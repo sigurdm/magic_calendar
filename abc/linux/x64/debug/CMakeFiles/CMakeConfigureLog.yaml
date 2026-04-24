@@ -1,0 +1,3753 @@
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineSystem.cmake:12 (find_program)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_UNAME"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "uname"
+    candidate_directories:
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/usr/bin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    searched_directories:
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/uname"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/uname"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/uname"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/uname"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/uname"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/uname"
+      - "/usr/lib/google-golang/bin/uname"
+      - "/usr/local/buildtools/java/jdk/bin/uname"
+      - "/usr/local/sbin/uname"
+      - "/usr/local/bin/uname"
+      - "/usr/sbin/uname"
+    found: "/usr/bin/uname"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineSystem.cmake:212 (message)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      The system is: Linux - 6.18.14-1rodete3-amd64 - x86_64
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeNinjaFindMake.cmake:5 (find_program)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_MAKE_PROGRAM"
+    description: "Program used to build from build.ninja files."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "ninja-build"
+      - "ninja"
+      - "samu"
+    candidate_directories:
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/usr/bin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    searched_directories:
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/ninja-build"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/ninja"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/samu"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/ninja-build"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/ninja"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/samu"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/ninja-build"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/ninja"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/samu"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/ninja-build"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/ninja"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/samu"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/ninja-build"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/ninja"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/samu"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/ninja-build"
+    found: "/usr/local/google/home/sigurdm/projects/depot_tools/ninja"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompiler.cmake:73 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:69 (_cmake_find_compiler)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_CXX_COMPILER"
+    description: "CXX compiler"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "/usr/bin/clang++"
+    candidate_directories:
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/usr/bin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    found: "/usr/bin/clang++"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:462 (find_file)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:500 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCXXCompilerId.cpp.in"
+    candidate_directories:
+      - "/usr/share/cmake-4.2/Modules/"
+    found: "/usr/share/cmake-4.2/Modules/CMakeCXXCompilerId.cpp.in"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler: /usr/bin/clang++ 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+      
+      The CXX compiler identification is Clang, found in:
+        /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/4.2.3/CompilerIdCXX/a.out
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:206 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_AR"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-ar"
+      - "ar"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    searched_directories:
+      - "/usr/bin/llvm-ar"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-ar"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-ar"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-ar"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-ar"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-ar"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-ar"
+      - "/usr/lib/google-golang/bin/llvm-ar"
+      - "/usr/local/buildtools/java/jdk/bin/llvm-ar"
+      - "/usr/local/sbin/llvm-ar"
+      - "/usr/local/bin/llvm-ar"
+      - "/usr/sbin/llvm-ar"
+      - "/sbin/llvm-ar"
+      - "/bin/llvm-ar"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/llvm-ar"
+      - "/usr/local/google/home/sigurdm/bin/llvm-ar"
+    found: "/usr/bin/ar"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:206 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_RANLIB"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-ranlib"
+      - "ranlib"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    searched_directories:
+      - "/usr/bin/llvm-ranlib"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-ranlib"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-ranlib"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-ranlib"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-ranlib"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-ranlib"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-ranlib"
+      - "/usr/lib/google-golang/bin/llvm-ranlib"
+      - "/usr/local/buildtools/java/jdk/bin/llvm-ranlib"
+      - "/usr/local/sbin/llvm-ranlib"
+      - "/usr/local/bin/llvm-ranlib"
+      - "/usr/sbin/llvm-ranlib"
+      - "/sbin/llvm-ranlib"
+      - "/bin/llvm-ranlib"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/llvm-ranlib"
+      - "/usr/local/google/home/sigurdm/bin/llvm-ranlib"
+    found: "/usr/bin/ranlib"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:206 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_STRIP"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-strip"
+      - "strip"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    searched_directories:
+      - "/usr/bin/llvm-strip"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-strip"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-strip"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-strip"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-strip"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-strip"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-strip"
+      - "/usr/lib/google-golang/bin/llvm-strip"
+      - "/usr/local/buildtools/java/jdk/bin/llvm-strip"
+      - "/usr/local/sbin/llvm-strip"
+      - "/usr/local/bin/llvm-strip"
+      - "/usr/sbin/llvm-strip"
+      - "/sbin/llvm-strip"
+      - "/bin/llvm-strip"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/llvm-strip"
+      - "/usr/local/google/home/sigurdm/bin/llvm-strip"
+    found: "/usr/bin/strip"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:206 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_LINKER"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "ld.lld"
+      - "ld"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    searched_directories:
+      - "/usr/bin/ld.lld"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/ld.lld"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/ld.lld"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/ld.lld"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/ld.lld"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/ld.lld"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/ld.lld"
+      - "/usr/lib/google-golang/bin/ld.lld"
+      - "/usr/local/buildtools/java/jdk/bin/ld.lld"
+      - "/usr/local/sbin/ld.lld"
+      - "/usr/local/bin/ld.lld"
+      - "/usr/sbin/ld.lld"
+      - "/sbin/ld.lld"
+      - "/bin/ld.lld"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/ld.lld"
+      - "/usr/local/google/home/sigurdm/bin/ld.lld"
+    found: "/usr/bin/ld"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:206 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_NM"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-nm"
+      - "nm"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    searched_directories:
+      - "/usr/bin/llvm-nm"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-nm"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-nm"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-nm"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-nm"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-nm"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-nm"
+      - "/usr/lib/google-golang/bin/llvm-nm"
+      - "/usr/local/buildtools/java/jdk/bin/llvm-nm"
+      - "/usr/local/sbin/llvm-nm"
+      - "/usr/local/bin/llvm-nm"
+      - "/usr/sbin/llvm-nm"
+      - "/sbin/llvm-nm"
+      - "/bin/llvm-nm"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/llvm-nm"
+      - "/usr/local/google/home/sigurdm/bin/llvm-nm"
+    found: "/usr/bin/nm"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:206 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_OBJDUMP"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-objdump"
+      - "objdump"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    searched_directories:
+      - "/usr/bin/llvm-objdump"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-objdump"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-objdump"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-objdump"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-objdump"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-objdump"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-objdump"
+      - "/usr/lib/google-golang/bin/llvm-objdump"
+      - "/usr/local/buildtools/java/jdk/bin/llvm-objdump"
+      - "/usr/local/sbin/llvm-objdump"
+      - "/usr/local/bin/llvm-objdump"
+      - "/usr/sbin/llvm-objdump"
+      - "/sbin/llvm-objdump"
+      - "/bin/llvm-objdump"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/llvm-objdump"
+      - "/usr/local/google/home/sigurdm/bin/llvm-objdump"
+    found: "/usr/bin/objdump"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:206 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_OBJCOPY"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-objcopy"
+      - "objcopy"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    searched_directories:
+      - "/usr/bin/llvm-objcopy"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-objcopy"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-objcopy"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-objcopy"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-objcopy"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-objcopy"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-objcopy"
+      - "/usr/lib/google-golang/bin/llvm-objcopy"
+      - "/usr/local/buildtools/java/jdk/bin/llvm-objcopy"
+      - "/usr/local/sbin/llvm-objcopy"
+      - "/usr/local/bin/llvm-objcopy"
+      - "/usr/sbin/llvm-objcopy"
+      - "/sbin/llvm-objcopy"
+      - "/bin/llvm-objcopy"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/llvm-objcopy"
+      - "/usr/local/google/home/sigurdm/bin/llvm-objcopy"
+    found: "/usr/bin/objcopy"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:206 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_READELF"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-readelf"
+      - "readelf"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    searched_directories:
+      - "/usr/bin/llvm-readelf"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-readelf"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-readelf"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-readelf"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-readelf"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-readelf"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-readelf"
+      - "/usr/lib/google-golang/bin/llvm-readelf"
+      - "/usr/local/buildtools/java/jdk/bin/llvm-readelf"
+      - "/usr/local/sbin/llvm-readelf"
+      - "/usr/local/bin/llvm-readelf"
+      - "/usr/sbin/llvm-readelf"
+      - "/sbin/llvm-readelf"
+      - "/bin/llvm-readelf"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/llvm-readelf"
+      - "/usr/local/google/home/sigurdm/bin/llvm-readelf"
+    found: "/usr/bin/readelf"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:206 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_DLLTOOL"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-dlltool"
+      - "dlltool"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    searched_directories:
+      - "/usr/bin/llvm-dlltool"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-dlltool"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-dlltool"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-dlltool"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-dlltool"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-dlltool"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-dlltool"
+      - "/usr/lib/google-golang/bin/llvm-dlltool"
+      - "/usr/local/buildtools/java/jdk/bin/llvm-dlltool"
+      - "/usr/local/sbin/llvm-dlltool"
+      - "/usr/local/bin/llvm-dlltool"
+      - "/usr/sbin/llvm-dlltool"
+      - "/sbin/llvm-dlltool"
+      - "/bin/llvm-dlltool"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/llvm-dlltool"
+      - "/usr/local/google/home/sigurdm/bin/llvm-dlltool"
+      - "/usr/bin/dlltool"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/dlltool"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/dlltool"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/dlltool"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/dlltool"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/dlltool"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/dlltool"
+      - "/usr/lib/google-golang/bin/dlltool"
+      - "/usr/local/buildtools/java/jdk/bin/dlltool"
+      - "/usr/local/sbin/dlltool"
+      - "/usr/local/bin/dlltool"
+      - "/usr/sbin/dlltool"
+      - "/sbin/dlltool"
+      - "/bin/dlltool"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/dlltool"
+      - "/usr/local/google/home/sigurdm/bin/dlltool"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:206 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_ADDR2LINE"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-addr2line"
+      - "addr2line"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    searched_directories:
+      - "/usr/bin/llvm-addr2line"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-addr2line"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-addr2line"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-addr2line"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-addr2line"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-addr2line"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-addr2line"
+      - "/usr/lib/google-golang/bin/llvm-addr2line"
+      - "/usr/local/buildtools/java/jdk/bin/llvm-addr2line"
+      - "/usr/local/sbin/llvm-addr2line"
+      - "/usr/local/bin/llvm-addr2line"
+      - "/usr/sbin/llvm-addr2line"
+      - "/sbin/llvm-addr2line"
+      - "/bin/llvm-addr2line"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/llvm-addr2line"
+      - "/usr/local/google/home/sigurdm/bin/llvm-addr2line"
+    found: "/usr/bin/addr2line"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:206 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_TAPI"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "tapi"
+    candidate_directories:
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    searched_directories:
+      - "/usr/bin/tapi"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/tapi"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/tapi"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/tapi"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/tapi"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/tapi"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/tapi"
+      - "/usr/lib/google-golang/bin/tapi"
+      - "/usr/local/buildtools/java/jdk/bin/tapi"
+      - "/usr/local/sbin/tapi"
+      - "/usr/local/bin/tapi"
+      - "/usr/sbin/tapi"
+      - "/sbin/tapi"
+      - "/bin/tapi"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/tapi"
+      - "/usr/local/google/home/sigurdm/bin/tapi"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/Compiler/Clang-FindBinUtils.cmake:26 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:207 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_CXX_COMPILER_AR"
+    description: "LLVM archiver"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-ar-19.1"
+      - "llvm-ar-19"
+      - "llvm-ar19"
+      - "llvm-ar"
+    candidate_directories:
+      - "/usr/lib/llvm-19/bin/"
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    searched_directories:
+      - "/usr/lib/llvm-19/bin/llvm-ar-19.1"
+      - "/usr/bin/llvm-ar-19.1"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-ar-19.1"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-ar-19.1"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-ar-19.1"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-ar-19.1"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-ar-19.1"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-ar-19.1"
+      - "/usr/lib/google-golang/bin/llvm-ar-19.1"
+      - "/usr/local/buildtools/java/jdk/bin/llvm-ar-19.1"
+      - "/usr/local/sbin/llvm-ar-19.1"
+      - "/usr/local/bin/llvm-ar-19.1"
+      - "/usr/sbin/llvm-ar-19.1"
+      - "/sbin/llvm-ar-19.1"
+      - "/bin/llvm-ar-19.1"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/llvm-ar-19.1"
+      - "/usr/local/google/home/sigurdm/bin/llvm-ar-19.1"
+      - "/usr/lib/llvm-19/bin/llvm-ar-19"
+    found: "/usr/bin/llvm-ar-19"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/Compiler/Clang-FindBinUtils.cmake:38 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:207 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_CXX_COMPILER_RANLIB"
+    description: "Generate index for LLVM archive"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-ranlib-19.1"
+      - "llvm-ranlib-19"
+      - "llvm-ranlib19"
+      - "llvm-ranlib"
+    candidate_directories:
+      - "/usr/lib/llvm-19/bin/"
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    searched_directories:
+      - "/usr/lib/llvm-19/bin/llvm-ranlib-19.1"
+      - "/usr/bin/llvm-ranlib-19.1"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-ranlib-19.1"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-ranlib-19.1"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-ranlib-19.1"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-ranlib-19.1"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-ranlib-19.1"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-ranlib-19.1"
+      - "/usr/lib/google-golang/bin/llvm-ranlib-19.1"
+      - "/usr/local/buildtools/java/jdk/bin/llvm-ranlib-19.1"
+      - "/usr/local/sbin/llvm-ranlib-19.1"
+      - "/usr/local/bin/llvm-ranlib-19.1"
+      - "/usr/sbin/llvm-ranlib-19.1"
+      - "/sbin/llvm-ranlib-19.1"
+      - "/bin/llvm-ranlib-19.1"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/llvm-ranlib-19.1"
+      - "/usr/local/google/home/sigurdm/bin/llvm-ranlib-19.1"
+      - "/usr/lib/llvm-19/bin/llvm-ranlib-19"
+    found: "/usr/bin/llvm-ranlib-19"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/Compiler/Clang-FindBinUtils.cmake:50 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:207 (include)"
+      - "CMakeLists.txt:3 (project)"
+    mode: "program"
+    variable: "CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS"
+    description: "`clang-scan-deps` dependency scanner"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "clang-scan-deps-19.1"
+      - "clang-scan-deps-19"
+      - "clang-scan-deps19"
+      - "clang-scan-deps"
+    candidate_directories:
+      - "/usr/lib/llvm-19/bin/"
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+    searched_directories:
+      - "/usr/lib/llvm-19/bin/clang-scan-deps-19.1"
+      - "/usr/bin/clang-scan-deps-19.1"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/clang-scan-deps-19.1"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/clang-scan-deps-19.1"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/clang-scan-deps-19.1"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/clang-scan-deps-19.1"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/clang-scan-deps-19.1"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/clang-scan-deps-19.1"
+      - "/usr/lib/google-golang/bin/clang-scan-deps-19.1"
+      - "/usr/local/buildtools/java/jdk/bin/clang-scan-deps-19.1"
+      - "/usr/local/sbin/clang-scan-deps-19.1"
+      - "/usr/local/bin/clang-scan-deps-19.1"
+      - "/usr/sbin/clang-scan-deps-19.1"
+      - "/sbin/clang-scan-deps-19.1"
+      - "/bin/clang-scan-deps-19.1"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/clang-scan-deps-19.1"
+      - "/usr/local/google/home/sigurdm/bin/clang-scan-deps-19.1"
+      - "/usr/lib/llvm-19/bin/clang-scan-deps-19"
+    found: "/usr/bin/clang-scan-deps-19"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:83 (try_compile)"
+      - "/usr/share/cmake-4.2/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-aEKoBn"
+      binary: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-aEKoBn"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps-19"
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-aEKoBn'
+        
+        Run Build Command(s): /usr/local/google/home/sigurdm/projects/depot_tools/ninja -v cmTC_53665
+        [1/2] /usr/bin/clang++   -v -MD -MT CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-4.2/Modules/CMakeCXXCompilerABI.cpp
+        Debian clang version 19.1.7 (10.1+build1)
+        Target: x86_64-pc-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/lib/llvm-19/bin
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/11
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/12
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/15
+        Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/15
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Candidate multilib: x32;@mx32
+        Selected multilib: .;@m64
+         (in-process)
+         "/usr/lib/llvm-19/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-aEKoBn -v -fcoverage-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-aEKoBn -resource-dir /usr/lib/llvm-19/lib/clang/19 -dependency-file CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/x86_64-linux-gnu/c++/15 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15/backward -internal-isystem /usr/lib/llvm-19/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -x c++ /usr/share/cmake-4.2/Modules/CMakeCXXCompilerABI.cpp
+        clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu
+        ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include"
+        ignoring nonexistent directory "/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15
+         /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/x86_64-linux-gnu/c++/15
+         /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15/backward
+         /usr/lib/llvm-19/lib/clang/19/include
+         /usr/local/include
+         /usr/include/x86_64-linux-gnu
+         /usr/include
+        End of search list.
+        [2/2] : && /usr/bin/clang++  -v -Wl,-v CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_53665   && :
+        Debian clang version 19.1.7 (10.1+build1)
+        Target: x86_64-pc-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/lib/llvm-19/bin
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/11
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/12
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/15
+        Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/15
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Candidate multilib: x32;@mx32
+        Selected multilib: .;@m64
+         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_53665 /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/15 -L/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o /lib/x86_64-linux-gnu/crtn.o
+        GNU ld (GNU Binutils for Debian) 2.45.50.20251209
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:217 (message)"
+      - "/usr/share/cmake-4.2/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Parsed CXX implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15]
+          add: [/usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/x86_64-linux-gnu/c++/15]
+          add: [/usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15/backward]
+          add: [/usr/lib/llvm-19/lib/clang/19/include]
+          add: [/usr/local/include]
+          add: [/usr/include/x86_64-linux-gnu]
+          add: [/usr/include]
+        end of search list found
+        collapse include dir [/usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15] ==> [/usr/include/c++/15]
+        collapse include dir [/usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/x86_64-linux-gnu/c++/15] ==> [/usr/include/x86_64-linux-gnu/c++/15]
+        collapse include dir [/usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15/backward] ==> [/usr/include/c++/15/backward]
+        collapse include dir [/usr/lib/llvm-19/lib/clang/19/include] ==> [/usr/lib/llvm-19/lib/clang/19/include]
+        collapse include dir [/usr/local/include] ==> [/usr/local/include]
+        collapse include dir [/usr/include/x86_64-linux-gnu] ==> [/usr/include/x86_64-linux-gnu]
+        collapse include dir [/usr/include] ==> [/usr/include]
+        implicit include dirs: [/usr/include/c++/15;/usr/include/x86_64-linux-gnu/c++/15;/usr/include/c++/15/backward;/usr/lib/llvm-19/lib/clang/19/include;/usr/local/include;/usr/include/x86_64-linux-gnu;/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:253 (message)"
+      - "/usr/share/cmake-4.2/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Parsed CXX implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
+        ignore line: [Change Dir: '/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-aEKoBn']
+        ignore line: []
+        ignore line: [Run Build Command(s): /usr/local/google/home/sigurdm/projects/depot_tools/ninja -v cmTC_53665]
+        ignore line: [[1/2] /usr/bin/clang++   -v -MD -MT CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-4.2/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Debian clang version 19.1.7 (10.1+build1)]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/lib/llvm-19/bin]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/11]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/12]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/15]
+        ignore line: [Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/15]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Candidate multilib: x32]
+        ignore line: [@mx32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        ignore line: [ (in-process)]
+        ignore line: [ "/usr/lib/llvm-19/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-aEKoBn -v -fcoverage-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-aEKoBn -resource-dir /usr/lib/llvm-19/lib/clang/19 -dependency-file CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/x86_64-linux-gnu/c++/15 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15/backward -internal-isystem /usr/lib/llvm-19/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -x c++ /usr/share/cmake-4.2/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu]
+        ignore line: [ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include"]
+        ignore line: [ignoring nonexistent directory "/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15]
+        ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/x86_64-linux-gnu/c++/15]
+        ignore line: [ /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15/backward]
+        ignore line: [ /usr/lib/llvm-19/lib/clang/19/include]
+        ignore line: [ /usr/local/include]
+        ignore line: [ /usr/include/x86_64-linux-gnu]
+        ignore line: [ /usr/include]
+        ignore line: [End of search list.]
+        ignore line: [[2/2] : && /usr/bin/clang++  -v -Wl -v CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_53665   && :]
+        ignore line: [Debian clang version 19.1.7 (10.1+build1)]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/lib/llvm-19/bin]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/11]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/12]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/15]
+        ignore line: [Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/15]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Candidate multilib: x32]
+        ignore line: [@mx32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_53665 /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/15 -L/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o /lib/x86_64-linux-gnu/crtn.o]
+          arg [/usr/bin/ld] ==> ignore
+          arg [--hash-style=gnu] ==> ignore
+          arg [--build-id] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [-m] ==> ignore
+          arg [elf_x86_64] ==> ignore
+          arg [-pie] ==> ignore
+          arg [-dynamic-linker] ==> ignore
+          arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_53665] ==> ignore
+          arg [/lib/x86_64-linux-gnu/Scrt1.o] ==> obj [/lib/x86_64-linux-gnu/Scrt1.o]
+          arg [/lib/x86_64-linux-gnu/crti.o] ==> obj [/lib/x86_64-linux-gnu/crti.o]
+          arg [/usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/15] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/15]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64]
+          arg [-L/lib/x86_64-linux-gnu] ==> dir [/lib/x86_64-linux-gnu]
+          arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+          arg [-L/usr/lib/x86_64-linux-gnu] ==> dir [/usr/lib/x86_64-linux-gnu]
+          arg [-L/usr/lib/../lib64] ==> dir [/usr/lib/../lib64]
+          arg [-L/lib] ==> dir [/lib]
+          arg [-L/usr/lib] ==> dir [/usr/lib]
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [-lstdc++] ==> lib [stdc++]
+          arg [-lm] ==> lib [m]
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [-lgcc] ==> lib [gcc]
+          arg [-lc] ==> lib [c]
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [-lgcc] ==> lib [gcc]
+          arg [/usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o]
+          arg [/lib/x86_64-linux-gnu/crtn.o] ==> obj [/lib/x86_64-linux-gnu/crtn.o]
+        linker tool for 'CXX': /usr/bin/ld
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/15] ==> [/usr/lib/gcc/x86_64-linux-gnu/15]
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib/x86_64-linux-gnu] ==> [/lib/x86_64-linux-gnu]
+        collapse library dir [/lib/../lib64] ==> [/lib64]
+        collapse library dir [/usr/lib/x86_64-linux-gnu] ==> [/usr/lib/x86_64-linux-gnu]
+        collapse library dir [/usr/lib/../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib] ==> [/lib]
+        collapse library dir [/usr/lib] ==> [/usr/lib]
+        implicit libs: [stdc++;m;gcc_s;gcc;c;gcc_s;gcc]
+        implicit objs: [/lib/x86_64-linux-gnu/Scrt1.o;/lib/x86_64-linux-gnu/crti.o;/usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o;/usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o;/lib/x86_64-linux-gnu/crtn.o]
+        implicit dirs: [/usr/lib/gcc/x86_64-linux-gnu/15;/usr/lib64;/lib/x86_64-linux-gnu;/lib64;/usr/lib/x86_64-linux-gnu;/lib;/usr/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/Internal/CMakeDetermineLinkerId.cmake:38 (message)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:299 (cmake_determine_linker_id)"
+      - "/usr/share/cmake-4.2/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Running the CXX compiler's linker: "/usr/bin/ld" "-v"
+      GNU ld (GNU Binutils for Debian) 2.45.50.20251209
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:517 (find_program)"
+      - "flutter/CMakeLists.txt:24 (find_package)"
+    mode: "program"
+    variable: "PKG_CONFIG_EXECUTABLE"
+    description: "pkg-config executable"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "pkg-config"
+      - "pkgconf"
+    candidate_directories:
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/usr/bin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+      - "/usr/local/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/"
+      - "/usr/bin/"
+      - "/usr/sbin/"
+      - "/usr/"
+      - "/bin/"
+      - "/sbin/"
+      - "/usr/X11R6/bin/"
+      - "/usr/X11R6/sbin/"
+      - "/usr/X11R6/"
+      - "/usr/pkg/bin/"
+      - "/usr/pkg/sbin/"
+      - "/usr/pkg/"
+      - "/opt/bin/"
+      - "/opt/sbin/"
+      - "/opt/"
+    searched_directories:
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/pkg-config"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/pkgconf"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/pkg-config"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/pkgconf"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/pkg-config"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/pkgconf"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/pkg-config"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/pkgconf"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/pkg-config"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/pkgconf"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/pkg-config"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/pkgconf"
+      - "/usr/lib/google-golang/bin/pkg-config"
+      - "/usr/lib/google-golang/bin/pkgconf"
+      - "/usr/local/buildtools/java/jdk/bin/pkg-config"
+      - "/usr/local/buildtools/java/jdk/bin/pkgconf"
+      - "/usr/local/sbin/pkg-config"
+      - "/usr/local/sbin/pkgconf"
+      - "/usr/local/bin/pkg-config"
+      - "/usr/local/bin/pkgconf"
+      - "/usr/sbin/pkg-config"
+      - "/usr/sbin/pkgconf"
+    found: "/usr/bin/pkg-config"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:25 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK_gtk-3"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gtk-3"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libgtk-3.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:25 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK_gdk-3"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gdk-3"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libgdk-3.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:25 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK_z"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "z"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libz.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:25 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK_pangocairo-1.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "pangocairo-1.0"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libpangocairo-1.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:25 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK_pango-1.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "pango-1.0"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libpango-1.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:25 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK_harfbuzz"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "harfbuzz"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libharfbuzz.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:25 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK_atk-1.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "atk-1.0"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libatk-1.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:25 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK_cairo-gobject"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "cairo-gobject"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libcairo-gobject.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:25 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK_cairo"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "cairo"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libcairo.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:25 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK_gdk_pixbuf-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gdk_pixbuf-2.0"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libgdk_pixbuf-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:25 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK_gio-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gio-2.0"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libgio-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:25 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK_gobject-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gobject-2.0"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libgobject-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:25 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK_glib-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "glib-2.0"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libglib-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:26 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GLIB_glib-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "glib-2.0"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libglib-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:27 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GIO_gio-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gio-2.0"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libgio-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:27 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GIO_gobject-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gobject-2.0"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libgobject-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake-4.2/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "flutter/CMakeLists.txt:27 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GIO_glib-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "glib-2.0"
+    candidate_directories:
+      - "/usr/lib/x86_64-linux-gnu/"
+    found: "/usr/lib/x86_64-linux-gnu/libglib-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompiler.cmake:54 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:64 (_cmake_find_compiler)"
+      - "flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt:8 (project)"
+    mode: "program"
+    variable: "CMAKE_C_COMPILER"
+    description: "C compiler"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "/usr/bin/clang"
+    candidate_directories:
+      - "/usr/bin/"
+    found: "/usr/bin/clang"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:462 (find_file)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:500 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt:8 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCCompilerId.c.in"
+    candidate_directories:
+      - "/usr/share/cmake-4.2/Modules/"
+    found: "/usr/share/cmake-4.2/Modules/CMakeCCompilerId.c.in"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_INCLUDE_PATH:
+        - "/usr/include/X11"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt:8 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler: /usr/bin/clang 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+      
+      The C compiler identification is Clang, found in:
+        /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/4.2.3/CompilerIdC/a.out
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/Compiler/Clang-FindBinUtils.cmake:26 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:201 (include)"
+      - "flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt:8 (project)"
+    mode: "program"
+    variable: "CMAKE_C_COMPILER_AR"
+    description: "LLVM archiver"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-ar-19.1"
+      - "llvm-ar-19"
+      - "llvm-ar19"
+      - "llvm-ar"
+    candidate_directories:
+      - "/usr/lib/llvm-19/bin/"
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+      - "/usr/local/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/"
+      - "/usr/bin/"
+      - "/usr/sbin/"
+      - "/usr/"
+      - "/bin/"
+      - "/sbin/"
+      - "/usr/X11R6/bin/"
+      - "/usr/X11R6/sbin/"
+      - "/usr/X11R6/"
+      - "/usr/pkg/bin/"
+      - "/usr/pkg/sbin/"
+      - "/usr/pkg/"
+      - "/opt/bin/"
+      - "/opt/sbin/"
+      - "/opt/"
+    searched_directories:
+      - "/usr/lib/llvm-19/bin/llvm-ar-19.1"
+      - "/usr/bin/llvm-ar-19.1"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-ar-19.1"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-ar-19.1"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-ar-19.1"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-ar-19.1"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-ar-19.1"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-ar-19.1"
+      - "/usr/lib/google-golang/bin/llvm-ar-19.1"
+      - "/usr/local/buildtools/java/jdk/bin/llvm-ar-19.1"
+      - "/usr/local/sbin/llvm-ar-19.1"
+      - "/usr/local/bin/llvm-ar-19.1"
+      - "/usr/sbin/llvm-ar-19.1"
+      - "/sbin/llvm-ar-19.1"
+      - "/bin/llvm-ar-19.1"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/llvm-ar-19.1"
+      - "/usr/local/google/home/sigurdm/bin/llvm-ar-19.1"
+      - "/usr/local/bin/llvm-ar-19.1"
+      - "/usr/local/sbin/llvm-ar-19.1"
+      - "/usr/local/llvm-ar-19.1"
+      - "/usr/bin/llvm-ar-19.1"
+      - "/usr/sbin/llvm-ar-19.1"
+      - "/usr/llvm-ar-19.1"
+      - "/bin/llvm-ar-19.1"
+      - "/sbin/llvm-ar-19.1"
+      - "/usr/X11R6/bin/llvm-ar-19.1"
+      - "/usr/X11R6/sbin/llvm-ar-19.1"
+      - "/usr/X11R6/llvm-ar-19.1"
+      - "/usr/pkg/bin/llvm-ar-19.1"
+      - "/usr/pkg/sbin/llvm-ar-19.1"
+      - "/usr/pkg/llvm-ar-19.1"
+      - "/opt/bin/llvm-ar-19.1"
+      - "/opt/sbin/llvm-ar-19.1"
+      - "/opt/llvm-ar-19.1"
+      - "/usr/lib/llvm-19/bin/llvm-ar-19"
+    found: "/usr/bin/llvm-ar-19"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/Compiler/Clang-FindBinUtils.cmake:38 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:201 (include)"
+      - "flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt:8 (project)"
+    mode: "program"
+    variable: "CMAKE_C_COMPILER_RANLIB"
+    description: "Generate index for LLVM archive"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-ranlib-19.1"
+      - "llvm-ranlib-19"
+      - "llvm-ranlib19"
+      - "llvm-ranlib"
+    candidate_directories:
+      - "/usr/lib/llvm-19/bin/"
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+      - "/usr/local/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/"
+      - "/usr/bin/"
+      - "/usr/sbin/"
+      - "/usr/"
+      - "/bin/"
+      - "/sbin/"
+      - "/usr/X11R6/bin/"
+      - "/usr/X11R6/sbin/"
+      - "/usr/X11R6/"
+      - "/usr/pkg/bin/"
+      - "/usr/pkg/sbin/"
+      - "/usr/pkg/"
+      - "/opt/bin/"
+      - "/opt/sbin/"
+      - "/opt/"
+    searched_directories:
+      - "/usr/lib/llvm-19/bin/llvm-ranlib-19.1"
+      - "/usr/bin/llvm-ranlib-19.1"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-ranlib-19.1"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-ranlib-19.1"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-ranlib-19.1"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-ranlib-19.1"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-ranlib-19.1"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-ranlib-19.1"
+      - "/usr/lib/google-golang/bin/llvm-ranlib-19.1"
+      - "/usr/local/buildtools/java/jdk/bin/llvm-ranlib-19.1"
+      - "/usr/local/sbin/llvm-ranlib-19.1"
+      - "/usr/local/bin/llvm-ranlib-19.1"
+      - "/usr/sbin/llvm-ranlib-19.1"
+      - "/sbin/llvm-ranlib-19.1"
+      - "/bin/llvm-ranlib-19.1"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/llvm-ranlib-19.1"
+      - "/usr/local/google/home/sigurdm/bin/llvm-ranlib-19.1"
+      - "/usr/local/bin/llvm-ranlib-19.1"
+      - "/usr/local/sbin/llvm-ranlib-19.1"
+      - "/usr/local/llvm-ranlib-19.1"
+      - "/usr/bin/llvm-ranlib-19.1"
+      - "/usr/sbin/llvm-ranlib-19.1"
+      - "/usr/llvm-ranlib-19.1"
+      - "/bin/llvm-ranlib-19.1"
+      - "/sbin/llvm-ranlib-19.1"
+      - "/usr/X11R6/bin/llvm-ranlib-19.1"
+      - "/usr/X11R6/sbin/llvm-ranlib-19.1"
+      - "/usr/X11R6/llvm-ranlib-19.1"
+      - "/usr/pkg/bin/llvm-ranlib-19.1"
+      - "/usr/pkg/sbin/llvm-ranlib-19.1"
+      - "/usr/pkg/llvm-ranlib-19.1"
+      - "/opt/bin/llvm-ranlib-19.1"
+      - "/opt/sbin/llvm-ranlib-19.1"
+      - "/opt/llvm-ranlib-19.1"
+      - "/usr/lib/llvm-19/bin/llvm-ranlib-19"
+    found: "/usr/bin/llvm-ranlib-19"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/Compiler/Clang-FindBinUtils.cmake:50 (find_program)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:201 (include)"
+      - "flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt:8 (project)"
+    mode: "program"
+    variable: "CMAKE_C_COMPILER_CLANG_SCAN_DEPS"
+    description: "`clang-scan-deps` dependency scanner"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "clang-scan-deps-19.1"
+      - "clang-scan-deps-19"
+      - "clang-scan-deps19"
+      - "clang-scan-deps"
+    candidate_directories:
+      - "/usr/lib/llvm-19/bin/"
+      - "/usr/bin/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+      - "/usr/local/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/"
+      - "/usr/bin/"
+      - "/usr/sbin/"
+      - "/usr/"
+      - "/bin/"
+      - "/sbin/"
+      - "/usr/X11R6/bin/"
+      - "/usr/X11R6/sbin/"
+      - "/usr/X11R6/"
+      - "/usr/pkg/bin/"
+      - "/usr/pkg/sbin/"
+      - "/usr/pkg/"
+      - "/opt/bin/"
+      - "/opt/sbin/"
+      - "/opt/"
+    searched_directories:
+      - "/usr/lib/llvm-19/bin/clang-scan-deps-19.1"
+      - "/usr/bin/clang-scan-deps-19.1"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/clang-scan-deps-19.1"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/clang-scan-deps-19.1"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/clang-scan-deps-19.1"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/clang-scan-deps-19.1"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/clang-scan-deps-19.1"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/clang-scan-deps-19.1"
+      - "/usr/lib/google-golang/bin/clang-scan-deps-19.1"
+      - "/usr/local/buildtools/java/jdk/bin/clang-scan-deps-19.1"
+      - "/usr/local/sbin/clang-scan-deps-19.1"
+      - "/usr/local/bin/clang-scan-deps-19.1"
+      - "/usr/sbin/clang-scan-deps-19.1"
+      - "/sbin/clang-scan-deps-19.1"
+      - "/bin/clang-scan-deps-19.1"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/clang-scan-deps-19.1"
+      - "/usr/local/google/home/sigurdm/bin/clang-scan-deps-19.1"
+      - "/usr/local/bin/clang-scan-deps-19.1"
+      - "/usr/local/sbin/clang-scan-deps-19.1"
+      - "/usr/local/clang-scan-deps-19.1"
+      - "/usr/bin/clang-scan-deps-19.1"
+      - "/usr/sbin/clang-scan-deps-19.1"
+      - "/usr/clang-scan-deps-19.1"
+      - "/bin/clang-scan-deps-19.1"
+      - "/sbin/clang-scan-deps-19.1"
+      - "/usr/X11R6/bin/clang-scan-deps-19.1"
+      - "/usr/X11R6/sbin/clang-scan-deps-19.1"
+      - "/usr/X11R6/clang-scan-deps-19.1"
+      - "/usr/pkg/bin/clang-scan-deps-19.1"
+      - "/usr/pkg/sbin/clang-scan-deps-19.1"
+      - "/usr/pkg/clang-scan-deps-19.1"
+      - "/opt/bin/clang-scan-deps-19.1"
+      - "/opt/sbin/clang-scan-deps-19.1"
+      - "/opt/clang-scan-deps-19.1"
+      - "/usr/lib/llvm-19/bin/clang-scan-deps-19"
+    found: "/usr/bin/clang-scan-deps-19"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:83 (try_compile)"
+      - "/usr/share/cmake-4.2/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt:8 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-8gAHew"
+      binary: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-8gAHew"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps-19"
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-8gAHew'
+        
+        Run Build Command(s): /usr/local/google/home/sigurdm/projects/depot_tools/ninja -v cmTC_ed652
+        [1/2] /usr/bin/clang   -v -MD -MT CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-4.2/Modules/CMakeCCompilerABI.c
+        Debian clang version 19.1.7 (10.1+build1)
+        Target: x86_64-pc-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/lib/llvm-19/bin
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/11
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/12
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/15
+        Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/15
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Candidate multilib: x32;@mx32
+        Selected multilib: .;@m64
+         (in-process)
+         "/usr/lib/llvm-19/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-8gAHew -v -fcoverage-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-8gAHew -resource-dir /usr/lib/llvm-19/lib/clang/19 -dependency-file CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/llvm-19/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake-4.2/Modules/CMakeCCompilerABI.c
+        clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu
+        ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include"
+        ignoring nonexistent directory "/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /usr/lib/llvm-19/lib/clang/19/include
+         /usr/local/include
+         /usr/include/x86_64-linux-gnu
+         /usr/include
+        End of search list.
+        [2/2] : && /usr/bin/clang  -v -Wl,-v CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -o cmTC_ed652   && :
+        Debian clang version 19.1.7 (10.1+build1)
+        Target: x86_64-pc-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/lib/llvm-19/bin
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/11
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/12
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+        Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/15
+        Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/15
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Candidate multilib: x32;@mx32
+        Selected multilib: .;@m64
+         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_ed652 /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/15 -L/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o /lib/x86_64-linux-gnu/crtn.o
+        GNU ld (GNU Binutils for Debian) 2.45.50.20251209
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:217 (message)"
+      - "/usr/share/cmake-4.2/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt:8 (project)"
+    message: |
+      Parsed C implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/usr/lib/llvm-19/lib/clang/19/include]
+          add: [/usr/local/include]
+          add: [/usr/include/x86_64-linux-gnu]
+          add: [/usr/include]
+        end of search list found
+        collapse include dir [/usr/lib/llvm-19/lib/clang/19/include] ==> [/usr/lib/llvm-19/lib/clang/19/include]
+        collapse include dir [/usr/local/include] ==> [/usr/local/include]
+        collapse include dir [/usr/include/x86_64-linux-gnu] ==> [/usr/include/x86_64-linux-gnu]
+        collapse include dir [/usr/include] ==> [/usr/include]
+        implicit include dirs: [/usr/lib/llvm-19/lib/clang/19/include;/usr/local/include;/usr/include/x86_64-linux-gnu;/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:253 (message)"
+      - "/usr/share/cmake-4.2/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt:8 (project)"
+    message: |
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
+        ignore line: [Change Dir: '/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-8gAHew']
+        ignore line: []
+        ignore line: [Run Build Command(s): /usr/local/google/home/sigurdm/projects/depot_tools/ninja -v cmTC_ed652]
+        ignore line: [[1/2] /usr/bin/clang   -v -MD -MT CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-4.2/Modules/CMakeCCompilerABI.c]
+        ignore line: [Debian clang version 19.1.7 (10.1+build1)]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/lib/llvm-19/bin]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/11]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/12]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/15]
+        ignore line: [Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/15]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Candidate multilib: x32]
+        ignore line: [@mx32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        ignore line: [ (in-process)]
+        ignore line: [ "/usr/lib/llvm-19/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-8gAHew -v -fcoverage-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-8gAHew -resource-dir /usr/lib/llvm-19/lib/clang/19 -dependency-file CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/llvm-19/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake-4.2/Modules/CMakeCCompilerABI.c]
+        ignore line: [clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu]
+        ignore line: [ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include"]
+        ignore line: [ignoring nonexistent directory "/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /usr/lib/llvm-19/lib/clang/19/include]
+        ignore line: [ /usr/local/include]
+        ignore line: [ /usr/include/x86_64-linux-gnu]
+        ignore line: [ /usr/include]
+        ignore line: [End of search list.]
+        ignore line: [[2/2] : && /usr/bin/clang  -v -Wl -v CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -o cmTC_ed652   && :]
+        ignore line: [Debian clang version 19.1.7 (10.1+build1)]
+        ignore line: [Target: x86_64-pc-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/lib/llvm-19/bin]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/11]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/12]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14]
+        ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/15]
+        ignore line: [Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/15]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Candidate multilib: x32]
+        ignore line: [@mx32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_ed652 /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/15 -L/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o /lib/x86_64-linux-gnu/crtn.o]
+          arg [/usr/bin/ld] ==> ignore
+          arg [--hash-style=gnu] ==> ignore
+          arg [--build-id] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [-m] ==> ignore
+          arg [elf_x86_64] ==> ignore
+          arg [-pie] ==> ignore
+          arg [-dynamic-linker] ==> ignore
+          arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_ed652] ==> ignore
+          arg [/lib/x86_64-linux-gnu/Scrt1.o] ==> obj [/lib/x86_64-linux-gnu/Scrt1.o]
+          arg [/lib/x86_64-linux-gnu/crti.o] ==> obj [/lib/x86_64-linux-gnu/crti.o]
+          arg [/usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/15] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/15]
+          arg [-L/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64] ==> dir [/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64]
+          arg [-L/lib/x86_64-linux-gnu] ==> dir [/lib/x86_64-linux-gnu]
+          arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+          arg [-L/usr/lib/x86_64-linux-gnu] ==> dir [/usr/lib/x86_64-linux-gnu]
+          arg [-L/usr/lib/../lib64] ==> dir [/usr/lib/../lib64]
+          arg [-L/lib] ==> dir [/lib]
+          arg [-L/usr/lib] ==> dir [/usr/lib]
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [-lgcc] ==> lib [gcc]
+          arg [--as-needed] ==> ignore
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [--no-as-needed] ==> ignore
+          arg [-lc] ==> lib [c]
+          arg [-lgcc] ==> lib [gcc]
+          arg [--as-needed] ==> ignore
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [--no-as-needed] ==> ignore
+          arg [/usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o]
+          arg [/lib/x86_64-linux-gnu/crtn.o] ==> obj [/lib/x86_64-linux-gnu/crtn.o]
+        linker tool for 'C': /usr/bin/ld
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/15] ==> [/usr/lib/gcc/x86_64-linux-gnu/15]
+        collapse library dir [/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib/x86_64-linux-gnu] ==> [/lib/x86_64-linux-gnu]
+        collapse library dir [/lib/../lib64] ==> [/lib64]
+        collapse library dir [/usr/lib/x86_64-linux-gnu] ==> [/usr/lib/x86_64-linux-gnu]
+        collapse library dir [/usr/lib/../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib] ==> [/lib]
+        collapse library dir [/usr/lib] ==> [/usr/lib]
+        implicit libs: [gcc;gcc_s;c;gcc;gcc_s]
+        implicit objs: [/lib/x86_64-linux-gnu/Scrt1.o;/lib/x86_64-linux-gnu/crti.o;/usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o;/usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o;/lib/x86_64-linux-gnu/crtn.o]
+        implicit dirs: [/usr/lib/gcc/x86_64-linux-gnu/15;/usr/lib64;/lib/x86_64-linux-gnu;/lib64;/usr/lib/x86_64-linux-gnu;/lib;/usr/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/Internal/CMakeDetermineLinkerId.cmake:38 (message)"
+      - "/usr/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:299 (cmake_determine_linker_id)"
+      - "/usr/share/cmake-4.2/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt:8 (project)"
+    message: |
+      Running the C compiler's linker: "/usr/bin/ld" "-v"
+      GNU ld (GNU Binutils for Debian) 2.45.50.20251209
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindJNI.cmake:538 (find_library)"
+      - "flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt:20 (find_package)"
+    mode: "library"
+    variable: "JAVA_JVM_LIBRARY"
+    description: "Java Virtual Machine library"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "jvm"
+    candidate_directories:
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/usr/bin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+      - "/usr/local/lib/x86_64-linux-gnu/"
+      - "/usr/local/lib/"
+      - "/usr/local/"
+      - "/usr/lib/x86_64-linux-gnu/"
+      - "/usr/lib/"
+      - "/usr/"
+      - "/lib/x86_64-linux-gnu/"
+      - "/lib/"
+      - "/usr/X11R6/lib/x86_64-linux-gnu/"
+      - "/usr/X11R6/lib/"
+      - "/usr/X11R6/"
+      - "/usr/pkg/lib/x86_64-linux-gnu/"
+      - "/usr/pkg/lib/"
+      - "/usr/pkg/"
+      - "/opt/lib/x86_64-linux-gnu/"
+      - "/opt/lib/"
+      - "/opt/"
+      - "/usr/lib/X11/"
+      - "/usr/local/buildtools/java/jdk/lib/"
+      - "/usr/local/buildtools/java/jdk/lib/client/"
+      - "/usr/local/buildtools/java/jdk/lib/minimal/"
+      - "/usr/local/buildtools/java/jdk/lib/server/"
+      - "/usr/local/buildtools/java/jdk/lib/zero/"
+      - "/usr/local/buildtools/java/jdk/lib/j9vm/"
+      - "/usr/local/buildtools/java/jdk/lib/default/"
+      - "/usr/local/buildtools/java/jdk/"
+      - "/usr/local/buildtools/java/jdk/client/"
+      - "/usr/local/buildtools/java/jdk/minimal/"
+      - "/usr/local/buildtools/java/jdk/server/"
+      - "/usr/local/buildtools/java/jdk/zero/"
+      - "/usr/local/buildtools/java/jdk/j9vm/"
+      - "/usr/local/buildtools/java/jdk/default/"
+      - "/usr/lib/jvm/"
+      - "/usr/lib/jvm/client/"
+      - "/usr/lib/jvm/minimal/"
+      - "/usr/lib/jvm/server/"
+      - "/usr/lib/jvm/zero/"
+      - "/usr/lib/jvm/j9vm/"
+      - "/usr/lib/jvm/default/"
+      - "/usr/lib/jvm/default-java/lib/"
+      - "/usr/lib/jvm/default-java/lib/client/"
+      - "/usr/lib/jvm/default-java/lib/minimal/"
+      - "/usr/lib/jvm/default-java/lib/server/"
+      - "/usr/lib/jvm/default-java/lib/zero/"
+      - "/usr/lib/jvm/default-java/lib/j9vm/"
+      - "/usr/lib/jvm/default-java/lib/default/"
+      - "/usr/lib/jvm/default-java/"
+      - "/usr/lib/jvm/default-java/client/"
+      - "/usr/lib/jvm/default-java/minimal/"
+      - "/usr/lib/jvm/default-java/server/"
+      - "/usr/lib/jvm/default-java/zero/"
+      - "/usr/lib/jvm/default-java/j9vm/"
+      - "/usr/lib/jvm/default-java/default/"
+      - "/usr/lib/jvm/java-21-openjdk-amd64/lib/"
+      - "/usr/lib/jvm/java-21-openjdk-amd64/lib/client/"
+      - "/usr/lib/jvm/java-21-openjdk-amd64/lib/minimal/"
+      - "/usr/lib/jvm/java-21-openjdk-amd64/lib/server/"
+      - "/usr/lib/jvm/java-21-openjdk-amd64/lib/zero/"
+      - "/usr/lib/jvm/java-21-openjdk-amd64/lib/j9vm/"
+      - "/usr/lib/jvm/java-21-openjdk-amd64/lib/default/"
+      - "/usr/lib/jvm/java-21-openjdk-amd64/"
+      - "/usr/lib/jvm/java-21-openjdk-amd64/client/"
+      - "/usr/lib/jvm/java-21-openjdk-amd64/minimal/"
+      - "/usr/lib/jvm/java-21-openjdk-amd64/server/"
+      - "/usr/lib/jvm/java-21-openjdk-amd64/zero/"
+      - "/usr/lib/jvm/java-21-openjdk-amd64/j9vm/"
+      - "/usr/lib/jvm/java-21-openjdk-amd64/default/"
+      - "/usr/lib/jvm/java-17-openjdk-amd64/lib/"
+      - "/usr/lib/jvm/java-17-openjdk-amd64/lib/client/"
+      - "/usr/lib/jvm/java-17-openjdk-amd64/lib/minimal/"
+      - "/usr/lib/jvm/java-17-openjdk-amd64/lib/server/"
+      - "/usr/lib/jvm/java-17-openjdk-amd64/lib/zero/"
+      - "/usr/lib/jvm/java-17-openjdk-amd64/lib/j9vm/"
+      - "/usr/lib/jvm/java-17-openjdk-amd64/lib/default/"
+      - "/usr/lib/jvm/java-17-openjdk-amd64/"
+      - "/usr/lib/jvm/java-17-openjdk-amd64/client/"
+      - "/usr/lib/jvm/java-17-openjdk-amd64/minimal/"
+      - "/usr/lib/jvm/java-17-openjdk-amd64/server/"
+      - "/usr/lib/jvm/java-17-openjdk-amd64/zero/"
+      - "/usr/lib/jvm/java-17-openjdk-amd64/j9vm/"
+      - "/usr/lib/jvm/java-17-openjdk-amd64/default/"
+    searched_directories:
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/usr/bin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+      - "/usr/local/lib/x86_64-linux-gnu/"
+      - "/usr/local/lib/"
+      - "/usr/local/"
+      - "/usr/lib/x86_64-linux-gnu/"
+      - "/usr/lib/"
+      - "/usr/"
+      - "/lib/x86_64-linux-gnu/"
+      - "/lib/"
+      - "/usr/X11R6/lib/x86_64-linux-gnu/"
+      - "/usr/X11R6/lib/"
+      - "/usr/X11R6/"
+      - "/usr/pkg/lib/x86_64-linux-gnu/"
+      - "/usr/pkg/lib/"
+      - "/usr/pkg/"
+      - "/opt/lib/x86_64-linux-gnu/"
+      - "/opt/lib/"
+      - "/opt/"
+      - "/usr/lib/X11/"
+      - "/usr/local/buildtools/java/jdk/lib/"
+      - "/usr/local/buildtools/java/jdk/lib/client/"
+      - "/usr/local/buildtools/java/jdk/lib/minimal/"
+    found: "/usr/local/buildtools/java/jdk/lib/server/libjvm.so"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindJNI.cmake:566 (find_path)"
+      - "flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt:20 (find_package)"
+    mode: "path"
+    variable: "JAVA_INCLUDE_PATH"
+    description: "JNI include directory"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "jni.h"
+    candidate_directories:
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/usr/bin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+      - "/usr/local/include/x86_64-linux-gnu/"
+      - "/usr/local/include/"
+      - "/usr/local/"
+      - "/usr/include/x86_64-linux-gnu/"
+      - "/usr/include/"
+      - "/usr/"
+      - "/include/x86_64-linux-gnu/"
+      - "/include/"
+      - "/usr/X11R6/include/x86_64-linux-gnu/"
+      - "/usr/X11R6/include/"
+      - "/usr/X11R6/"
+      - "/usr/pkg/include/x86_64-linux-gnu/"
+      - "/usr/pkg/include/"
+      - "/usr/pkg/"
+      - "/opt/include/x86_64-linux-gnu/"
+      - "/opt/include/"
+      - "/opt/"
+      - "/usr/include/X11/"
+      - "/usr/local/buildtools/java/jdk/include/"
+      - "/usr/lib/jvm/default-java/include/"
+      - "/usr/lib/jvm/java-21-openjdk-amd64/include/"
+      - "/usr/lib/jvm/java-17-openjdk-amd64/include/"
+    searched_directories:
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/jni.h"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/jni.h"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/jni.h"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/jni.h"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/jni.h"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/jni.h"
+      - "/usr/lib/google-golang/bin/jni.h"
+      - "/usr/local/buildtools/java/jdk/bin/jni.h"
+      - "/usr/local/sbin/jni.h"
+      - "/usr/local/bin/jni.h"
+      - "/usr/sbin/jni.h"
+      - "/usr/bin/jni.h"
+      - "/sbin/jni.h"
+      - "/bin/jni.h"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/jni.h"
+      - "/usr/local/google/home/sigurdm/bin/jni.h"
+      - "/usr/local/include/x86_64-linux-gnu/jni.h"
+      - "/usr/local/include/jni.h"
+      - "/usr/local/jni.h"
+      - "/usr/include/x86_64-linux-gnu/jni.h"
+      - "/usr/include/jni.h"
+      - "/usr/jni.h"
+      - "/include/x86_64-linux-gnu/jni.h"
+      - "/include/jni.h"
+      - "/usr/X11R6/include/x86_64-linux-gnu/jni.h"
+      - "/usr/X11R6/include/jni.h"
+      - "/usr/X11R6/jni.h"
+      - "/usr/pkg/include/x86_64-linux-gnu/jni.h"
+      - "/usr/pkg/include/jni.h"
+      - "/usr/pkg/jni.h"
+      - "/opt/include/x86_64-linux-gnu/jni.h"
+      - "/opt/include/jni.h"
+      - "/opt/jni.h"
+      - "/usr/include/X11/jni.h"
+    found: "/usr/local/buildtools/java/jdk/include/"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_INCLUDE_PATH:
+        - "/usr/include/X11"
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "/usr/share/cmake-4.2/Modules/CheckSourceCompiles.cmake:205 (cmake_check_source_compiles)"
+      - "/usr/share/cmake-4.2/Modules/FindJNI.cmake:590 (check_source_compiles)"
+      - "flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt:20 (find_package)"
+    directories:
+      source: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-YCAlL2"
+      binary: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-YCAlL2"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps-19"
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "JNI_INCLUDE_PATH2_OPTIONAL"
+      cached: true
+      stdout: |
+        Change Dir: '/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-YCAlL2'
+        
+        Run Build Command(s): /usr/local/google/home/sigurdm/projects/depot_tools/ninja -v cmTC_be720
+        [1/2] /usr/bin/clang -DJNI_INCLUDE_PATH2_OPTIONAL -I/usr/local/buildtools/java/jdk/include  -MD -MT CMakeFiles/cmTC_be720.dir/src.c.o -MF CMakeFiles/cmTC_be720.dir/src.c.o.d -o CMakeFiles/cmTC_be720.dir/src.c.o -c /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-YCAlL2/src.c
+        FAILED: [code=1] CMakeFiles/cmTC_be720.dir/src.c.o 
+        /usr/bin/clang -DJNI_INCLUDE_PATH2_OPTIONAL -I/usr/local/buildtools/java/jdk/include  -MD -MT CMakeFiles/cmTC_be720.dir/src.c.o -MF CMakeFiles/cmTC_be720.dir/src.c.o.d -o CMakeFiles/cmTC_be720.dir/src.c.o -c /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-YCAlL2/src.c
+        In file included from /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-YCAlL2/src.c:2:
+        /usr/local/buildtools/java/jdk/include/jni.h:45:10: fatal error: 'jni_md.h' file not found
+           45 | #include "jni_md.h"
+              |          ^~~~~~~~~~
+        1 error generated.
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake-4.2/Modules/FindJNI.cmake:606 (find_path)"
+      - "flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt:20 (find_package)"
+    mode: "path"
+    variable: "JAVA_INCLUDE_PATH2"
+    description: "jni_md.h jniport.h include directory"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "jni_md.h"
+      - "jniport.h"
+    candidate_directories:
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/"
+      - "/usr/lib/google-golang/bin/"
+      - "/usr/local/buildtools/java/jdk/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/local/bin/"
+      - "/usr/sbin/"
+      - "/usr/bin/"
+      - "/sbin/"
+      - "/bin/"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
+      - "/usr/local/google/home/sigurdm/bin/"
+      - "/usr/local/include/x86_64-linux-gnu/"
+      - "/usr/local/include/"
+      - "/usr/local/"
+      - "/usr/include/x86_64-linux-gnu/"
+      - "/usr/include/"
+      - "/usr/"
+      - "/include/x86_64-linux-gnu/"
+      - "/include/"
+      - "/usr/X11R6/include/x86_64-linux-gnu/"
+      - "/usr/X11R6/include/"
+      - "/usr/X11R6/"
+      - "/usr/pkg/include/x86_64-linux-gnu/"
+      - "/usr/pkg/include/"
+      - "/usr/pkg/"
+      - "/opt/include/x86_64-linux-gnu/"
+      - "/opt/include/"
+      - "/opt/"
+      - "/usr/include/X11/"
+      - "/usr/local/buildtools/java/jdk/include/"
+      - "/usr/local/buildtools/java/jdk/include/darwin/"
+      - "/usr/local/buildtools/java/jdk/include/win32/"
+      - "/usr/local/buildtools/java/jdk/include/linux/"
+      - "/usr/local/buildtools/java/jdk/include/freebsd/"
+      - "/usr/local/buildtools/java/jdk/include/openbsd/"
+      - "/usr/local/buildtools/java/jdk/include/solaris/"
+      - "/usr/local/buildtools/java/jdk/include/hp-ux/"
+      - "/usr/local/buildtools/java/jdk/include/alpha/"
+      - "/usr/local/buildtools/java/jdk/include/aix/"
+    searched_directories:
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/jni_md.h"
+      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/jni_md.h"
+      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/jni_md.h"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/jni_md.h"
+      - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/jni_md.h"
+      - "/usr/local/google/home/sigurdm/projects/depot_tools/jni_md.h"
+      - "/usr/lib/google-golang/bin/jni_md.h"
+      - "/usr/local/buildtools/java/jdk/bin/jni_md.h"
+      - "/usr/local/sbin/jni_md.h"
+      - "/usr/local/bin/jni_md.h"
+      - "/usr/sbin/jni_md.h"
+      - "/usr/bin/jni_md.h"
+      - "/sbin/jni_md.h"
+      - "/bin/jni_md.h"
+      - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/jni_md.h"
+      - "/usr/local/google/home/sigurdm/bin/jni_md.h"
+      - "/usr/local/include/x86_64-linux-gnu/jni_md.h"
+      - "/usr/local/include/jni_md.h"
+      - "/usr/local/jni_md.h"
+      - "/usr/include/x86_64-linux-gnu/jni_md.h"
+      - "/usr/include/jni_md.h"
+      - "/usr/jni_md.h"
+      - "/include/x86_64-linux-gnu/jni_md.h"
+      - "/include/jni_md.h"
+      - "/usr/X11R6/include/x86_64-linux-gnu/jni_md.h"
+      - "/usr/X11R6/include/jni_md.h"
+      - "/usr/X11R6/jni_md.h"
+      - "/usr/pkg/include/x86_64-linux-gnu/jni_md.h"
+      - "/usr/pkg/include/jni_md.h"
+      - "/usr/pkg/jni_md.h"
+      - "/opt/include/x86_64-linux-gnu/jni_md.h"
+      - "/opt/include/jni_md.h"
+      - "/opt/jni_md.h"
+      - "/usr/include/X11/jni_md.h"
+      - "/usr/local/buildtools/java/jdk/include/jni_md.h"
+      - "/usr/local/buildtools/java/jdk/include/darwin/jni_md.h"
+      - "/usr/local/buildtools/java/jdk/include/win32/jni_md.h"
+    found: "/usr/local/buildtools/java/jdk/include/linux/"
+    search_context:
+      ENV{PATH}:
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
+        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
+        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
+        - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
+        - "/usr/local/google/home/sigurdm/projects/depot_tools"
+        - "/usr/lib/google-golang/bin"
+        - "/usr/local/buildtools/java/jdk/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/sbin"
+        - "/usr/bin"
+        - "/sbin"
+        - "/bin"
+        - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin"
+        - "/usr/local/google/home/sigurdm/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_INCLUDE_PATH:
+        - "/usr/include/X11"
+...

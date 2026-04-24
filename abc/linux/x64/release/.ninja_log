@@ -1,0 +1,5 @@
+# ninja log v7
+3	151	1777032821548508051	plugins/jni/shared/CMakeFiles/jni.dir/include/dart_api_dl.c.o	f3b791736e6dcbe6
+2	158	1777032821547728258	plugins/jni/shared/CMakeFiles/jni.dir/dartjni.c.o	bc5108cad9e76f10
+2	585	1777032821548150880	plugins/jni/shared/CMakeFiles/jni.dir/third_party/global_jni_env.c.o	f46d775aee6c171a
+585	627	1777032822128629077	plugins/jni/shared/libdartjni.so	6df262d4f87d2376
