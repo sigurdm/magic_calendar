@@ -209,13 +209,17 @@ class AstronomiaEphemerisService implements EphemerisService {
     double k = moonillum.illuminated(i);
 
     double t = j2000Century(jd);
-    double d = mod2pi(toRad(horner(t, [
-      297.8501921,
-      445267.1114034,
-      -0.0018819,
-      1 / 545868.0,
-      -1 / 113065000.0
-    ])));
+    double d = mod2pi(
+      toRad(
+        horner(t, [
+          297.8501921,
+          445267.1114034,
+          -0.0018819,
+          1 / 545868.0,
+          -1 / 113065000.0,
+        ]),
+      ),
+    );
 
     bool isWaxing = d < math.pi;
 
@@ -262,13 +266,18 @@ class AstronomiaEphemerisService implements EphemerisService {
   }
 
   PlanetInfo _getGeocentricPlanet(
-      String name, planetpos.Planet planet, double jd) {
+    String name,
+    planetpos.Planet planet,
+    double jd,
+  ) {
     final pPos = planet.position(jd);
     final ePos = _earth.position(jd);
 
-    final x = pPos.range * math.cos(pPos.lat) * math.cos(pPos.lon) -
+    final x =
+        pPos.range * math.cos(pPos.lat) * math.cos(pPos.lon) -
         ePos.range * math.cos(ePos.lat) * math.cos(ePos.lon);
-    final y = pPos.range * math.cos(pPos.lat) * math.sin(pPos.lon) -
+    final y =
+        pPos.range * math.cos(pPos.lat) * math.sin(pPos.lon) -
         ePos.range * math.cos(ePos.lat) * math.sin(ePos.lon);
 
     double lon = math.atan2(y, x) * 180 / math.pi;
@@ -283,11 +292,11 @@ class AstronomiaEphemerisService implements EphemerisService {
     // Passing 12h UTC ensures we find the sunrise and sunset for this calendar day.
     final dateMidday = DateTime.utc(date.year, date.month, date.day, 12);
     double jd = _toJD(dateMidday);
-    
+
     final latRad = lat * math.pi / 180;
-    final lonRad = -lon * math.pi / 180; 
+    final lonRad = -lon * math.pi / 180;
     final result = sunrise.sunriseSunset(jd, latRad, lonRad);
-    
+
     return SunriseSunsetInfo(
       sunrise: result.rise != null ? _fromJD(result.rise!) : null,
       sunset: result.set != null ? _fromJD(result.set!) : null,
@@ -297,7 +306,10 @@ class AstronomiaEphemerisService implements EphemerisService {
 
   DateTime _fromJD(double jd) {
     final seconds = (jd - 2440587.5) * 86400.0;
-    return DateTime.fromMillisecondsSinceEpoch((seconds * 1000).round(), isUtc: true).toLocal();
+    return DateTime.fromMillisecondsSinceEpoch(
+      (seconds * 1000).round(),
+      isUtc: true,
+    ).toLocal();
   }
 
   @override
@@ -338,13 +350,13 @@ class AstronomiaEphemerisService implements EphemerisService {
     double jd = _toJD(time);
     final pos = _getMoonPosition(jd);
     final node = moonpos.node(jd);
-    
+
     double moonLong = pos.lon * 180 / math.pi;
     double nodeLong1 = node * 180 / math.pi;
-    
+
     double diff1 = (moonLong - nodeLong1).abs();
     if (diff1 > 180) diff1 = 360 - diff1;
-    
+
     return (diff1 - 90.0).abs() < 6.5;
   }
 
@@ -434,7 +446,8 @@ class AstronomiaEphemerisService implements EphemerisService {
   }
 
   CalendarInfo _getCalendarInfo(DateTime time, {bool includePlanets = false}) {
-    if (!includePlanets && _infoCache.containsKey(time)) return _infoCache[time]!;
+    if (!includePlanets && _infoCache.containsKey(time))
+      return _infoCache[time]!;
 
     double moonLongitude = getMoonLongitude(time);
     bool isNearNode = this.isNearNode(time);

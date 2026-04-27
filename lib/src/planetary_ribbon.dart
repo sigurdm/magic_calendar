@@ -28,8 +28,10 @@ class _PlanetaryRibbonState extends State<PlanetaryRibbon> {
         valueListenable: widget.timeNotifier,
         builder: (context, time, _) {
           final planets = widget.ephemeris.getPlanets(time);
-          final moon = planets.firstWhere((p) => p.name == 'Moon',
-              orElse: () => PlanetInfo(name: 'Moon', longitude: 0));
+          final moon = planets.firstWhere(
+            (p) => p.name == 'Moon',
+            orElse: () => PlanetInfo(name: 'Moon', longitude: 0),
+          );
 
           return Container(
             height: widget.height,
@@ -89,7 +91,9 @@ class RibbonPainter extends CustomPainter {
       if (x2 < x1) {
         // Wraps around the edges of the visible ribbon
         canvas.drawRect(
-            Rect.fromLTWH(x1, 0, size.width - x1, size.height), paint);
+          Rect.fromLTWH(x1, 0, size.width - x1, size.height),
+          paint,
+        );
         canvas.drawRect(Rect.fromLTWH(0, 0, x2, size.height), paint);
       } else {
         canvas.drawRect(Rect.fromLTWH(x1, 0, x2 - x1, size.height), paint);
@@ -136,7 +140,7 @@ class RibbonPainter extends CustomPainter {
 
     for (var planet in planets) {
       final x = getX(planet.longitude);
-      
+
       // Only draw if on screen
       if (x < -20 || x > size.width + 20) continue;
 
@@ -164,42 +168,67 @@ class RibbonPainter extends CustomPainter {
     final refPaint = Paint()
       ..color = Colors.white12
       ..strokeWidth = 1;
-    canvas.drawLine(Offset(size.width / 2, 0), Offset(size.width / 2, size.height), refPaint);
+    canvas.drawLine(
+      Offset(size.width / 2, 0),
+      Offset(size.width / 2, size.height),
+      refPaint,
+    );
   }
 
   Color _getColorForElement(String element) {
     switch (element) {
-      case 'Earth': return const Color(0xFF8D6E63);
-      case 'Water': return const Color(0xFF66BB6A);
-      case 'Air': return const Color(0xFFAB47BC);
-      case 'Fire': return const Color(0xFFFFA726);
-      default: return Colors.grey;
+      case 'Earth':
+        return const Color(0xFF8D6E63);
+      case 'Water':
+        return const Color(0xFF66BB6A);
+      case 'Air':
+        return const Color(0xFFAB47BC);
+      case 'Fire':
+        return const Color(0xFFFFA726);
+      default:
+        return Colors.grey;
     }
   }
 
   Color _getPlanetColor(String name) {
     switch (name) {
-      case 'Sun': return Colors.yellow;
-      case 'Moon': return Colors.white;
-      case 'Mercury': return Colors.grey;
-      case 'Venus': return Colors.green;
-      case 'Mars': return Colors.red;
-      case 'Jupiter': return Colors.orange;
-      case 'Saturn': return Colors.brown;
-      default: return Colors.white;
+      case 'Sun':
+        return Colors.yellow;
+      case 'Moon':
+        return Colors.white;
+      case 'Mercury':
+        return Colors.grey;
+      case 'Venus':
+        return Colors.green;
+      case 'Mars':
+        return Colors.red;
+      case 'Jupiter':
+        return Colors.orange;
+      case 'Saturn':
+        return Colors.brown;
+      default:
+        return Colors.white;
     }
   }
 
   String _getPlanetSymbol(String name) {
     switch (name) {
-      case 'Sun': return '☀️';
-      case 'Moon': return '🌙';
-      case 'Mercury': return '☿';
-      case 'Venus': return '♀';
-      case 'Mars': return '♂';
-      case 'Jupiter': return '♃';
-      case 'Saturn': return '♄';
-      default: return '?';
+      case 'Sun':
+        return '☀️';
+      case 'Moon':
+        return '🌙';
+      case 'Mercury':
+        return '☿';
+      case 'Venus':
+        return '♀';
+      case 'Mars':
+        return '♂';
+      case 'Jupiter':
+        return '♃';
+      case 'Saturn':
+        return '♄';
+      default:
+        return '?';
     }
   }
 

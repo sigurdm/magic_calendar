@@ -7,7 +7,11 @@ void main() {
   final service = AstronomiaEphemerisService();
 
   void check(DateTime time, PlantQuality expected, [bool isGray = false]) {
-    final info = getCalendarInfo(time, service, boundaries: customCalendarBoundaries);
+    final info = getCalendarInfo(
+      time,
+      service,
+      boundaries: customCalendarBoundaries,
+    );
     expect(info.quality, expected, reason: 'Failed at $time quality');
     expect(info.isGrayDay, isGray, reason: 'Failed at $time (gray day status)');
   }

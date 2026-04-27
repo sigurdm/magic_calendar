@@ -10,6 +10,7 @@ import 'src/ephemeris_service.dart';
 import 'src/time_scroll_view.dart';
 import 'src/planetary_ribbon.dart';
 import 'src/planting_icons.dart';
+import 'src/weather_service.dart';
 
 void main() {
   enableFlutterDriverExtension();
@@ -42,26 +43,34 @@ class CalendarHomePage extends StatefulWidget {
 }
 
 class _CalendarHomePageState extends State<CalendarHomePage> {
-  final ValueNotifier<DateTime> _selectedDateNotifier =
-      ValueNotifier(DateTime.now());
+  final ValueNotifier<DateTime> _selectedDateNotifier = ValueNotifier(
+    DateTime.now(),
+  );
   final ValueNotifier<CalendarInfo?> _infoNotifier = ValueNotifier(null);
   final ValueNotifier<double> _latNotifier = ValueNotifier(56.0); // Denmark
   final ValueNotifier<double> _lonNotifier = ValueNotifier(10.0);
   final _timeScrollController = TimeScrollController();
+  late final WeatherService _weatherService;
 
   Timer? _debounceTimer;
 
   @override
   void initState() {
     super.initState();
+    _weatherService = YrNoWeatherService(
+      userAgent: 'MagicCalendar/1.0 (sigurdm@google.com)',
+    );
     // Initial fetch
     _updateInfo(_selectedDateNotifier.value, immediate: true);
   }
 
   void _updateInfo(DateTime time, {bool immediate = false}) {
     if (immediate) {
-      _infoNotifier.value =
-          getCalendarInfo(time, widget.ephemeris, includePlanets: true);
+      _infoNotifier.value = getCalendarInfo(
+        time,
+        widget.ephemeris,
+        includePlanets: true,
+      );
       return;
     }
 
@@ -140,6 +149,7 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
                     builder: (context, _) {
                       return TimeScrollView(
                         ephemeris: widget.ephemeris,
+                        weatherService: _weatherService,
                         controller: _timeScrollController,
                         onTimeSelected: _onTimeSelected,
                         latitude: _latNotifier.value,
@@ -197,14 +207,21 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
                 GestureDetector(
                   onTap: _showLocationPicker,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.location_on, size: 12, color: Colors.white70),
+                        const Icon(
+                          Icons.location_on,
+                          size: 12,
+                          color: Colors.white70,
+                        ),
                         const SizedBox(width: 4),
                         ValueListenableBuilder<double>(
                           valueListenable: _latNotifier,
@@ -214,7 +231,10 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
                               builder: (context, lon, _) {
                                 return Text(
                                   '${lat.toStringAsFixed(1)}°, ${lon.toStringAsFixed(1)}°',
-                                  style: const TextStyle(fontSize: 10, color: Colors.white70),
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.white70,
+                                  ),
                                 );
                               },
                             );
@@ -234,18 +254,10 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
               onPressed: () {
                 _timeScrollController.scrollToNow();
               },
-              icon: const Icon(
-                Icons.history,
-                color: Colors.white,
-              ),
-              label: const Text(
-                'NOW',
-                style: TextStyle(color: Colors.white),
-              ),
+              icon: const Icon(Icons.history, color: Colors.white),
+              label: const Text('NOW', style: TextStyle(color: Colors.white)),
               style: TextButton.styleFrom(
-                backgroundColor: Colors.white.withValues(
-                  alpha: 0.1,
-                ),
+                backgroundColor: Colors.white.withValues(alpha: 0.1),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -253,10 +265,7 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
             ),
             const SizedBox(width: 8),
             IconButton(
-              icon: const Icon(
-                Icons.calendar_month,
-                color: Colors.white,
-              ),
+              icon: const Icon(Icons.calendar_month, color: Colors.white),
               onPressed: () async {
                 final date = await showDatePicker(
                   context: context,
@@ -276,8 +285,12 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
   }
 
   void _showLocationPicker() {
-    final latController = TextEditingController(text: _latNotifier.value.toString());
-    final lonController = TextEditingController(text: _lonNotifier.value.toString());
+    final latController = TextEditingController(
+      text: _latNotifier.value.toString(),
+    );
+    final lonController = TextEditingController(
+      text: _lonNotifier.value.toString(),
+    );
 
     showDialog(
       context: context,
@@ -288,12 +301,16 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
           children: [
             TextField(
               controller: latController,
-              decoration: const InputDecoration(labelText: 'Latitude (-90 to 90)'),
+              decoration: const InputDecoration(
+                labelText: 'Latitude (-90 to 90)',
+              ),
               keyboardType: TextInputType.number,
             ),
             TextField(
               controller: lonController,
-              decoration: const InputDecoration(labelText: 'Longitude (-180 to 180)'),
+              decoration: const InputDecoration(
+                labelText: 'Longitude (-180 to 180)',
+              ),
               keyboardType: TextInputType.number,
             ),
           ],
@@ -421,51 +438,102 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
         valueListenable: _selectedDateNotifier,
         builder: (context, date, _) {
           final moonPhase = widget.ephemeris.getMoonPhase(date);
-          
+
           // Real-time calculation of sap flow trend
           final dec1 = widget.ephemeris.getMoonDeclination(date);
-          final dec2 = widget.ephemeris.getMoonDeclination(date.add(const Duration(hours: 1)));
+          final dec2 = widget.ephemeris.getMoonDeclination(
+            date.add(const Duration(hours: 1)),
+          );
           final realTimeSapFlow = dec2 > dec1 ? 'Ascending' : 'Descending';
 
-          return Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Celestial Rhythms',
-                      style: GoogleFonts.outfit(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildDetailRow('Sap Flow', realTimeSapFlow),
-                    const SizedBox(height: 12),
-                    _buildDetailRow('Vitality', moonPhase.name),
-                    const SizedBox(height: 12),
-                    _buildDetailRow(
-                      'Illumination',
-                      '${(moonPhase.illuminatedFraction * 100).toStringAsFixed(1)}%',
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 24),
-              Column(
+          return FutureBuilder<List<WeatherDataPoint>>(
+            future: _weatherService.getForecast(
+              _latNotifier.value,
+              _lonNotifier.value,
+            ),
+            builder: (context, snapshot) {
+              WeatherDataPoint? selectedWeather;
+              if (snapshot.hasData) {
+                // Find closest weather point
+                final weather = snapshot.data!;
+                selectedWeather = weather.reduce(
+                  (a, b) =>
+                      a.time.difference(date).inSeconds.abs() <
+                          b.time.difference(date).inSeconds.abs()
+                      ? a
+                      : b,
+                );
+              }
+
+              return Row(
                 children: [
-                  MoonPhaseWidget(info: moonPhase),
-                  const SizedBox(height: 8),
-                  Text(
-                    moonPhase.isWaxing ? 'Waxing' : 'Waning',
-                    style:
-                        GoogleFonts.outfit(fontSize: 12, color: Colors.white54),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Celestial Rhythms',
+                          style: GoogleFonts.outfit(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDetailRow('Sap Flow', realTimeSapFlow),
+                        const SizedBox(height: 12),
+                        _buildDetailRow('Vitality', moonPhase.name),
+                        const SizedBox(height: 12),
+                        _buildDetailRow(
+                          'Illumination',
+                          '${(moonPhase.illuminatedFraction * 100).toStringAsFixed(1)}%',
+                        ),
+                        if (selectedWeather != null) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            'Weather Predicted',
+                            style: GoogleFonts.outfit(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildDetailRow(
+                            'Temperature',
+                            '${selectedWeather.temperature.round()}°C',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildDetailRow(
+                            'Wind',
+                            '${selectedWeather.windSpeed.round()} m/s',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildDetailRow(
+                            'Clouds',
+                            '${selectedWeather.cloudCover.round()}%',
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  Column(
+                    children: [
+                      MoonPhaseWidget(info: moonPhase),
+                      const SizedBox(height: 8),
+                      Text(
+                        moonPhase.isWaxing ? 'Waxing' : 'Waning',
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          color: Colors.white54,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ],
+              );
+            },
           );
         },
       ),
@@ -522,7 +590,8 @@ class MoonPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
 
-    final bgPaint = Paint()..color = const Color(0xFF1E1E2E); // Match background
+    final bgPaint = Paint()
+      ..color = const Color(0xFF1E1E2E); // Match background
     final lightPaint = Paint()..color = const Color(0xFFFFF9C4); // Pale yellow
 
     // Draw background circle
@@ -532,41 +601,71 @@ class MoonPainter extends CustomPainter {
 
     if (info.isWaxing) {
       // Right side is light
-      canvas.drawArc(Rect.fromCircle(center: center, radius: radius),
-          -math.pi / 2, math.pi, true, lightPaint);
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -math.pi / 2,
+        math.pi,
+        true,
+        lightPaint,
+      );
       if (k < 0.5) {
         // Dark ellipse on the right side to create crescent
         double ellipseWidth = (1 - 2 * k) * radius;
         canvas.drawOval(
-            Rect.fromLTRB(center.dx - ellipseWidth, center.dy - radius,
-                center.dx + ellipseWidth, center.dy + radius),
-            bgPaint);
+          Rect.fromLTRB(
+            center.dx - ellipseWidth,
+            center.dy - radius,
+            center.dx + ellipseWidth,
+            center.dy + radius,
+          ),
+          bgPaint,
+        );
       } else {
         // Light ellipse on the left side to create gibbous
         double ellipseWidth = (2 * k - 1) * radius;
         canvas.drawOval(
-            Rect.fromLTRB(center.dx - ellipseWidth, center.dy - radius,
-                center.dx + ellipseWidth, center.dy + radius),
-            lightPaint);
+          Rect.fromLTRB(
+            center.dx - ellipseWidth,
+            center.dy - radius,
+            center.dx + ellipseWidth,
+            center.dy + radius,
+          ),
+          lightPaint,
+        );
       }
     } else {
       // Left side is light
-      canvas.drawArc(Rect.fromCircle(center: center, radius: radius),
-          math.pi / 2, math.pi, true, lightPaint);
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        math.pi / 2,
+        math.pi,
+        true,
+        lightPaint,
+      );
       if (k < 0.5) {
         // Dark ellipse on the left side to create crescent
         double ellipseWidth = (1 - 2 * k) * radius;
         canvas.drawOval(
-            Rect.fromLTRB(center.dx - ellipseWidth, center.dy - radius,
-                center.dx + ellipseWidth, center.dy + radius),
-            bgPaint);
+          Rect.fromLTRB(
+            center.dx - ellipseWidth,
+            center.dy - radius,
+            center.dx + ellipseWidth,
+            center.dy + radius,
+          ),
+          bgPaint,
+        );
       } else {
         // Light ellipse on the right side to create gibbous
         double ellipseWidth = (2 * k - 1) * radius;
         canvas.drawOval(
-            Rect.fromLTRB(center.dx - ellipseWidth, center.dy - radius,
-                center.dx + ellipseWidth, center.dy + radius),
-            lightPaint);
+          Rect.fromLTRB(
+            center.dx - ellipseWidth,
+            center.dy - radius,
+            center.dx + ellipseWidth,
+            center.dy + radius,
+          ),
+          lightPaint,
+        );
       }
     }
 

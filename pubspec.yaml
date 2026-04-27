@@ -37,6 +37,7 @@ dependencies:
   intl: ^0.20.2
   google_fonts: ^8.0.2
   astronomia: ^0.3.2
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:

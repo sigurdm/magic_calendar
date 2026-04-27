@@ -52,13 +52,8 @@ class PlantingQualityIcon extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(2),
         ),
-        child: Image.asset(
-          assetPath,
-          fit: BoxFit.contain,
-        ),
+        child: Image.asset(assetPath, fit: BoxFit.contain),
       ),
     );
   }
 }
-
-

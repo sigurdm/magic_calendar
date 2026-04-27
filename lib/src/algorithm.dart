@@ -75,8 +75,8 @@ CalendarInfo getCalendarInfo(
     double dec2 = ephemeris.getMoonDeclination(
       time.add(const Duration(hours: 1)),
     );
-    sapFlow = dec2 > dec1 
-        ? 'Ascending: Sap rises; good for harvesting fruit/cuttings.' 
+    sapFlow = dec2 > dec1
+        ? 'Ascending: Sap rises; good for harvesting fruit/cuttings.'
         : "Descending: Sap recedes; 'transplanting time' for root development.";
   }
 
