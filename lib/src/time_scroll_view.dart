@@ -192,22 +192,11 @@ class _TimeScrollViewState extends State<TimeScrollView>
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 150,
+      height: 200,
       child: GestureDetector(
-        onHorizontalDragUpdate: (details) {
-          _momentumController.stop();
-          _applyPanDelta(details.delta.dx);
-        },
-        onHorizontalDragEnd: (details) {
-          final velocity = details.primaryVelocity ?? 0;
-          if (velocity.abs() > 100) {
-            final simulation = FrictionSimulation(0.1, 0.0, -velocity);
-            _lastMomentumValue = 0.0;
-            _momentumController.animateWith(simulation);
-          }
-        },
         onScaleStart: (details) {
           _baseScaleHourWidth = _hourWidth;
+          _momentumController.stop();
         },
         onScaleUpdate: (details) {
           if (details.scale != 1.0) {
@@ -217,8 +206,15 @@ class _TimeScrollViewState extends State<TimeScrollView>
                 _maxHourWidth,
               );
             });
-          } else {
-            _applyPanDelta(details.focalPointDelta.dx);
+          }
+          _applyPanDelta(details.focalPointDelta.dx);
+        },
+        onScaleEnd: (details) {
+          final velocity = details.velocity.pixelsPerSecond.dx;
+          if (velocity.abs() > 100) {
+            final simulation = FrictionSimulation(0.1, 0.0, -velocity);
+            _lastMomentumValue = 0.0;
+            _momentumController.animateWith(simulation);
           }
         },
         child: Container(
@@ -570,69 +566,127 @@ class InfiniteTimelinePainter extends CustomPainter {
         );
       }
     }
-    // Draw Weather Row (Option B style)
-    final weatherRowY = 85.0;
-    final weatherRowHeight = 25.0;
+    // Draw Weather Row (Option B style) - Refined for two charts
+    final tempRowY = 85.0;
+    final tempRowHeight = 50.0;
+    final windRowY = 135.0;
+    final windRowHeight = 50.0;
 
-    // Draw light background for weather row as in mockup
-    final weatherBgPaint = Paint()
-      ..color = const Color(0xFFD0E2FF).withValues(alpha: 0.3)
+    // Draw backgrounds
+    final tempBgPaint = Paint()
+      ..color = const Color(0xFFD0E2FF).withValues(alpha: 0.1)
       ..style = PaintingStyle.fill;
     canvas.drawRect(
-      Rect.fromLTWH(0, weatherRowY, size.width, weatherRowHeight),
-      weatherBgPaint,
+      Rect.fromLTWH(0, tempRowY, size.width, tempRowHeight),
+      tempBgPaint,
     );
 
-    final linePaint = Paint()
-      ..color = Colors.white70
+    final windBgPaint = Paint()
+      ..color = const Color(0xFFE0E0E0).withValues(alpha: 0.05)
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(
+      Rect.fromLTWH(0, windRowY, size.width, windRowHeight),
+      windBgPaint,
+    );
+
+    final tempLinePaint = Paint()
+      ..color = Colors.orangeAccent.withValues(alpha: 0.7)
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
-    final path = Path();
+    final windLinePaint = Paint()
+      ..color = Colors.lightBlueAccent.withValues(alpha: 0.7)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+
+    final tempPath = Path();
+    final windPath = Path();
     bool first = true;
 
-    // Simple mapping: 0 to 30 degrees Celsius mapped to weatherRowY + weatherRowHeight to weatherRowY
+    // Mapping functions
     double mapTempToY(double temp) {
       final clamped = temp.clamp(0.0, 30.0);
-      return weatherRowY +
-          weatherRowHeight -
-          (clamped / 30.0 * weatherRowHeight);
+      return tempRowY + tempRowHeight - (clamped / 30.0 * tempRowHeight);
+    }
+
+    double mapWindToY(double speed) {
+      final clamped = speed.clamp(0.0, 15.0);
+      return windRowY + windRowHeight - (clamped / 15.0 * windRowHeight);
     }
 
     for (final wd in weatherData) {
       final offsetInHours = wd.time.difference(centerTime).inSeconds / 3600.0;
       final x = centerX + (offsetInHours * hourWidth);
-      final y = mapTempToY(wd.temperature);
+      final yTemp = mapTempToY(wd.temperature);
+      final yWind = mapWindToY(wd.windSpeed);
 
       if (first) {
-        path.moveTo(x, y);
+        tempPath.moveTo(x, yTemp);
+        windPath.moveTo(x, yWind);
         first = false;
       } else {
-        path.lineTo(x, y);
+        tempPath.lineTo(x, yTemp);
+        windPath.lineTo(x, yWind);
       }
     }
 
-    canvas.drawPath(path, linePaint);
+    canvas.drawPath(tempPath, tempLinePaint);
+    canvas.drawPath(windPath, windLinePaint);
 
-    // Draw icons at some intervals
+    // Draw labels and arrows
+    String getWindArrow(double degrees) {
+      final normalized = (degrees % 360 + 360) % 360;
+      if (normalized >= 337.5 || normalized < 22.5) return '⬇️';
+      if (normalized >= 22.5 && normalized < 67.5) return '↙️';
+      if (normalized >= 67.5 && normalized < 112.5) return '⬅️';
+      if (normalized >= 112.5 && normalized < 157.5) return '↖️';
+      if (normalized >= 157.5 && normalized < 202.5) return '⬆️';
+      if (normalized >= 202.5 && normalized < 247.5) return '↗️';
+      if (normalized >= 247.5 && normalized < 292.5) return '➡️';
+      return '↘️';
+    }
+
     for (int i = 0; i < weatherData.length; i += 6) {
       final wd = weatherData[i];
       final offsetInHours = wd.time.difference(centerTime).inSeconds / 3600.0;
       final x = centerX + (offsetInHours * hourWidth);
-      final y = mapTempToY(wd.temperature);
 
       if (x >= 0 && x <= size.width) {
-        // Draw cloud icon (☁️)
+        // Temp label
+        final yTemp = mapTempToY(wd.temperature);
+        _drawText(canvas, x, '${wd.temperature.round()}°', 10, yTemp - 12);
+
+        // Cloud cover on temp chart
         if (wd.cloudCover > 30) {
-          _drawIcon(canvas, x, '☁️', 14, y - 10);
+          _drawIcon(canvas, x, '☁️', 12, yTemp + 5);
         }
 
-        // Draw wind arrow or text
-        if (wd.windSpeed > 2.0) {
-          _drawIcon(canvas, x, '💨', 12, y + 10);
-        }
+        // Wind speed label and arrow on wind chart
+        final yWind = mapWindToY(wd.windSpeed);
+        _drawText(canvas, x, '${wd.windSpeed.round()}m/s', 10, yWind - 12);
+
+        final arrow = getWindArrow(wd.windDirection);
+        _drawIcon(canvas, x, arrow, 12, yWind + 5);
       }
     }
+  }
+
+  void _drawText(
+    Canvas canvas,
+    double x,
+    String text,
+    double fontSize,
+    double y,
+  ) {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(color: Colors.white70, fontSize: fontSize),
+      ),
+      textDirection: ui.TextDirection.ltr,
+    );
+    tp.layout();
+    tp.paint(canvas, Offset(x - tp.width / 2, y));
   }
 
   void _drawIcon(
