@@ -5,11 +5,20 @@ import 'package:astronomia/solar.dart' as solar;
 import 'package:astronomia/coord.dart' as coord;
 import 'package:astronomia/nutation.dart';
 import 'package:astronomia/astronomia.dart';
+import 'package:astronomia/sunrise.dart' as sunrise;
 import 'dart:math' as math;
 import 'dornach_boundaries.dart';
 import 'algorithm.dart';
 
 enum PlantQuality { root, leaf, flower, fruit, none }
+
+class SunriseSunsetInfo {
+  final DateTime? sunrise;
+  final DateTime? sunset;
+  final DateTime noon;
+
+  SunriseSunsetInfo({this.sunrise, this.sunset, required this.noon});
+}
 
 class PlanetInfo {
   final String name;
@@ -30,16 +39,15 @@ class MoonPhaseInfo {
   });
 
   String get name {
-    if (illuminatedFraction > 0.99) return 'Full Moon';
-    if (illuminatedFraction < 0.01) return 'New Moon';
+    if (illuminatedFraction > 0.97) return 'Full Moon';
+    if (illuminatedFraction < 0.03) return 'New Moon';
+    if (illuminatedFraction >= 0.48 && illuminatedFraction <= 0.52) {
+      return isWaxing ? 'First Quarter' : 'Last Quarter';
+    }
     if (isWaxing) {
-      if (illuminatedFraction < 0.5) return 'Waxing Crescent';
-      if (illuminatedFraction < 0.51) return 'First Quarter';
-      return 'Waxing Gibbous';
+      return illuminatedFraction < 0.5 ? 'Waxing Crescent' : 'Waxing Gibbous';
     } else {
-      if (illuminatedFraction > 0.5) return 'Waning Gibbous';
-      if (illuminatedFraction > 0.49) return 'Last Quarter';
-      return 'Waning Crescent';
+      return illuminatedFraction > 0.5 ? 'Waning Gibbous' : 'Waning Crescent';
     }
   }
 }
@@ -93,6 +101,7 @@ abstract class EphemerisService {
   double getMoonDeclination(DateTime time);
   List<PlanetInfo> getPlanets(DateTime time);
   List<CalendarInterval> getIntervals(DateTime start, DateTime end);
+  SunriseSunsetInfo getSunriseSunset(DateTime date, double lat, double lon);
 }
 
 class CalendarInterval {
@@ -147,6 +156,7 @@ class AstronomiaEphemerisService implements EphemerisService {
   final Map<int, dynamic> _moonPosCache = {};
   final Map<DateTime, CalendarInfo> _infoCache = {};
   final Map<DateTime, List<PlanetInfo>> _planetsCache = {};
+  final Map<DateTime, MoonPhaseInfo> _phaseCache = {};
 
   dynamic _getMoonPosition(double jd) {
     // Round JD to nearest 10 seconds (roughly) for cache alignment
@@ -183,21 +193,40 @@ class AstronomiaEphemerisService implements EphemerisService {
 
   @override
   MoonPhaseInfo getMoonPhase(DateTime time) {
+    // Round to 1 minute UTC for smoothness and cache stability
+    final utc = time.toUtc();
+    final cacheKey = DateTime.utc(
+      utc.year,
+      utc.month,
+      utc.day,
+      utc.hour,
+      utc.minute,
+    );
+    if (_phaseCache.containsKey(cacheKey)) return _phaseCache[cacheKey]!;
+
     double jd = _toJD(time);
     double i = moonillum.phaseAngle3(jd);
     double k = moonillum.illuminated(i);
-    
+
     double t = j2000Century(jd);
-    double d = mod2pi(toRad(horner(t, [297.8501921, 445267.1114034,
-      -0.0018819, 1 / 545868.0, -1 / 113065000.0])));
-    
+    double d = mod2pi(toRad(horner(t, [
+      297.8501921,
+      445267.1114034,
+      -0.0018819,
+      1 / 545868.0,
+      -1 / 113065000.0
+    ])));
+
     bool isWaxing = d < math.pi;
 
-    return MoonPhaseInfo(
+    final info = MoonPhaseInfo(
       illuminatedFraction: k,
       isWaxing: isWaxing,
       phaseAngle: i,
     );
+
+    if (_phaseCache.length > 1000) _phaseCache.clear();
+    return _phaseCache[cacheKey] = info;
   }
 
   @override
@@ -249,6 +278,29 @@ class AstronomiaEphemerisService implements EphemerisService {
   }
 
   @override
+  SunriseSunsetInfo getSunriseSunset(DateTime date, double lat, double lon) {
+    // Astronomia expects jd to be the center of the period to search.
+    // Passing 12h UTC ensures we find the sunrise and sunset for this calendar day.
+    final dateMidday = DateTime.utc(date.year, date.month, date.day, 12);
+    double jd = _toJD(dateMidday);
+    
+    final latRad = lat * math.pi / 180;
+    final lonRad = -lon * math.pi / 180; 
+    final result = sunrise.sunriseSunset(jd, latRad, lonRad);
+    
+    return SunriseSunsetInfo(
+      sunrise: result.rise != null ? _fromJD(result.rise!) : null,
+      sunset: result.set != null ? _fromJD(result.set!) : null,
+      noon: _fromJD(result.noon),
+    );
+  }
+
+  DateTime _fromJD(double jd) {
+    final seconds = (jd - 2440587.5) * 86400.0;
+    return DateTime.fromMillisecondsSinceEpoch((seconds * 1000).round(), isUtc: true).toLocal();
+  }
+
+  @override
   bool isNearNode(DateTime time) {
     double jd = _toJD(time);
     final pos = _getMoonPosition(jd);
@@ -279,7 +331,6 @@ class AstronomiaEphemerisService implements EphemerisService {
     double diff = (moonLong - perigeeLong).abs();
     if (diff > 180) diff = 360 - diff;
 
-    // Perigee window is +/- 12 hours. Moon moves ~13.2 deg/day, so ~6.6 deg in 12h.
     return diff < 6.6;
   }
 
@@ -297,87 +348,90 @@ class AstronomiaEphemerisService implements EphemerisService {
     return (diff1 - 90.0).abs() < 6.5;
   }
 
-  DateTime? _findExactSquareTime(DateTime time) {
-    final startTime = time.subtract(const Duration(days: 1));
-    final interval = const Duration(hours: 12);
-    
-    List<double> y = [];
-    for (int i = 0; i < 5; i++) {
-      final t = startTime.add(interval * i);
-      double dayFraction = t.day + t.hour / 24.0 + t.minute / 1440.0 + t.second / 86400.0;
-      double jd = calendarGregorianToJD(t.year, t.month, dayFraction);
-      final pos = _getMoonPosition(jd);
-      final node = moonpos.node(jd);
-      
-      double moonLong = pos.lon * 180 / math.pi;
-      double nodeLong = node * 180 / math.pi;
-      
-      double diff = (moonLong - nodeLong).abs();
-      if (diff > 180) diff = 360 - diff;
-      
-      y.add((diff - 90.0).abs());
-    }
-    
-    final x1 = 0.0;
-    final x5 = 48.0;
-    
-    final len5 = Len5(x1, x5, y);
-    
-    try {
-      final ext = len5.extremum();
-      if (ext.y < 1.0) {
-        return startTime.add(Duration(minutes: (ext.x * 60).round()));
-      }
-    } catch (e) {
-      // No extremum
-    }
-    
-    return null;
-  }
-
   @override
   List<CalendarInterval> getIntervals(DateTime start, DateTime end) {
     List<CalendarInterval> intervals = [];
     DateTime current = start;
-    
-    CalendarInfo? lastInfo;
-    DateTime? intervalStart;
-    
+
+    CalendarInfo currentInfo = _getCalendarInfo(current);
+    DateTime intervalStart = current;
+
     while (current.isBefore(end)) {
-      final info = _getCalendarInfo(current);
-      
-      if (lastInfo == null) {
-        lastInfo = info;
-        intervalStart = current;
-      } else if (info.quality != lastInfo.quality || info.isGrayDay != lastInfo.isGrayDay) {
-        intervals.add(CalendarInterval(
-          start: intervalStart!,
-          end: current,
-          quality: lastInfo.quality,
-          isGrayDay: lastInfo.isGrayDay,
-          message: lastInfo.message,
-        ));
-        lastInfo = info;
-        intervalStart = current;
+      final tConst = _timeToNextConstellation(current);
+      final tNode = _timeToNextNodeEvent(current);
+      final tPerigee = _timeToNextPerigeeEvent(current);
+
+      Duration minJump = tConst;
+      if (tNode < minJump) minJump = tNode;
+      if (tPerigee < minJump) minJump = tPerigee;
+
+      if (minJump <= Duration.zero || minJump < const Duration(minutes: 5)) {
+        minJump = const Duration(minutes: 15);
       }
-      
-      current = current.add(const Duration(hours: 1));
+
+      Duration safeJump = Duration(minutes: (minJump.inMinutes * 0.9).round());
+      if (safeJump < const Duration(minutes: 5))
+        safeJump = const Duration(minutes: 5);
+
+      current = current.add(safeJump);
+      if (current.isAfter(end)) current = end;
+
+      final info = _getCalendarInfo(current);
+
+      if (info.quality != currentInfo.quality ||
+          info.isGrayDay != currentInfo.isGrayDay) {
+        DateTime t0 = current.subtract(safeJump);
+        DateTime t1 = current;
+        DateTime transitionTime = _findTransition(
+          t0,
+          t1,
+          currentInfo.quality,
+          currentInfo.isGrayDay,
+        );
+
+        intervals.add(
+          CalendarInterval(
+            start: intervalStart,
+            end: transitionTime,
+            quality: currentInfo.quality,
+            isGrayDay: currentInfo.isGrayDay,
+            message: currentInfo.message,
+          ),
+        );
+
+        intervalStart = transitionTime;
+        current = transitionTime.add(const Duration(minutes: 1));
+        currentInfo = _getCalendarInfo(current);
+      }
     }
-    
-    if (lastInfo != null && intervalStart != null) {
-      intervals.add(CalendarInterval(
+
+    intervals.add(
+      CalendarInterval(
         start: intervalStart,
         end: end,
-        quality: lastInfo.quality,
-        isGrayDay: lastInfo.isGrayDay,
-        message: lastInfo.message,
-      ));
-    }
-    
+        quality: currentInfo.quality,
+        isGrayDay: currentInfo.isGrayDay,
+        message: currentInfo.message,
+      ),
+    );
+
     return intervals;
   }
 
-
+  DateTime _findTransition(DateTime t0, DateTime t1, PlantQuality q0, bool g0) {
+    while (t1.difference(t0).inMinutes > 1) {
+      DateTime mid = t0.add(
+        Duration(minutes: (t1.difference(t0).inMinutes / 2).round()),
+      );
+      final info = _getCalendarInfo(mid);
+      if (info.quality == q0 && info.isGrayDay == g0) {
+        t0 = mid;
+      } else {
+        t1 = mid;
+      }
+    }
+    return t0;
+  }
 
   CalendarInfo _getCalendarInfo(DateTime time, {bool includePlanets = false}) {
     if (!includePlanets && _infoCache.containsKey(time)) return _infoCache[time]!;
@@ -385,15 +439,7 @@ class AstronomiaEphemerisService implements EphemerisService {
     double moonLongitude = getMoonLongitude(time);
     bool isNearNode = this.isNearNode(time);
     bool isNearPerigee = this.isNearPerigee(time);
-    
-    DateTime? squareTime = _findExactSquareTime(time);
-    bool isSquare = false;
-    if (squareTime != null) {
-      final duration = const Duration(hours: 26);
-      final endTime = squareTime.add(duration);
-      isSquare = time.isAfter(squareTime) && time.isBefore(endTime);
-    }
-    
+    bool isSquare = this.isMoonSquareNode(time);
     bool isGrayDay = isNearNode || isNearPerigee || isSquare;
     final moonPhase = getMoonPhase(time);
 
@@ -432,5 +478,75 @@ class AstronomiaEphemerisService implements EphemerisService {
     return dec2 > dec1 ? 'Ascending' : 'Descending';
   }
 
+  Duration _timeToNextConstellation(DateTime time) {
+    final long = getMoonLongitude(time);
+    double minDiff = 360.0;
+    for (var boundary in dornachBoundaries) {
+      double diff = (boundary.startDegree - long) % 360.0;
+      if (diff < 0) diff += 360.0;
+      if (diff < minDiff) minDiff = diff;
+    }
+    double hours = minDiff / 0.54;
+    return Duration(minutes: (hours * 60).round());
+  }
 
+  Duration _timeToNextNodeEvent(DateTime time) {
+    double jd = _toJD(time);
+    final pos = _getMoonPosition(jd);
+    final node = moonpos.node(jd);
+
+    double moonLong = pos.lon * 180 / math.pi;
+    double nodeLong = node * 180 / math.pi;
+
+    double diff = (nodeLong - moonLong) % 180.0;
+    if (diff < 0) diff += 180.0;
+
+    double hoursToAlignment = diff / 0.54;
+    DateTime alignmentTime = time.add(
+      Duration(minutes: (hoursToAlignment * 60).round()),
+    );
+
+    DateTime entryTime = alignmentTime.subtract(
+      const Duration(hours: 4, minutes: 30),
+    );
+    DateTime exitTime = alignmentTime.add(
+      const Duration(hours: 4, minutes: 30),
+    );
+
+    if (entryTime.isAfter(time)) {
+      return entryTime.difference(time);
+    } else if (exitTime.isAfter(time)) {
+      return exitTime.difference(time);
+    } else {
+      return const Duration(days: 13);
+    }
+  }
+
+  Duration _timeToNextPerigeeEvent(DateTime time) {
+    double jd = _toJD(time);
+    final pos = _getMoonPosition(jd);
+    final perigee = moonpos.perigee(jd);
+
+    double moonLong = pos.lon * 180 / math.pi;
+    double perigeeLong = perigee * 180 / math.pi;
+
+    double diff = (perigeeLong - moonLong) % 360.0;
+    if (diff < 0) diff += 360.0;
+
+    double hoursToAlignment = diff / 0.54;
+    DateTime alignmentTime = time.add(
+      Duration(minutes: (hoursToAlignment * 60).round()),
+    );
+
+    DateTime entryTime = alignmentTime.subtract(const Duration(hours: 12));
+    DateTime exitTime = alignmentTime.add(const Duration(hours: 12));
+
+    if (entryTime.isAfter(time)) {
+      return entryTime.difference(time);
+    } else if (exitTime.isAfter(time)) {
+      return exitTime.difference(time);
+    } else {
+      return const Duration(days: 27);
+    }
+  }
 }

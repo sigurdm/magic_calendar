@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_driver/driver_extension.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
@@ -11,6 +12,7 @@ import 'src/planetary_ribbon.dart';
 import 'src/planting_icons.dart';
 
 void main() {
+  enableFlutterDriverExtension();
   runApp(MyApp(ephemeris: AstronomiaEphemerisService()));
 }
 
@@ -43,6 +45,8 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
   final ValueNotifier<DateTime> _selectedDateNotifier =
       ValueNotifier(DateTime.now());
   final ValueNotifier<CalendarInfo?> _infoNotifier = ValueNotifier(null);
+  final ValueNotifier<double> _latNotifier = ValueNotifier(56.0); // Denmark
+  final ValueNotifier<double> _lonNotifier = ValueNotifier(10.0);
   final _timeScrollController = TimeScrollController();
 
   Timer? _debounceTimer;
@@ -84,6 +88,8 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
     _debounceTimer?.cancel();
     _selectedDateNotifier.dispose();
     _infoNotifier.dispose();
+    _latNotifier.dispose();
+    _lonNotifier.dispose();
     super.dispose();
   }
 
@@ -129,10 +135,17 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
                     },
                   ),
                   const SizedBox(height: 20),
-                  TimeScrollView(
-                    ephemeris: widget.ephemeris,
-                    controller: _timeScrollController,
-                    onTimeSelected: _onTimeSelected,
+                  ListenableBuilder(
+                    listenable: Listenable.merge([_latNotifier, _lonNotifier]),
+                    builder: (context, _) {
+                      return TimeScrollView(
+                        ephemeris: widget.ephemeris,
+                        controller: _timeScrollController,
+                        onTimeSelected: _onTimeSelected,
+                        latitude: _latNotifier.value,
+                        longitude: _lonNotifier.value,
+                      );
+                    },
                   ),
                   const SizedBox(height: 20),
                   PlanetaryRibbon(
@@ -171,12 +184,47 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
                 color: Colors.white,
               ),
             ),
-            Text(
-              'Biodynamic Planting Guide',
-              style: GoogleFonts.outfit(
-                fontSize: 16,
-                color: Colors.white70,
-              ),
+            Row(
+              children: [
+                Text(
+                  'Biodynamic Planting Guide',
+                  style: GoogleFonts.outfit(
+                    fontSize: 16,
+                    color: Colors.white70,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: _showLocationPicker,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_on, size: 12, color: Colors.white70),
+                        const SizedBox(width: 4),
+                        ValueListenableBuilder<double>(
+                          valueListenable: _latNotifier,
+                          builder: (context, lat, _) {
+                            return ValueListenableBuilder<double>(
+                              valueListenable: _lonNotifier,
+                              builder: (context, lon, _) {
+                                return Text(
+                                  '${lat.toStringAsFixed(1)}°, ${lon.toStringAsFixed(1)}°',
+                                  style: const TextStyle(fontSize: 10, color: Colors.white70),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -224,6 +272,51 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
           ],
         ),
       ],
+    );
+  }
+
+  void _showLocationPicker() {
+    final latController = TextEditingController(text: _latNotifier.value.toString());
+    final lonController = TextEditingController(text: _lonNotifier.value.toString());
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Set Location'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: latController,
+              decoration: const InputDecoration(labelText: 'Latitude (-90 to 90)'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: lonController,
+              decoration: const InputDecoration(labelText: 'Longitude (-180 to 180)'),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final lat = double.tryParse(latController.text);
+              final lon = double.tryParse(lonController.text);
+              if (lat != null && lon != null) {
+                _latNotifier.value = lat.clamp(-90, 90);
+                _lonNotifier.value = lon.clamp(-180, 180);
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -324,44 +417,57 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Celestial Rhythms',
-                  style: GoogleFonts.outfit(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _buildDetailRow('Sap Flow', info.sapFlow),
-                const SizedBox(height: 12),
-                _buildDetailRow('Vitality', info.vitality),
-                const SizedBox(height: 12),
-                _buildDetailRow(
-                  'Illumination',
-                  '${(info.moonPhase.illuminatedFraction * 100).toStringAsFixed(1)}%',
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 24),
-          Column(
+      child: ValueListenableBuilder<DateTime>(
+        valueListenable: _selectedDateNotifier,
+        builder: (context, date, _) {
+          final moonPhase = widget.ephemeris.getMoonPhase(date);
+          
+          // Real-time calculation of sap flow trend
+          final dec1 = widget.ephemeris.getMoonDeclination(date);
+          final dec2 = widget.ephemeris.getMoonDeclination(date.add(const Duration(hours: 1)));
+          final realTimeSapFlow = dec2 > dec1 ? 'Ascending' : 'Descending';
+
+          return Row(
             children: [
-              MoonPhaseWidget(info: info.moonPhase),
-              const SizedBox(height: 8),
-              Text(
-                info.moonPhase.isWaxing ? 'Waxing' : 'Waning',
-                style: GoogleFonts.outfit(fontSize: 12, color: Colors.white54),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Celestial Rhythms',
+                      style: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildDetailRow('Sap Flow', realTimeSapFlow),
+                    const SizedBox(height: 12),
+                    _buildDetailRow('Vitality', moonPhase.name),
+                    const SizedBox(height: 12),
+                    _buildDetailRow(
+                      'Illumination',
+                      '${(moonPhase.illuminatedFraction * 100).toStringAsFixed(1)}%',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 24),
+              Column(
+                children: [
+                  MoonPhaseWidget(info: moonPhase),
+                  const SizedBox(height: 8),
+                  Text(
+                    moonPhase.isWaxing ? 'Waxing' : 'Waning',
+                    style:
+                        GoogleFonts.outfit(fontSize: 12, color: Colors.white54),
+                  ),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
