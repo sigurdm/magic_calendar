@@ -513,6 +513,11 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
                             'Clouds',
                             '${selectedWeather.cloudCover.round()}%',
                           ),
+                          const SizedBox(height: 12),
+                          _buildDetailRow(
+                            'Precipitation',
+                            '${selectedWeather.precipitation.toStringAsFixed(1)} mm',
+                          ),
                         ],
                       ],
                     ),

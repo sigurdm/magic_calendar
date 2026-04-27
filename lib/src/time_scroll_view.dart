@@ -620,6 +620,22 @@ class InfiniteTimelinePainter extends CustomPainter {
       final yTemp = mapTempToY(wd.temperature);
       final yWind = mapWindToY(wd.windSpeed);
 
+      if (wd.precipitation > 0) {
+        final barHeight = (wd.precipitation / 5.0 * 15.0).clamp(1.0, 15.0);
+        final barPaint = Paint()
+          ..color = Colors.blueAccent.withValues(alpha: 0.5)
+          ..style = PaintingStyle.fill;
+        canvas.drawRect(
+          Rect.fromLTWH(
+            x - 2,
+            tempRowY + tempRowHeight - barHeight,
+            4,
+            barHeight,
+          ),
+          barPaint,
+        );
+      }
+
       if (first) {
         tempPath.moveTo(x, yTemp);
         windPath.moveTo(x, yWind);
@@ -659,6 +675,16 @@ class InfiniteTimelinePainter extends CustomPainter {
         // Cloud cover on temp chart
         if (wd.cloudCover > 30) {
           _drawIcon(canvas, x, '☁️', 12, yTemp + 5);
+        }
+
+        if (wd.precipitation > 0) {
+          _drawText(
+            canvas,
+            x,
+            '${wd.precipitation.toStringAsFixed(1)}mm',
+            8,
+            yTemp + 15,
+          );
         }
 
         // Wind speed label and arrow on wind chart
