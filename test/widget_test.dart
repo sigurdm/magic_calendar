@@ -33,6 +33,9 @@ class MockEphemerisService implements EphemerisService {
   bool isNearPerigee(DateTime time) => _mockIsNearPerigee;
 
   @override
+  bool isMoonSquareNode(DateTime time) => false;
+
+  @override
   double getMoonDeclination(DateTime time) => 0.0;
 
   @override
