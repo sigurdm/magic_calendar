@@ -192,7 +192,7 @@ class _TimeScrollViewState extends State<TimeScrollView>
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 120,
+      height: 150,
       child: GestureDetector(
         onHorizontalDragUpdate: (details) {
           _momentumController.stop();
@@ -570,29 +570,78 @@ class InfiniteTimelinePainter extends CustomPainter {
         );
       }
     }
-    // Draw Weather Row
+    // Draw Weather Row (Option B style)
     final weatherRowY = 85.0;
+    final weatherRowHeight = 25.0;
+
+    // Draw light background for weather row as in mockup
+    final weatherBgPaint = Paint()
+      ..color = const Color(0xFFD0E2FF).withValues(alpha: 0.3)
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(
+      Rect.fromLTWH(0, weatherRowY, size.width, weatherRowHeight),
+      weatherBgPaint,
+    );
+
+    final linePaint = Paint()
+      ..color = Colors.white70
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+    bool first = true;
+
+    // Simple mapping: 0 to 30 degrees Celsius mapped to weatherRowY + weatherRowHeight to weatherRowY
+    double mapTempToY(double temp) {
+      final clamped = temp.clamp(0.0, 30.0);
+      return weatherRowY +
+          weatherRowHeight -
+          (clamped / 30.0 * weatherRowHeight);
+    }
 
     for (final wd in weatherData) {
       final offsetInHours = wd.time.difference(centerTime).inSeconds / 3600.0;
       final x = centerX + (offsetInHours * hourWidth);
+      final y = mapTempToY(wd.temperature);
+
+      if (first) {
+        path.moveTo(x, y);
+        first = false;
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+
+    canvas.drawPath(path, linePaint);
+
+    // Draw icons at some intervals
+    for (int i = 0; i < weatherData.length; i += 6) {
+      final wd = weatherData[i];
+      final offsetInHours = wd.time.difference(centerTime).inSeconds / 3600.0;
+      final x = centerX + (offsetInHours * hourWidth);
+      final y = mapTempToY(wd.temperature);
 
       if (x >= 0 && x <= size.width) {
-        // Draw temperature
-        final tp = TextPainter(
-          text: TextSpan(
-            text: '${wd.temperature.round()}°',
-            style: const TextStyle(color: Colors.white70, fontSize: 10),
-          ),
-          textDirection: ui.TextDirection.ltr,
-        );
-        tp.layout();
-        tp.paint(canvas, Offset(x - tp.width / 2, weatherRowY));
+        // Draw cloud icon (☁️)
+        if (wd.cloudCover > 30) {
+          _drawIcon(canvas, x, '☁️', 14, y - 10);
+        }
+
+        // Draw wind arrow or text
+        if (wd.windSpeed > 2.0) {
+          _drawIcon(canvas, x, '💨', 12, y + 10);
+        }
       }
     }
   }
 
-  void _drawIcon(Canvas canvas, double x, String icon, double fontSize) {
+  void _drawIcon(
+    Canvas canvas,
+    double x,
+    String icon,
+    double fontSize, [
+    double? y,
+  ]) {
     final tp = TextPainter(
       text: TextSpan(
         text: icon,
