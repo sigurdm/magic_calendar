@@ -29,8 +29,8 @@ class TimeScrollView extends StatefulWidget {
     required this.weatherService,
     required this.onTimeSelected,
     this.controller,
-    this.latitude = 56.0,
-    this.longitude = 10.0,
+    this.latitude = 54.9037,
+    this.longitude = 10.6074,
   });
 
   @override

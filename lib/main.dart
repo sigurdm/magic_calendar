@@ -47,8 +47,8 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
     DateTime.now(),
   );
   final ValueNotifier<CalendarInfo?> _infoNotifier = ValueNotifier(null);
-  final ValueNotifier<double> _latNotifier = ValueNotifier(56.0); // Denmark
-  final ValueNotifier<double> _lonNotifier = ValueNotifier(10.0);
+  final ValueNotifier<double> _latNotifier = ValueNotifier(54.9037);
+  final ValueNotifier<double> _lonNotifier = ValueNotifier(10.6074);
   final _timeScrollController = TimeScrollController();
   late final WeatherService _weatherService;
 
