@@ -9,6 +9,7 @@
 /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/AssetManifest.bin
 /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/kernel_blob.bin
 /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/assets/icons/leaf.png
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/assets/icons/gray_day.png
 /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/assets/icons/root.png
 /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/assets/icons/fruit.png
 /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/assets/icons/flower.png

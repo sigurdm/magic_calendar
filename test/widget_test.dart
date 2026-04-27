@@ -41,6 +41,11 @@ class MockEphemerisService implements EphemerisService {
 
   @override
   List<PlanetInfo> getPlanets(DateTime time) => [];
+
+  @override
+  SunriseSunsetInfo getSunriseSunset(DateTime date, double lat, double lon) {
+    return SunriseSunsetInfo(noon: DateTime.now());
+  }
 }
 
 void main() {
