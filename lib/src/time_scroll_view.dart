@@ -8,8 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:math' as math;
 import 'package:flutter/services.dart'; // Added for rootBundle
 import 'ephemeris_service.dart';
-
-
+import 'weather_service.dart';
 
 class TimeScrollController {
   _TimeScrollViewState? _state;
@@ -18,6 +17,7 @@ class TimeScrollController {
 
 class TimeScrollView extends StatefulWidget {
   final EphemerisService ephemeris;
+  final WeatherService weatherService;
   final ValueChanged<DateTime> onTimeSelected;
   final TimeScrollController? controller;
   final double latitude;
@@ -26,6 +26,7 @@ class TimeScrollView extends StatefulWidget {
   const TimeScrollView({
     super.key,
     required this.ephemeris,
+    required this.weatherService,
     required this.onTimeSelected,
     this.controller,
     this.latitude = 56.0,
@@ -46,6 +47,7 @@ class _TimeScrollViewState extends State<TimeScrollView>
   double _baseScaleHourWidth = 40.0;
 
   List<CalendarInterval> _visibleIntervals = [];
+  List<WeatherDataPoint> _weatherData = [];
   DateTime? _cachedStart;
   DateTime? _cachedEnd;
 
@@ -61,7 +63,6 @@ class _TimeScrollViewState extends State<TimeScrollView>
   ui.Image? _fruitImage;
   ui.Image? _noneImage;
   ui.Image? _grayDayImage;
-
 
   Future<void> _loadIcons() async {
     _rootImage = await _loadAssetImage('assets/icons/root.png');
@@ -140,9 +141,20 @@ class _TimeScrollViewState extends State<TimeScrollView>
         IntervalRequest(start, end),
       );
 
+      List<WeatherDataPoint> weather = [];
+      try {
+        weather = await widget.weatherService.getForecast(
+          widget.latitude,
+          widget.longitude,
+        );
+      } catch (e) {
+        debugPrint('Error fetching weather: $e');
+      }
+
       if (mounted) {
         setState(() {
           _visibleIntervals = intervals;
+          _weatherData = weather;
           _cachedStart = start;
           _cachedEnd = end;
           _isLoading = false;
@@ -200,8 +212,10 @@ class _TimeScrollViewState extends State<TimeScrollView>
         onScaleUpdate: (details) {
           if (details.scale != 1.0) {
             setState(() {
-              _hourWidth = (_baseScaleHourWidth * details.scale)
-                  .clamp(_minHourWidth, _maxHourWidth);
+              _hourWidth = (_baseScaleHourWidth * details.scale).clamp(
+                _minHourWidth,
+                _maxHourWidth,
+              );
             });
           } else {
             _applyPanDelta(details.focalPointDelta.dx);
@@ -211,8 +225,7 @@ class _TimeScrollViewState extends State<TimeScrollView>
           color: Colors.transparent,
           child: Stack(
             children: [
-              if (_isLoading)
-                const Center(child: CircularProgressIndicator()),
+              if (_isLoading) const Center(child: CircularProgressIndicator()),
               IgnorePointer(
                 child: CustomPaint(
                   size: Size.infinite,
@@ -220,6 +233,7 @@ class _TimeScrollViewState extends State<TimeScrollView>
                     centerTime: _centerTime,
                     hourWidth: _hourWidth,
                     intervals: _visibleIntervals,
+                    weatherData: _weatherData,
                     ephemeris: widget.ephemeris,
                     latitude: widget.latitude,
                     longitude: widget.longitude,
@@ -259,6 +273,7 @@ class InfiniteTimelinePainter extends CustomPainter {
   final DateTime centerTime;
   final double hourWidth;
   final List<CalendarInterval> intervals;
+  final List<WeatherDataPoint> weatherData;
   final EphemerisService ephemeris;
   final double latitude;
   final double longitude;
@@ -273,6 +288,7 @@ class InfiniteTimelinePainter extends CustomPainter {
     required this.centerTime,
     required this.hourWidth,
     required this.intervals,
+    required this.weatherData,
     required this.ephemeris,
     required this.latitude,
     required this.longitude,
@@ -288,25 +304,38 @@ class InfiniteTimelinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (size.width <= 0) return;
     final centerX = size.width / 2;
-    
+
     final visibleHours = size.width / hourWidth;
-    final startTime =
-        centerTime.subtract(Duration(hours: (visibleHours / 2).ceil() + 24));
-    final endTime =
-        centerTime.add(Duration(hours: (visibleHours / 2).ceil() + 24));
+    final startTime = centerTime.subtract(
+      Duration(hours: (visibleHours / 2).ceil() + 24),
+    );
+    final endTime = centerTime.add(
+      Duration(hours: (visibleHours / 2).ceil() + 24),
+    );
 
     // Calculate Gradient Background with robust interpolation
-    final canvasStartTime = centerTime.subtract(Duration(hours: (visibleHours / 2).ceil()));
-    final canvasEndTime = centerTime.add(Duration(hours: (visibleHours / 2).ceil()));
-    final totalDuration = canvasEndTime.difference(canvasStartTime).inSeconds.toDouble();
+    final canvasStartTime = centerTime.subtract(
+      Duration(hours: (visibleHours / 2).ceil()),
+    );
+    final canvasEndTime = centerTime.add(
+      Duration(hours: (visibleHours / 2).ceil()),
+    );
+    final totalDuration = canvasEndTime
+        .difference(canvasStartTime)
+        .inSeconds
+        .toDouble();
 
     final List<({DateTime time, Color color})> markers = [];
-    
+
     // Collect markers for a 3-day window to ensure we always have points before/after the canvas
     for (int dayOffset = -2; dayOffset <= 2; dayOffset++) {
-      final d = DateTime(centerTime.year, centerTime.month, centerTime.day + dayOffset);
+      final d = DateTime(
+        centerTime.year,
+        centerTime.month,
+        centerTime.day + dayOffset,
+      );
       final ss = ephemeris.getSunriseSunset(d, latitude, longitude);
-      
+
       if (ss.sunrise != null && ss.sunset != null) {
         final midday = ss.sunrise!.add(ss.sunset!.difference(ss.sunrise!) ~/ 2);
         final morningStart = ss.sunrise!.subtract(const Duration(minutes: 90));
@@ -314,9 +343,18 @@ class InfiniteTimelinePainter extends CustomPainter {
 
         markers.add((time: morningStart, color: Colors.black));
         markers.add((time: ss.sunrise!, color: const Color(0xFFD32F2F)));
-        markers.add((time: ss.sunrise!.add(const Duration(minutes: 60)), color: const Color(0xFFFFF9C4)));
-        markers.add((time: midday, color: const Color(0xFFFFFDE7))); // Brightest noon
-        markers.add((time: ss.sunset!.subtract(const Duration(minutes: 60)), color: const Color(0xFFFFF9C4)));
+        markers.add((
+          time: ss.sunrise!.add(const Duration(minutes: 60)),
+          color: const Color(0xFFFFF9C4),
+        ));
+        markers.add((
+          time: midday,
+          color: const Color(0xFFFFFDE7),
+        )); // Brightest noon
+        markers.add((
+          time: ss.sunset!.subtract(const Duration(minutes: 60)),
+          color: const Color(0xFFFFF9C4),
+        ));
         markers.add((time: ss.sunset!, color: const Color(0xFFD32F2F)));
         markers.add((time: eveningEnd, color: Colors.black));
       } else {
@@ -336,8 +374,9 @@ class InfiniteTimelinePainter extends CustomPainter {
         final m2 = markers[i + 1];
         if (target.isAtSameMomentAs(m1.time)) return m1.color;
         if (target.isAfter(m1.time) && target.isBefore(m2.time)) {
-          final t = target.difference(m1.time).inSeconds / 
-                    m2.time.difference(m1.time).inSeconds;
+          final t =
+              target.difference(m1.time).inSeconds /
+              m2.time.difference(m1.time).inSeconds;
           return Color.lerp(m1.color, m2.color, t)!;
         }
       }
@@ -355,7 +394,9 @@ class InfiniteTimelinePainter extends CustomPainter {
     for (var m in markers) {
       if (m.time.isAfter(canvasStartTime) && m.time.isBefore(canvasEndTime)) {
         finalColors.add(m.color);
-        finalStops.add(m.time.difference(canvasStartTime).inSeconds / totalDuration);
+        finalStops.add(
+          m.time.difference(canvasStartTime).inSeconds / totalDuration,
+        );
       }
     }
 
@@ -375,17 +416,27 @@ class InfiniteTimelinePainter extends CustomPainter {
     }
 
     // Draw Solar Icons
-    for (var d = DateTime(canvasStartTime.year, canvasStartTime.month, canvasStartTime.day);
-        d.isBefore(canvasEndTime.add(const Duration(days: 1)));
-        d = d.add(const Duration(days: 1))) {
+    for (
+      var d = DateTime(
+        canvasStartTime.year,
+        canvasStartTime.month,
+        canvasStartTime.day,
+      );
+      d.isBefore(canvasEndTime.add(const Duration(days: 1)));
+      d = d.add(const Duration(days: 1))
+    ) {
       final ss = ephemeris.getSunriseSunset(d, latitude, longitude);
-      
+
       if (ss.sunrise != null) {
-        final x = centerX + (ss.sunrise!.difference(centerTime).inSeconds / 3600.0 * hourWidth);
+        final x =
+            centerX +
+            (ss.sunrise!.difference(centerTime).inSeconds / 3600.0 * hourWidth);
         if (x >= 0 && x <= size.width) _drawIcon(canvas, x, '☀️', 12);
       }
       if (ss.sunset != null) {
-        final x = centerX + (ss.sunset!.difference(centerTime).inSeconds / 3600.0 * hourWidth);
+        final x =
+            centerX +
+            (ss.sunset!.difference(centerTime).inSeconds / 3600.0 * hourWidth);
         if (x >= 0 && x <= size.width) _drawIcon(canvas, x, '🌙', 12);
       }
     }
@@ -429,9 +480,11 @@ class InfiniteTimelinePainter extends CustomPainter {
 
     final epoch = DateTime(2000, 1, 1);
 
-    for (var t = firstTickTime;
-        t.isBefore(endTime);
-        t = t.add(Duration(hours: tickFrequency))) {
+    for (
+      var t = firstTickTime;
+      t.isBefore(endTime);
+      t = t.add(Duration(hours: tickFrequency))
+    ) {
       final offsetInHours = t.difference(centerTime).inSeconds / 3600.0;
       final x = centerX + (offsetInHours * hourWidth);
 
@@ -440,7 +493,10 @@ class InfiniteTimelinePainter extends CustomPainter {
 
       if (isHourLabelTime || isMidnight) {
         canvas.drawLine(
-            Offset(x, 15), Offset(x, 25), tickPaint..color = Colors.white54);
+          Offset(x, 15),
+          Offset(x, 25),
+          tickPaint..color = Colors.white54,
+        );
 
         if (showHourLabels && !isMidnight) {
           final hourPainter = TextPainter(
@@ -461,9 +517,10 @@ class InfiniteTimelinePainter extends CustomPainter {
               text: TextSpan(
                 text: DateFormat('EEE, MMM d').format(t),
                 style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold),
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               textDirection: ui.TextDirection.ltr,
             );
@@ -473,7 +530,10 @@ class InfiniteTimelinePainter extends CustomPainter {
         }
       } else {
         canvas.drawLine(
-            Offset(x, 18), Offset(x, 22), tickPaint..color = Colors.white24);
+          Offset(x, 18),
+          Offset(x, 22),
+          tickPaint..color = Colors.white24,
+        );
       }
     }
 
@@ -487,12 +547,47 @@ class InfiniteTimelinePainter extends CustomPainter {
       final width = xEnd - xStart;
       if (xEnd < 0 || xStart > size.width) continue;
       if (interval.isGrayDay) {
-        _drawBlock(canvas, xStart, width, 'gray', Colors.grey[400]!,
-            interval.quality, true);
+        _drawBlock(
+          canvas,
+          xStart,
+          width,
+          'gray',
+          Colors.grey[400]!,
+          interval.quality,
+          true,
+        );
       } else if (interval.quality != PlantQuality.none) {
         final color = _getColorForQuality(interval.quality);
         final label = _getLabelForQuality(interval.quality);
-        _drawBlock(canvas, xStart, width, label, color, interval.quality, false);
+        _drawBlock(
+          canvas,
+          xStart,
+          width,
+          label,
+          color,
+          interval.quality,
+          false,
+        );
+      }
+    }
+    // Draw Weather Row
+    final weatherRowY = 85.0;
+
+    for (final wd in weatherData) {
+      final offsetInHours = wd.time.difference(centerTime).inSeconds / 3600.0;
+      final x = centerX + (offsetInHours * hourWidth);
+
+      if (x >= 0 && x <= size.width) {
+        // Draw temperature
+        final tp = TextPainter(
+          text: TextSpan(
+            text: '${wd.temperature.round()}°',
+            style: const TextStyle(color: Colors.white70, fontSize: 10),
+          ),
+          textDirection: ui.TextDirection.ltr,
+        );
+        tp.layout();
+        tp.paint(canvas, Offset(x - tp.width / 2, weatherRowY));
       }
     }
   }
@@ -509,14 +604,23 @@ class InfiniteTimelinePainter extends CustomPainter {
     tp.paint(canvas, Offset(x - tp.width / 2, 85));
   }
 
-  void _drawBlock(Canvas canvas, double x, double width, String label,
-      Color color, PlantQuality quality, bool isGrayDay) {
+  void _drawBlock(
+    Canvas canvas,
+    double x,
+    double width,
+    String label,
+    Color color,
+    PlantQuality quality,
+    bool isGrayDay,
+  ) {
     final rect = Rect.fromLTWH(x, 30, width, 50);
     final paint = Paint()
       ..color = color.withValues(alpha: 0.8)
       ..style = PaintingStyle.fill;
     canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, const Radius.circular(4)), paint);
+      RRect.fromRectAndRadius(rect, const Radius.circular(4)),
+      paint,
+    );
 
     if (width > 30) {
       final iconSize = math.min(width * 0.6, 30.0);
@@ -546,20 +650,25 @@ class InfiniteTimelinePainter extends CustomPainter {
       if (image != null) {
         canvas.save();
         canvas.translate(x + (width - iconSize) / 2, 30 + (50 - iconSize) / 2);
-        final src = Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble());
+        final src = Rect.fromLTWH(
+          0,
+          0,
+          image.width.toDouble(),
+          image.height.toDouble(),
+        );
         final dst = Rect.fromLTWH(0, 0, iconSize, iconSize);
         canvas.drawImageRect(image, src, dst, Paint());
-        
+
         // Draw a nice frame around the image
         final framePaint = Paint()
           ..color = Colors.white.withValues(alpha: 0.7)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5;
         canvas.drawRRect(
-          RRect.fromRectAndRadius(dst, const Radius.circular(2)), 
-          framePaint
+          RRect.fromRectAndRadius(dst, const Radius.circular(2)),
+          framePaint,
         );
-        
+
         canvas.restore();
       }
     }

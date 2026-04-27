@@ -80,5 +80,4 @@ void main() {
     expect(intervals[0].start, startTime);
     expect(intervals[0].end, endTime);
   });
-
 }
