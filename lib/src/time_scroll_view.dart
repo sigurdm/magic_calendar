@@ -365,12 +365,22 @@ class InfiniteTimelinePainter extends CustomPainter {
     final List<({DateTime time, Color color})> markers = [];
 
     // Collect markers for a 3-day window to ensure we always have points before/after the canvas
-    for (int dayOffset = -2; dayOffset <= 2; dayOffset++) {
-      final d = DateTime(
-        centerTime.year,
-        centerTime.month,
-        centerTime.day + dayOffset,
-      );
+    final startDay = DateTime(
+      canvasStartTime.year,
+      canvasStartTime.month,
+      canvasStartTime.day,
+    );
+    final endDay = DateTime(
+      canvasEndTime.year,
+      canvasEndTime.month,
+      canvasEndTime.day,
+    );
+
+    for (
+      var d = startDay.subtract(const Duration(days: 1));
+      d.isBefore(endDay.add(const Duration(days: 2)));
+      d = d.add(const Duration(days: 1))
+    ) {
       final ss = ephemeris.getSunriseSunset(d, latitude, longitude);
 
       if (ss.sunrise != null && ss.sunset != null) {
