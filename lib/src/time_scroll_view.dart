@@ -244,8 +244,9 @@ class _TimeScrollViewState extends State<TimeScrollView>
                   _maxHourWidth,
                 );
               });
+            } else {
+              _applyPanDelta(details.focalPointDelta.dx);
             }
-            _applyPanDelta(details.focalPointDelta.dx);
           },
           onScaleEnd: (details) {
             final velocity = details.velocity.pixelsPerSecond.dx;
