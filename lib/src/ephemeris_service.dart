@@ -510,9 +510,7 @@ class AstronomiaEphemerisService implements EphemerisService {
     double moonLongitude = getMoonLongitude(time);
     bool isNearNode = this.isNearNode(time);
     bool isNearPerigee = this.isNearPerigee(time);
-    bool isSquare = this.isMoonSquareNode(time);
-    bool hasAspect = this.hasUnfavorableAspect(time);
-    bool isGrayDay = isNearNode || isNearPerigee || isSquare || hasAspect;
+    bool isGrayDay = isNearNode || isNearPerigee;
     final moonPhase = getMoonPhase(time);
 
     String message = '';
@@ -520,10 +518,6 @@ class AstronomiaEphemerisService implements EphemerisService {
       message = 'Gray Day: Near Lunar Node.';
     } else if (isNearPerigee) {
       message = 'Gray Day: Near Lunar Perigee.';
-    } else if (isSquare) {
-      message = 'Gray Day: Moon Square Node.';
-    } else if (hasAspect) {
-      message = 'Gray Day: Unfavorable Planetary Aspect.';
     }
 
     PlantQuality quality = getQualityFromLongitude(moonLongitude);
