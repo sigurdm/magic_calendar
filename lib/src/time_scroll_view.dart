@@ -141,20 +141,46 @@ class _TimeScrollViewState extends State<TimeScrollView>
         IntervalRequest(start, end),
       );
 
-      List<WeatherDataPoint> weather = [];
-      try {
-        weather = await widget.weatherService.getForecast(
-          widget.latitude,
-          widget.longitude,
-        );
-      } catch (e) {
-        debugPrint('Error fetching weather: $e');
+      List<WeatherDataPoint> combinedWeather = [];
+      final now = DateTime.now();
+
+      // Fetch historical data if range starts before now
+      if (start.isBefore(now)) {
+        final histEnd = end.isBefore(now) ? end : now;
+        try {
+          final histWeather = await widget.weatherService.getHistoricalData(
+            widget.latitude,
+            widget.longitude,
+            start,
+            histEnd,
+          );
+          combinedWeather.addAll(histWeather);
+        } catch (e) {
+          debugPrint('Error fetching historical weather: $e');
+        }
       }
+
+      // Fetch forecast if range ends after now
+      if (end.isAfter(now)) {
+        try {
+          final forecast = await widget.weatherService.getForecast(
+            widget.latitude,
+            widget.longitude,
+          );
+          combinedWeather.addAll(
+            forecast.where((p) => p.time.isAfter(now) && p.time.isBefore(end)),
+          );
+        } catch (e) {
+          debugPrint('Error fetching forecast: $e');
+        }
+      }
+
+      combinedWeather.sort((a, b) => a.time.compareTo(b.time));
 
       if (mounted) {
         setState(() {
           _visibleIntervals = intervals;
-          _weatherData = weather;
+          _weatherData = combinedWeather;
           _cachedStart = start;
           _cachedEnd = end;
           _isLoading = false;

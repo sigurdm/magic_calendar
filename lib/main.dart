@@ -14,12 +14,19 @@ import 'src/weather_service.dart';
 
 void main() {
   enableFlutterDriverExtension();
-  runApp(MyApp(ephemeris: AstronomiaEphemerisService()));
+  final weatherService = YrNoWeatherService(
+    userAgent: 'MagicCalendar/1.0 (sigurd.meldgaard@example.com)',
+  );
+  runApp(
+    MyApp(ephemeris: AstronomiaEphemerisService(), weather: weatherService),
+  );
 }
 
 class MyApp extends StatelessWidget {
   final EphemerisService ephemeris;
-  const MyApp({super.key, required this.ephemeris});
+  final WeatherService weather;
+
+  const MyApp({super.key, required this.ephemeris, required this.weather});
 
   @override
   Widget build(BuildContext context) {
@@ -29,14 +36,19 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFF121212),
         textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
       ),
-      home: CalendarHomePage(ephemeris: ephemeris),
+      home: CalendarHomePage(ephemeris: ephemeris, weather: weather),
     );
   }
 }
 
 class CalendarHomePage extends StatefulWidget {
   final EphemerisService ephemeris;
-  const CalendarHomePage({super.key, required this.ephemeris});
+  final WeatherService weather;
+  const CalendarHomePage({
+    super.key,
+    required this.ephemeris,
+    required this.weather,
+  });
 
   @override
   State<CalendarHomePage> createState() => _CalendarHomePageState();
@@ -47,6 +59,9 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
     DateTime.now(),
   );
   final ValueNotifier<CalendarInfo?> _infoNotifier = ValueNotifier(null);
+  final ValueNotifier<List<WeatherDataPoint>?> _weatherNotifier = ValueNotifier(
+    null,
+  );
   final ValueNotifier<double> _latNotifier = ValueNotifier(54.9037);
   final ValueNotifier<double> _lonNotifier = ValueNotifier(10.6074);
   final _timeScrollController = TimeScrollController();
@@ -60,8 +75,21 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
     _weatherService = YrNoWeatherService(
       userAgent: 'MagicCalendar/1.0 (sigurdm@google.com)',
     );
+    _fetchWeather();
     // Initial fetch
     _updateInfo(_selectedDateNotifier.value, immediate: true);
+  }
+
+  void _fetchWeather() async {
+    try {
+      final forecast = await _weatherService.getForecast(
+        _latNotifier.value,
+        _lonNotifier.value,
+      );
+      _weatherNotifier.value = forecast;
+    } catch (e) {
+      debugPrint('Failed to fetch weather: $e');
+    }
   }
 
   void _updateInfo(DateTime time, {bool immediate = false}) {
