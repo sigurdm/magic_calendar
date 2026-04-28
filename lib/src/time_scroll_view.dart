@@ -631,13 +631,13 @@ class InfiniteTimelinePainter extends CustomPainter {
     );
 
     final tempLinePaint = Paint()
-      ..color = Colors.orangeAccent.withValues(alpha: 0.7)
-      ..strokeWidth = 2.0
+      ..color = Colors.orangeAccent.withValues(alpha: 0.3)
+      ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
     final windLinePaint = Paint()
-      ..color = Colors.lightBlueAccent.withValues(alpha: 0.7)
-      ..strokeWidth = 2.0
+      ..color = Colors.lightBlueAccent.withValues(alpha: 0.3)
+      ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
     final tempPath = Path();
@@ -703,7 +703,7 @@ class InfiniteTimelinePainter extends CustomPainter {
       return '↘️';
     }
 
-    for (int i = 0; i < weatherData.length; i += 6) {
+    for (int i = 0; i < weatherData.length; i += 12) {
       final wd = weatherData[i];
       final offsetInHours = wd.time.difference(centerTime).inSeconds / 3600.0;
       final x = centerX + (offsetInHours * hourWidth);

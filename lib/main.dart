@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'dart:math' as math;
 import 'src/algorithm.dart';
 import 'src/ephemeris_service.dart';
+import 'dart:ui';
 import 'src/time_scroll_view.dart';
 import 'src/planetary_ribbon.dart';
 import 'src/planting_icons.dart';
@@ -410,51 +411,63 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
       }
     }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: cardColor.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: cardColor.withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              PlantingQualityIcon(
-                quality: info.quality,
-                isGrayDay: info.isGrayDay,
-                size: 40,
-                color: Colors.white,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: cardColor.withValues(
+              alpha: 0.2,
+            ), // Lower alpha for glass effect
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: cardColor.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 15,
+                spreadRadius: -5,
               ),
-              const SizedBox(width: 16),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  PlantingQualityIcon(
+                    quality: info.quality,
+                    isGrayDay: info.isGrayDay,
+                    size: 40,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 16),
+                  Text(
+                    title,
+                    style: GoogleFonts.outfit(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
               Text(
-                title,
+                desc,
                 style: GoogleFonts.outfit(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  fontSize: 16,
+                  color: Colors.white.withValues(alpha: 0.9),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            desc,
-            style: GoogleFonts.outfit(
-              fontSize: 16,
-              color: Colors.white.withValues(alpha: 0.9),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
