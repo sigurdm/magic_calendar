@@ -14,8 +14,11 @@ import 'src/weather_service.dart';
 
 void main() {
   enableFlutterDriverExtension();
-  final weatherService = YrNoWeatherService(
-    userAgent: 'MagicCalendar/1.0 (sigurd.meldgaard@example.com)',
+  final weatherService = CombinedWeatherService(
+    yrNoService: YrNoWeatherService(
+      userAgent: 'MagicCalendar/1.0 (sigurd.meldgaard@example.com)',
+    ),
+    dmiService: DmiWeatherService(),
   );
   runApp(
     MyApp(ephemeris: AstronomiaEphemerisService(), weather: weatherService),
@@ -72,8 +75,11 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
   @override
   void initState() {
     super.initState();
-    _weatherService = YrNoWeatherService(
-      userAgent: 'MagicCalendar/1.0 (sigurdm@google.com)',
+    _weatherService = CombinedWeatherService(
+      yrNoService: YrNoWeatherService(
+        userAgent: 'MagicCalendar/1.0 (sigurdm@google.com)',
+      ),
+      dmiService: DmiWeatherService(),
     );
     _fetchWeather();
     // Initial fetch
