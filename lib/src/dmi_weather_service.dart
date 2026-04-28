@@ -26,7 +26,7 @@ final class DmiWeatherService implements WeatherService {
     // 1. Find a station near the location
     final bbox = '${lon - 0.5},${lat - 0.5},${lon + 0.5},${lat + 0.5}';
     final stationsUrl = Uri.parse(
-      'https://opendataapi.dmi.dk/v2/metObs/collections/station/items?bbox=$bbox&status=Active',
+      'https://opendataapi.dmi.dk/v2/metObs/collections/station/items?bbox=$bbox&status=Active&type=Synop',
     );
 
     final stationsResponse = await http.get(stationsUrl);
