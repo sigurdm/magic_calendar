@@ -219,71 +219,85 @@ class _TimeScrollViewState extends State<TimeScrollView>
   Widget build(BuildContext context) {
     return SizedBox(
       height: 200,
-      child: GestureDetector(
-        onScaleStart: (details) {
-          _baseScaleHourWidth = _hourWidth;
-          _momentumController.stop();
-        },
-        onScaleUpdate: (details) {
-          if (details.scale != 1.0) {
+      child: Listener(
+        onPointerSignal: (pointerSignal) {
+          if (pointerSignal is PointerScrollEvent) {
             setState(() {
-              _hourWidth = (_baseScaleHourWidth * details.scale).clamp(
+              final zoomFactor = pointerSignal.scrollDelta.dy > 0 ? 0.9 : 1.1;
+              _hourWidth = (_hourWidth * zoomFactor).clamp(
                 _minHourWidth,
                 _maxHourWidth,
               );
             });
           }
-          _applyPanDelta(details.focalPointDelta.dx);
         },
-        onScaleEnd: (details) {
-          final velocity = details.velocity.pixelsPerSecond.dx;
-          if (velocity.abs() > 100) {
-            final simulation = FrictionSimulation(0.1, 0.0, -velocity);
-            _lastMomentumValue = 0.0;
-            _momentumController.animateWith(simulation);
-          }
-        },
-        child: Container(
-          color: Colors.transparent,
-          child: Stack(
-            children: [
-              if (_isLoading) const Center(child: CircularProgressIndicator()),
-              IgnorePointer(
-                child: CustomPaint(
-                  size: Size.infinite,
-                  painter: InfiniteTimelinePainter(
-                    centerTime: _centerTime,
-                    hourWidth: _hourWidth,
-                    intervals: _visibleIntervals,
-                    weatherData: _weatherData,
-                    ephemeris: widget.ephemeris,
-                    latitude: widget.latitude,
-                    longitude: widget.longitude,
-                    rootImage: _rootImage,
-                    leafImage: _leafImage,
-                    flowerImage: _flowerImage,
-                    fruitImage: _fruitImage,
-                    noneImage: _noneImage,
-                    grayDayImage: _grayDayImage,
-                  ),
-                ),
-              ),
-              IgnorePointer(
-                child: Align(
-                  alignment: Alignment.center,
-                  child: Container(
-                    width: 2,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent,
-                      boxShadow: const [
-                        BoxShadow(color: Colors.black26, blurRadius: 4),
-                      ],
+        child: GestureDetector(
+          onScaleStart: (details) {
+            _baseScaleHourWidth = _hourWidth;
+            _momentumController.stop();
+          },
+          onScaleUpdate: (details) {
+            if (details.scale != 1.0) {
+              setState(() {
+                _hourWidth = (_baseScaleHourWidth * details.scale).clamp(
+                  _minHourWidth,
+                  _maxHourWidth,
+                );
+              });
+            }
+            _applyPanDelta(details.focalPointDelta.dx);
+          },
+          onScaleEnd: (details) {
+            final velocity = details.velocity.pixelsPerSecond.dx;
+            if (velocity.abs() > 100) {
+              final simulation = FrictionSimulation(0.1, 0.0, -velocity);
+              _lastMomentumValue = 0.0;
+              _momentumController.animateWith(simulation);
+            }
+          },
+          child: Container(
+            color: Colors.transparent,
+            child: Stack(
+              children: [
+                if (_isLoading)
+                  const Center(child: CircularProgressIndicator()),
+                IgnorePointer(
+                  child: CustomPaint(
+                    size: Size.infinite,
+                    painter: InfiniteTimelinePainter(
+                      centerTime: _centerTime,
+                      hourWidth: _hourWidth,
+                      intervals: _visibleIntervals,
+                      weatherData: _weatherData,
+                      ephemeris: widget.ephemeris,
+                      latitude: widget.latitude,
+                      longitude: widget.longitude,
+                      rootImage: _rootImage,
+                      leafImage: _leafImage,
+                      flowerImage: _flowerImage,
+                      fruitImage: _fruitImage,
+                      noneImage: _noneImage,
+                      grayDayImage: _grayDayImage,
                     ),
                   ),
                 ),
-              ),
-            ],
+                IgnorePointer(
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: Container(
+                      width: 2,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black26, blurRadius: 4),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
