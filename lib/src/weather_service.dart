@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+export 'dmi_weather_service.dart';
 
 class WeatherDataPoint {
   final DateTime time;
