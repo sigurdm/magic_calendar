@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:magic_calendar/main.dart';
 import 'package:magic_calendar/src/ephemeris_service.dart';
+import 'package:magic_calendar/src/weather_service.dart';
 
 class MockEphemerisService implements EphemerisService {
   final double _mockLongitude;
@@ -51,10 +52,32 @@ class MockEphemerisService implements EphemerisService {
   }
 }
 
+class MockWeatherService implements WeatherService {
+  @override
+  Future<List<WeatherDataPoint>> getForecast(double lat, double lon) async {
+    return [];
+  }
+
+  @override
+  Future<List<WeatherDataPoint>> getHistoricalData(
+    double lat,
+    double lon,
+    DateTime start,
+    DateTime end,
+  ) async {
+    return [];
+  }
+}
+
 void main() {
   testWidgets('Smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(MyApp(ephemeris: MockEphemerisService(0.0)));
+    await tester.pumpWidget(
+      MyApp(
+        ephemeris: MockEphemerisService(0.0),
+        weather: MockWeatherService(),
+      ),
+    );
 
     // Verify that it shows Magic Calendar.
     expect(find.text('Magic Calendar'), findsOneWidget);

@@ -38,6 +38,12 @@ class WeatherDataPoint {
 
 abstract class WeatherService {
   Future<List<WeatherDataPoint>> getForecast(double lat, double lon);
+  Future<List<WeatherDataPoint>> getHistoricalData(
+    double lat,
+    double lon,
+    DateTime start,
+    DateTime end,
+  );
 }
 
 class YrNoWeatherService implements WeatherService {
@@ -69,6 +75,100 @@ class YrNoWeatherService implements WeatherService {
       return forecast;
     } else {
       throw Exception('Failed to load weather data: ${response.statusCode}');
+    }
+  }
+
+  @override
+  Future<List<WeatherDataPoint>> getHistoricalData(
+    double lat,
+    double lon,
+    DateTime start,
+    DateTime end,
+  ) async {
+    final clientId = '371091f7-14c3-4d25-9725-4da6eb9d5b25';
+    final credentials = base64Encode(utf8.encode('$clientId:'));
+
+    final sourcesUrl = Uri.parse(
+      'https://frost.met.no/sources/v0.jsonld?geometry=point($lon $lat)',
+    );
+    final sourcesResponse = await http.get(
+      sourcesUrl,
+      headers: {'Authorization': 'Basic $credentials'},
+    );
+
+    String stationId = '';
+    if (sourcesResponse.statusCode == 200) {
+      final data = jsonDecode(sourcesResponse.body);
+      final sources = data['data'] as List;
+      if (sources.isNotEmpty) {
+        stationId = sources.first['id'];
+      }
+    }
+
+    if (stationId.isEmpty) {
+      throw Exception('No weather station found near this location.');
+    }
+
+    final startStr = start.toUtc().toIso8601String();
+    final endStr = end.toUtc().toIso8601String();
+    final obsUrl = Uri.parse(
+      'https://frost.met.no/observations/v0.jsonld?sources=$stationId&referencetime=$startStr/$endStr&elements=air_temperature,wind_speed,wind_from_direction,cloud_area_fraction',
+    );
+
+    final obsResponse = await http.get(
+      obsUrl,
+      headers: {'Authorization': 'Basic $credentials'},
+    );
+
+    if (obsResponse.statusCode == 200) {
+      final data = jsonDecode(obsResponse.body);
+      final obsData = data['data'] as List;
+
+      final List<WeatherDataPoint> results = [];
+      for (var point in obsData) {
+        final time = DateTime.parse(point['referenceTime']);
+        final observations = point['observations'] as List;
+
+        double temp = 0.0;
+        double windSpeed = 0.0;
+        double windDir = 0.0;
+        double clouds = 0.0;
+
+        for (var obs in observations) {
+          final element = obs['elementId'];
+          final value = obs['value']?.toDouble() ?? 0.0;
+          switch (element) {
+            case 'air_temperature':
+              temp = value;
+              break;
+            case 'wind_speed':
+              windSpeed = value;
+              break;
+            case 'wind_from_direction':
+              windDir = value;
+              break;
+            case 'cloud_area_fraction':
+              clouds = value;
+              break;
+          }
+        }
+
+        results.add(
+          WeatherDataPoint(
+            time: time,
+            temperature: temp,
+            windSpeed: windSpeed,
+            windDirection: windDir,
+            cloudCover: clouds,
+            precipitation: 0.0,
+          ),
+        );
+      }
+      return results;
+    } else {
+      throw Exception(
+        'Failed to load historical weather data: ${obsResponse.statusCode}',
+      );
     }
   }
 }

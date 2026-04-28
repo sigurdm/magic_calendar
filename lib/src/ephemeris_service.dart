@@ -400,6 +400,24 @@ class AstronomiaEphemerisService implements EphemerisService {
     return (diff1 - 90.0).abs() < 6.5;
   }
 
+  bool hasUnfavorableAspect(DateTime time) {
+    double moonLong = getMoonLongitude(time);
+    final planets = getPlanets(time);
+
+    for (final pl in planets) {
+      if (pl.name == 'Moon') continue;
+
+      double diff = (moonLong - pl.longitude).abs();
+      if (diff > 180) diff = 360 - diff;
+
+      if (diff < 6.5) return true;
+      if ((diff - 90.0).abs() < 6.5) return true;
+      if ((diff - 180.0).abs() < 6.5) return true;
+    }
+
+    return false;
+  }
+
   @override
   List<CalendarInterval> getIntervals(DateTime start, DateTime end) {
     List<CalendarInterval> intervals = [];
@@ -493,7 +511,8 @@ class AstronomiaEphemerisService implements EphemerisService {
     bool isNearNode = this.isNearNode(time);
     bool isNearPerigee = this.isNearPerigee(time);
     bool isSquare = this.isMoonSquareNode(time);
-    bool isGrayDay = isNearNode || isNearPerigee || isSquare;
+    bool hasAspect = this.hasUnfavorableAspect(time);
+    bool isGrayDay = isNearNode || isNearPerigee || isSquare || hasAspect;
     final moonPhase = getMoonPhase(time);
 
     String message = '';
@@ -503,6 +522,8 @@ class AstronomiaEphemerisService implements EphemerisService {
       message = 'Gray Day: Near Lunar Perigee.';
     } else if (isSquare) {
       message = 'Gray Day: Moon Square Node.';
+    } else if (hasAspect) {
+      message = 'Gray Day: Unfavorable Planetary Aspect.';
     }
 
     PlantQuality quality = getQualityFromLongitude(moonLongitude);
