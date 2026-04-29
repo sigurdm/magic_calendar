@@ -418,6 +418,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
+  sweph:
+    dependency: "direct main"
+    description:
+      name: sweph
+      sha256: "32067efbf3984857a970a590adb6502373d199add4867936485678130824a241"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.1+2.10.3"
   sync_http:
     dependency: transitive
     description:
@@ -450,6 +458,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
+  universal_ffi:
+    dependency: transitive
+    description:
+      name: universal_ffi
+      sha256: a4071511e11b96fc741a91f89dd6891ffce196c45e85f89983beb31cde695dee
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.5.0"
   vector_math:
     dependency: transitive
     description:
@@ -466,6 +482,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "15.1.0"
+  wasm_ffi:
+    dependency: transitive
+    description:
+      name: wasm_ffi
+      sha256: "950238f09e2d18b85c5c4356833a06319b049c1d19f936db32c3f0d8194e30b5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.0"
   web:
     dependency: transitive
     description:

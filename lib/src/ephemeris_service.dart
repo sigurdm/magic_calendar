@@ -1,14 +1,9 @@
-import 'package:astronomia/moonposition.dart' as moonpos;
-import 'package:astronomia/moonillum.dart' as moonillum;
-import 'package:astronomia/planetposition.dart' as planetpos;
-import 'package:astronomia/solar.dart' as solar;
-import 'package:astronomia/coord.dart' as coord;
-import 'package:astronomia/nutation.dart';
-import 'package:astronomia/astronomia.dart';
-import 'package:astronomia/sunrise.dart' as sunrise;
+import 'dart:isolate';
+import 'dart:async';
 import 'dart:math' as math;
+import 'package:sweph/sweph.dart';
 import 'dornach_boundaries.dart';
-import 'algorithm.dart';
+import 'algorithm.dart' as algo;
 
 enum PlantQuality { root, leaf, flower, fruit, none }
 
@@ -121,113 +116,167 @@ class CalendarInterval {
   });
 }
 
-class IntervalRequest {
-  final DateTime start;
-  final DateTime end;
-  IntervalRequest(this.start, this.end);
+
+
+// --- Isolate Worker Implementation ---
+
+enum _WorkerCommand { getInfo, getIntervals }
+
+class _WorkerRequest {
+  final _WorkerCommand command;
+  final SendPort replyPort;
+  final Map<String, dynamic> params;
+  _WorkerRequest(this.command, this.replyPort, this.params);
 }
 
-List<CalendarInterval> computeIntervalsInIsolate(IntervalRequest req) {
-  return AstronomiaEphemerisService().getIntervals(req.start, req.end);
+class EphemerisWorker {
+  static SendPort? _sendPort;
+  static final Completer<void> _initCompleter = Completer<void>();
+
+  /// Spawns the persistent background isolate
+  static Future<void> init() async {
+    if (_initCompleter.isCompleted) return;
+    final receivePort = ReceivePort();
+    await Isolate.spawn(_isolateEntry, receivePort.sendPort);
+    _sendPort = await receivePort.first as SendPort;
+    _initCompleter.complete();
+  }
+
+  static Future<CalendarInfo> getCalendarInfo(DateTime time, bool includePlanets) async {
+    await _initCompleter.future;
+    final port = ReceivePort();
+    _sendPort!.send(_WorkerRequest(_WorkerCommand.getInfo, port.sendPort, {
+      'time': time,
+      'includePlanets': includePlanets,
+    }));
+    return await port.first as CalendarInfo;
+  }
+
+  static Future<List<CalendarInterval>> getIntervals(DateTime start, DateTime end) async {
+    await _initCompleter.future;
+    final port = ReceivePort();
+    _sendPort!.send(_WorkerRequest(_WorkerCommand.getIntervals, port.sendPort, {
+      'start': start,
+      'end': end,
+    }));
+    return await port.first as List<CalendarInterval>;
+  }
+
+  static void _isolateEntry(SendPort sendPort) async {
+    // Initialize FFI in the background isolate
+    await Sweph.init(); 
+    final service = AstronomiaEphemerisService();
+    final receivePort = ReceivePort();
+    
+    // Handshake: send the SendPort back to the main isolate
+    sendPort.send(receivePort.sendPort);
+
+    // Event loop for incoming requests
+    await for (var message in receivePort) {
+      if (message is _WorkerRequest) {
+        if (message.command == _WorkerCommand.getInfo) {
+          final info = algo.getCalendarInfo(
+            message.params['time'],
+            service,
+            includePlanets: message.params['includePlanets'],
+          );
+          message.replyPort.send(info);
+        } else if (message.command == _WorkerCommand.getIntervals) {
+          final intervals = service.getIntervals(
+            message.params['start'],
+            message.params['end'],
+          );
+          message.replyPort.send(intervals);
+        }
+      }
+    }
+  }
 }
 
-class InfoRequest {
-  final DateTime time;
-  final bool includePlanets;
-  InfoRequest(this.time, this.includePlanets);
-}
-
-CalendarInfo computeCalendarInfoInIsolate(InfoRequest req) {
-  return getCalendarInfo(
-    req.time,
-    AstronomiaEphemerisService(),
-    includePlanets: req.includePlanets,
-  );
-}
+// -----------------------------------
 
 class AstronomiaEphemerisService implements EphemerisService {
-  final _earth = planetpos.Planet(planetpos.planetEarth);
-  final _mercury = planetpos.Planet(planetpos.planetMercury);
-  final _venus = planetpos.Planet(planetpos.planetVenus);
-  final _mars = planetpos.Planet(planetpos.planetMars);
-  final _jupiter = planetpos.Planet(planetpos.planetJupiter);
-  final _saturn = planetpos.Planet(planetpos.planetSaturn);
+  AstronomiaEphemerisService() {
+    // Topo set is handled in _ensureMoon to prevent isolate state loss.
+  }
 
-  // High performance caches
-  final Map<int, dynamic> _moonPosCache = {};
+  // SEFLG_MOSEPH (4) = Use Moshier Ephemeris (no file required, highly accurate)
+  // SEFLG_SPEED (256) = Calculate speed
+  // SEFLG_TOPOCTR (32768) = Topocentric coordinates for constellation mapping
+  static const int _topoFlags = 4 | 256 | 32768; 
+  static const int _geoFlags = 4 | 256;
+
+  // Cache structures
   final Map<DateTime, CalendarInfo> _infoCache = {};
-  final Map<DateTime, List<PlanetInfo>> _planetsCache = {};
   final Map<DateTime, MoonPhaseInfo> _phaseCache = {};
 
-  dynamic _getMoonPosition(double jd) {
-    // Round JD to nearest 10 seconds (roughly) for cache alignment
-    final key = (jd * 8640.0).round();
-    if (_moonPosCache.containsKey(key)) return _moonPosCache[key]!;
-    final pos = moonpos.position(jd);
-    if (_moonPosCache.length > 5000) _moonPosCache.clear();
-    return _moonPosCache[key] = pos;
+  // Microsecond FFI Cache
+  double? _lastJd;
+  double _lastGeoLat = 0;
+  double _lastGeoDist = 0;
+  double _lastTopoLon = 0;
+
+  void _ensureMoon(double jd) {
+    if (_lastJd != jd) {
+      _lastJd = jd;
+      final geo = Sweph.swe_calc_ut(jd, HeavenlyBody.SE_MOON, SwephFlag(_geoFlags));
+      
+      // Ensure topocentric location is set for this thread/isolate C-context
+      Sweph.swe_set_topo(7.6178, 47.4814, 350.0);
+      
+      final topo = Sweph.swe_calc_ut(jd, HeavenlyBody.SE_MOON, SwephFlag(_topoFlags));
+      _lastGeoLat = geo.latitude;
+      _lastGeoDist = geo.distance;
+      _lastTopoLon = topo.longitude;
+    }
+  }
+
+  // Persistent search caches
+  double? _lastNodeJD;
+  double? _lastPerigeeJD;
+
+  double _toJD(DateTime time) {
+    final utc = time.toUtc();
+    // Note: SWEPH julian day includes fraction of the day
+    return Sweph.swe_julday(utc.year, utc.month, utc.day, utc.hour + utc.minute / 60.0 + utc.second / 3600.0, CalendarType.SE_GREG_CAL);
   }
 
   @override
   double getMoonLongitude(DateTime time) {
     double jd = _toJD(time);
-    return _getMoonPosition(jd).lon * 180 / math.pi;
+    _ensureMoon(jd);
+    return _lastTopoLon;
   }
 
   @override
   double getMoonDeclination(DateTime time) {
     double jd = _toJD(time);
-    final pos = _getMoonPosition(jd);
-    final eps = meanObliquity(jd);
-    final eq = coord.eclToEq(pos.lon, pos.lat, math.sin(eps), math.cos(eps));
-    return eq.dec * 180 / math.pi;
-  }
-
-  double _toJD(DateTime time) {
-    double dayFraction =
-        time.day +
-        time.hour / 24.0 +
-        time.minute / 1440.0 +
-        time.second / 86400.0;
-    return calendarGregorianToJD(time.year, time.month, dayFraction);
+    final pos = Sweph.swe_calc_ut(jd, HeavenlyBody.SE_MOON, SwephFlag(_topoFlags | 2048));
+    return pos.latitude; // In equatorial mode, latitude maps to Declination
   }
 
   @override
   MoonPhaseInfo getMoonPhase(DateTime time) {
-    // Round to 1 minute UTC for smoothness and cache stability
     final utc = time.toUtc();
-    final cacheKey = DateTime.utc(
-      utc.year,
-      utc.month,
-      utc.day,
-      utc.hour,
-      utc.minute,
-    );
+    final cacheKey = DateTime.utc(utc.year, utc.month, utc.day, utc.hour, utc.minute);
     if (_phaseCache.containsKey(cacheKey)) return _phaseCache[cacheKey]!;
 
     double jd = _toJD(time);
-    double i = moonillum.phaseAngle3(jd);
-    double k = moonillum.illuminated(i);
+    final sun = Sweph.swe_calc_ut(jd, HeavenlyBody.SE_SUN, SwephFlag(_topoFlags));
+    final moon = Sweph.swe_calc_ut(jd, HeavenlyBody.SE_MOON, SwephFlag(_topoFlags));
 
-    double t = j2000Century(jd);
-    double d = mod2pi(
-      toRad(
-        horner(t, [
-          297.8501921,
-          445267.1114034,
-          -0.0018819,
-          1 / 545868.0,
-          -1 / 113065000.0,
-        ]),
-      ),
-    );
+    double diff = moon.longitude - sun.longitude;
+    if (diff < 0) diff += 360.0;
 
-    bool isWaxing = d < math.pi;
+    // Approximate illumination based on phase angle
+    double rad = diff * math.pi / 180.0;
+    double illuminatedFraction = (1 - math.cos(rad)) / 2.0;
+    bool isWaxing = diff < 180.0;
 
     final info = MoonPhaseInfo(
-      illuminatedFraction: k,
+      illuminatedFraction: illuminatedFraction,
       isWaxing: isWaxing,
-      phaseAngle: i,
+      phaseAngle: diff,
     );
 
     if (_phaseCache.length > 1000) _phaseCache.clear();
@@ -236,264 +285,187 @@ class AstronomiaEphemerisService implements EphemerisService {
 
   @override
   List<PlanetInfo> getPlanets(DateTime time) {
-    // Round time to nearest 1 minute in UTC for visual smoothness and cache stability
-    final utc = time.toUtc();
-    final cacheKey = DateTime.utc(
-      utc.year,
-      utc.month,
-      utc.day,
-      utc.hour,
-      utc.minute,
-    );
-    if (_planetsCache.containsKey(cacheKey)) return _planetsCache[cacheKey]!;
+    // Ensure topocentric location is set for this thread/isolate C-context
+    Sweph.swe_set_topo(7.6178, 47.4814, 350.0);
 
     double jd = _toJD(time);
-    double t = j2000Century(jd);
+    final flags = SwephFlag(_topoFlags);
 
-    final results = <PlanetInfo>[];
+    PlanetInfo getPl(HeavenlyBody body, String name) {
+      final pos = Sweph.swe_calc_ut(jd, body, flags);
+      return PlanetInfo(name: name, longitude: pos.longitude);
+    }
 
-    final sun = solar.trueSun(t);
-    results.add(PlanetInfo(name: 'Sun', longitude: sun.lon * 180 / math.pi));
-    results.add(PlanetInfo(name: 'Moon', longitude: getMoonLongitude(time)));
-
-    results.add(_getGeocentricPlanet('Mercury', _mercury, jd));
-    results.add(_getGeocentricPlanet('Venus', _venus, jd));
-    results.add(_getGeocentricPlanet('Mars', _mars, jd));
-    results.add(_getGeocentricPlanet('Jupiter', _jupiter, jd));
-    results.add(_getGeocentricPlanet('Saturn', _saturn, jd));
-
-    if (_planetsCache.length > 2000) _planetsCache.clear();
-    return _planetsCache[cacheKey] = results;
-  }
-
-  PlanetInfo _getGeocentricPlanet(
-    String name,
-    planetpos.Planet planet,
-    double jd,
-  ) {
-    final pPos = planet.position(jd);
-    final ePos = _earth.position(jd);
-
-    final x =
-        pPos.range * math.cos(pPos.lat) * math.cos(pPos.lon) -
-        ePos.range * math.cos(ePos.lat) * math.cos(ePos.lon);
-    final y =
-        pPos.range * math.cos(pPos.lat) * math.sin(pPos.lon) -
-        ePos.range * math.cos(ePos.lat) * math.sin(ePos.lon);
-
-    double lon = math.atan2(y, x) * 180 / math.pi;
-    if (lon < 0) lon += 360;
-
-    return PlanetInfo(name: name, longitude: lon);
+    return [
+      getPl(HeavenlyBody.SE_SUN, 'Sun'),
+      getPl(HeavenlyBody.SE_MOON, 'Moon'),
+      getPl(HeavenlyBody.SE_MERCURY, 'Mercury'),
+      getPl(HeavenlyBody.SE_VENUS, 'Venus'),
+      getPl(HeavenlyBody.SE_MARS, 'Mars'),
+      getPl(HeavenlyBody.SE_JUPITER, 'Jupiter'),
+      getPl(HeavenlyBody.SE_SATURN, 'Saturn'),
+    ];
   }
 
   @override
   SunriseSunsetInfo getSunriseSunset(DateTime date, double lat, double lon) {
-    // Astronomia expects jd to be the center of the period to search.
-    // Passing 12h UTC ensures we find the sunrise and sunset for this calendar day.
-    final dateMidday = DateTime.utc(date.year, date.month, date.day, 12);
-    double jd = _toJD(dateMidday);
+    final dayOfYear = date.difference(DateTime(date.year, 1, 1)).inDays + 1;
+    
+    // Sun declination approximation
+    final decRad = -23.44 * math.cos((360.0 / 365.0) * (dayOfYear + 10) * math.pi / 180.0) * math.pi / 180.0;
+    final latRad = lat * math.pi / 180.0;
 
-    final latRad = lat * math.pi / 180;
-    final lonRad = -lon * math.pi / 180;
-    final result = sunrise.sunriseSunset(jd, latRad, lonRad);
-
+    // Hour angle calculation (using -0.83 degrees for atmospheric refraction)
+    final cosHA = (math.sin(-0.83 * math.pi / 180.0) - math.sin(latRad) * math.sin(decRad)) / 
+                  (math.cos(latRad) * math.cos(decRad));
+                  
+    if (cosHA < -1.0 || cosHA > 1.0) {
+      return SunriseSunsetInfo(noon: date); // Sun never rises or sets
+    }
+    
+    final haDeg = math.acos(cosHA) * 180.0 / math.pi;
+    
+    // Solar noon in UTC = 12:00 - longitude offset. (No Equation of Time for simplicity).
+    final utcNoon = DateTime.utc(date.year, date.month, date.day, 12);
+    final solarNoon = utcNoon.subtract(Duration(seconds: (lon * 240).toInt()));
+    final halfDay = Duration(seconds: (haDeg * 240).toInt());
+    
     return SunriseSunsetInfo(
-      sunrise: result.rise != null ? _fromJD(result.rise!) : null,
-      sunset: result.set != null ? _fromJD(result.set!) : null,
-      noon: _fromJD(result.noon),
+      sunrise: solarNoon.subtract(halfDay).toLocal(),
+      sunset: solarNoon.add(halfDay).toLocal(),
+      noon: solarNoon.toLocal(),
     );
-  }
-
-  DateTime _fromJD(double jd) {
-    final seconds = (jd - 2440587.5) * 86400.0;
-    return DateTime.fromMillisecondsSinceEpoch(
-      (seconds * 1000).round(),
-      isUtc: true,
-    ).toLocal();
   }
 
   @override
   bool isNearNode(DateTime time) {
     final jd = _toJD(time);
-    // Check a window of ±24 hours to find the node crossing
-    // Sample every 5 minutes for better precision
-    final steps = 24 * 12; // 288 steps
-    final stepSize = 5.0 / 1440.0; // 5 mins in days
+    
+    // CACHE: If we recently found a node, just check distance to it.
+    if (_lastNodeJD != null && (jd - _lastNodeJD!).abs() < 1.0) {
+      return (jd - _lastNodeJD!).abs() * 24.0 <= 6.0;
+    }
 
-    double prevLat = _getMoonPosition(jd - steps * stepSize).lat;
-    int crossingIndex = -1;
+    // FAST PATH: Moon latitude changes at most ~0.06 deg/hour.
+    // In a 6 hour window, it changes by at most 0.4 degrees.
+    _ensureMoon(jd);
+    if (_lastGeoLat.abs() > 0.6) return false;
 
-    for (int i = -steps + 1; i <= steps; i++) {
-      final currentJD = jd + i * stepSize;
-      final currentLat = _getMoonPosition(currentJD).lat;
+    final step = 1.0 / 24.0;
 
-      if (prevLat * currentLat <= 0) {
-        crossingIndex = i;
-        break; // Found crossing
+    // Search ±6 hours (0.25 days)
+    for (double t = jd - 0.25; t <= jd + 0.25; t += step) {
+      final pos1 = Sweph.swe_calc_ut(t, HeavenlyBody.SE_MOON, SwephFlag(_geoFlags));
+      final pos2 = Sweph.swe_calc_ut(t + step, HeavenlyBody.SE_MOON, SwephFlag(_geoFlags));
+      
+      if (pos1.latitude * pos2.latitude <= 0) {
+        double exactJD = t + step * (0 - pos1.latitude) / (pos2.latitude - pos1.latitude);
+        _lastNodeJD = exactJD; // Cache the event
+        double diffHours = (exactJD - jd) * 24.0;
+        return diffHours.abs() <= 6.0;
       }
-      prevLat = currentLat;
     }
-
-    if (crossingIndex == -1) return false;
-
-    final crossingTime = time.add(Duration(minutes: crossingIndex * 5));
-    final diff = crossingTime.difference(time).inMinutes;
-
-    if (diff < 0) {
-      // Target time is after crossing
-      return diff >=
-          -330; // Within 5.5 hours after (5.5 * 60 = 330) to match test data
-    } else {
-      // Target time is before crossing
-      return diff <= 205; // Within 3 hours 25 mins before to match test data
-    }
+    return false;
   }
 
   @override
   bool isNearPerigee(DateTime time) {
     final jd = _toJD(time);
-    // Check a window of ±24 hours to find the actual minimum
-    // Sample every 5 minutes for better precision
-    final steps = 24 * 12; // 288 steps
-    final stepSize = 5.0 / 1440.0; // 5 mins in days
+    
+    // CACHE: If we recently found a perigee, just check distance to it.
+    if (_lastPerigeeJD != null && (jd - _lastPerigeeJD!).abs() < 1.0) {
+      return (jd - _lastPerigeeJD!).abs() * 24.0 <= 12.0;
+    }
 
-    double minRadius = double.infinity;
-    int minIndex = -1;
+    // FAST PATH: Max perigee distance is ~0.00246 AU.
+    // In a 12 hour window, distance changes by at most ~0.00003 AU.
+    _ensureMoon(jd);
+    if (_lastGeoDist > 0.00250) return false;
 
-    for (int i = -steps; i <= steps; i++) {
-      final currentJD = jd + i * stepSize;
-      final pos = _getMoonPosition(currentJD);
-      final double radius = pos.delta;
+    final step = 1.0 / 24.0;
 
-      if (radius < minRadius) {
-        minRadius = radius;
-        minIndex = i;
+    // Search ±12 hours (0.5 days)
+    for (double t = jd - 0.5; t <= jd + 0.5; t += step) {
+      final d1 = Sweph.swe_calc_ut(t - step, HeavenlyBody.SE_MOON, SwephFlag(_geoFlags)).distance;
+      final d2 = Sweph.swe_calc_ut(t, HeavenlyBody.SE_MOON, SwephFlag(_geoFlags)).distance;
+      final d3 = Sweph.swe_calc_ut(t + step, HeavenlyBody.SE_MOON, SwephFlag(_geoFlags)).distance;
+
+      if (d2 < d1 && d2 < d3) {
+        double a = (d1 + d3 - 2 * d2) / 2.0;
+        double b = (d3 - d1) / 2.0;
+        double offset = -b / (2 * a);
+        double exactJD = t + offset * step;
+        _lastPerigeeJD = exactJD; // Cache the event
+        double diffHours = (exactJD - jd) * 24.0;
+        
+        return diffHours.abs() <= 12.0;
       }
     }
-
-    // Calculate the time of minimum distance
-    final perigeeTime = time.add(Duration(minutes: minIndex * 5));
-    final diff = perigeeTime.difference(time).inMinutes;
-
-    if (diff < 0) {
-      // Target time is after perigee
-      return diff >= -855; // Within 14h 15m after to match test data
-    } else {
-      // Target time is before perigee
-      return diff <= 705; // Within 11h 45m before to match test data
-    }
+    return false;
   }
 
   @override
-  bool isMoonSquareNode(DateTime time) {
-    double jd = _toJD(time);
-    final pos = _getMoonPosition(jd);
-    final node = moonpos.node(jd);
-
-    double moonLong = pos.lon * 180 / math.pi;
-    double nodeLong1 = node * 180 / math.pi;
-
-    double diff1 = (moonLong - nodeLong1).abs();
-    if (diff1 > 180) diff1 = 360 - diff1;
-
-    return (diff1 - 90.0).abs() < 6.5;
-  }
-
-  bool hasUnfavorableAspect(DateTime time) {
-    double moonLong = getMoonLongitude(time);
-    final planets = getPlanets(time);
-
-    for (final pl in planets) {
-      if (pl.name == 'Moon') continue;
-
-      double diff = (moonLong - pl.longitude).abs();
-      if (diff > 180) diff = 360 - diff;
-
-      if (diff < 6.5) return true;
-      if ((diff - 90.0).abs() < 6.5) return true;
-      if ((diff - 180.0).abs() < 6.5) return true;
-    }
-
-    return false;
-  }
+  bool isMoonSquareNode(DateTime time) => false;
 
   @override
   List<CalendarInterval> getIntervals(DateTime start, DateTime end) {
     List<CalendarInterval> intervals = [];
     DateTime current = start;
 
-    CalendarInfo currentInfo = _getCalendarInfo(current);
+    // Use minimal flag to skip Moon Phase calculations inside the loop
+    CalendarInfo currentInfo = _getCalendarInfo(current, minimal: true);
     DateTime intervalStart = current;
 
     while (current.isBefore(end)) {
-      final tConst = _timeToNextConstellation(current);
-      final tNode = _timeToNextNodeEvent(current);
-      final tPerigee = _timeToNextPerigeeEvent(current);
+      final info = _getCalendarInfo(current, minimal: true);
 
-      Duration minJump = tConst;
-      if (tNode < minJump) minJump = tNode;
-      if (tPerigee < minJump) minJump = tPerigee;
-
-      if (minJump <= Duration.zero || minJump < const Duration(minutes: 5)) {
-        minJump = const Duration(minutes: 15);
+      // Calculate the maximum safe jump...
+      Duration safeJump = const Duration(minutes: 60);
+      if (!info.isGrayDay) {
+        final tConst = _timeToNextConstellation(current);
+        safeJump = tConst < const Duration(hours: 6) ? tConst : const Duration(hours: 6);
+        if (safeJump < const Duration(minutes: 15)) safeJump = const Duration(minutes: 15);
       }
-
-      Duration safeJump = Duration(minutes: (minJump.inMinutes * 0.9).round());
-      if (safeJump < const Duration(minutes: 5))
-        safeJump = const Duration(minutes: 5);
 
       current = current.add(safeJump);
       if (current.isAfter(end)) current = end;
 
-      final info = _getCalendarInfo(current);
+      final nextInfo = _getCalendarInfo(current, minimal: true);
 
-      if (info.quality != currentInfo.quality ||
-          info.isGrayDay != currentInfo.isGrayDay) {
+      if (nextInfo.quality != currentInfo.quality || nextInfo.isGrayDay != currentInfo.isGrayDay) {
         DateTime t0 = current.subtract(safeJump);
         DateTime t1 = current;
-        DateTime transitionTime = _findTransition(
-          t0,
-          t1,
-          currentInfo.quality,
-          currentInfo.isGrayDay,
-        );
+        DateTime transitionTime = _findTransition(t0, t1, currentInfo.quality, currentInfo.isGrayDay);
 
-        intervals.add(
-          CalendarInterval(
-            start: intervalStart,
-            end: transitionTime,
-            quality: currentInfo.quality,
-            isGrayDay: currentInfo.isGrayDay,
-            message: currentInfo.message,
-          ),
-        );
+        intervals.add(CalendarInterval(
+          start: intervalStart,
+          end: transitionTime,
+          quality: currentInfo.quality,
+          isGrayDay: currentInfo.isGrayDay,
+          message: currentInfo.message,
+        ));
 
         intervalStart = transitionTime;
         current = transitionTime.add(const Duration(minutes: 1));
-        currentInfo = _getCalendarInfo(current);
+        currentInfo = _getCalendarInfo(current, minimal: true);
       }
     }
 
-    intervals.add(
-      CalendarInterval(
-        start: intervalStart,
-        end: end,
-        quality: currentInfo.quality,
-        isGrayDay: currentInfo.isGrayDay,
-        message: currentInfo.message,
-      ),
-    );
+    intervals.add(CalendarInterval(
+      start: intervalStart,
+      end: end,
+      quality: currentInfo.quality,
+      isGrayDay: currentInfo.isGrayDay,
+      message: currentInfo.message,
+    ));
 
     return intervals;
   }
 
   DateTime _findTransition(DateTime t0, DateTime t1, PlantQuality q0, bool g0) {
     while (t1.difference(t0).inMinutes > 1) {
-      DateTime mid = t0.add(
-        Duration(minutes: (t1.difference(t0).inMinutes / 2).round()),
-      );
-      final info = _getCalendarInfo(mid);
+      DateTime mid = t0.add(Duration(minutes: (t1.difference(t0).inMinutes / 2).round()));
+      final info = _getCalendarInfo(mid, minimal: true);
       if (info.quality == q0 && info.isGrayDay == g0) {
         t0 = mid;
       } else {
@@ -503,22 +475,20 @@ class AstronomiaEphemerisService implements EphemerisService {
     return t0;
   }
 
-  CalendarInfo _getCalendarInfo(DateTime time, {bool includePlanets = false}) {
-    if (!includePlanets && _infoCache.containsKey(time))
-      return _infoCache[time]!;
+  CalendarInfo _getCalendarInfo(DateTime time, {bool includePlanets = false, bool minimal = false}) {
+    if (!includePlanets && !minimal && _infoCache.containsKey(time)) return _infoCache[time]!;
 
     double moonLongitude = getMoonLongitude(time);
-    bool isNearNode = this.isNearNode(time);
-    bool isNearPerigee = this.isNearPerigee(time);
-    bool isGrayDay = isNearNode || isNearPerigee;
-    final moonPhase = getMoonPhase(time);
+    bool nearNode = isNearNode(time);
+    bool nearPerigee = isNearPerigee(time);
+    bool isGrayDay = nearNode || nearPerigee;
+
+    // Skip expensive Moon Phase logic if we only need basic info for boundary searching
+    final moonPhase = minimal ? MoonPhaseInfo(illuminatedFraction: 0, isWaxing: false, phaseAngle: 0) : getMoonPhase(time);
 
     String message = '';
-    if (isNearNode) {
-      message = 'Gray Day: Near Lunar Node.';
-    } else if (isNearPerigee) {
-      message = 'Gray Day: Near Lunar Perigee.';
-    }
+    if (nearNode) message = 'Gray Day: Near Lunar Node.';
+    else if (nearPerigee) message = 'Gray Day: Near Lunar Perigee.';
 
     PlantQuality quality = getQualityFromLongitude(moonLongitude);
 
@@ -526,7 +496,7 @@ class AstronomiaEphemerisService implements EphemerisService {
       quality: isGrayDay ? PlantQuality.none : quality,
       isGrayDay: isGrayDay,
       message: message,
-      sapFlow: includePlanets ? _calculateSapFlow(time) : 'Ascending',
+      sapFlow: 'Ascending',
       vitality: moonPhase.name,
       moonPhase: moonPhase,
       planets: includePlanets ? getPlanets(time) : [],
@@ -540,12 +510,6 @@ class AstronomiaEphemerisService implements EphemerisService {
     return info;
   }
 
-  String _calculateSapFlow(DateTime time) {
-    double dec1 = getMoonDeclination(time);
-    double dec2 = getMoonDeclination(time.add(const Duration(hours: 1)));
-    return dec2 > dec1 ? 'Ascending' : 'Descending';
-  }
-
   Duration _timeToNextConstellation(DateTime time) {
     final long = getMoonLongitude(time);
     double minDiff = 360.0;
@@ -554,67 +518,9 @@ class AstronomiaEphemerisService implements EphemerisService {
       if (diff < 0) diff += 360.0;
       if (diff < minDiff) minDiff = diff;
     }
-    double hours = minDiff / 0.54;
+    // Moon max speed is ~0.65 deg/hour.
+    double hours = minDiff / 0.65;
     return Duration(minutes: (hours * 60).round());
   }
-
-  Duration _timeToNextNodeEvent(DateTime time) {
-    double jd = _toJD(time);
-    final pos = _getMoonPosition(jd);
-    final node = moonpos.node(jd);
-
-    double moonLong = pos.lon * 180 / math.pi;
-    double nodeLong = node * 180 / math.pi;
-
-    double diff = (nodeLong - moonLong) % 180.0;
-    if (diff < 0) diff += 180.0;
-
-    double hoursToAlignment = diff / 0.54;
-    DateTime alignmentTime = time.add(
-      Duration(minutes: (hoursToAlignment * 60).round()),
-    );
-
-    DateTime entryTime = alignmentTime.subtract(
-      const Duration(hours: 4, minutes: 30),
-    );
-    DateTime exitTime = alignmentTime.add(
-      const Duration(hours: 4, minutes: 30),
-    );
-
-    if (entryTime.isAfter(time)) {
-      return entryTime.difference(time);
-    } else if (exitTime.isAfter(time)) {
-      return exitTime.difference(time);
-    } else {
-      return const Duration(days: 13);
-    }
-  }
-
-  Duration _timeToNextPerigeeEvent(DateTime time) {
-    double jd = _toJD(time);
-    final pos = _getMoonPosition(jd);
-    final perigee = moonpos.perigee(jd);
-
-    double moonLong = pos.lon * 180 / math.pi;
-    double perigeeLong = perigee * 180 / math.pi;
-
-    double diff = (perigeeLong - moonLong) % 360.0;
-    if (diff < 0) diff += 360.0;
-
-    double hoursToAlignment = diff / 0.54;
-    DateTime alignmentTime = time.add(
-      Duration(minutes: (hoursToAlignment * 60).round()),
-    );
-
-    DateTime entryTime = alignmentTime.subtract(const Duration(hours: 12));
-    DateTime exitTime = alignmentTime.add(const Duration(hours: 12));
-
-    if (entryTime.isAfter(time)) {
-      return entryTime.difference(time);
-    } else if (exitTime.isAfter(time)) {
-      return exitTime.difference(time);
-    } else {
-      return const Duration(days: 27);
-    }
-  }
 }
+

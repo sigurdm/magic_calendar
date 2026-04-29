@@ -13,7 +13,9 @@ import 'src/planetary_ribbon.dart';
 import 'src/planting_icons.dart';
 import 'src/weather_service.dart';
 
-void main() {
+import 'package:sweph/sweph.dart';
+
+void main() async {
   enableFlutterDriverExtension();
   final weatherService = CombinedWeatherService(
     yrNoService: YrNoWeatherService(
@@ -21,6 +23,10 @@ void main() {
     ),
     dmiService: DmiWeatherService(),
   );
+
+  await Sweph.init(); // Initialize for main thread
+  await EphemerisWorker.init(); // Initialize persistent background isolate
+
   runApp(
     MyApp(ephemeris: AstronomiaEphemerisService(), weather: weatherService),
   );
@@ -35,7 +41,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Magic Calendar',
+      // title: 'Magic Calendar',
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF121212),
         textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
@@ -99,27 +105,11 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
     }
   }
 
-  void _updateInfo(DateTime time, {bool immediate = false}) {
-    if (immediate) {
-      _infoNotifier.value = getCalendarInfo(
-        time,
-        widget.ephemeris,
-        includePlanets: true,
-      );
-      return;
+  void _updateInfo(DateTime time, {bool immediate = false}) async {
+    final info = await EphemerisWorker.getCalendarInfo(time, true);
+    if (mounted) {
+      _infoNotifier.value = info;
     }
-
-    // Debounced heavy update
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 100), () async {
-      final updatedInfo = await compute(
-        computeCalendarInfoInIsolate,
-        InfoRequest(time, true),
-      );
-      if (mounted) {
-        _infoNotifier.value = updatedInfo;
-      }
-    });
   }
 
   void _onTimeSelected(DateTime time) {
@@ -150,63 +140,60 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 40),
-                  ValueListenableBuilder<DateTime>(
-                    valueListenable: _selectedDateNotifier,
-                    builder: (context, date, _) {
-                      return Text(
-                        DateFormat('EEEE, MMM d, y - HH:00').format(date),
-                        style: GoogleFonts.outfit(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  ValueListenableBuilder<CalendarInfo?>(
-                    valueListenable: _infoNotifier,
-                    builder: (context, info, _) {
-                      if (info == null) return const SizedBox(height: 140);
-                      return _buildQualityCard(info);
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  ListenableBuilder(
-                    listenable: Listenable.merge([_latNotifier, _lonNotifier]),
-                    builder: (context, _) {
-                      return TimeScrollView(
-                        ephemeris: widget.ephemeris,
-                        weatherService: _weatherService,
-                        controller: _timeScrollController,
-                        onTimeSelected: _onTimeSelected,
-                        latitude: _latNotifier.value,
-                        longitude: _lonNotifier.value,
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  PlanetaryRibbon(
-                    timeNotifier: _selectedDateNotifier,
-                    ephemeris: widget.ephemeris,
-                  ),
-                  const SizedBox(height: 20),
-                  ValueListenableBuilder<CalendarInfo?>(
-                    valueListenable: _infoNotifier,
-                    builder: (context, info, _) {
-                      if (info == null) return const SizedBox();
-                      return _buildDetailsCard(info);
-                    },
-                  ),
-                ],
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(),
+                const SizedBox(height: 20),
+                ValueListenableBuilder<DateTime>(
+                  valueListenable: _selectedDateNotifier,
+                  builder: (context, date, _) {
+                    return Text(
+                      DateFormat('EEEE, MMM d, y - HH:00').format(date),
+                      style: GoogleFonts.outfit(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                ValueListenableBuilder<CalendarInfo?>(
+                  valueListenable: _infoNotifier,
+                  builder: (context, info, _) {
+                    if (info == null) return const SizedBox(height: 140);
+                    return _buildQualityCard(info);
+                  },
+                ),
+                const SizedBox(height: 20),
+                ListenableBuilder(
+                  listenable: Listenable.merge([_latNotifier, _lonNotifier]),
+                  builder: (context, _) {
+                    return TimeScrollView(
+                      ephemeris: widget.ephemeris,
+                      weatherService: _weatherService,
+                      controller: _timeScrollController,
+                      onTimeSelected: _onTimeSelected,
+                      latitude: _latNotifier.value,
+                      longitude: _lonNotifier.value,
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                PlanetaryRibbon(
+                  timeNotifier: _selectedDateNotifier,
+                  ephemeris: widget.ephemeris,
+                ),
+                const SizedBox(height: 20),
+                ValueListenableBuilder<CalendarInfo?>(
+                  valueListenable: _infoNotifier,
+                  builder: (context, info, _) {
+                    if (info == null) return const SizedBox();
+                    return _buildDetailsCard(info);
+                  },
+                ),
+              ],
             ),
           ),
         ),
@@ -218,70 +205,38 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Magic Calendar',
-              style: GoogleFonts.outfit(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+        GestureDetector(
+          onTap: _showLocationPicker,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
             ),
-            Row(
+            child: Row(
               children: [
-                Text(
-                  'Biodynamic Planting Guide',
-                  style: GoogleFonts.outfit(
-                    fontSize: 16,
-                    color: Colors.white70,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _showLocationPicker,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on,
-                          size: 12,
-                          color: Colors.white70,
-                        ),
-                        const SizedBox(width: 4),
-                        ValueListenableBuilder<double>(
-                          valueListenable: _latNotifier,
-                          builder: (context, lat, _) {
-                            return ValueListenableBuilder<double>(
-                              valueListenable: _lonNotifier,
-                              builder: (context, lon, _) {
-                                return Text(
-                                  '${lat.toStringAsFixed(1)}°, ${lon.toStringAsFixed(1)}°',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.white70,
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
+                const Icon(Icons.location_on, size: 18, color: Colors.white70),
+                const SizedBox(width: 4),
+                ValueListenableBuilder<double>(
+                  valueListenable: _latNotifier,
+                  builder: (context, lat, _) {
+                    return ValueListenableBuilder<double>(
+                      valueListenable: _lonNotifier,
+                      builder: (context, lon, _) {
+                        return Text(
+                          '${lat.toStringAsFixed(1)}°, ${lon.toStringAsFixed(1)}°',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.white70,
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
               ],
             ),
-          ],
+          ),
         ),
         Row(
           children: [
@@ -418,32 +373,15 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: cardColor.withValues(
-              alpha: 0.2,
-            ), // Lower alpha for glass effect
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: cardColor.withValues(alpha: 0.3),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: 15,
-                spreadRadius: -5,
-              ),
-            ],
-          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
+              Column(
                 children: [
                   PlantingQualityIcon(
                     quality: info.quality,
                     isGrayDay: info.isGrayDay,
-                    size: 40,
+                    size: 200,
                     color: Colors.white,
                   ),
                   const SizedBox(width: 16),
@@ -493,6 +431,25 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
           );
           final realTimeSapFlow = dec2 > dec1 ? 'Ascending' : 'Descending';
 
+          // Explanations based on biodynamic principles
+          final isAscending = dec2 > dec1;
+          final sapExplanation = isAscending 
+              ? "Sap rises, bringing energy to leaves, flowers and fruits. Ideal for harvesting above-ground crops." 
+              : "Sap recedes to the soil. Ideal for planting, pruning, and harvesting root crops.";
+              
+          final vitalityExplanation = moonPhase.isWaxing
+              ? "Increasing lunar vitality stimulates above-ground growth and germination."
+              : "Decreasing lunar vitality supports root development and soil consolidation.";
+              
+          String illumExplanation;
+          if (moonPhase.illuminatedFraction > 0.8) {
+            illumExplanation = "High nocturnal light stimulates foliage growth.";
+          } else if (moonPhase.illuminatedFraction < 0.2) {
+            illumExplanation = "Dark nights encourage root formation and plant rest.";
+          } else {
+            illumExplanation = "Balanced lunar light influence.";
+          }
+
           return FutureBuilder<List<WeatherDataPoint>>(
             future: _weatherService.getForecast(
               _latNotifier.value,
@@ -527,13 +484,14 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _buildDetailRow('Sap Flow', realTimeSapFlow),
+                        _buildDetailRow('Sap Flow', realTimeSapFlow, explanation: sapExplanation),
                         const SizedBox(height: 12),
-                        _buildDetailRow('Vitality', moonPhase.name),
+                        _buildDetailRow('Vitality', moonPhase.name, explanation: vitalityExplanation),
                         const SizedBox(height: 12),
                         _buildDetailRow(
                           'Illumination',
                           '${(moonPhase.illuminatedFraction * 100).toStringAsFixed(1)}%',
+                          explanation: illumExplanation,
                         ),
                         if (selectedWeather != null) ...[
                           const SizedBox(height: 16),
@@ -592,26 +550,43 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildDetailRow(String label, String value, {String? explanation}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.outfit(fontSize: 16, color: Colors.white70),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: GoogleFonts.outfit(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: GoogleFonts.outfit(fontSize: 16, color: Colors.white70),
             ),
-            textAlign: TextAlign.end,
-            overflow: TextOverflow.ellipsis,
-          ),
+            Expanded(
+              child: Text(
+                value,
+                style: GoogleFonts.outfit(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.end,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
+        if (explanation != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Text(
+              explanation,
+              style: GoogleFonts.outfit(
+                fontSize: 12,
+                color: Colors.white54,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
       ],
     );
   }

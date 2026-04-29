@@ -40,6 +40,9 @@ class TimeScrollView extends StatefulWidget {
 class _TimeScrollViewState extends State<TimeScrollView>
     with SingleTickerProviderStateMixin {
   late DateTime _centerTime;
+  late DateTime _baseTime;
+  double _panOffset = 0.0;
+  double _viewportWidth = 400.0;
   double _hourWidth = 40.0;
   final double _minHourWidth = 2.5;
   final double _maxHourWidth = 500.0;
@@ -88,6 +91,7 @@ class _TimeScrollViewState extends State<TimeScrollView>
     super.initState();
     widget.controller?._state = this;
     _centerTime = DateTime.now();
+    _baseTime = _centerTime;
 
     _momentumController = AnimationController.unbounded(vsync: this);
     _momentumController.addListener(_handleMomentumTick);
@@ -106,10 +110,15 @@ class _TimeScrollViewState extends State<TimeScrollView>
   void _applyPanDelta(double dx) {
     if (dx == 0) return;
     setState(() {
-      final hoursDelta = dx / _hourWidth;
-      _centerTime = _centerTime.subtract(
-        Duration(seconds: (hoursDelta * 3600).toInt()),
-      );
+      _panOffset += dx;
+      final secondsOffset = -_panOffset / _hourWidth * 3600.0;
+      _centerTime = _baseTime.add(Duration(seconds: secondsOffset.toInt()));
+
+      // Re-center the buffer if we scroll beyond half the screen width
+      if (_panOffset.abs() > _viewportWidth / 2) {
+        _baseTime = _centerTime;
+        _panOffset = 0.0;
+      }
     });
     widget.onTimeSelected(_centerTime);
     _scheduleUpdate();
@@ -127,22 +136,30 @@ class _TimeScrollViewState extends State<TimeScrollView>
   Future<void> _performUpdate() async {
     if (!mounted) return;
 
-    final range = const Duration(days: 30);
+    final range = const Duration(days: 60);
     final start = _centerTime.subtract(range);
     final end = _centerTime.add(range);
 
     if (_cachedStart == null ||
-        _centerTime.difference(_cachedStart!).inDays.abs() < 5 ||
-        _cachedEnd!.difference(_centerTime).inDays.abs() < 5) {
+        _centerTime.difference(_cachedStart!).inDays.abs() < 15 ||
+        _cachedEnd!.difference(_centerTime).inDays.abs() < 15) {
       setState(() => _isLoading = true);
 
-      final intervals = await compute(
-        computeIntervalsInIsolate,
-        IntervalRequest(start, end),
-      );
+      // 1. Fetch astronomical intervals (Instant from FFI worker)
+      final intervals = await EphemerisWorker.getIntervals(start, end);
+      if (!mounted) return;
+      
+      // Update UI immediately with celestial data
+      setState(() {
+        _visibleIntervals = intervals;
+        _cachedStart = start;
+        _cachedEnd = end;
+        _isLoading = false; // Stop loading spinner since main data is here
+      });
 
-      List<WeatherDataPoint> combinedWeather = [];
+      // 2. Fetch weather data (Slow network calls) in the background
       final now = DateTime.now();
+      List<WeatherDataPoint> combinedWeather = [];
 
       // Fetch historical data if range starts before now
       if (start.isBefore(now)) {
@@ -177,13 +194,10 @@ class _TimeScrollViewState extends State<TimeScrollView>
 
       combinedWeather.sort((a, b) => a.time.compareTo(b.time));
 
+      // Update UI with weather data once it arrives
       if (mounted) {
         setState(() {
-          _visibleIntervals = intervals;
           _weatherData = combinedWeather;
-          _cachedStart = start;
-          _cachedEnd = end;
-          _isLoading = false;
         });
       }
     }
@@ -202,6 +216,8 @@ class _TimeScrollViewState extends State<TimeScrollView>
     _momentumController.stop();
     setState(() {
       _centerTime = DateTime.now();
+      _baseTime = _centerTime;
+      _panOffset = 0.0;
     });
     widget.onTimeSelected(_centerTime);
     _scheduleUpdate(immediate: true);
@@ -217,91 +233,121 @@ class _TimeScrollViewState extends State<TimeScrollView>
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 200,
-      child: Listener(
-        onPointerSignal: (pointerSignal) {
-          if (pointerSignal is PointerScrollEvent) {
-            setState(() {
-              final zoomFactor = pointerSignal.scrollDelta.dy > 0 ? 0.9 : 1.1;
-              _hourWidth = (_hourWidth * zoomFactor).clamp(
-                _minHourWidth,
-                _maxHourWidth,
-              );
-            });
-          }
-        },
-        child: GestureDetector(
-          onScaleStart: (details) {
-            _baseScaleHourWidth = _hourWidth;
-            _momentumController.stop();
-          },
-          onScaleUpdate: (details) {
-            if (details.scale != 1.0) {
-              setState(() {
-                _hourWidth = (_baseScaleHourWidth * details.scale).clamp(
-                  _minHourWidth,
-                  _maxHourWidth,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _viewportWidth = constraints.maxWidth;
+        final canvasWidth = _viewportWidth * 3;
+
+        return SizedBox(
+          height: 200,
+          child: Listener(
+            onPointerSignal: (pointerSignal) {
+              if (pointerSignal is PointerScrollEvent) {
+                GestureBinding.instance.pointerSignalResolver.register(
+                  pointerSignal,
+                  (PointerSignalEvent event) {
+                    if (event is PointerScrollEvent) {
+                      setState(() {
+                        final zoomFactor = event.scrollDelta.dy > 0 ? 0.9 : 1.1;
+                        _hourWidth = (_hourWidth * zoomFactor).clamp(
+                          _minHourWidth,
+                          _maxHourWidth,
+                        );
+                        // Reset buffer on zoom
+                        _baseTime = _centerTime;
+                        _panOffset = 0.0;
+                      });
+                    }
+                  },
                 );
-              });
-            } else {
-              _applyPanDelta(details.focalPointDelta.dx);
-            }
-          },
-          onScaleEnd: (details) {
-            final velocity = details.velocity.pixelsPerSecond.dx;
-            if (velocity.abs() > 100) {
-              final simulation = FrictionSimulation(0.1, 0.0, -velocity);
-              _lastMomentumValue = 0.0;
-              _momentumController.animateWith(simulation);
-            }
-          },
-          child: Container(
-            color: Colors.transparent,
-            child: Stack(
-              children: [
-                if (_isLoading)
-                  const Center(child: CircularProgressIndicator()),
-                IgnorePointer(
-                  child: CustomPaint(
-                    size: Size.infinite,
-                    painter: InfiniteTimelinePainter(
-                      centerTime: _centerTime,
-                      hourWidth: _hourWidth,
-                      intervals: _visibleIntervals,
-                      weatherData: _weatherData,
-                      ephemeris: widget.ephemeris,
-                      latitude: widget.latitude,
-                      longitude: widget.longitude,
-                      rootImage: _rootImage,
-                      leafImage: _leafImage,
-                      flowerImage: _flowerImage,
-                      fruitImage: _fruitImage,
-                      noneImage: _noneImage,
-                      grayDayImage: _grayDayImage,
-                    ),
-                  ),
-                ),
-                IgnorePointer(
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: Container(
-                      width: 2,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.redAccent,
-                        boxShadow: const [
-                          BoxShadow(color: Colors.black26, blurRadius: 4),
-                        ],
+              }
+            },
+            child: GestureDetector(
+              onScaleStart: (details) {
+                _baseScaleHourWidth = _hourWidth;
+                _momentumController.stop();
+              },
+              onScaleUpdate: (details) {
+                if (details.scale != 1.0) {
+                  setState(() {
+                    _hourWidth = (_baseScaleHourWidth * details.scale).clamp(
+                      _minHourWidth,
+                      _maxHourWidth,
+                    );
+                    _baseTime = _centerTime;
+                    _panOffset = 0.0;
+                  });
+                } else {
+                  _applyPanDelta(details.focalPointDelta.dx);
+                }
+              },
+              onScaleEnd: (details) {
+                final velocity = details.velocity.pixelsPerSecond.dx;
+                if (velocity.abs() > 100) {
+                  final simulation = FrictionSimulation(0.1, 0.0, -velocity);
+                  _lastMomentumValue = 0.0;
+                  _momentumController.animateWith(simulation);
+                }
+              },
+              child: Container(
+                color: Colors.transparent,
+                child: Stack(
+                  children: [
+                    if (_isLoading)
+                      const Center(child: CircularProgressIndicator()),
+                    IgnorePointer(
+                      child: ClipRect(
+                        child: Transform.translate(
+                          offset: Offset(_panOffset, 0),
+                          child: OverflowBox(
+                            maxWidth: canvasWidth,
+                            minWidth: canvasWidth,
+                            child: RepaintBoundary(
+                              child: CustomPaint(
+                                size: Size(canvasWidth, 200),
+                                painter: InfiniteTimelinePainter(
+                                  centerTime: _baseTime,
+                                  hourWidth: _hourWidth,
+                                  intervals: _visibleIntervals,
+                                  weatherData: _weatherData,
+                                  ephemeris: widget.ephemeris,
+                                  latitude: widget.latitude,
+                                  longitude: widget.longitude,
+                                  rootImage: _rootImage,
+                                  leafImage: _leafImage,
+                                  flowerImage: _flowerImage,
+                                  fruitImage: _fruitImage,
+                                  noneImage: _noneImage,
+                                  grayDayImage: _grayDayImage,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    IgnorePointer(
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: Container(
+                          width: 2,
+                          height: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent,
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black26, blurRadius: 4),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -362,105 +408,61 @@ class InfiniteTimelinePainter extends CustomPainter {
         .inSeconds
         .toDouble();
 
-    final List<({DateTime time, Color color})> markers = [];
-
-    // Collect markers for a 3-day window to ensure we always have points before/after the canvas
-    final startDay = DateTime(
-      canvasStartTime.year,
-      canvasStartTime.month,
-      canvasStartTime.day,
-    );
-    final endDay = DateTime(
-      canvasEndTime.year,
-      canvasEndTime.month,
-      canvasEndTime.day,
-    );
-
-    for (
-      var d = startDay.subtract(const Duration(days: 1));
-      d.isBefore(endDay.add(const Duration(days: 2)));
-      d = d.add(const Duration(days: 1))
-    ) {
-      final ss = ephemeris.getSunriseSunset(d, latitude, longitude);
-
-      if (ss.sunrise != null && ss.sunset != null) {
-        final midday = ss.sunrise!.add(ss.sunset!.difference(ss.sunrise!) ~/ 2);
-        final morningStart = ss.sunrise!.subtract(const Duration(minutes: 90));
-        final eveningEnd = ss.sunset!.add(const Duration(minutes: 90));
-
-        markers.add((time: morningStart, color: Colors.black));
-        markers.add((time: ss.sunrise!, color: const Color(0xFFD32F2F)));
-        markers.add((
-          time: ss.sunrise!.add(const Duration(minutes: 60)),
-          color: const Color(0xFFFFF9C4),
-        ));
-        markers.add((
-          time: midday,
-          color: const Color(0xFFFFFDE7),
-        )); // Brightest noon
-        markers.add((
-          time: ss.sunset!.subtract(const Duration(minutes: 60)),
-          color: const Color(0xFFFFF9C4),
-        ));
-        markers.add((time: ss.sunset!, color: const Color(0xFFD32F2F)));
-        markers.add((time: eveningEnd, color: Colors.black));
-      } else {
-        // Simple fallback
-        markers.add((time: d, color: const Color(0xFFFFF9C4)));
-      }
-    }
-    markers.sort((a, b) => a.time.compareTo(b.time));
-
-    Color interpolate(DateTime target) {
-      if (markers.isEmpty) return Colors.black;
-      if (target.isBefore(markers.first.time)) return markers.first.color;
-      if (target.isAfter(markers.last.time)) return markers.last.color;
-
-      for (int i = 0; i < markers.length - 1; i++) {
-        final m1 = markers[i];
-        final m2 = markers[i + 1];
-        if (target.isAtSameMomentAs(m1.time)) return m1.color;
-        if (target.isAfter(m1.time) && target.isBefore(m2.time)) {
-          final t =
-              target.difference(m1.time).inSeconds /
-              m2.time.difference(m1.time).inSeconds;
-          return Color.lerp(m1.color, m2.color, t)!;
-        }
-      }
-      return markers.last.color;
-    }
-
+    // Sample every 30 minutes to prevent aliasing when zoomed out (min 100 samples)
+    final int sampleCount = math.max(100, (totalDuration / 1800).toInt());
     final List<Color> finalColors = [];
     final List<double> finalStops = [];
 
-    // Add exact start color at stop 0.0
-    finalColors.add(interpolate(canvasStartTime));
-    finalStops.add(0.0);
+    for (int i = 0; i <= sampleCount; i++) {
+      final t = i / sampleCount;
+      final time = canvasStartTime.add(
+        Duration(seconds: (totalDuration * t).toInt()),
+      );
 
-    // Add all markers that fall within the canvas
-    for (var m in markers) {
-      if (m.time.isAfter(canvasStartTime) && m.time.isBefore(canvasEndTime)) {
-        finalColors.add(m.color);
-        finalStops.add(
-          m.time.difference(canvasStartTime).inSeconds / totalDuration,
-        );
+      final utc = time.toUtc();
+      final dayOfYear = utc.difference(DateTime.utc(utc.year, 1, 1)).inDays + 1;
+      // Solar declination
+      final decRad = -23.44 * math.cos((360.0 / 365.0) * (dayOfYear + 10) * math.pi / 180.0) * math.pi / 180.0;
+      final latRad = latitude * math.pi / 180.0;
+
+      // Solar hour angle
+      final h = (utc.hour + utc.minute / 60.0 + utc.second / 3600.0 - 12.0 + longitude / 15.0) * 15.0;
+      final hRad = h * math.pi / 180.0;
+
+      // Solar altitude
+      final altRad = math.asin(
+        math.sin(latRad) * math.sin(decRad) +
+        math.cos(latRad) * math.cos(decRad) * math.cos(hRad)
+      );
+      final alt = altRad * 180.0 / math.pi;
+
+      Color c;
+      if (alt > 0) {
+        // Daylight: Orange -> White/Yellow
+        final factor = (alt / 40.0).clamp(0.0, 1.0);
+        c = Color.lerp(const Color(0xFFFFB74D), const Color(0xFFFFFDE7), factor)!;
+      } else if (alt > -6) {
+        // Civil twilight: Night -> Dawn/Dusk
+        final factor = ((alt + 6) / 6.0).clamp(0.0, 1.0);
+        c = Color.lerp(const Color(0xFF121212), const Color(0xFFFFB74D), factor)!;
+      } else {
+        // Nautical/Astronomical twilight and Night are visually pitch black
+        c = const Color(0xFF121212);
       }
+
+      finalColors.add(c);
+      finalStops.add(t);
     }
 
-    // Add exact end color at stop 1.0
-    finalColors.add(interpolate(canvasEndTime));
-    finalStops.add(1.0);
-
-    if (finalColors.length >= 2) {
-      final paint = Paint()
-        ..shader = ui.Gradient.linear(
-          Offset(0, 0),
-          Offset(size.width, 0),
-          finalColors,
-          finalStops,
-        );
-      canvas.drawRect(Rect.fromLTWH(0, 20, size.width, 80), paint);
-    }
+    final paint = Paint()
+      ..shader = ui.Gradient.linear(
+        Offset(0, 0),
+        Offset(size.width, 0),
+        finalColors,
+        finalStops,
+      );
+    // Sunlight gradient: narrower ribbon (27 to 47)
+    canvas.drawRect(Rect.fromLTWH(0, 27, size.width, 20), paint);
 
     // Draw Solar Icons
     for (
@@ -478,13 +480,13 @@ class InfiniteTimelinePainter extends CustomPainter {
         final x =
             centerX +
             (ss.sunrise!.difference(centerTime).inSeconds / 3600.0 * hourWidth);
-        if (x >= 0 && x <= size.width) _drawIcon(canvas, x, '☀️', 12);
+        if (x >= 0 && x <= size.width) _drawIcon(canvas, x, '☀️', 10, 37);
       }
       if (ss.sunset != null) {
         final x =
             centerX +
             (ss.sunset!.difference(centerTime).inSeconds / 3600.0 * hourWidth);
-        if (x >= 0 && x <= size.width) _drawIcon(canvas, x, '🌙', 12);
+        if (x >= 0 && x <= size.width) _drawIcon(canvas, x, '🌙', 10, 37);
       }
     }
 
@@ -539,11 +541,21 @@ class InfiniteTimelinePainter extends CustomPainter {
       final isMidnight = t.hour == 0;
 
       if (isHourLabelTime || isMidnight) {
-        canvas.drawLine(
-          Offset(x, 15),
-          Offset(x, 25),
-          tickPaint..color = Colors.white54,
-        );
+        if (isMidnight) {
+          // Midnight lines span the entire height as a faint day grid
+          canvas.drawLine(
+            Offset(x, 0),
+            Offset(x, size.height),
+            tickPaint..color = Colors.white24,
+          );
+        } else {
+          // Standard hour ticks
+          canvas.drawLine(
+            Offset(x, 25),
+            Offset(x, 49),
+            tickPaint..color = Colors.white54,
+          );
+        }
 
         if (showHourLabels && !isMidnight) {
           final hourPainter = TextPainter(
@@ -554,7 +566,7 @@ class InfiniteTimelinePainter extends CustomPainter {
             textDirection: ui.TextDirection.ltr,
           );
           hourPainter.layout();
-          hourPainter.paint(canvas, Offset(x - hourPainter.width / 2, 2));
+          hourPainter.paint(canvas, Offset(x - hourPainter.width / 2, 50));
         }
 
         if (isMidnight) {
@@ -577,8 +589,8 @@ class InfiniteTimelinePainter extends CustomPainter {
         }
       } else {
         canvas.drawLine(
-          Offset(x, 18),
-          Offset(x, 22),
+          Offset(x, 32),
+          Offset(x, 42),
           tickPaint..color = Colors.white24,
         );
       }
@@ -617,10 +629,10 @@ class InfiniteTimelinePainter extends CustomPainter {
         );
       }
     }
-    // Draw Weather Row (Option B style) - Refined for two charts
-    final tempRowY = 85.0;
+    // Draw Weather Row
+    final tempRowY = 65.0;
     final tempRowHeight = 50.0;
-    final windRowY = 135.0;
+    final windRowY = 115.0;
     final windRowHeight = 50.0;
 
     // Draw backgrounds
@@ -672,16 +684,21 @@ class InfiniteTimelinePainter extends CustomPainter {
       final yWind = mapWindToY(wd.windSpeed);
 
       if (wd.precipitation > 0) {
-        final barHeight = (wd.precipitation / 5.0 * 15.0).clamp(1.0, 15.0);
+        // 1mm of rain = 8px height, min 3px, max 40px
+        final barHeight = (wd.precipitation * 8.0).clamp(3.0, 40.0);
         final barPaint = Paint()
-          ..color = Colors.blueAccent.withValues(alpha: 0.5)
+          ..color = const Color(0xFF42A5F5) // Opaque, vibrant blue
           ..style = PaintingStyle.fill;
-        canvas.drawRect(
-          Rect.fromLTWH(
-            x - 2,
-            tempRowY + tempRowHeight - barHeight,
-            4,
-            barHeight,
+          
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(
+              x - 3, // Slightly wider (6px total)
+              tempRowY + tempRowHeight - barHeight,
+              6,
+              barHeight,
+            ),
+            const Radius.circular(2), // Rounded corners
           ),
           barPaint,
         );
@@ -701,18 +718,6 @@ class InfiniteTimelinePainter extends CustomPainter {
     canvas.drawPath(windPath, windLinePaint);
 
     // Draw labels and arrows
-    String getWindArrow(double degrees) {
-      final normalized = (degrees % 360 + 360) % 360;
-      if (normalized >= 337.5 || normalized < 22.5) return '⬇️';
-      if (normalized >= 22.5 && normalized < 67.5) return '↙️';
-      if (normalized >= 67.5 && normalized < 112.5) return '⬅️';
-      if (normalized >= 112.5 && normalized < 157.5) return '↖️';
-      if (normalized >= 157.5 && normalized < 202.5) return '⬆️';
-      if (normalized >= 202.5 && normalized < 247.5) return '↗️';
-      if (normalized >= 247.5 && normalized < 292.5) return '➡️';
-      return '↘️';
-    }
-
     for (int i = 0; i < weatherData.length; i += 12) {
       final wd = weatherData[i];
       final offsetInHours = wd.time.difference(centerTime).inSeconds / 3600.0;
@@ -742,9 +747,32 @@ class InfiniteTimelinePainter extends CustomPainter {
         final yWind = mapWindToY(wd.windSpeed);
         _drawText(canvas, x, '${wd.windSpeed.round()}m/s', 10, yWind - 12);
 
-        final arrow = getWindArrow(wd.windDirection);
-        _drawIcon(canvas, x, arrow, 12, yWind + 5);
+        // Draw the precise wind arrow
+        _drawWindArrow(canvas, x, yWind + 10, wd.windDirection);
       }
+    }
+
+    // Draw Current Wall Time Indicator (Blue Line)
+    final now = DateTime.now();
+    final nowOffsetInHours = now.difference(centerTime).inSeconds / 3600.0;
+    final nowX = centerX + (nowOffsetInHours * hourWidth);
+
+    if (nowX >= 0 && nowX <= size.width) {
+      final nowPaint = Paint()
+        ..color = Colors.blueAccent
+        ..strokeWidth = 2.0
+        ..style = PaintingStyle.stroke;
+        
+      // Draw the line spanning the full height
+      canvas.drawLine(Offset(nowX, 0), Offset(nowX, size.height), nowPaint);
+      
+      // Add a subtle glow effect
+      final glowPaint = Paint()
+        ..color = Colors.blueAccent.withValues(alpha: 0.3)
+        ..strokeWidth = 6.0
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0)
+        ..style = PaintingStyle.stroke;
+      canvas.drawLine(Offset(nowX, 0), Offset(nowX, size.height), glowPaint);
     }
   }
 
@@ -784,6 +812,32 @@ class InfiniteTimelinePainter extends CustomPainter {
     tp.paint(canvas, Offset(x - tp.width / 2, 85));
   }
 
+  void _drawWindArrow(Canvas canvas, double x, double y, double windDirDegrees) {
+    canvas.save();
+    canvas.translate(x, y);
+    // Meteorological wind direction is where the wind comes FROM.
+    // 0° = North (blowing South).
+    // We rotate the canvas so the arrow points to where the wind is GOING.
+    // Default arrow points UP (0°), so we add 180°.
+    canvas.rotate((windDirDegrees + 180) * math.pi / 180.0);
+
+    final paint = Paint()
+      ..color = Colors.lightBlueAccent
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path()
+      ..moveTo(0, 6)
+      ..lineTo(0, -6)
+      ..moveTo(-3, -3)
+      ..lineTo(0, -6)
+      ..lineTo(3, -3);
+
+    canvas.drawPath(path, paint);
+    canvas.restore();
+  }
+
   void _drawBlock(
     Canvas canvas,
     double x,
@@ -793,17 +847,18 @@ class InfiniteTimelinePainter extends CustomPainter {
     PlantQuality quality,
     bool isGrayDay,
   ) {
-    final rect = Rect.fromLTWH(x, 30, width, 50);
+    // Ribbon at the very top (5 to 25)
+    final rect = Rect.fromLTWH(x, 5, width, 20);
     final paint = Paint()
       ..color = color.withValues(alpha: 0.8)
       ..style = PaintingStyle.fill;
     canvas.drawRRect(
-      RRect.fromRectAndRadius(rect, const Radius.circular(4)),
+      RRect.fromRectAndRadius(rect, const Radius.circular(3)),
       paint,
     );
 
-    if (width > 30) {
-      final iconSize = math.min(width * 0.6, 30.0);
+    if (width > 15) {
+      final iconSize = math.min(width * 0.6, 14.0);
       ui.Image? image;
       if (isGrayDay) {
         image = grayDayImage;
@@ -829,7 +884,8 @@ class InfiniteTimelinePainter extends CustomPainter {
 
       if (image != null) {
         canvas.save();
-        canvas.translate(x + (width - iconSize) / 2, 30 + (50 - iconSize) / 2);
+        // Center icon inside the 20px tall ribbon
+        canvas.translate(x + (width - iconSize) / 2, 5 + (20 - iconSize) / 2);
         final src = Rect.fromLTWH(
           0,
           0,
