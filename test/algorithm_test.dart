@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic_calendar/src/algorithm.dart';
 import 'package:magic_calendar/src/ephemeris_service.dart';
+import 'package:sweph/sweph.dart';
 
 class MockEphemerisService implements EphemerisService {
   final double _mockLongitude;
@@ -43,7 +44,9 @@ class MockEphemerisService implements EphemerisService {
   }
 }
 
-void main() {
+void main() async {
+  await Sweph.init();
+
   test('getCalendarInfo returns a valid CalendarInfo', () {
     final info = getCalendarInfo(DateTime.now(), MockEphemerisService(0.0));
     expect(info, isNotNull);

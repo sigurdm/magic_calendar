@@ -529,6 +529,267 @@ build plugins/jni/shared/CMakeFiles/install/strip.util: CUSTOM_COMMAND plugins/j
 build plugins/jni/shared/install/strip: phony plugins/jni/shared/CMakeFiles/install/strip.util
 
 # =============================================================================
+# Write statements declared in CMakeLists.txt:
+# /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/generated_plugins.cmake
+# =============================================================================
+
+
+#############################################
+# Utility command for edit_cache
+
+build plugins/sweph/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/sweph && /usr/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+  DESC = No interactive CMake dialog available...
+  restat = 1
+
+build plugins/sweph/edit_cache: phony plugins/sweph/CMakeFiles/edit_cache.util
+
+
+#############################################
+# Utility command for rebuild_cache
+
+build plugins/sweph/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/sweph && /usr/bin/cmake --regenerate-during-build -S/usr/local/google/home/sigurdm/projects/magic_calendar/linux -B/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug
+  DESC = Running CMake to regenerate build system...
+  pool = console
+  restat = 1
+
+build plugins/sweph/rebuild_cache: phony plugins/sweph/CMakeFiles/rebuild_cache.util
+
+
+#############################################
+# Utility command for list_install_components
+
+build plugins/sweph/list_install_components: phony
+
+
+#############################################
+# Utility command for install
+
+build plugins/sweph/CMakeFiles/install.util: CUSTOM_COMMAND plugins/sweph/all
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/sweph && /usr/bin/cmake -P cmake_install.cmake
+  DESC = Install the project...
+  pool = console
+  restat = 1
+
+build plugins/sweph/install: phony plugins/sweph/CMakeFiles/install.util
+
+
+#############################################
+# Utility command for install/local
+
+build plugins/sweph/CMakeFiles/install/local.util: CUSTOM_COMMAND plugins/sweph/all
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/sweph && /usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  DESC = Installing only the local directory...
+  pool = console
+  restat = 1
+
+build plugins/sweph/install/local: phony plugins/sweph/CMakeFiles/install/local.util
+
+
+#############################################
+# Utility command for install/strip
+
+build plugins/sweph/CMakeFiles/install/strip.util: CUSTOM_COMMAND plugins/sweph/all
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/sweph && /usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  DESC = Installing the project stripped...
+  pool = console
+  restat = 1
+
+build plugins/sweph/install/strip: phony plugins/sweph/CMakeFiles/install/strip.util
+
+# =============================================================================
+# Write statements declared in CMakeLists.txt:
+# /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/linux/CMakeLists.txt
+# =============================================================================
+
+# =============================================================================
+# Object build statements for SHARED_LIBRARY target sweph
+
+
+#############################################
+# Order-only phony target for sweph
+
+build cmake_object_order_depends_target_sweph: phony || .
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swecl.c.o: C_COMPILER__sweph_unscanned_Debug /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/swecl.c || cmake_object_order_depends_target_sweph
+  CONFIG = Debug
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swecl.c.o.d
+  FLAGS = -g -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swedate.c.o: C_COMPILER__sweph_unscanned_Debug /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/swedate.c || cmake_object_order_depends_target_sweph
+  CONFIG = Debug
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swedate.c.o.d
+  FLAGS = -g -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swehel.c.o: C_COMPILER__sweph_unscanned_Debug /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/swehel.c || cmake_object_order_depends_target_sweph
+  CONFIG = Debug
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swehel.c.o.d
+  FLAGS = -g -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swehouse.c.o: C_COMPILER__sweph_unscanned_Debug /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/swehouse.c || cmake_object_order_depends_target_sweph
+  CONFIG = Debug
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swehouse.c.o.d
+  FLAGS = -g -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swejpl.c.o: C_COMPILER__sweph_unscanned_Debug /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/swejpl.c || cmake_object_order_depends_target_sweph
+  CONFIG = Debug
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swejpl.c.o.d
+  FLAGS = -g -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swemmoon.c.o: C_COMPILER__sweph_unscanned_Debug /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/swemmoon.c || cmake_object_order_depends_target_sweph
+  CONFIG = Debug
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swemmoon.c.o.d
+  FLAGS = -g -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swemplan.c.o: C_COMPILER__sweph_unscanned_Debug /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/swemplan.c || cmake_object_order_depends_target_sweph
+  CONFIG = Debug
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swemplan.c.o.d
+  FLAGS = -g -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/sweph.c.o: C_COMPILER__sweph_unscanned_Debug /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/sweph.c || cmake_object_order_depends_target_sweph
+  CONFIG = Debug
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/sweph.c.o.d
+  FLAGS = -g -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swephlib.c.o: C_COMPILER__sweph_unscanned_Debug /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/swephlib.c || cmake_object_order_depends_target_sweph
+  CONFIG = Debug
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swephlib.c.o.d
+  FLAGS = -g -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+
+# =============================================================================
+# Link build statements for SHARED_LIBRARY target sweph
+
+
+#############################################
+# Link the shared library plugins/sweph/shared/libsweph.so
+
+build plugins/sweph/shared/libsweph.so: C_SHARED_LIBRARY_LINKER__sweph_Debug plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swecl.c.o plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swedate.c.o plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swehel.c.o plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swehouse.c.o plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swejpl.c.o plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swemmoon.c.o plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swemplan.c.o plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/sweph.c.o plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swephlib.c.o
+  CONFIG = Debug
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/link.d
+  LANGUAGE_COMPILE_FLAGS = -g
+  LINK_FLAGS = -shared -Xlinker --dependency-file=plugins/sweph/shared/CMakeFiles/sweph.dir/link.d
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  POST_BUILD = :
+  PRE_LINK = :
+  SONAME = libsweph.so
+  SONAME_FLAG = -Wl,-soname,
+  TARGET_FILE = plugins/sweph/shared/libsweph.so
+  TARGET_PDB = sweph.so.dbg
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+
+#############################################
+# Utility command for edit_cache
+
+build plugins/sweph/shared/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/sweph/shared && /usr/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+  DESC = No interactive CMake dialog available...
+  restat = 1
+
+build plugins/sweph/shared/edit_cache: phony plugins/sweph/shared/CMakeFiles/edit_cache.util
+
+
+#############################################
+# Utility command for rebuild_cache
+
+build plugins/sweph/shared/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/sweph/shared && /usr/bin/cmake --regenerate-during-build -S/usr/local/google/home/sigurdm/projects/magic_calendar/linux -B/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug
+  DESC = Running CMake to regenerate build system...
+  pool = console
+  restat = 1
+
+build plugins/sweph/shared/rebuild_cache: phony plugins/sweph/shared/CMakeFiles/rebuild_cache.util
+
+
+#############################################
+# Utility command for list_install_components
+
+build plugins/sweph/shared/list_install_components: phony
+
+
+#############################################
+# Utility command for install
+
+build plugins/sweph/shared/CMakeFiles/install.util: CUSTOM_COMMAND plugins/sweph/shared/all
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/sweph/shared && /usr/bin/cmake -P cmake_install.cmake
+  DESC = Install the project...
+  pool = console
+  restat = 1
+
+build plugins/sweph/shared/install: phony plugins/sweph/shared/CMakeFiles/install.util
+
+
+#############################################
+# Utility command for install/local
+
+build plugins/sweph/shared/CMakeFiles/install/local.util: CUSTOM_COMMAND plugins/sweph/shared/all
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/sweph/shared && /usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  DESC = Installing only the local directory...
+  pool = console
+  restat = 1
+
+build plugins/sweph/shared/install/local: phony plugins/sweph/shared/CMakeFiles/install/local.util
+
+
+#############################################
+# Utility command for install/strip
+
+build plugins/sweph/shared/CMakeFiles/install/strip.util: CUSTOM_COMMAND plugins/sweph/shared/all
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/sweph/shared && /usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  DESC = Installing the project stripped...
+  pool = console
+  restat = 1
+
+build plugins/sweph/shared/install/strip: phony plugins/sweph/shared/CMakeFiles/install/strip.util
+
+# =============================================================================
 # Target aliases.
 
 build flutter_assemble: phony flutter/flutter_assemble
@@ -537,7 +798,11 @@ build jni: phony plugins/jni/shared/libdartjni.so
 
 build libdartjni.so: phony plugins/jni/shared/libdartjni.so
 
+build libsweph.so: phony plugins/sweph/shared/libsweph.so
+
 build magic_calendar: phony intermediates_do_not_run/magic_calendar
+
+build sweph: phony plugins/sweph/shared/libsweph.so
 
 # =============================================================================
 # Folder targets.
@@ -547,7 +812,7 @@ build magic_calendar: phony intermediates_do_not_run/magic_calendar
 #############################################
 # Folder: /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug
 
-build all: phony flutter/all runner/all plugins/jni/all
+build all: phony flutter/all runner/all plugins/jni/all plugins/sweph/all
 
 # =============================================================================
 
@@ -573,6 +838,20 @@ build plugins/jni/shared/all: phony plugins/jni/shared/libdartjni.so
 # =============================================================================
 
 #############################################
+# Folder: /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/sweph
+
+build plugins/sweph/all: phony plugins/sweph/shared/all
+
+# =============================================================================
+
+#############################################
+# Folder: /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/sweph/shared
+
+build plugins/sweph/shared/all: phony plugins/sweph/shared/libsweph.so
+
+# =============================================================================
+
+#############################################
 # Folder: /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/runner
 
 build runner/all: phony intermediates_do_not_run/magic_calendar
@@ -584,14 +863,14 @@ build runner/all: phony intermediates_do_not_run/magic_calendar
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/flutter/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/runner/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/jni/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/jni/shared/cmake_install.cmake: RERUN_CMAKE | /usr/local/google/home/sigurdm/projects/magic_calendar/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/generated_config.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/generated_plugins.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/linux/runner/CMakeLists.txt /usr/share/cmake-4.2/Modules/CMakeCInformation.cmake /usr/share/cmake-4.2/Modules/CMakeCXXInformation.cmake /usr/share/cmake-4.2/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-4.2/Modules/CMakeFindJavaCommon.cmake /usr/share/cmake-4.2/Modules/CMakeGenericSystem.cmake /usr/share/cmake-4.2/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-4.2/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-4.2/Modules/CMakePushCheckState.cmake /usr/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-4.2/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-4.2/Modules/CheckSourceCompiles.cmake /usr/share/cmake-4.2/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-C.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang.cmake /usr/share/cmake-4.2/Modules/Compiler/GNU.cmake /usr/share/cmake-4.2/Modules/FindJNI.cmake /usr/share/cmake-4.2/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake-4.2/Modules/FindPackageMessage.cmake /usr/share/cmake-4.2/Modules/FindPkgConfig.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCXXLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCommonLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake /usr/share/cmake-4.2/Modules/Linker/GNU-C.cmake /usr/share/cmake-4.2/Modules/Linker/GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Linker/GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Clang-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-4.2/Modules/Platform/Linux.cmake /usr/share/cmake-4.2/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/4.2.3/CMakeCCompiler.cmake CMakeFiles/4.2.3/CMakeCXXCompiler.cmake CMakeFiles/4.2.3/CMakeSystem.cmake
+build build.ninja /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/flutter/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/runner/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/jni/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/jni/shared/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/sweph/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/sweph/shared/cmake_install.cmake: RERUN_CMAKE | /usr/local/google/home/sigurdm/projects/magic_calendar/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/generated_config.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/generated_plugins.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/linux/runner/CMakeLists.txt /usr/share/cmake-4.2/Modules/CMakeCInformation.cmake /usr/share/cmake-4.2/Modules/CMakeCXXInformation.cmake /usr/share/cmake-4.2/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-4.2/Modules/CMakeFindJavaCommon.cmake /usr/share/cmake-4.2/Modules/CMakeGenericSystem.cmake /usr/share/cmake-4.2/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-4.2/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-4.2/Modules/CMakePushCheckState.cmake /usr/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-4.2/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-4.2/Modules/CheckSourceCompiles.cmake /usr/share/cmake-4.2/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-C.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang.cmake /usr/share/cmake-4.2/Modules/Compiler/GNU.cmake /usr/share/cmake-4.2/Modules/FindJNI.cmake /usr/share/cmake-4.2/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake-4.2/Modules/FindPackageMessage.cmake /usr/share/cmake-4.2/Modules/FindPkgConfig.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCXXLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCommonLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake /usr/share/cmake-4.2/Modules/Linker/GNU-C.cmake /usr/share/cmake-4.2/Modules/Linker/GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Linker/GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Clang-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-4.2/Modules/Platform/Linux.cmake /usr/share/cmake-4.2/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/4.2.3/CMakeCCompiler.cmake CMakeFiles/4.2.3/CMakeCXXCompiler.cmake CMakeFiles/4.2.3/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build /usr/local/google/home/sigurdm/projects/magic_calendar/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/generated_config.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/generated_plugins.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/linux/runner/CMakeLists.txt /usr/share/cmake-4.2/Modules/CMakeCInformation.cmake /usr/share/cmake-4.2/Modules/CMakeCXXInformation.cmake /usr/share/cmake-4.2/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-4.2/Modules/CMakeFindJavaCommon.cmake /usr/share/cmake-4.2/Modules/CMakeGenericSystem.cmake /usr/share/cmake-4.2/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-4.2/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-4.2/Modules/CMakePushCheckState.cmake /usr/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-4.2/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-4.2/Modules/CheckSourceCompiles.cmake /usr/share/cmake-4.2/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-C.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang.cmake /usr/share/cmake-4.2/Modules/Compiler/GNU.cmake /usr/share/cmake-4.2/Modules/FindJNI.cmake /usr/share/cmake-4.2/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake-4.2/Modules/FindPackageMessage.cmake /usr/share/cmake-4.2/Modules/FindPkgConfig.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCXXLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCommonLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake /usr/share/cmake-4.2/Modules/Linker/GNU-C.cmake /usr/share/cmake-4.2/Modules/Linker/GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Linker/GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Clang-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-4.2/Modules/Platform/Linux.cmake /usr/share/cmake-4.2/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/4.2.3/CMakeCCompiler.cmake CMakeFiles/4.2.3/CMakeCXXCompiler.cmake CMakeFiles/4.2.3/CMakeSystem.cmake: phony
+build /usr/local/google/home/sigurdm/projects/magic_calendar/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/generated_config.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/generated_plugins.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/linux/runner/CMakeLists.txt /usr/share/cmake-4.2/Modules/CMakeCInformation.cmake /usr/share/cmake-4.2/Modules/CMakeCXXInformation.cmake /usr/share/cmake-4.2/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-4.2/Modules/CMakeFindJavaCommon.cmake /usr/share/cmake-4.2/Modules/CMakeGenericSystem.cmake /usr/share/cmake-4.2/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-4.2/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-4.2/Modules/CMakePushCheckState.cmake /usr/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-4.2/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-4.2/Modules/CheckSourceCompiles.cmake /usr/share/cmake-4.2/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-C.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang.cmake /usr/share/cmake-4.2/Modules/Compiler/GNU.cmake /usr/share/cmake-4.2/Modules/FindJNI.cmake /usr/share/cmake-4.2/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake-4.2/Modules/FindPackageMessage.cmake /usr/share/cmake-4.2/Modules/FindPkgConfig.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCXXLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCommonLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake /usr/share/cmake-4.2/Modules/Linker/GNU-C.cmake /usr/share/cmake-4.2/Modules/Linker/GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Linker/GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Clang-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-4.2/Modules/Platform/Linux.cmake /usr/share/cmake-4.2/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/4.2.3/CMakeCCompiler.cmake CMakeFiles/4.2.3/CMakeCXXCompiler.cmake CMakeFiles/4.2.3/CMakeSystem.cmake: phony
 
 
 #############################################

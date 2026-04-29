@@ -87,89 +87,44 @@ class YrNoWeatherService implements WeatherService {
     DateTime start,
     DateTime end,
   ) async {
-    final clientId = '371091f7-14c3-4d25-9725-4da6eb9d5b25';
-    final credentials = base64Encode(utf8.encode('$clientId:'));
+    // Use Open-Meteo Archive API for reliable global historical data
+    final startStr = start.toUtc().toIso8601String().substring(0, 10);
+    final endStr = end.toUtc().toIso8601String().substring(0, 10);
 
-    final sourcesUrl = Uri.parse(
-      'https://frost.met.no/sources/v0.jsonld?geometry=point($lon $lat)',
-    );
-    final sourcesResponse = await http.get(
-      sourcesUrl,
-      headers: {'Authorization': 'Basic $credentials'},
+    final url = Uri.parse(
+      'https://archive-api.open-meteo.com/v1/archive?latitude=$lat&longitude=$lon&start_date=$startStr&end_date=$endStr&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,cloudcover,precipitation',
     );
 
-    String stationId = '';
-    if (sourcesResponse.statusCode == 200) {
-      final data = jsonDecode(sourcesResponse.body);
-      final sources = data['data'] as List;
-      if (sources.isNotEmpty) {
-        stationId = sources.first['id'];
-      }
-    }
+    final response = await http.get(url);
 
-    if (stationId.isEmpty) {
-      throw Exception('No weather station found near this location.');
-    }
-
-    final startStr = start.toUtc().toIso8601String();
-    final endStr = end.toUtc().toIso8601String();
-    final obsUrl = Uri.parse(
-      'https://frost.met.no/observations/v0.jsonld?sources=$stationId&referencetime=$startStr/$endStr&elements=air_temperature,wind_speed,wind_from_direction,cloud_area_fraction',
-    );
-
-    final obsResponse = await http.get(
-      obsUrl,
-      headers: {'Authorization': 'Basic $credentials'},
-    );
-
-    if (obsResponse.statusCode == 200) {
-      final data = jsonDecode(obsResponse.body);
-      final obsData = data['data'] as List;
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final hourly = data['hourly'];
+      final times = hourly['time'] as List;
+      final temps = hourly['temperature_2m'] as List;
+      final winds = hourly['wind_speed_10m'] as List;
+      final windDirs = hourly['wind_direction_10m'] as List;
+      final clouds = hourly['cloudcover'] as List;
+      final precip = hourly['precipitation'] as List;
 
       final List<WeatherDataPoint> results = [];
-      for (var point in obsData) {
-        final time = DateTime.parse(point['referenceTime']);
-        final observations = point['observations'] as List;
-
-        double temp = 0.0;
-        double windSpeed = 0.0;
-        double windDir = 0.0;
-        double clouds = 0.0;
-
-        for (var obs in observations) {
-          final element = obs['elementId'];
-          final value = obs['value']?.toDouble() ?? 0.0;
-          switch (element) {
-            case 'air_temperature':
-              temp = value;
-              break;
-            case 'wind_speed':
-              windSpeed = value;
-              break;
-            case 'wind_from_direction':
-              windDir = value;
-              break;
-            case 'cloud_area_fraction':
-              clouds = value;
-              break;
-          }
-        }
-
+      for (int i = 0; i < times.length; i++) {
+        if (temps[i] == null) continue; // Skip missing data
         results.add(
           WeatherDataPoint(
-            time: time,
-            temperature: temp,
-            windSpeed: windSpeed,
-            windDirection: windDir,
-            cloudCover: clouds,
-            precipitation: 0.0,
+            time: DateTime.parse(times[i]),
+            temperature: temps[i].toDouble(),
+            windSpeed: winds[i].toDouble(),
+            windDirection: windDirs[i].toDouble(),
+            cloudCover: clouds[i].toDouble(),
+            precipitation: precip[i].toDouble(),
           ),
         );
       }
       return results;
     } else {
       throw Exception(
-        'Failed to load historical weather data: ${obsResponse.statusCode}',
+        'Failed to load historical weather data: ${response.statusCode}',
       );
     }
   }

@@ -5,7 +5,9 @@
 		"/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/flutter/cmake_install.cmake",
 		"/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/runner/cmake_install.cmake",
 		"/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/jni/cmake_install.cmake",
-		"/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/jni/shared/cmake_install.cmake"
+		"/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/jni/shared/cmake_install.cmake",
+		"/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/cmake_install.cmake",
+		"/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/shared/cmake_install.cmake"
 	],
 	"Parallel" : false
 }

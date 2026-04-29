@@ -20,9 +20,6 @@ events:
     names:
       - "uname"
     candidate_directories:
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -37,9 +34,6 @@ events:
       - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
       - "/usr/local/google/home/sigurdm/bin/"
     searched_directories:
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/uname"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/uname"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/uname"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/uname"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/uname"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/uname"
@@ -51,9 +45,6 @@ events:
     found: "/usr/bin/uname"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -95,9 +86,6 @@ events:
       - "ninja"
       - "samu"
     candidate_directories:
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -112,15 +100,6 @@ events:
       - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/"
       - "/usr/local/google/home/sigurdm/bin/"
     searched_directories:
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/ninja-build"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/ninja"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/samu"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/ninja-build"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/ninja"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/samu"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/ninja-build"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/ninja"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/samu"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/ninja-build"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/ninja"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/samu"
@@ -131,9 +110,6 @@ events:
     found: "/usr/local/google/home/sigurdm/projects/depot_tools/ninja"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -167,9 +143,6 @@ events:
     names:
       - "/usr/bin/clang++"
     candidate_directories:
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -186,9 +159,6 @@ events:
     found: "/usr/bin/clang++"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -229,9 +199,6 @@ events:
     found: "/usr/share/cmake-4.2/Modules/CMakeCXXCompilerId.cpp.in"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -289,9 +256,6 @@ events:
       - "ar"
     candidate_directories:
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -306,9 +270,6 @@ events:
       - "/usr/local/google/home/sigurdm/bin/"
     searched_directories:
       - "/usr/bin/llvm-ar"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-ar"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-ar"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-ar"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-ar"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-ar"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-ar"
@@ -324,9 +285,6 @@ events:
     found: "/usr/bin/ar"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -362,9 +320,6 @@ events:
       - "ranlib"
     candidate_directories:
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -379,9 +334,6 @@ events:
       - "/usr/local/google/home/sigurdm/bin/"
     searched_directories:
       - "/usr/bin/llvm-ranlib"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-ranlib"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-ranlib"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-ranlib"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-ranlib"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-ranlib"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-ranlib"
@@ -397,9 +349,6 @@ events:
     found: "/usr/bin/ranlib"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -435,9 +384,6 @@ events:
       - "strip"
     candidate_directories:
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -452,9 +398,6 @@ events:
       - "/usr/local/google/home/sigurdm/bin/"
     searched_directories:
       - "/usr/bin/llvm-strip"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-strip"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-strip"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-strip"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-strip"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-strip"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-strip"
@@ -470,9 +413,6 @@ events:
     found: "/usr/bin/strip"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -508,9 +448,6 @@ events:
       - "ld"
     candidate_directories:
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -525,9 +462,6 @@ events:
       - "/usr/local/google/home/sigurdm/bin/"
     searched_directories:
       - "/usr/bin/ld.lld"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/ld.lld"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/ld.lld"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/ld.lld"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/ld.lld"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/ld.lld"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/ld.lld"
@@ -543,9 +477,6 @@ events:
     found: "/usr/bin/ld"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -581,9 +512,6 @@ events:
       - "nm"
     candidate_directories:
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -598,9 +526,6 @@ events:
       - "/usr/local/google/home/sigurdm/bin/"
     searched_directories:
       - "/usr/bin/llvm-nm"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-nm"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-nm"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-nm"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-nm"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-nm"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-nm"
@@ -616,9 +541,6 @@ events:
     found: "/usr/bin/nm"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -654,9 +576,6 @@ events:
       - "objdump"
     candidate_directories:
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -671,9 +590,6 @@ events:
       - "/usr/local/google/home/sigurdm/bin/"
     searched_directories:
       - "/usr/bin/llvm-objdump"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-objdump"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-objdump"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-objdump"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-objdump"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-objdump"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-objdump"
@@ -689,9 +605,6 @@ events:
     found: "/usr/bin/objdump"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -727,9 +640,6 @@ events:
       - "objcopy"
     candidate_directories:
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -744,9 +654,6 @@ events:
       - "/usr/local/google/home/sigurdm/bin/"
     searched_directories:
       - "/usr/bin/llvm-objcopy"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-objcopy"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-objcopy"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-objcopy"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-objcopy"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-objcopy"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-objcopy"
@@ -762,9 +669,6 @@ events:
     found: "/usr/bin/objcopy"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -800,9 +704,6 @@ events:
       - "readelf"
     candidate_directories:
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -817,9 +718,6 @@ events:
       - "/usr/local/google/home/sigurdm/bin/"
     searched_directories:
       - "/usr/bin/llvm-readelf"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-readelf"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-readelf"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-readelf"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-readelf"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-readelf"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-readelf"
@@ -835,9 +733,6 @@ events:
     found: "/usr/bin/readelf"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -873,9 +768,6 @@ events:
       - "dlltool"
     candidate_directories:
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -890,9 +782,6 @@ events:
       - "/usr/local/google/home/sigurdm/bin/"
     searched_directories:
       - "/usr/bin/llvm-dlltool"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-dlltool"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-dlltool"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-dlltool"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-dlltool"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-dlltool"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-dlltool"
@@ -906,9 +795,6 @@ events:
       - "/usr/local/google/home/sigurdm/Android/Sdk/tools/bin/llvm-dlltool"
       - "/usr/local/google/home/sigurdm/bin/llvm-dlltool"
       - "/usr/bin/dlltool"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/dlltool"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/dlltool"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/dlltool"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/dlltool"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/dlltool"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/dlltool"
@@ -924,9 +810,6 @@ events:
     found: false
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -962,9 +845,6 @@ events:
       - "addr2line"
     candidate_directories:
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -979,9 +859,6 @@ events:
       - "/usr/local/google/home/sigurdm/bin/"
     searched_directories:
       - "/usr/bin/llvm-addr2line"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-addr2line"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-addr2line"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-addr2line"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-addr2line"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-addr2line"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-addr2line"
@@ -997,9 +874,6 @@ events:
     found: "/usr/bin/addr2line"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -1034,9 +908,6 @@ events:
       - "tapi"
     candidate_directories:
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -1051,9 +922,6 @@ events:
       - "/usr/local/google/home/sigurdm/bin/"
     searched_directories:
       - "/usr/bin/tapi"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/tapi"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/tapi"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/tapi"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/tapi"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/tapi"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/tapi"
@@ -1069,9 +937,6 @@ events:
     found: false
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -1110,9 +975,6 @@ events:
     candidate_directories:
       - "/usr/lib/llvm-19/bin/"
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -1128,9 +990,6 @@ events:
     searched_directories:
       - "/usr/lib/llvm-19/bin/llvm-ar-19.1"
       - "/usr/bin/llvm-ar-19.1"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-ar-19.1"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-ar-19.1"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-ar-19.1"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-ar-19.1"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-ar-19.1"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-ar-19.1"
@@ -1147,9 +1006,6 @@ events:
     found: "/usr/bin/llvm-ar-19"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -1188,9 +1044,6 @@ events:
     candidate_directories:
       - "/usr/lib/llvm-19/bin/"
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -1206,9 +1059,6 @@ events:
     searched_directories:
       - "/usr/lib/llvm-19/bin/llvm-ranlib-19.1"
       - "/usr/bin/llvm-ranlib-19.1"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-ranlib-19.1"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-ranlib-19.1"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-ranlib-19.1"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-ranlib-19.1"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-ranlib-19.1"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-ranlib-19.1"
@@ -1225,9 +1075,6 @@ events:
     found: "/usr/bin/llvm-ranlib-19"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -1266,9 +1113,6 @@ events:
     candidate_directories:
       - "/usr/lib/llvm-19/bin/"
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -1284,9 +1128,6 @@ events:
     searched_directories:
       - "/usr/lib/llvm-19/bin/clang-scan-deps-19.1"
       - "/usr/bin/clang-scan-deps-19.1"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/clang-scan-deps-19.1"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/clang-scan-deps-19.1"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/clang-scan-deps-19.1"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/clang-scan-deps-19.1"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/clang-scan-deps-19.1"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/clang-scan-deps-19.1"
@@ -1303,9 +1144,6 @@ events:
     found: "/usr/bin/clang-scan-deps-19"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -1328,8 +1166,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-aEKoBn"
-      binary: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-aEKoBn"
+      source: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-gH7Foj"
+      binary: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-gH7Foj"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps-19"
       CMAKE_CXX_FLAGS: ""
@@ -1340,10 +1178,10 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-aEKoBn'
+        Change Dir: '/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-gH7Foj'
         
-        Run Build Command(s): /usr/local/google/home/sigurdm/projects/depot_tools/ninja -v cmTC_53665
-        [1/2] /usr/bin/clang++   -v -MD -MT CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-4.2/Modules/CMakeCXXCompilerABI.cpp
+        Run Build Command(s): /usr/local/google/home/sigurdm/projects/depot_tools/ninja -v cmTC_ebe42
+        [1/2] /usr/bin/clang++   -v -MD -MT CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-4.2/Modules/CMakeCXXCompilerABI.cpp
         Debian clang version 19.1.7 (10.1+build1)
         Target: x86_64-pc-linux-gnu
         Thread model: posix
@@ -1359,7 +1197,7 @@ events:
         Candidate multilib: x32;@mx32
         Selected multilib: .;@m64
          (in-process)
-         "/usr/lib/llvm-19/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-aEKoBn -v -fcoverage-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-aEKoBn -resource-dir /usr/lib/llvm-19/lib/clang/19 -dependency-file CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/x86_64-linux-gnu/c++/15 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15/backward -internal-isystem /usr/lib/llvm-19/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -x c++ /usr/share/cmake-4.2/Modules/CMakeCXXCompilerABI.cpp
+         "/usr/lib/llvm-19/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-gH7Foj -v -fcoverage-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-gH7Foj -resource-dir /usr/lib/llvm-19/lib/clang/19 -dependency-file CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/x86_64-linux-gnu/c++/15 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15/backward -internal-isystem /usr/lib/llvm-19/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o -x c++ /usr/share/cmake-4.2/Modules/CMakeCXXCompilerABI.cpp
         clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu
         ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include"
         ignoring nonexistent directory "/include"
@@ -1373,7 +1211,7 @@ events:
          /usr/include/x86_64-linux-gnu
          /usr/include
         End of search list.
-        [2/2] : && /usr/bin/clang++  -v -Wl,-v CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_53665   && :
+        [2/2] : && /usr/bin/clang++  -v -Wl,-v CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_ebe42   && :
         Debian clang version 19.1.7 (10.1+build1)
         Target: x86_64-pc-linux-gnu
         Thread model: posix
@@ -1388,7 +1226,7 @@ events:
         Candidate multilib: 32;@m32
         Candidate multilib: x32;@mx32
         Selected multilib: .;@m64
-         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_53665 /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/15 -L/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o /lib/x86_64-linux-gnu/crtn.o
+         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_ebe42 /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/15 -L/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o /lib/x86_64-linux-gnu/crtn.o
         GNU ld (GNU Binutils for Debian) 2.45.50.20251209
         
       exitCode: 0
@@ -1430,10 +1268,10 @@ events:
       Parsed CXX implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
-        ignore line: [Change Dir: '/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-aEKoBn']
+        ignore line: [Change Dir: '/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-gH7Foj']
         ignore line: []
-        ignore line: [Run Build Command(s): /usr/local/google/home/sigurdm/projects/depot_tools/ninja -v cmTC_53665]
-        ignore line: [[1/2] /usr/bin/clang++   -v -MD -MT CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-4.2/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Run Build Command(s): /usr/local/google/home/sigurdm/projects/depot_tools/ninja -v cmTC_ebe42]
+        ignore line: [[1/2] /usr/bin/clang++   -v -MD -MT CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-4.2/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [Debian clang version 19.1.7 (10.1+build1)]
         ignore line: [Target: x86_64-pc-linux-gnu]
         ignore line: [Thread model: posix]
@@ -1453,7 +1291,7 @@ events:
         ignore line: [Selected multilib: .]
         ignore line: [@m64]
         ignore line: [ (in-process)]
-        ignore line: [ "/usr/lib/llvm-19/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-aEKoBn -v -fcoverage-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-aEKoBn -resource-dir /usr/lib/llvm-19/lib/clang/19 -dependency-file CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/x86_64-linux-gnu/c++/15 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15/backward -internal-isystem /usr/lib/llvm-19/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -x c++ /usr/share/cmake-4.2/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [ "/usr/lib/llvm-19/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-gH7Foj -v -fcoverage-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-gH7Foj -resource-dir /usr/lib/llvm-19/lib/clang/19 -dependency-file CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/x86_64-linux-gnu/c++/15 -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../include/c++/15/backward -internal-isystem /usr/lib/llvm-19/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o -x c++ /usr/share/cmake-4.2/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu]
         ignore line: [ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include"]
         ignore line: [ignoring nonexistent directory "/include"]
@@ -1467,7 +1305,7 @@ events:
         ignore line: [ /usr/include/x86_64-linux-gnu]
         ignore line: [ /usr/include]
         ignore line: [End of search list.]
-        ignore line: [[2/2] : && /usr/bin/clang++  -v -Wl -v CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_53665   && :]
+        ignore line: [[2/2] : && /usr/bin/clang++  -v -Wl -v CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_ebe42   && :]
         ignore line: [Debian clang version 19.1.7 (10.1+build1)]
         ignore line: [Target: x86_64-pc-linux-gnu]
         ignore line: [Thread model: posix]
@@ -1486,7 +1324,7 @@ events:
         ignore line: [@mx32]
         ignore line: [Selected multilib: .]
         ignore line: [@m64]
-        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_53665 /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/15 -L/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o /lib/x86_64-linux-gnu/crtn.o]
+        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_ebe42 /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/15 -L/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o /lib/x86_64-linux-gnu/crtn.o]
           arg [/usr/bin/ld] ==> ignore
           arg [--hash-style=gnu] ==> ignore
           arg [--build-id] ==> ignore
@@ -1497,7 +1335,7 @@ events:
           arg [-dynamic-linker] ==> ignore
           arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_53665] ==> ignore
+          arg [cmTC_ebe42] ==> ignore
           arg [/lib/x86_64-linux-gnu/Scrt1.o] ==> obj [/lib/x86_64-linux-gnu/Scrt1.o]
           arg [/lib/x86_64-linux-gnu/crti.o] ==> obj [/lib/x86_64-linux-gnu/crti.o]
           arg [/usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o]
@@ -1510,7 +1348,7 @@ events:
           arg [-L/lib] ==> dir [/lib]
           arg [-L/usr/lib] ==> dir [/usr/lib]
           arg [-v] ==> ignore
-          arg [CMakeFiles/cmTC_53665.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [CMakeFiles/cmTC_ebe42.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
           arg [-lstdc++] ==> lib [stdc++]
           arg [-lm] ==> lib [m]
           arg [-lgcc_s] ==> lib [gcc_s]
@@ -1565,9 +1403,6 @@ events:
       - "pkg-config"
       - "pkgconf"
     candidate_directories:
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -1599,12 +1434,6 @@ events:
       - "/opt/sbin/"
       - "/opt/"
     searched_directories:
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/pkg-config"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/pkgconf"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/pkg-config"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/pkgconf"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/pkg-config"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/pkgconf"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/pkg-config"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/pkgconf"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/pkg-config"
@@ -1624,9 +1453,6 @@ events:
     found: "/usr/bin/pkg-config"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -1676,9 +1502,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libgtk-3.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -1730,9 +1553,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libgdk-3.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -1784,9 +1604,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libz.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -1838,9 +1655,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libpangocairo-1.0.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -1892,9 +1706,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libpango-1.0.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -1946,9 +1757,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libharfbuzz.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -2000,9 +1808,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libatk-1.0.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -2054,9 +1859,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libcairo-gobject.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -2108,9 +1910,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libcairo.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -2162,9 +1961,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libgdk_pixbuf-2.0.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -2216,9 +2012,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libgio-2.0.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -2270,9 +2063,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libgobject-2.0.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -2324,9 +2114,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libglib-2.0.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -2378,9 +2165,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libglib-2.0.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -2432,9 +2216,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libgio-2.0.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -2486,9 +2267,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libgobject-2.0.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -2540,9 +2318,6 @@ events:
     found: "/usr/lib/x86_64-linux-gnu/libglib-2.0.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -2592,9 +2367,6 @@ events:
     found: "/usr/bin/clang"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -2645,9 +2417,6 @@ events:
     found: "/usr/share/cmake-4.2/Modules/CMakeCCompilerId.c.in"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -2720,9 +2489,6 @@ events:
     candidate_directories:
       - "/usr/lib/llvm-19/bin/"
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -2755,9 +2521,6 @@ events:
     searched_directories:
       - "/usr/lib/llvm-19/bin/llvm-ar-19.1"
       - "/usr/bin/llvm-ar-19.1"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-ar-19.1"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-ar-19.1"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-ar-19.1"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-ar-19.1"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-ar-19.1"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-ar-19.1"
@@ -2791,9 +2554,6 @@ events:
     found: "/usr/bin/llvm-ar-19"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -2842,9 +2602,6 @@ events:
     candidate_directories:
       - "/usr/lib/llvm-19/bin/"
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -2877,9 +2634,6 @@ events:
     searched_directories:
       - "/usr/lib/llvm-19/bin/llvm-ranlib-19.1"
       - "/usr/bin/llvm-ranlib-19.1"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/llvm-ranlib-19.1"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/llvm-ranlib-19.1"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/llvm-ranlib-19.1"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/llvm-ranlib-19.1"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/llvm-ranlib-19.1"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/llvm-ranlib-19.1"
@@ -2913,9 +2667,6 @@ events:
     found: "/usr/bin/llvm-ranlib-19"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -2964,9 +2715,6 @@ events:
     candidate_directories:
       - "/usr/lib/llvm-19/bin/"
       - "/usr/bin/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -2999,9 +2747,6 @@ events:
     searched_directories:
       - "/usr/lib/llvm-19/bin/clang-scan-deps-19.1"
       - "/usr/bin/clang-scan-deps-19.1"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/clang-scan-deps-19.1"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/clang-scan-deps-19.1"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/clang-scan-deps-19.1"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/clang-scan-deps-19.1"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/clang-scan-deps-19.1"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/clang-scan-deps-19.1"
@@ -3035,9 +2780,6 @@ events:
     found: "/usr/bin/clang-scan-deps-19"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -3070,8 +2812,8 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-8gAHew"
-      binary: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-8gAHew"
+      source: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-AKbVe0"
+      binary: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-AKbVe0"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps-19"
       CMAKE_C_FLAGS: ""
@@ -3081,10 +2823,10 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-8gAHew'
+        Change Dir: '/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-AKbVe0'
         
-        Run Build Command(s): /usr/local/google/home/sigurdm/projects/depot_tools/ninja -v cmTC_ed652
-        [1/2] /usr/bin/clang   -v -MD -MT CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-4.2/Modules/CMakeCCompilerABI.c
+        Run Build Command(s): /usr/local/google/home/sigurdm/projects/depot_tools/ninja -v cmTC_572fd
+        [1/2] /usr/bin/clang   -v -MD -MT CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-4.2/Modules/CMakeCCompilerABI.c
         Debian clang version 19.1.7 (10.1+build1)
         Target: x86_64-pc-linux-gnu
         Thread model: posix
@@ -3100,7 +2842,7 @@ events:
         Candidate multilib: x32;@mx32
         Selected multilib: .;@m64
          (in-process)
-         "/usr/lib/llvm-19/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-8gAHew -v -fcoverage-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-8gAHew -resource-dir /usr/lib/llvm-19/lib/clang/19 -dependency-file CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/llvm-19/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake-4.2/Modules/CMakeCCompilerABI.c
+         "/usr/lib/llvm-19/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-AKbVe0 -v -fcoverage-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-AKbVe0 -resource-dir /usr/lib/llvm-19/lib/clang/19 -dependency-file CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/llvm-19/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake-4.2/Modules/CMakeCCompilerABI.c
         clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu
         ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include"
         ignoring nonexistent directory "/include"
@@ -3111,7 +2853,7 @@ events:
          /usr/include/x86_64-linux-gnu
          /usr/include
         End of search list.
-        [2/2] : && /usr/bin/clang  -v -Wl,-v CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -o cmTC_ed652   && :
+        [2/2] : && /usr/bin/clang  -v -Wl,-v CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o -o cmTC_572fd   && :
         Debian clang version 19.1.7 (10.1+build1)
         Target: x86_64-pc-linux-gnu
         Thread model: posix
@@ -3126,7 +2868,7 @@ events:
         Candidate multilib: 32;@m32
         Candidate multilib: x32;@mx32
         Selected multilib: .;@m64
-         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_ed652 /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/15 -L/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o /lib/x86_64-linux-gnu/crtn.o
+         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_572fd /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/15 -L/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o /lib/x86_64-linux-gnu/crtn.o
         GNU ld (GNU Binutils for Debian) 2.45.50.20251209
         
       exitCode: 0
@@ -3162,10 +2904,10 @@ events:
       Parsed C implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
-        ignore line: [Change Dir: '/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-8gAHew']
+        ignore line: [Change Dir: '/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-AKbVe0']
         ignore line: []
-        ignore line: [Run Build Command(s): /usr/local/google/home/sigurdm/projects/depot_tools/ninja -v cmTC_ed652]
-        ignore line: [[1/2] /usr/bin/clang   -v -MD -MT CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-4.2/Modules/CMakeCCompilerABI.c]
+        ignore line: [Run Build Command(s): /usr/local/google/home/sigurdm/projects/depot_tools/ninja -v cmTC_572fd]
+        ignore line: [[1/2] /usr/bin/clang   -v -MD -MT CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-4.2/Modules/CMakeCCompilerABI.c]
         ignore line: [Debian clang version 19.1.7 (10.1+build1)]
         ignore line: [Target: x86_64-pc-linux-gnu]
         ignore line: [Thread model: posix]
@@ -3185,7 +2927,7 @@ events:
         ignore line: [Selected multilib: .]
         ignore line: [@m64]
         ignore line: [ (in-process)]
-        ignore line: [ "/usr/lib/llvm-19/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-8gAHew -v -fcoverage-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-8gAHew -resource-dir /usr/lib/llvm-19/lib/clang/19 -dependency-file CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/llvm-19/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake-4.2/Modules/CMakeCCompilerABI.c]
+        ignore line: [ "/usr/lib/llvm-19/bin/clang" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-AKbVe0 -v -fcoverage-compilation-dir=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-AKbVe0 -resource-dir /usr/lib/llvm-19/lib/clang/19 -dependency-file CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/lib/llvm-19/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake-4.2/Modules/CMakeCCompilerABI.c]
         ignore line: [clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu]
         ignore line: [ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/15/../../../../x86_64-linux-gnu/include"]
         ignore line: [ignoring nonexistent directory "/include"]
@@ -3196,7 +2938,7 @@ events:
         ignore line: [ /usr/include/x86_64-linux-gnu]
         ignore line: [ /usr/include]
         ignore line: [End of search list.]
-        ignore line: [[2/2] : && /usr/bin/clang  -v -Wl -v CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -o cmTC_ed652   && :]
+        ignore line: [[2/2] : && /usr/bin/clang  -v -Wl -v CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o -o cmTC_572fd   && :]
         ignore line: [Debian clang version 19.1.7 (10.1+build1)]
         ignore line: [Target: x86_64-pc-linux-gnu]
         ignore line: [Thread model: posix]
@@ -3215,7 +2957,7 @@ events:
         ignore line: [@mx32]
         ignore line: [Selected multilib: .]
         ignore line: [@m64]
-        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_ed652 /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/15 -L/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o /lib/x86_64-linux-gnu/crtn.o]
+        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_572fd /lib/x86_64-linux-gnu/Scrt1.o /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/15 -L/usr/lib/gcc/x86_64-linux-gnu/15/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o /lib/x86_64-linux-gnu/crtn.o]
           arg [/usr/bin/ld] ==> ignore
           arg [--hash-style=gnu] ==> ignore
           arg [--build-id] ==> ignore
@@ -3226,7 +2968,7 @@ events:
           arg [-dynamic-linker] ==> ignore
           arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_ed652] ==> ignore
+          arg [cmTC_572fd] ==> ignore
           arg [/lib/x86_64-linux-gnu/Scrt1.o] ==> obj [/lib/x86_64-linux-gnu/Scrt1.o]
           arg [/lib/x86_64-linux-gnu/crti.o] ==> obj [/lib/x86_64-linux-gnu/crti.o]
           arg [/usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o] ==> obj [/usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o]
@@ -3239,7 +2981,7 @@ events:
           arg [-L/lib] ==> dir [/lib]
           arg [-L/usr/lib] ==> dir [/usr/lib]
           arg [-v] ==> ignore
-          arg [CMakeFiles/cmTC_ed652.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [CMakeFiles/cmTC_572fd.dir/CMakeCCompilerABI.c.o] ==> ignore
           arg [-lgcc] ==> lib [gcc]
           arg [--as-needed] ==> ignore
           arg [-lgcc_s] ==> lib [gcc_s]
@@ -3295,9 +3037,6 @@ events:
     names:
       - "jvm"
     candidate_directories:
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -3393,9 +3132,6 @@ events:
       - "/usr/lib/jvm/java-17-openjdk-amd64/j9vm/"
       - "/usr/lib/jvm/java-17-openjdk-amd64/default/"
     searched_directories:
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -3433,9 +3169,6 @@ events:
     found: "/usr/local/buildtools/java/jdk/lib/server/libjvm.so"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -3480,9 +3213,6 @@ events:
     names:
       - "jni.h"
     candidate_directories:
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -3519,9 +3249,6 @@ events:
       - "/usr/lib/jvm/java-21-openjdk-amd64/include/"
       - "/usr/lib/jvm/java-17-openjdk-amd64/include/"
     searched_directories:
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/jni.h"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/jni.h"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/jni.h"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/jni.h"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/jni.h"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/jni.h"
@@ -3556,9 +3283,6 @@ events:
     found: "/usr/local/buildtools/java/jdk/include/"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"
@@ -3592,8 +3316,8 @@ events:
       - "/usr/share/cmake-4.2/Modules/FindJNI.cmake:590 (check_source_compiles)"
       - "flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt:20 (find_package)"
     directories:
-      source: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-YCAlL2"
-      binary: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-YCAlL2"
+      source: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-OlRAvS"
+      binary: "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-OlRAvS"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps-19"
       CMAKE_C_FLAGS: ""
@@ -3603,13 +3327,13 @@ events:
       variable: "JNI_INCLUDE_PATH2_OPTIONAL"
       cached: true
       stdout: |
-        Change Dir: '/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-YCAlL2'
+        Change Dir: '/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-OlRAvS'
         
-        Run Build Command(s): /usr/local/google/home/sigurdm/projects/depot_tools/ninja -v cmTC_be720
-        [1/2] /usr/bin/clang -DJNI_INCLUDE_PATH2_OPTIONAL -I/usr/local/buildtools/java/jdk/include  -MD -MT CMakeFiles/cmTC_be720.dir/src.c.o -MF CMakeFiles/cmTC_be720.dir/src.c.o.d -o CMakeFiles/cmTC_be720.dir/src.c.o -c /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-YCAlL2/src.c
-        FAILED: [code=1] CMakeFiles/cmTC_be720.dir/src.c.o 
-        /usr/bin/clang -DJNI_INCLUDE_PATH2_OPTIONAL -I/usr/local/buildtools/java/jdk/include  -MD -MT CMakeFiles/cmTC_be720.dir/src.c.o -MF CMakeFiles/cmTC_be720.dir/src.c.o.d -o CMakeFiles/cmTC_be720.dir/src.c.o -c /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-YCAlL2/src.c
-        In file included from /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-YCAlL2/src.c:2:
+        Run Build Command(s): /usr/local/google/home/sigurdm/projects/depot_tools/ninja -v cmTC_81d1a
+        [1/2] /usr/bin/clang -DJNI_INCLUDE_PATH2_OPTIONAL -I/usr/local/buildtools/java/jdk/include  -MD -MT CMakeFiles/cmTC_81d1a.dir/src.c.o -MF CMakeFiles/cmTC_81d1a.dir/src.c.o.d -o CMakeFiles/cmTC_81d1a.dir/src.c.o -c /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-OlRAvS/src.c
+        FAILED: [code=1] CMakeFiles/cmTC_81d1a.dir/src.c.o 
+        /usr/bin/clang -DJNI_INCLUDE_PATH2_OPTIONAL -I/usr/local/buildtools/java/jdk/include  -MD -MT CMakeFiles/cmTC_81d1a.dir/src.c.o -MF CMakeFiles/cmTC_81d1a.dir/src.c.o.d -o CMakeFiles/cmTC_81d1a.dir/src.c.o -c /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-OlRAvS/src.c
+        In file included from /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/CMakeFiles/CMakeScratch/TryCompile-OlRAvS/src.c:2:
         /usr/local/buildtools/java/jdk/include/jni.h:45:10: fatal error: 'jni_md.h' file not found
            45 | #include "jni_md.h"
               |          ^~~~~~~~~~
@@ -3637,9 +3361,6 @@ events:
       - "jni_md.h"
       - "jniport.h"
     candidate_directories:
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/"
@@ -3682,9 +3403,6 @@ events:
       - "/usr/local/buildtools/java/jdk/include/alpha/"
       - "/usr/local/buildtools/java/jdk/include/aix/"
     searched_directories:
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime/jni_md.h"
-      - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/jni_md.h"
-      - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin/jni_md.h"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin/jni_md.h"
       - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin/jni_md.h"
       - "/usr/local/google/home/sigurdm/projects/depot_tools/jni_md.h"
@@ -3722,9 +3440,6 @@ events:
     found: "/usr/local/buildtools/java/jdk/include/linux/"
     search_context:
       ENV{PATH}:
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash/v1_runtime"
-        - "/tmp/sar.gemini.224757.bae8bbe2bc05c45072023294158e3ad345a6385b/gemini_impl.runfiles/google3/util/shell/gbash"
-        - "/usr/local/google/home/sigurdm/projects/pub-ops/dart-sdk/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.9.0/bin"
         - "/usr/local/google/home/sigurdm/.dvm/darts/3.7.0/bin"
         - "/usr/local/google/home/sigurdm/projects/depot_tools"

@@ -2,6 +2,16 @@
 /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/icudtl.dat
 /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/lib/libflutter_linux_gtk.so
 /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/lib/libdartjni.so
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/lib/libsweph.so
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/lib/libsweph.so
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/packages/sweph/assets/ephe/seorbel.txt
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/packages/sweph/assets/ephe/seas_18.se1
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/packages/sweph/assets/ephe/semo_18.se1
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/packages/sweph/assets/ephe/seasnam.txt
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/packages/sweph/assets/ephe/sepl_18.se1
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/packages/sweph/assets/ephe/seleapsec.txt
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/packages/sweph/assets/ephe/sefstars.txt
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/packages/sweph/assets/sweph.wasm
 /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/packages/cupertino_icons/assets/CupertinoIcons.ttf
 /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/shaders/stretch_effect.frag
 /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/data/flutter_assets/shaders/ink_sparkle.frag

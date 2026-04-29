@@ -114,6 +114,30 @@ endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Runtime" OR NOT CMAKE_INSTALL_COMPONENT)
   list(APPEND CMAKE_ABSOLUTE_DESTINATION_FILES
+   "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/lib/libsweph.so")
+  if(CMAKE_WARN_ON_ABSOLUTE_INSTALL_DESTINATION)
+    message(WARNING "ABSOLUTE path INSTALL DESTINATION : ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
+  endif()
+  if(CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
+    message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
+  endif()
+  file(INSTALL DESTINATION "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/lib" TYPE FILE FILES "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/sweph/shared/libsweph.so")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Runtime" OR NOT CMAKE_INSTALL_COMPONENT)
+  list(APPEND CMAKE_ABSOLUTE_DESTINATION_FILES
+   "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/lib/libsweph.so")
+  if(CMAKE_WARN_ON_ABSOLUTE_INSTALL_DESTINATION)
+    message(WARNING "ABSOLUTE path INSTALL DESTINATION : ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
+  endif()
+  if(CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
+    message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
+  endif()
+  file(INSTALL DESTINATION "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/lib" TYPE FILE OPTIONAL FILES "/usr/local/google/home/sigurdm/projects/magic_calendar/linux/../libsweph.so")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Runtime" OR NOT CMAKE_INSTALL_COMPONENT)
+  list(APPEND CMAKE_ABSOLUTE_DESTINATION_FILES
    "/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/bundle/lib/")
   if(CMAKE_WARN_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(WARNING "ABSOLUTE path INSTALL DESTINATION : ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
@@ -147,6 +171,7 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/flutter/cmake_install.cmake")
   include("/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/runner/cmake_install.cmake")
   include("/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/jni/cmake_install.cmake")
+  include("/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/debug/plugins/sweph/cmake_install.cmake")
 
 endif()
 

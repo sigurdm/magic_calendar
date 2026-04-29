@@ -31,3 +31,16 @@
 /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/jni/shared/CMakeFiles/install.dir
 /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/jni/shared/CMakeFiles/install/local.dir
 /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/jni/shared/CMakeFiles/install/strip.dir
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/CMakeFiles/edit_cache.dir
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/CMakeFiles/rebuild_cache.dir
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/CMakeFiles/list_install_components.dir
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/CMakeFiles/install.dir
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/CMakeFiles/install/local.dir
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/CMakeFiles/install/strip.dir
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/shared/CMakeFiles/sweph.dir
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/shared/CMakeFiles/edit_cache.dir
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/shared/CMakeFiles/rebuild_cache.dir
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/shared/CMakeFiles/list_install_components.dir
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/shared/CMakeFiles/install.dir
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/shared/CMakeFiles/install/local.dir
+/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/shared/CMakeFiles/install/strip.dir

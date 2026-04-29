@@ -192,7 +192,7 @@ build flutter/CMakeFiles/flutter_assemble | ${cmake_ninja_workdir}flutter/CMakeF
 # Custom command for /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/libflutter_linux_gtk.so
 
 build /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/libflutter_linux_gtk.so /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_basic_message_channel.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_binary_codec.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_binary_messenger.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_dart_project.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_engine.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_json_message_codec.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_json_method_codec.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_message_codec.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_method_call.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_method_channel.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_method_codec.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_method_response.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_plugin_registrar.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_plugin_registry.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_standard_message_codec.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_standard_method_codec.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_string_codec.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_value.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_view.h /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/flutter_linux.h flutter/_phony_ | ${cmake_ninja_workdir}flutter/_phony_: CUSTOM_COMMAND
-  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/flutter && /usr/bin/cmake -E env FLUTTER_ROOT=/usr/local/google/home/sigurdm/projects/flutter PROJECT_DIR=/usr/local/google/home/sigurdm/projects/magic_calendar DART_DEFINES=RkxVVFRFUl9WRVJTSU9OPTMuNDQuMC0xLjAucHJlLTEzNw==,RkxVVFRFUl9DSEFOTkVMPVt1c2VyLWJyYW5jaF0=,RkxVVFRFUl9HSVRfVVJMPWh0dHBzOi8vZ2l0aHViLmNvbS9zaWd1cmRtL2ZsdXR0ZXI=,RkxVVFRFUl9GUkFNRVdPUktfUkVWSVNJT049Y2E2MTE4ZWNiOA==,RkxVVFRFUl9FTkdJTkVfUkVWSVNJT049N2UzMWE1YjYzMQ==,RkxVVFRFUl9EQVJUX1ZFUlNJT049My4xMy4wIChidWlsZCAzLjEzLjAtMjcuMC5kZXYp DART_OBFUSCATION=false TRACK_WIDGET_CREATION=true TREE_SHAKE_ICONS=true PACKAGE_CONFIG=/usr/local/google/home/sigurdm/projects/magic_calendar/.dart_tool/package_config.json FLUTTER_TARGET=lib/main.dart /usr/local/google/home/sigurdm/projects/flutter/packages/flutter_tools/bin/tool_backend.sh linux-x64 Release
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/flutter && /usr/bin/cmake -E env FLUTTER_ROOT=/usr/local/google/home/sigurdm/projects/flutter PROJECT_DIR=/usr/local/google/home/sigurdm/projects/magic_calendar DART_DEFINES=RkxVVFRFUl9WRVJTSU9OPTMuNDQuMC0xLjAucHJlLTEzNw==,RkxVVFRFUl9DSEFOTkVMPVt1c2VyLWJyYW5jaF0=,RkxVVFRFUl9HSVRfVVJMPWh0dHBzOi8vZ2l0aHViLmNvbS9zaWd1cmRtL2ZsdXR0ZXI=,RkxVVFRFUl9GUkFNRVdPUktfUkVWSVNJT049Y2E2MTE4ZWNiOA==,RkxVVFRFUl9FTkdJTkVfUkVWSVNJT049N2UzMWE1YjYzMQ==,RkxVVFRFUl9EQVJUX1ZFUlNJT049My4xMy4wIChidWlsZCAzLjEzLjAtMjcuMC5kZXYp DART_OBFUSCATION=false TRACK_WIDGET_CREATION=true TREE_SHAKE_ICONS=false PACKAGE_CONFIG=/usr/local/google/home/sigurdm/projects/magic_calendar/.dart_tool/package_config.json FLUTTER_TARGET=/usr/local/google/home/sigurdm/projects/magic_calendar/lib/main.dart /usr/local/google/home/sigurdm/projects/flutter/packages/flutter_tools/bin/tool_backend.sh linux-x64 Release
   DESC = Generating /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/libflutter_linux_gtk.so, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_basic_message_channel.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_binary_codec.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_binary_messenger.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_dart_project.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_engine.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_json_message_codec.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_json_method_codec.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_message_codec.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_method_call.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_method_channel.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_method_codec.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_method_response.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_plugin_registrar.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_plugin_registry.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_standard_message_codec.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_standard_method_codec.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_string_codec.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_value.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/fl_view.h, /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/flutter_linux/flutter_linux.h, _phony_
   restat = 1
 
@@ -218,8 +218,6 @@ build runner/CMakeFiles/magic_calendar.dir/main.cc.o: CXX_COMPILER__magic_calend
   INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/glib-2.0 -isystem /usr/lib/x86_64-linux-gnu/glib-2.0/include -isystem /usr/include/sysprof-6 -isystem /usr/include/harfbuzz -isystem /usr/include/freetype2 -isystem /usr/include/libpng16 -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/fribidi -isystem /usr/include/cairo -isystem /usr/include/pixman-1 -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/webp -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/cloudproviders -isystem /usr/include/atk-1.0 -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/x86_64-linux-gnu/dbus-1.0/include
   OBJECT_DIR = runner/CMakeFiles/magic_calendar.dir
   OBJECT_FILE_DIR = runner/CMakeFiles/magic_calendar.dir
-  TARGET_COMPILE_PDB = runner/CMakeFiles/magic_calendar.dir/
-  TARGET_PDB = intermediates_do_not_run/magic_calendar.pdb
   TARGET_SUPPORT_DIR = runner/CMakeFiles/magic_calendar.dir
 
 build runner/CMakeFiles/magic_calendar.dir/my_application.cc.o: CXX_COMPILER__magic_calendar_unscanned_Release /usr/local/google/home/sigurdm/projects/magic_calendar/linux/runner/my_application.cc || cmake_object_order_depends_target_magic_calendar
@@ -230,8 +228,6 @@ build runner/CMakeFiles/magic_calendar.dir/my_application.cc.o: CXX_COMPILER__ma
   INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/glib-2.0 -isystem /usr/lib/x86_64-linux-gnu/glib-2.0/include -isystem /usr/include/sysprof-6 -isystem /usr/include/harfbuzz -isystem /usr/include/freetype2 -isystem /usr/include/libpng16 -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/fribidi -isystem /usr/include/cairo -isystem /usr/include/pixman-1 -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/webp -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/cloudproviders -isystem /usr/include/atk-1.0 -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/x86_64-linux-gnu/dbus-1.0/include
   OBJECT_DIR = runner/CMakeFiles/magic_calendar.dir
   OBJECT_FILE_DIR = runner/CMakeFiles/magic_calendar.dir
-  TARGET_COMPILE_PDB = runner/CMakeFiles/magic_calendar.dir/
-  TARGET_PDB = intermediates_do_not_run/magic_calendar.pdb
   TARGET_SUPPORT_DIR = runner/CMakeFiles/magic_calendar.dir
 
 build runner/CMakeFiles/magic_calendar.dir/__/flutter/generated_plugin_registrant.cc.o: CXX_COMPILER__magic_calendar_unscanned_Release /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/generated_plugin_registrant.cc || cmake_object_order_depends_target_magic_calendar
@@ -242,8 +238,6 @@ build runner/CMakeFiles/magic_calendar.dir/__/flutter/generated_plugin_registran
   INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/glib-2.0 -isystem /usr/lib/x86_64-linux-gnu/glib-2.0/include -isystem /usr/include/sysprof-6 -isystem /usr/include/harfbuzz -isystem /usr/include/freetype2 -isystem /usr/include/libpng16 -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/fribidi -isystem /usr/include/cairo -isystem /usr/include/pixman-1 -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/webp -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/cloudproviders -isystem /usr/include/atk-1.0 -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/x86_64-linux-gnu/dbus-1.0/include
   OBJECT_DIR = runner/CMakeFiles/magic_calendar.dir
   OBJECT_FILE_DIR = runner/CMakeFiles/magic_calendar.dir/__/flutter
-  TARGET_COMPILE_PDB = runner/CMakeFiles/magic_calendar.dir/
-  TARGET_PDB = intermediates_do_not_run/magic_calendar.pdb
   TARGET_SUPPORT_DIR = runner/CMakeFiles/magic_calendar.dir
 
 
@@ -263,9 +257,8 @@ build intermediates_do_not_run/magic_calendar: CXX_EXECUTABLE_LINKER__magic_cale
   OBJECT_DIR = runner/CMakeFiles/magic_calendar.dir
   POST_BUILD = :
   PRE_LINK = :
-  TARGET_COMPILE_PDB = runner/CMakeFiles/magic_calendar.dir/
   TARGET_FILE = intermediates_do_not_run/magic_calendar
-  TARGET_PDB = intermediates_do_not_run/magic_calendar.pdb
+  TARGET_PDB = magic_calendar.dbg
   TARGET_SUPPORT_DIR = runner/CMakeFiles/magic_calendar.dir
 
 
@@ -425,8 +418,6 @@ build plugins/jni/shared/CMakeFiles/jni.dir/dartjni.c.o: C_COMPILER__jni_unscann
   INCLUDES = -I/usr/local/buildtools/java/jdk/include -I/usr/local/buildtools/java/jdk/include/linux
   OBJECT_DIR = plugins/jni/shared/CMakeFiles/jni.dir
   OBJECT_FILE_DIR = plugins/jni/shared/CMakeFiles/jni.dir
-  TARGET_COMPILE_PDB = plugins/jni/shared/CMakeFiles/jni.dir/
-  TARGET_PDB = plugins/jni/shared/libdartjni.pdb
   TARGET_SUPPORT_DIR = plugins/jni/shared/CMakeFiles/jni.dir
 
 build plugins/jni/shared/CMakeFiles/jni.dir/third_party/global_jni_env.c.o: C_COMPILER__jni_unscanned_Release /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/src/third_party/global_jni_env.c || cmake_object_order_depends_target_jni
@@ -437,8 +428,6 @@ build plugins/jni/shared/CMakeFiles/jni.dir/third_party/global_jni_env.c.o: C_CO
   INCLUDES = -I/usr/local/buildtools/java/jdk/include -I/usr/local/buildtools/java/jdk/include/linux
   OBJECT_DIR = plugins/jni/shared/CMakeFiles/jni.dir
   OBJECT_FILE_DIR = plugins/jni/shared/CMakeFiles/jni.dir/third_party
-  TARGET_COMPILE_PDB = plugins/jni/shared/CMakeFiles/jni.dir/
-  TARGET_PDB = plugins/jni/shared/libdartjni.pdb
   TARGET_SUPPORT_DIR = plugins/jni/shared/CMakeFiles/jni.dir
 
 build plugins/jni/shared/CMakeFiles/jni.dir/include/dart_api_dl.c.o: C_COMPILER__jni_unscanned_Release /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/src/include/dart_api_dl.c || cmake_object_order_depends_target_jni
@@ -449,8 +438,6 @@ build plugins/jni/shared/CMakeFiles/jni.dir/include/dart_api_dl.c.o: C_COMPILER_
   INCLUDES = -I/usr/local/buildtools/java/jdk/include -I/usr/local/buildtools/java/jdk/include/linux
   OBJECT_DIR = plugins/jni/shared/CMakeFiles/jni.dir
   OBJECT_FILE_DIR = plugins/jni/shared/CMakeFiles/jni.dir/include
-  TARGET_COMPILE_PDB = plugins/jni/shared/CMakeFiles/jni.dir/
-  TARGET_PDB = plugins/jni/shared/libdartjni.pdb
   TARGET_SUPPORT_DIR = plugins/jni/shared/CMakeFiles/jni.dir
 
 
@@ -472,9 +459,8 @@ build plugins/jni/shared/libdartjni.so: C_SHARED_LIBRARY_LINKER__jni_Release plu
   PRE_LINK = :
   SONAME = libdartjni.so
   SONAME_FLAG = -Wl,-soname,
-  TARGET_COMPILE_PDB = plugins/jni/shared/CMakeFiles/jni.dir/
   TARGET_FILE = plugins/jni/shared/libdartjni.so
-  TARGET_PDB = plugins/jni/shared/libdartjni.pdb
+  TARGET_PDB = dartjni.so.dbg
   TARGET_SUPPORT_DIR = plugins/jni/shared/CMakeFiles/jni.dir
 
 
@@ -543,6 +529,267 @@ build plugins/jni/shared/CMakeFiles/install/strip.util: CUSTOM_COMMAND plugins/j
 build plugins/jni/shared/install/strip: phony plugins/jni/shared/CMakeFiles/install/strip.util
 
 # =============================================================================
+# Write statements declared in CMakeLists.txt:
+# /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/generated_plugins.cmake
+# =============================================================================
+
+
+#############################################
+# Utility command for edit_cache
+
+build plugins/sweph/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph && /usr/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+  DESC = No interactive CMake dialog available...
+  restat = 1
+
+build plugins/sweph/edit_cache: phony plugins/sweph/CMakeFiles/edit_cache.util
+
+
+#############################################
+# Utility command for rebuild_cache
+
+build plugins/sweph/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph && /usr/bin/cmake --regenerate-during-build -S/usr/local/google/home/sigurdm/projects/magic_calendar/linux -B/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release
+  DESC = Running CMake to regenerate build system...
+  pool = console
+  restat = 1
+
+build plugins/sweph/rebuild_cache: phony plugins/sweph/CMakeFiles/rebuild_cache.util
+
+
+#############################################
+# Utility command for list_install_components
+
+build plugins/sweph/list_install_components: phony
+
+
+#############################################
+# Utility command for install
+
+build plugins/sweph/CMakeFiles/install.util: CUSTOM_COMMAND plugins/sweph/all
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph && /usr/bin/cmake -P cmake_install.cmake
+  DESC = Install the project...
+  pool = console
+  restat = 1
+
+build plugins/sweph/install: phony plugins/sweph/CMakeFiles/install.util
+
+
+#############################################
+# Utility command for install/local
+
+build plugins/sweph/CMakeFiles/install/local.util: CUSTOM_COMMAND plugins/sweph/all
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph && /usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  DESC = Installing only the local directory...
+  pool = console
+  restat = 1
+
+build plugins/sweph/install/local: phony plugins/sweph/CMakeFiles/install/local.util
+
+
+#############################################
+# Utility command for install/strip
+
+build plugins/sweph/CMakeFiles/install/strip.util: CUSTOM_COMMAND plugins/sweph/all
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph && /usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  DESC = Installing the project stripped...
+  pool = console
+  restat = 1
+
+build plugins/sweph/install/strip: phony plugins/sweph/CMakeFiles/install/strip.util
+
+# =============================================================================
+# Write statements declared in CMakeLists.txt:
+# /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/linux/CMakeLists.txt
+# =============================================================================
+
+# =============================================================================
+# Object build statements for SHARED_LIBRARY target sweph
+
+
+#############################################
+# Order-only phony target for sweph
+
+build cmake_object_order_depends_target_sweph: phony || .
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swecl.c.o: C_COMPILER__sweph_unscanned_Release /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/swecl.c || cmake_object_order_depends_target_sweph
+  CONFIG = Release
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swecl.c.o.d
+  FLAGS = -O3 -DNDEBUG -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swedate.c.o: C_COMPILER__sweph_unscanned_Release /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/swedate.c || cmake_object_order_depends_target_sweph
+  CONFIG = Release
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swedate.c.o.d
+  FLAGS = -O3 -DNDEBUG -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swehel.c.o: C_COMPILER__sweph_unscanned_Release /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/swehel.c || cmake_object_order_depends_target_sweph
+  CONFIG = Release
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swehel.c.o.d
+  FLAGS = -O3 -DNDEBUG -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swehouse.c.o: C_COMPILER__sweph_unscanned_Release /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/swehouse.c || cmake_object_order_depends_target_sweph
+  CONFIG = Release
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swehouse.c.o.d
+  FLAGS = -O3 -DNDEBUG -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swejpl.c.o: C_COMPILER__sweph_unscanned_Release /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/swejpl.c || cmake_object_order_depends_target_sweph
+  CONFIG = Release
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swejpl.c.o.d
+  FLAGS = -O3 -DNDEBUG -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swemmoon.c.o: C_COMPILER__sweph_unscanned_Release /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/swemmoon.c || cmake_object_order_depends_target_sweph
+  CONFIG = Release
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swemmoon.c.o.d
+  FLAGS = -O3 -DNDEBUG -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swemplan.c.o: C_COMPILER__sweph_unscanned_Release /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/swemplan.c || cmake_object_order_depends_target_sweph
+  CONFIG = Release
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swemplan.c.o.d
+  FLAGS = -O3 -DNDEBUG -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/sweph.c.o: C_COMPILER__sweph_unscanned_Release /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/sweph.c || cmake_object_order_depends_target_sweph
+  CONFIG = Release
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/sweph.c.o.d
+  FLAGS = -O3 -DNDEBUG -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+build plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swephlib.c.o: C_COMPILER__sweph_unscanned_Release /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src/swephlib.c || cmake_object_order_depends_target_sweph
+  CONFIG = Release
+  DEFINES = -DDART_SHARED_LIB -D_CRT_SECURE_NO_WARNINGS -Dsweph_EXPORTS
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swephlib.c.o.d
+  FLAGS = -O3 -DNDEBUG -fPIC
+  INCLUDES = -I/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/sweph/src
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  OBJECT_FILE_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+
+# =============================================================================
+# Link build statements for SHARED_LIBRARY target sweph
+
+
+#############################################
+# Link the shared library plugins/sweph/shared/libsweph.so
+
+build plugins/sweph/shared/libsweph.so: C_SHARED_LIBRARY_LINKER__sweph_Release plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swecl.c.o plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swedate.c.o plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swehel.c.o plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swehouse.c.o plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swejpl.c.o plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swemmoon.c.o plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swemplan.c.o plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/sweph.c.o plugins/sweph/shared/CMakeFiles/sweph.dir/sweph/src/swephlib.c.o
+  CONFIG = Release
+  DEP_FILE = plugins/sweph/shared/CMakeFiles/sweph.dir/link.d
+  LANGUAGE_COMPILE_FLAGS = -O3 -DNDEBUG
+  LINK_FLAGS = -shared -Xlinker --dependency-file=plugins/sweph/shared/CMakeFiles/sweph.dir/link.d
+  OBJECT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+  POST_BUILD = :
+  PRE_LINK = :
+  SONAME = libsweph.so
+  SONAME_FLAG = -Wl,-soname,
+  TARGET_FILE = plugins/sweph/shared/libsweph.so
+  TARGET_PDB = sweph.so.dbg
+  TARGET_SUPPORT_DIR = plugins/sweph/shared/CMakeFiles/sweph.dir
+
+
+#############################################
+# Utility command for edit_cache
+
+build plugins/sweph/shared/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/shared && /usr/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+  DESC = No interactive CMake dialog available...
+  restat = 1
+
+build plugins/sweph/shared/edit_cache: phony plugins/sweph/shared/CMakeFiles/edit_cache.util
+
+
+#############################################
+# Utility command for rebuild_cache
+
+build plugins/sweph/shared/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/shared && /usr/bin/cmake --regenerate-during-build -S/usr/local/google/home/sigurdm/projects/magic_calendar/linux -B/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release
+  DESC = Running CMake to regenerate build system...
+  pool = console
+  restat = 1
+
+build plugins/sweph/shared/rebuild_cache: phony plugins/sweph/shared/CMakeFiles/rebuild_cache.util
+
+
+#############################################
+# Utility command for list_install_components
+
+build plugins/sweph/shared/list_install_components: phony
+
+
+#############################################
+# Utility command for install
+
+build plugins/sweph/shared/CMakeFiles/install.util: CUSTOM_COMMAND plugins/sweph/shared/all
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/shared && /usr/bin/cmake -P cmake_install.cmake
+  DESC = Install the project...
+  pool = console
+  restat = 1
+
+build plugins/sweph/shared/install: phony plugins/sweph/shared/CMakeFiles/install.util
+
+
+#############################################
+# Utility command for install/local
+
+build plugins/sweph/shared/CMakeFiles/install/local.util: CUSTOM_COMMAND plugins/sweph/shared/all
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/shared && /usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  DESC = Installing only the local directory...
+  pool = console
+  restat = 1
+
+build plugins/sweph/shared/install/local: phony plugins/sweph/shared/CMakeFiles/install/local.util
+
+
+#############################################
+# Utility command for install/strip
+
+build plugins/sweph/shared/CMakeFiles/install/strip.util: CUSTOM_COMMAND plugins/sweph/shared/all
+  COMMAND = cd /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/shared && /usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  DESC = Installing the project stripped...
+  pool = console
+  restat = 1
+
+build plugins/sweph/shared/install/strip: phony plugins/sweph/shared/CMakeFiles/install/strip.util
+
+# =============================================================================
 # Target aliases.
 
 build flutter_assemble: phony flutter/flutter_assemble
@@ -551,7 +798,11 @@ build jni: phony plugins/jni/shared/libdartjni.so
 
 build libdartjni.so: phony plugins/jni/shared/libdartjni.so
 
+build libsweph.so: phony plugins/sweph/shared/libsweph.so
+
 build magic_calendar: phony intermediates_do_not_run/magic_calendar
+
+build sweph: phony plugins/sweph/shared/libsweph.so
 
 # =============================================================================
 # Folder targets.
@@ -561,7 +812,7 @@ build magic_calendar: phony intermediates_do_not_run/magic_calendar
 #############################################
 # Folder: /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release
 
-build all: phony flutter/all runner/all plugins/jni/all
+build all: phony flutter/all runner/all plugins/jni/all plugins/sweph/all
 
 # =============================================================================
 
@@ -587,6 +838,20 @@ build plugins/jni/shared/all: phony plugins/jni/shared/libdartjni.so
 # =============================================================================
 
 #############################################
+# Folder: /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph
+
+build plugins/sweph/all: phony plugins/sweph/shared/all
+
+# =============================================================================
+
+#############################################
+# Folder: /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/shared
+
+build plugins/sweph/shared/all: phony plugins/sweph/shared/libsweph.so
+
+# =============================================================================
+
+#############################################
 # Folder: /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/runner
 
 build runner/all: phony intermediates_do_not_run/magic_calendar
@@ -598,14 +863,14 @@ build runner/all: phony intermediates_do_not_run/magic_calendar
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/flutter/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/runner/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/jni/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/jni/shared/cmake_install.cmake: RERUN_CMAKE | /usr/local/google/home/sigurdm/projects/magic_calendar/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/generated_config.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/generated_plugins.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/linux/runner/CMakeLists.txt /usr/share/cmake-4.2/Modules/CMakeCCompiler.cmake.in /usr/share/cmake-4.2/Modules/CMakeCCompilerABI.c /usr/share/cmake-4.2/Modules/CMakeCInformation.cmake /usr/share/cmake-4.2/Modules/CMakeCXXCompiler.cmake.in /usr/share/cmake-4.2/Modules/CMakeCXXCompilerABI.cpp /usr/share/cmake-4.2/Modules/CMakeCXXInformation.cmake /usr/share/cmake-4.2/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-4.2/Modules/CMakeCompilerIdDetection.cmake /usr/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake /usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake /usr/share/cmake-4.2/Modules/CMakeDetermineCompiler.cmake /usr/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake /usr/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake /usr/share/cmake-4.2/Modules/CMakeDetermineCompilerSupport.cmake /usr/share/cmake-4.2/Modules/CMakeDetermineSystem.cmake /usr/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake /usr/share/cmake-4.2/Modules/CMakeFindJavaCommon.cmake /usr/share/cmake-4.2/Modules/CMakeGenericSystem.cmake /usr/share/cmake-4.2/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-4.2/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-4.2/Modules/CMakeNinjaFindMake.cmake /usr/share/cmake-4.2/Modules/CMakeParseImplicitIncludeInfo.cmake /usr/share/cmake-4.2/Modules/CMakeParseImplicitLinkInfo.cmake /usr/share/cmake-4.2/Modules/CMakeParseLibraryArchitecture.cmake /usr/share/cmake-4.2/Modules/CMakePushCheckState.cmake /usr/share/cmake-4.2/Modules/CMakeSystem.cmake.in /usr/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-4.2/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-4.2/Modules/CMakeTestCCompiler.cmake /usr/share/cmake-4.2/Modules/CMakeTestCXXCompiler.cmake /usr/share/cmake-4.2/Modules/CMakeTestCompilerCommon.cmake /usr/share/cmake-4.2/Modules/CheckSourceCompiles.cmake /usr/share/cmake-4.2/Modules/Compiler/ADSP-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/ARMCC-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/ARMClang-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/AppleClang-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Borland-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Bruce-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-C.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-CXX-CXXImportStd.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-DetermineCompilerInternal.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-FindBinUtils.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang.cmake /usr/share/cmake-4.2/Modules/Compiler/Compaq-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Compaq-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Cray-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/CrayClang-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Diab-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Embarcadero-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Fujitsu-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/FujitsuClang-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/GHS-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/GNU-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/GNU-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/GNU.cmake /usr/share/cmake-4.2/Modules/Compiler/HP-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/HP-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/IAR-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/IBMCPP-C-DetermineVersionInternal.cmake /usr/share/cmake-4.2/Modules/Compiler/IBMCPP-CXX-DetermineVersionInternal.cmake /usr/share/cmake-4.2/Modules/Compiler/IBMClang-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/IBMClang-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Intel-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/IntelLLVM-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/LCC-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/LCC-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/MSVC-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/NVHPC-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/NVIDIA-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/OpenWatcom-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/OrangeC-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/PGI-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/PathScale-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Renesas-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/SCO-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/SDCC-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/SunPro-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/SunPro-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/TI-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/TIClang-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Tasking-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/TinyCC-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/VisualAge-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/VisualAge-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Watcom-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/XL-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/XL-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/XLClang-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/XLClang-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/zOS-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/zOS-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/FindJNI.cmake /usr/share/cmake-4.2/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake-4.2/Modules/FindPackageMessage.cmake /usr/share/cmake-4.2/Modules/FindPkgConfig.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCXXLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCommonLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeDetermineLinkerId.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeInspectCLinker.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeInspectCXXLinker.cmake /usr/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake /usr/share/cmake-4.2/Modules/Internal/FeatureTesting.cmake /usr/share/cmake-4.2/Modules/Linker/GNU-C.cmake /usr/share/cmake-4.2/Modules/Linker/GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Linker/GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Clang-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Determine-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-4.2/Modules/Platform/Linux.cmake /usr/share/cmake-4.2/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/4.2.3/CMakeCCompiler.cmake CMakeFiles/4.2.3/CMakeCXXCompiler.cmake CMakeFiles/4.2.3/CMakeSystem.cmake
+build build.ninja /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/flutter/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/runner/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/jni/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/jni/shared/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/cmake_install.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/shared/cmake_install.cmake: RERUN_CMAKE | /usr/local/google/home/sigurdm/projects/magic_calendar/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/generated_config.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/generated_plugins.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/linux/runner/CMakeLists.txt /usr/share/cmake-4.2/Modules/CMakeCInformation.cmake /usr/share/cmake-4.2/Modules/CMakeCXXInformation.cmake /usr/share/cmake-4.2/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-4.2/Modules/CMakeFindJavaCommon.cmake /usr/share/cmake-4.2/Modules/CMakeGenericSystem.cmake /usr/share/cmake-4.2/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-4.2/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-4.2/Modules/CMakePushCheckState.cmake /usr/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-4.2/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-4.2/Modules/CheckSourceCompiles.cmake /usr/share/cmake-4.2/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-C.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang.cmake /usr/share/cmake-4.2/Modules/Compiler/GNU.cmake /usr/share/cmake-4.2/Modules/FindJNI.cmake /usr/share/cmake-4.2/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake-4.2/Modules/FindPackageMessage.cmake /usr/share/cmake-4.2/Modules/FindPkgConfig.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCXXLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCommonLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake /usr/share/cmake-4.2/Modules/Linker/GNU-C.cmake /usr/share/cmake-4.2/Modules/Linker/GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Linker/GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Clang-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-4.2/Modules/Platform/Linux.cmake /usr/share/cmake-4.2/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/4.2.3/CMakeCCompiler.cmake CMakeFiles/4.2.3/CMakeCXXCompiler.cmake CMakeFiles/4.2.3/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build /usr/local/google/home/sigurdm/projects/magic_calendar/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/generated_config.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/generated_plugins.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/linux/runner/CMakeLists.txt /usr/share/cmake-4.2/Modules/CMakeCCompiler.cmake.in /usr/share/cmake-4.2/Modules/CMakeCCompilerABI.c /usr/share/cmake-4.2/Modules/CMakeCInformation.cmake /usr/share/cmake-4.2/Modules/CMakeCXXCompiler.cmake.in /usr/share/cmake-4.2/Modules/CMakeCXXCompilerABI.cpp /usr/share/cmake-4.2/Modules/CMakeCXXInformation.cmake /usr/share/cmake-4.2/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-4.2/Modules/CMakeCompilerIdDetection.cmake /usr/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake /usr/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake /usr/share/cmake-4.2/Modules/CMakeDetermineCompiler.cmake /usr/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake /usr/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake /usr/share/cmake-4.2/Modules/CMakeDetermineCompilerSupport.cmake /usr/share/cmake-4.2/Modules/CMakeDetermineSystem.cmake /usr/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake /usr/share/cmake-4.2/Modules/CMakeFindJavaCommon.cmake /usr/share/cmake-4.2/Modules/CMakeGenericSystem.cmake /usr/share/cmake-4.2/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-4.2/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-4.2/Modules/CMakeNinjaFindMake.cmake /usr/share/cmake-4.2/Modules/CMakeParseImplicitIncludeInfo.cmake /usr/share/cmake-4.2/Modules/CMakeParseImplicitLinkInfo.cmake /usr/share/cmake-4.2/Modules/CMakeParseLibraryArchitecture.cmake /usr/share/cmake-4.2/Modules/CMakePushCheckState.cmake /usr/share/cmake-4.2/Modules/CMakeSystem.cmake.in /usr/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-4.2/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-4.2/Modules/CMakeTestCCompiler.cmake /usr/share/cmake-4.2/Modules/CMakeTestCXXCompiler.cmake /usr/share/cmake-4.2/Modules/CMakeTestCompilerCommon.cmake /usr/share/cmake-4.2/Modules/CheckSourceCompiles.cmake /usr/share/cmake-4.2/Modules/Compiler/ADSP-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/ARMCC-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/ARMClang-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/AppleClang-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Borland-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Bruce-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-C.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-CXX-CXXImportStd.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-DetermineCompilerInternal.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-FindBinUtils.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang.cmake /usr/share/cmake-4.2/Modules/Compiler/Compaq-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Compaq-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Cray-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/CrayClang-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Diab-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Embarcadero-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Fujitsu-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/FujitsuClang-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/GHS-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/GNU-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/GNU-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/GNU.cmake /usr/share/cmake-4.2/Modules/Compiler/HP-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/HP-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/IAR-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/IBMCPP-C-DetermineVersionInternal.cmake /usr/share/cmake-4.2/Modules/Compiler/IBMCPP-CXX-DetermineVersionInternal.cmake /usr/share/cmake-4.2/Modules/Compiler/IBMClang-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/IBMClang-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Intel-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/IntelLLVM-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/LCC-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/LCC-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/MSVC-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/NVHPC-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/NVIDIA-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/OpenWatcom-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/OrangeC-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/PGI-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/PathScale-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Renesas-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/SCO-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/SDCC-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/SunPro-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/SunPro-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/TI-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/TIClang-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Tasking-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/TinyCC-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/VisualAge-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/VisualAge-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/Watcom-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/XL-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/XL-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/XLClang-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/XLClang-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/zOS-C-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/Compiler/zOS-CXX-DetermineCompiler.cmake /usr/share/cmake-4.2/Modules/FindJNI.cmake /usr/share/cmake-4.2/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake-4.2/Modules/FindPackageMessage.cmake /usr/share/cmake-4.2/Modules/FindPkgConfig.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCXXLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCommonLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeDetermineLinkerId.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeInspectCLinker.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeInspectCXXLinker.cmake /usr/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake /usr/share/cmake-4.2/Modules/Internal/FeatureTesting.cmake /usr/share/cmake-4.2/Modules/Linker/GNU-C.cmake /usr/share/cmake-4.2/Modules/Linker/GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Linker/GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Clang-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Determine-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-4.2/Modules/Platform/Linux.cmake /usr/share/cmake-4.2/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/4.2.3/CMakeCCompiler.cmake CMakeFiles/4.2.3/CMakeCXXCompiler.cmake CMakeFiles/4.2.3/CMakeSystem.cmake: phony
+build /usr/local/google/home/sigurdm/projects/magic_calendar/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/jni/src/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/linux/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native/CMakeLists.txt /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/generated_config.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/generated_plugins.cmake /usr/local/google/home/sigurdm/projects/magic_calendar/linux/runner/CMakeLists.txt /usr/share/cmake-4.2/Modules/CMakeCInformation.cmake /usr/share/cmake-4.2/Modules/CMakeCXXInformation.cmake /usr/share/cmake-4.2/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-4.2/Modules/CMakeFindJavaCommon.cmake /usr/share/cmake-4.2/Modules/CMakeGenericSystem.cmake /usr/share/cmake-4.2/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-4.2/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-4.2/Modules/CMakePushCheckState.cmake /usr/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-4.2/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-4.2/Modules/CheckSourceCompiles.cmake /usr/share/cmake-4.2/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-C.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake-4.2/Modules/Compiler/Clang.cmake /usr/share/cmake-4.2/Modules/Compiler/GNU.cmake /usr/share/cmake-4.2/Modules/FindJNI.cmake /usr/share/cmake-4.2/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake-4.2/Modules/FindPackageMessage.cmake /usr/share/cmake-4.2/Modules/FindPkgConfig.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCXXLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CMakeCommonLinkerInformation.cmake /usr/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake /usr/share/cmake-4.2/Modules/Linker/GNU-C.cmake /usr/share/cmake-4.2/Modules/Linker/GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Linker/GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linker/Linux-GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Clang-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU-C.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-4.2/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-4.2/Modules/Platform/Linux.cmake /usr/share/cmake-4.2/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/4.2.3/CMakeCCompiler.cmake CMakeFiles/4.2.3/CMakeCXXCompiler.cmake CMakeFiles/4.2.3/CMakeSystem.cmake: phony
 
 
 #############################################

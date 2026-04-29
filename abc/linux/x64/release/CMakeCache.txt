@@ -337,6 +337,24 @@ runner_IS_TOP_LEVEL:STATIC=OFF
 //Value Computed by CMake
 runner_SOURCE_DIR:STATIC=/usr/local/google/home/sigurdm/projects/magic_calendar/linux/runner
 
+//Value Computed by CMake
+sweph_BINARY_DIR:STATIC=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph
+
+//Value Computed by CMake
+sweph_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+sweph_SOURCE_DIR:STATIC=/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/linux
+
+//Value Computed by CMake
+sweph_library_BINARY_DIR:STATIC=/usr/local/google/home/sigurdm/projects/magic_calendar/abc/linux/x64/release/plugins/sweph/shared
+
+//Value Computed by CMake
+sweph_library_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+sweph_library_SOURCE_DIR:STATIC=/usr/local/google/home/sigurdm/projects/magic_calendar/linux/flutter/ephemeral/.plugin_symlinks/sweph/native
+
 
 ########################
 # INTERNAL cache entries
@@ -448,7 +466,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=5
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=7
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP
