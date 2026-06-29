@@ -387,8 +387,22 @@ final class InfiniteTimelinePainter extends CustomPainter {
     canvas.drawPath(tempPath, tempLinePaint);
     canvas.drawPath(windPath, windLinePaint);
 
-    for (int i = 0; i < weatherData.length; i += 12) {
-      final wd = weatherData[i];
+    for (final wd in weatherData) {
+      final hour = wd.time.hour;
+      bool showLabel = false;
+
+      if (hourWidth < 10) {
+        showLabel = hour == 12;
+      } else if (hourWidth < 20) {
+        showLabel = hour == 0 || hour == 12;
+      } else if (hourWidth < 40) {
+        showLabel = hour % 6 == 0;
+      } else {
+        showLabel = hour % 3 == 0;
+      }
+
+      if (!showLabel) continue;
+
       final offsetInHours = wd.time.difference(centerTime).inSeconds / 3600.0;
       final x = centerX + (offsetInHours * hourWidth);
 
