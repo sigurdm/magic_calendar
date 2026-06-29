@@ -17,7 +17,7 @@ void main() async {
   enableFlutterDriverExtension();
   final weatherService = CombinedWeatherService(
     yrNoService: YrNoWeatherService(
-      userAgent: 'MagicCalendar/1.0 (sigurd.meldgaard@example.com)',
+      userAgent: 'MagicCalendar/1.0 post@sigurdmeldgaard.dk',
     ),
     dmiService: DmiWeatherService(),
   );
