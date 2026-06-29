@@ -90,7 +90,7 @@ void main() async {
 
   test('calculateTrineQuality detects Special Flower Day from Air constellation planetary trine', () {
     final planets = [
-      PlanetInfo(name: 'Moon', longitude: 108.0), // Gemini (Air -> Flower)
+      PlanetInfo(name: 'Venus', longitude: 108.0), // Gemini (Air -> Flower)
       PlanetInfo(name: 'Jupiter', longitude: 228.0), // Libra (Air -> Flower), exact 120 degrees apart
     ];
 
