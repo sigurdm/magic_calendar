@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Full help and reference screen explaining calendar usage, concepts, practical applications, and history.
+/// Full help and reference screen explaining calendar usage, concepts, practical applications, prioritization, and history.
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
 
@@ -76,7 +76,7 @@ class HelpScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            _buildSectionHeader(context, 'Practical Execution: Special & Gray Days', Icons.stars),
+            _buildSectionHeader(context, 'Special Days & Sap Rhythms', Icons.stars),
             const SizedBox(height: 8),
             _buildCard(
               context,
@@ -88,12 +88,6 @@ class HelpScreen extends StatelessWidget {
                   practical: 'Treat as "Prime Execution Hours". Reserve delicate sowings, high-value grafting, taking cuttings, or harvesting medicinal herbs for these 4-to-12 hour windows for extra-strong plant vigor.',
                 ),
                 _buildHelpItem(
-                  'Gray Days (Unfavorable Windows)',
-                  'Marked with a gray hatched background and warning symbol. Occur during Moon Node crossings (crossing the ecliptic plane) and Moon Perigee (closest point to Earth).',
-                  badgeColor: Colors.grey[400],
-                  practical: 'Treat as "Rest & Maintenance Hours". Gravitational interference causes erratic germination, weak roots, and fungal susceptibility. Avoid sowing, transplanting, pruning, or grafting. Use this time for sharpening tools, repairing beds, or building compost.',
-                ),
-                _buildHelpItem(
                   'Multi-Organ Crops & Dual Purposes',
                   'Many plants have multiple edible parts. Apply the calendar according to the specific organ you intend to harvest.',
                   practical: 'Grow celery for stalks on Leaf days, but celeriac for roots on Root days. Sow broccoli on Flower days for compact heads, but silage corn on Leaf days for foliage biomass.',
@@ -102,6 +96,26 @@ class HelpScreen extends StatelessWidget {
                   'Sap Flow & Sap Vitality Rhythms',
                   'Reflects lunar ascent/descent and waxing/waning cycles governing plant sap pressure.',
                   practical: 'Ascending/Waxing Moon: Sap rises into foliage (ideal for taking greenwood cuttings, grafting, and harvesting above-ground fruits). Descending/Waning Moon: Sap drops into roots and soil (ideal for transplanting seedlings as roots establish rapidly, root pruning, and spreading compost).',
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            _buildSectionHeader(context, 'Prioritization & Gray Day Consequences', Icons.warning_amber),
+            const SizedBox(height: 8),
+            _buildCard(
+              context,
+              children: [
+                _buildHelpItem(
+                  'Real-World Prioritization Hierarchy',
+                  'Maria Thun stresses that weather conditions and soil moisture take physical precedence. Working wet soil on a "perfect" calendar day causes soil compaction damage. When timing is constrained, follow this hierarchy:',
+                  practical: '1. Avoid Gray Days (Highest Rule): Moving work to ANY clear day is better than working on a Gray Day.\n2. Prioritize Sowing & Planting: Aligning initial seed contact or transplanting gives the strongest lifelong impulse.\n3. Leverage Moon Ascent/Descent: If you miss the exact constellation quality, align with Ascending/Descending moon rhythms.\n4. Secondary Cultivation: Hoeing, weeding, and harvesting can be caught up on subsequent matching days.',
+                ),
+                _buildHelpItem(
+                  'Consequences of Working on a Gray Day',
+                  'Gray Days mark Moon Node crossings and Moon Perigee, where gravitational and cosmic interference disrupts plant cell division and sap pressure.',
+                  badgeColor: Colors.grey[400],
+                  practical: '• Poor & Erratic Germination: Seeds sown on Gray Days show delayed, uneven, or failed sprouting.\n• Structural Weakness: Young plants tend to grow leggy, structurally weak stems and bolt prematurely.\n• Rot & Mold Vulnerability: Crops harvested or pruned during Gray Days retain erratic moisture, causing rapid storage decay and slow pruning wound healing.',
                 ),
               ],
             ),
