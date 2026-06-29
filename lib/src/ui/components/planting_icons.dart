@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
+import '../../services/ephemeris_service.dart';
 
-import 'ephemeris_service.dart';
-
-class PlantingQualityIcon extends StatelessWidget {
+/// Widget rendering plant quality icon badges.
+final class PlantingQualityIcon extends StatelessWidget {
+  /// Plant quality.
   final PlantQuality quality;
+
+  /// Size of icon.
   final double size;
+
+  /// Optional color tint.
   final Color? color;
+
+  /// Flag indicating if day is a Gray Day.
   final bool isGrayDay;
 
+  /// Creates a [PlantingQualityIcon].
   const PlantingQualityIcon({
     super.key,
     required this.quality,

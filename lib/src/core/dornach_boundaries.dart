@@ -1,13 +1,18 @@
-/// Dornach boundaries for the Maria Thun biodynamic calendar.
-/// These are unequal constellation sizes.
-///
-/// Placeholder values for now.
-class ConstellationBoundary {
+/// Representation of constellation boundaries for biodynamic calendar calculations.
+final class ConstellationBoundary {
+  /// Name of constellation.
   final String name;
+
+  /// Starting ecliptic degree.
   final double startDegree;
+
+  /// Ending ecliptic degree.
   final double endDegree;
+
+  /// Associated element ('Earth', 'Water', 'Air', 'Fire').
   final String element;
 
+  /// Creates a [ConstellationBoundary].
   const ConstellationBoundary({
     required this.name,
     required this.startDegree,
@@ -16,6 +21,7 @@ class ConstellationBoundary {
   });
 }
 
+/// Dornach constellation boundaries.
 const List<ConstellationBoundary> dornachBoundaries = [
   ConstellationBoundary(
     name: 'Aries',
@@ -91,6 +97,7 @@ const List<ConstellationBoundary> dornachBoundaries = [
   ),
 ];
 
+/// Custom calendar constellation boundaries.
 const List<ConstellationBoundary> customCalendarBoundaries = [
   ConstellationBoundary(
     name: 'Aries',

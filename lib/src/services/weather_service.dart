@@ -1,16 +1,31 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../repository/open_meteo_client.dart';
+
 export 'dmi_weather_service.dart';
 export 'combined_weather_service.dart';
 
-class WeatherDataPoint {
+/// Represents a single weather data observation or forecast point.
+final class WeatherDataPoint {
+  /// Timestamp of the observation.
   final DateTime time;
-  final double temperature; // Celsius
-  final double windSpeed; // m/s
-  final double windDirection; // degrees
-  final double cloudCover; // percentage 0-100
-  final double precipitation; // mm
 
+  /// Air temperature in degrees Celsius.
+  final double temperature;
+
+  /// Wind speed in meters per second.
+  final double windSpeed;
+
+  /// Wind direction in degrees (0-360).
+  final double windDirection;
+
+  /// Cloud cover percentage (0-100).
+  final double cloudCover;
+
+  /// Precipitation amount in millimeters.
+  final double precipitation;
+
+  /// Creates a [WeatherDataPoint].
   WeatherDataPoint({
     required this.time,
     required this.temperature,
@@ -20,6 +35,7 @@ class WeatherDataPoint {
     required this.precipitation,
   });
 
+  /// Constructs a [WeatherDataPoint] from JSON representation.
   factory WeatherDataPoint.fromJson(Map<String, dynamic> json) {
     final instantDetails = json['data']['instant']['details'];
     final next1Hours = json['data']['next_1_hours'];
@@ -38,8 +54,12 @@ class WeatherDataPoint {
   }
 }
 
+/// Abstract contract for fetching weather forecasts and historical data.
 abstract class WeatherService {
+  /// Fetches weather forecast for given [lat] and [lon].
   Future<List<WeatherDataPoint>> getForecast(double lat, double lon);
+
+  /// Fetches historical weather data between [start] and [end] for [lat] and [lon].
   Future<List<WeatherDataPoint>> getHistoricalData(
     double lat,
     double lon,
@@ -48,10 +68,14 @@ abstract class WeatherService {
   );
 }
 
-class YrNoWeatherService implements WeatherService {
+/// Weather service implementation connecting to Yr.no (MET Norway).
+final class YrNoWeatherService implements WeatherService {
+  /// User agent header identifying the application to MET Norway APIs.
   final String userAgent;
   final Map<String, List<WeatherDataPoint>> _cache = {};
+  final OpenMeteoClient _openMeteoClient = OpenMeteoClient();
 
+  /// Creates a [YrNoWeatherService] with the required [userAgent].
   YrNoWeatherService({required this.userAgent});
 
   @override
@@ -86,46 +110,7 @@ class YrNoWeatherService implements WeatherService {
     double lon,
     DateTime start,
     DateTime end,
-  ) async {
-    // Use Open-Meteo Archive API for reliable global historical data
-    final startStr = start.toUtc().toIso8601String().substring(0, 10);
-    final endStr = end.toUtc().toIso8601String().substring(0, 10);
-
-    final url = Uri.parse(
-      'https://archive-api.open-meteo.com/v1/archive?latitude=$lat&longitude=$lon&start_date=$startStr&end_date=$endStr&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,cloudcover,precipitation',
-    );
-
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final hourly = data['hourly'];
-      final times = hourly['time'] as List;
-      final temps = hourly['temperature_2m'] as List;
-      final winds = hourly['wind_speed_10m'] as List;
-      final windDirs = hourly['wind_direction_10m'] as List;
-      final clouds = hourly['cloudcover'] as List;
-      final precip = hourly['precipitation'] as List;
-
-      final List<WeatherDataPoint> results = [];
-      for (int i = 0; i < times.length; i++) {
-        if (temps[i] == null) continue; // Skip missing data
-        results.add(
-          WeatherDataPoint(
-            time: DateTime.parse(times[i]),
-            temperature: temps[i].toDouble(),
-            windSpeed: winds[i].toDouble(),
-            windDirection: windDirs[i].toDouble(),
-            cloudCover: clouds[i].toDouble(),
-            precipitation: precip[i].toDouble(),
-          ),
-        );
-      }
-      return results;
-    } else {
-      throw Exception(
-        'Failed to load historical weather data: ${response.statusCode}',
-      );
-    }
+  ) {
+    return _openMeteoClient.getHistoricalData(lat, lon, start, end);
   }
 }
