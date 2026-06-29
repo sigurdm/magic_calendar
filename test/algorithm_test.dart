@@ -100,21 +100,24 @@ void main() async {
     expect(result.message, contains('Special Flower Day'));
   });
 
-  test('validates Ag-Flower reference scan periods', () {
+  test('validates Ag-Flower and Especially Favorable reference scan periods', () {
     final service = AstronomiaEphemerisService();
-    final agFlowerCheckpoints = [
-      DateTime.utc(2026, 1, 12, 22, 0),
+    final checkPoints = [
+      (DateTime.utc(2026, 1, 12, 22, 0), PlantQuality.flower, 'Special Flower Day'),
+      (DateTime.utc(2026, 2, 9, 14, 0), PlantQuality.flower, 'Special Flower Day'),
+      (DateTime.utc(2026, 8, 31, 21, 0), PlantQuality.leaf, 'Special Leaf Day'),
+      (DateTime.utc(2026, 12, 31, 14, 30), PlantQuality.fruit, 'Special Fruit Day'),
     ];
 
-    for (final time in agFlowerCheckpoints) {
+    for (final (time, expectedQuality, expectedMsg) in checkPoints) {
       final info = getCalendarInfo(
         time,
         service,
         boundaries: customCalendarBoundaries,
       );
-      expect(info.quality, PlantQuality.flower);
+      expect(info.quality, expectedQuality);
       expect(info.isSpecial, isTrue);
-      expect(info.message, contains('Special Flower Day'));
+      expect(info.message, contains(expectedMsg));
     }
   });
 }
