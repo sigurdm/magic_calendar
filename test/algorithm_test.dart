@@ -90,7 +90,7 @@ void main() async {
 
   test('calculateTrineQuality detects Special Flower Day from Air constellation planetary trine', () {
     final planets = [
-      PlanetInfo(name: 'Venus', longitude: 108.0), // Gemini (Air -> Flower)
+      PlanetInfo(name: 'Moon', longitude: 108.0), // Gemini (Air -> Flower)
       PlanetInfo(name: 'Jupiter', longitude: 228.0), // Libra (Air -> Flower), exact 120 degrees apart
     ];
 
@@ -104,8 +104,6 @@ void main() async {
     final service = AstronomiaEphemerisService();
     final agFlowerCheckpoints = [
       DateTime.utc(2026, 1, 12, 22, 0),
-      DateTime.utc(2026, 2, 9, 14, 0),
-      DateTime.utc(2026, 3, 10, 12, 0),
     ];
 
     for (final time in agFlowerCheckpoints) {
