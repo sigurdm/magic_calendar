@@ -1,19 +1,17 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_driver/driver_extension.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'dart:math' as math;
-import 'src/algorithm.dart';
-import 'src/ephemeris_service.dart';
 import 'dart:ui';
-import 'src/time_scroll_view.dart';
-import 'src/planetary_ribbon.dart';
-import 'src/planting_icons.dart';
-import 'src/weather_service.dart';
-
 import 'package:sweph/sweph.dart';
+
+import 'src/services/ephemeris_service.dart';
+import 'src/ui/views/time_scroll_view.dart';
+import 'src/ui/components/planetary_ribbon.dart';
+import 'src/ui/components/planting_icons.dart';
+import 'src/services/weather_service.dart';
+import 'src/ui/painters/moon_painter.dart';
 
 void main() async {
   enableFlutterDriverExtension();
@@ -24,15 +22,15 @@ void main() async {
     dmiService: DmiWeatherService(),
   );
 
-  await Sweph.init(); // Initialize for main thread
-  await EphemerisWorker.init(); // Initialize persistent background isolate
+  await Sweph.init();
+  await EphemerisWorker.init();
 
   runApp(
-    MyApp(ephemeris: AstronomiaEphemerisService(), weather: weatherService),
+    MyApp(ephemeris: IsolateEphemerisService(), weather: weatherService),
   );
 }
 
-class MyApp extends StatelessWidget {
+final class MyApp extends StatelessWidget {
   final EphemerisService ephemeris;
   final WeatherService weather;
 
@@ -41,7 +39,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // title: 'Magic Calendar',
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF121212),
         textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
@@ -51,9 +48,10 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class CalendarHomePage extends StatefulWidget {
+final class CalendarHomePage extends StatefulWidget {
   final EphemerisService ephemeris;
   final WeatherService weather;
+
   const CalendarHomePage({
     super.key,
     required this.ephemeris,
@@ -64,7 +62,7 @@ class CalendarHomePage extends StatefulWidget {
   State<CalendarHomePage> createState() => _CalendarHomePageState();
 }
 
-class _CalendarHomePageState extends State<CalendarHomePage> {
+final class _CalendarHomePageState extends State<CalendarHomePage> {
   final ValueNotifier<DateTime> _selectedDateNotifier = ValueNotifier(
     DateTime.now(),
   );
@@ -82,14 +80,8 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
   @override
   void initState() {
     super.initState();
-    _weatherService = CombinedWeatherService(
-      yrNoService: YrNoWeatherService(
-        userAgent: 'MagicCalendar/1.0 (sigurdm@google.com)',
-      ),
-      dmiService: DmiWeatherService(),
-    );
+    _weatherService = widget.weather;
     _fetchWeather();
-    // Initial fetch
     _updateInfo(_selectedDateNotifier.value, immediate: true);
   }
 
@@ -162,7 +154,9 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
                 ValueListenableBuilder<CalendarInfo?>(
                   valueListenable: _infoNotifier,
                   builder: (context, info, _) {
-                    if (info == null) return const SizedBox(height: 140);
+                    if (info == null) {
+                      return const SizedBox(height: 140);
+                    }
                     return _buildQualityCard(info);
                   },
                 ),
@@ -189,7 +183,9 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
                 ValueListenableBuilder<CalendarInfo?>(
                   valueListenable: _infoNotifier,
                   builder: (context, info, _) {
-                    if (info == null) return const SizedBox();
+                    if (info == null) {
+                      return const SizedBox();
+                    }
                     return _buildDetailsCard(info);
                   },
                 ),
@@ -205,38 +201,55 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        GestureDetector(
-          onTap: _showLocationPicker,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.location_on, size: 18, color: Colors.white70),
-                const SizedBox(width: 4),
-                ValueListenableBuilder<double>(
-                  valueListenable: _latNotifier,
-                  builder: (context, lat, _) {
-                    return ValueListenableBuilder<double>(
-                      valueListenable: _lonNotifier,
-                      builder: (context, lon, _) {
-                        return Text(
-                          '${lat.toStringAsFixed(1)}°, ${lon.toStringAsFixed(1)}°',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Colors.white70,
-                          ),
+        Row(
+          children: [
+            GestureDetector(
+              onTap: _showLocationPicker,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on,
+                      size: 18,
+                      color: Colors.white70,
+                    ),
+                    const SizedBox(width: 4),
+                    ValueListenableBuilder<double>(
+                      valueListenable: _latNotifier,
+                      builder: (context, lat, _) {
+                        return ValueListenableBuilder<double>(
+                          valueListenable: _lonNotifier,
+                          builder: (context, lon, _) {
+                            return Text(
+                              '${lat.toStringAsFixed(1)}°, ${lon.toStringAsFixed(1)}°',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.white70,
+                              ),
+                            );
+                          },
                         );
                       },
-                    );
-                  },
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
+            const SizedBox(width: 12),
+            Text(
+              'Magic Calendar',
+              style: GoogleFonts.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
         ),
         Row(
           children: [
@@ -328,38 +341,57 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
   }
 
   Widget _buildQualityCard(CalendarInfo info) {
-    Color cardColor = Colors.grey[800]!;
     String title = 'Unknown';
     String desc = 'Select a date to see quality.';
 
     if (info.isGrayDay) {
-      cardColor = const Color(0xFFD32F2F);
       title = 'Gray Day';
       desc = info.message;
+    } else if (info.message.startsWith('Special')) {
+      title = info.message.split(':').first;
+      String explanation = '';
+      switch (info.quality) {
+        case PlantQuality.flower:
+          explanation =
+              'In biodynamic gardening, planetary trines in Air/Light constellations create exceptional cosmic energy for flowering plants. Ideal for sowing, cultivating, and picking cut flowers, medicinal herbs, and broccoli/cauliflower to maximize aroma, fragrance, and essential oils.';
+          break;
+        case PlantQuality.fruit:
+          explanation =
+              'In biodynamic gardening, planetary trines in Fire constellations concentrate warmth and energy into seed formation and fruit ripening. Excellent for harvesting tomatoes, apples, squash, and grains for long-term storage and superior flavor.';
+          break;
+        case PlantQuality.leaf:
+          explanation =
+              'In biodynamic gardening, planetary trines in Water constellations channel intense moisture impulses. Peak time for sowing leafy greens, lettuce, spinach, and herbs, promoting lush foliage and preventing early bolting.';
+          break;
+        case PlantQuality.root:
+          explanation =
+              'In biodynamic gardening, planetary trines in Earth constellations focus gravitational earth forces deep into root systems. Optimal for planting and harvesting long-storing root vegetables like carrots, potatoes, parsnips, and beets.';
+          break;
+        default:
+          explanation =
+              'Special planetary alignment boosting elemental plant development.';
+          break;
+      }
+      desc = '${info.message}\n\n$explanation';
     } else {
       switch (info.quality) {
         case PlantQuality.root:
-          cardColor = const Color(0xFF8D6E63);
           title = 'Root Day';
           desc = 'Good for planting carrots, beets, potatoes, onions.';
           break;
         case PlantQuality.leaf:
-          cardColor = const Color(0xFF66BB6A);
           title = 'Leaf Day';
           desc = 'Good for planting lettuce, spinach, herbs, cabbage.';
           break;
         case PlantQuality.flower:
-          cardColor = const Color(0xFFAB47BC);
           title = 'Flower Day';
           desc = 'Good for planting broccoli, cauliflower, cut flowers.';
           break;
         case PlantQuality.fruit:
-          cardColor = const Color(0xFFFFA726);
           title = 'Fruit Day';
           desc = 'Good for planting tomatoes, beans, grains, fruit trees.';
           break;
         case PlantQuality.none:
-          cardColor = const Color(0xFF78909C);
           title = 'No Specific Quality';
           desc = 'Neutral day for planting.';
           break;
@@ -424,43 +456,38 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
         builder: (context, date, _) {
           final moonPhase = widget.ephemeris.getMoonPhase(date);
 
-          // Real-time calculation of sap flow trend
           final dec1 = widget.ephemeris.getMoonDeclination(date);
           final dec2 = widget.ephemeris.getMoonDeclination(
             date.add(const Duration(hours: 1)),
           );
           final realTimeSapFlow = dec2 > dec1 ? 'Ascending' : 'Descending';
 
-          // Explanations based on biodynamic principles
           final isAscending = dec2 > dec1;
-          final sapExplanation = isAscending 
-              ? "Sap rises, bringing energy to leaves, flowers and fruits. Ideal for harvesting above-ground crops." 
+          final sapExplanation = isAscending
+              ? "Sap rises, bringing energy to leaves, flowers and fruits. Ideal for harvesting above-ground crops."
               : "Sap recedes to the soil. Ideal for planting, pruning, and harvesting root crops.";
-              
+
           final vitalityExplanation = moonPhase.isWaxing
               ? "Increasing lunar vitality stimulates above-ground growth and germination."
               : "Decreasing lunar vitality supports root development and soil consolidation.";
-              
+
           String illumExplanation;
           if (moonPhase.illuminatedFraction > 0.8) {
-            illumExplanation = "High nocturnal light stimulates foliage growth.";
+            illumExplanation =
+                "High nocturnal light stimulates foliage growth.";
           } else if (moonPhase.illuminatedFraction < 0.2) {
-            illumExplanation = "Dark nights encourage root formation and plant rest.";
+            illumExplanation =
+                "Dark nights encourage root formation and plant rest.";
           } else {
             illumExplanation = "Balanced lunar light influence.";
           }
 
-          return FutureBuilder<List<WeatherDataPoint>>(
-            future: _weatherService.getForecast(
-              _latNotifier.value,
-              _lonNotifier.value,
-            ),
-            builder: (context, snapshot) {
+          return ValueListenableBuilder<List<WeatherDataPoint>?>(
+            valueListenable: _weatherNotifier,
+            builder: (context, weatherList, _) {
               WeatherDataPoint? selectedWeather;
-              if (snapshot.hasData) {
-                // Find closest weather point
-                final weather = snapshot.data!;
-                selectedWeather = weather.reduce(
+              if (weatherList != null && weatherList.isNotEmpty) {
+                selectedWeather = weatherList.reduce(
                   (a, b) =>
                       a.time.difference(date).inSeconds.abs() <
                           b.time.difference(date).inSeconds.abs()
@@ -484,9 +511,17 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _buildDetailRow('Sap Flow', realTimeSapFlow, explanation: sapExplanation),
+                        _buildDetailRow(
+                          'Sap Flow',
+                          realTimeSapFlow,
+                          explanation: sapExplanation,
+                        ),
                         const SizedBox(height: 12),
-                        _buildDetailRow('Vitality', moonPhase.name, explanation: vitalityExplanation),
+                        _buildDetailRow(
+                          'Vitality',
+                          moonPhase.name,
+                          explanation: vitalityExplanation,
+                        ),
                         const SizedBox(height: 12),
                         _buildDetailRow(
                           'Illumination',
@@ -592,7 +627,7 @@ class _CalendarHomePageState extends State<CalendarHomePage> {
   }
 }
 
-class MoonPhaseWidget extends StatelessWidget {
+final class MoonPhaseWidget extends StatelessWidget {
   final MoonPhaseInfo info;
   final double size;
 
@@ -605,106 +640,4 @@ class MoonPhaseWidget extends StatelessWidget {
       painter: MoonPainter(info: info),
     );
   }
-}
-
-class MoonPainter extends CustomPainter {
-  final MoonPhaseInfo info;
-
-  MoonPainter({required this.info});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-
-    final bgPaint = Paint()
-      ..color = const Color(0xFF1E1E2E); // Match background
-    final lightPaint = Paint()..color = const Color(0xFFFFF9C4); // Pale yellow
-
-    // Draw background circle
-    canvas.drawCircle(center, radius, bgPaint);
-
-    double k = info.illuminatedFraction;
-
-    if (info.isWaxing) {
-      // Right side is light
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        -math.pi / 2,
-        math.pi,
-        true,
-        lightPaint,
-      );
-      if (k < 0.5) {
-        // Dark ellipse on the right side to create crescent
-        double ellipseWidth = (1 - 2 * k) * radius;
-        canvas.drawOval(
-          Rect.fromLTRB(
-            center.dx - ellipseWidth,
-            center.dy - radius,
-            center.dx + ellipseWidth,
-            center.dy + radius,
-          ),
-          bgPaint,
-        );
-      } else {
-        // Light ellipse on the left side to create gibbous
-        double ellipseWidth = (2 * k - 1) * radius;
-        canvas.drawOval(
-          Rect.fromLTRB(
-            center.dx - ellipseWidth,
-            center.dy - radius,
-            center.dx + ellipseWidth,
-            center.dy + radius,
-          ),
-          lightPaint,
-        );
-      }
-    } else {
-      // Left side is light
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        math.pi / 2,
-        math.pi,
-        true,
-        lightPaint,
-      );
-      if (k < 0.5) {
-        // Dark ellipse on the left side to create crescent
-        double ellipseWidth = (1 - 2 * k) * radius;
-        canvas.drawOval(
-          Rect.fromLTRB(
-            center.dx - ellipseWidth,
-            center.dy - radius,
-            center.dx + ellipseWidth,
-            center.dy + radius,
-          ),
-          bgPaint,
-        );
-      } else {
-        // Light ellipse on the right side to create gibbous
-        double ellipseWidth = (2 * k - 1) * radius;
-        canvas.drawOval(
-          Rect.fromLTRB(
-            center.dx - ellipseWidth,
-            center.dy - radius,
-            center.dx + ellipseWidth,
-            center.dy + radius,
-          ),
-          lightPaint,
-        );
-      }
-    }
-
-    // Optional: add a subtle glow or border
-    final borderPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.1)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    canvas.drawCircle(center, radius, borderPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant MoonPainter oldDelegate) =>
-      oldDelegate.info.phaseAngle != info.phaseAngle;
 }

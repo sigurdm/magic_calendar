@@ -39,11 +39,11 @@ dependencies:
   astronomia: ^0.3.2
   http: ^1.2.0
   sweph: ^3.2.1+2.10.3
+  flutter_driver:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:
-    sdk: flutter
-  flutter_driver:
     sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to

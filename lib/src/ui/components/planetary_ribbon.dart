@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:ui' as ui;
-import 'ephemeris_service.dart';
-import 'dornach_boundaries.dart';
+import '../../services/ephemeris_service.dart';
+import '../../core/dornach_boundaries.dart';
 
-class PlanetaryRibbon extends StatefulWidget {
+/// Widget displaying planetary positions across the zodiac ribbon.
+final class PlanetaryRibbon extends StatefulWidget {
+  /// Notifier for currently selected date/time.
   final ValueListenable<DateTime> timeNotifier;
+
+  /// Ephemeris service.
   final EphemerisService ephemeris;
+
+  /// Height of ribbon widget.
   final double height;
 
+  /// Creates a [PlanetaryRibbon].
   const PlanetaryRibbon({
     super.key,
     required this.timeNotifier,
@@ -57,29 +64,35 @@ class _PlanetaryRibbonState extends State<PlanetaryRibbon> {
   }
 }
 
-class RibbonPainter extends CustomPainter {
+/// Painter for drawing constellation boundaries and planet markers.
+final class RibbonPainter extends CustomPainter {
+  /// List of planets to draw.
   final List<PlanetInfo> planets;
+
+  /// Center longitude reference.
   final double centerLongitude;
 
+  /// Creates a [RibbonPainter].
   RibbonPainter({required this.planets, required this.centerLongitude});
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (size.width <= 0) return;
+    if (size.width <= 0) {
+      return;
+    }
 
-    // Show the full 360 degrees of the zodiac
     const double visibleRange = 360.0;
     final double degreeWidth = size.width / visibleRange;
-    // We start 180 degrees behind the center to keep centerLongitude at middle
     final double startLon = (centerLongitude - 180.0);
 
     double getX(double lon) {
       double relativeLon = (lon - startLon) % 360.0;
-      if (relativeLon < 0) relativeLon += 360.0;
+      if (relativeLon < 0) {
+        relativeLon += 360.0;
+      }
       return relativeLon * degreeWidth;
     }
 
-    // Draw Constellation boundaries
     for (var boundary in dornachBoundaries) {
       final paint = Paint()
         ..color = _getColorForElement(boundary.element).withValues(alpha: 0.1)
@@ -89,7 +102,6 @@ class RibbonPainter extends CustomPainter {
       double x2 = getX(boundary.endDegree);
 
       if (x2 < x1) {
-        // Wraps around the edges of the visible ribbon
         canvas.drawRect(
           Rect.fromLTWH(x1, 0, size.width - x1, size.height),
           paint,
@@ -99,10 +111,10 @@ class RibbonPainter extends CustomPainter {
         canvas.drawRect(Rect.fromLTWH(x1, 0, x2 - x1, size.height), paint);
       }
 
-      // Draw label (Aries, Taurus, etc.)
-      // Center the label in the constellation block
       double blockWidth = (boundary.endDegree - boundary.startDegree) % 360.0;
-      if (blockWidth < 0) blockWidth += 360.0;
+      if (blockWidth < 0) {
+        blockWidth += 360.0;
+      }
 
       if (blockWidth * degreeWidth > 15) {
         final textPainter = TextPainter(
@@ -119,15 +131,15 @@ class RibbonPainter extends CustomPainter {
         textPainter.layout();
 
         double labelX = x1 + (blockWidth * degreeWidth - textPainter.width) / 2;
-        // Wrap label X if it goes off screen
         labelX = labelX % size.width;
-        if (labelX < 0) labelX += size.width;
+        if (labelX < 0) {
+          labelX += size.width;
+        }
 
         textPainter.paint(canvas, Offset(labelX, size.height - 15));
       }
     }
 
-    // Draw Planets with vertical offsets
     final offsets = {
       'Sun': 0.0,
       'Moon': -15.0,
@@ -141,8 +153,9 @@ class RibbonPainter extends CustomPainter {
     for (var planet in planets) {
       final x = getX(planet.longitude);
 
-      // Only draw if on screen
-      if (x < -20 || x > size.width + 20) continue;
+      if (x < -20 || x > size.width + 20) {
+        continue;
+      }
 
       final yOffset = offsets[planet.name] ?? 0.0;
       final y = size.height / 2 + yOffset;
@@ -156,7 +169,7 @@ class RibbonPainter extends CustomPainter {
       final textPainter = TextPainter(
         text: TextSpan(
           text: _getPlanetSymbol(planet.name),
-          style: TextStyle(color: Colors.white, fontSize: 16),
+          style: const TextStyle(color: Colors.white, fontSize: 16),
         ),
         textDirection: ui.TextDirection.ltr,
       );
@@ -164,7 +177,6 @@ class RibbonPainter extends CustomPainter {
       textPainter.paint(canvas, Offset(x - textPainter.width / 2, y - 22));
     }
 
-    // Draw center reference line
     final refPaint = Paint()
       ..color = Colors.white12
       ..strokeWidth = 1;

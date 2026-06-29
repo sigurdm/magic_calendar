@@ -1,13 +1,67 @@
-import 'ephemeris_service.dart';
+import '../services/ephemeris_service.dart';
 import 'dornach_boundaries.dart';
 
+/// Checks for planetary Trine aspects (120 degrees apart) and returns special plant quality if present.
+({PlantQuality quality, String message}) calculateTrineQuality(
+  List<PlanetInfo> planets,
+  List<ConstellationBoundary> boundaries,
+) {
+  if (planets.length < 2) {
+    return (quality: PlantQuality.none, message: '');
+  }
+
+  for (int i = 0; i < planets.length; i++) {
+    for (int j = i + 1; j < planets.length; j++) {
+      final p1 = planets[i];
+      final p2 = planets[j];
+
+      if (p1.name != 'Moon' && p2.name != 'Moon') {
+        continue;
+      }
+
+      double diff = (p1.longitude - p2.longitude).abs() % 360.0;
+      if (diff > 180.0) {
+        diff = 360.0 - diff;
+      }
+
+      // Trine aspect is 120 degrees with a 4 degree orb tolerance for Moon trines
+      if ((diff - 120.0).abs() <= 4.0) {
+        final q1 = getQualityFromLongitude(p1.longitude, boundaries);
+        final q2 = getQualityFromLongitude(p2.longitude, boundaries);
+
+        PlantQuality aspectQuality = PlantQuality.none;
+        if (q1 == q2 && q1 != PlantQuality.none) {
+          aspectQuality = q1;
+        } else if (p1.name == 'Moon') {
+          aspectQuality = q1;
+        } else if (p2.name == 'Moon') {
+          aspectQuality = q2;
+        }
+
+        if (aspectQuality != PlantQuality.none) {
+          final qualityName =
+              aspectQuality.name[0].toUpperCase() +
+              aspectQuality.name.substring(1);
+          return (
+            quality: aspectQuality,
+            message:
+                'Special $qualityName Day: Planetary Trine between ${p1.name} and ${p2.name}.',
+          );
+        }
+      }
+    }
+  }
+
+  return (quality: PlantQuality.none, message: '');
+}
+
+/// Calculates complete calendar information for a given [time] using [ephemeris].
 CalendarInfo getCalendarInfo(
   DateTime time,
   EphemerisService ephemeris, {
   bool includePlanets = false,
   List<ConstellationBoundary> boundaries = dornachBoundaries,
 }) {
-  // 1. Coordinate Calculation
   double moonLongitude;
   try {
     moonLongitude = ephemeris.getMoonLongitude(time);
@@ -27,8 +81,6 @@ CalendarInfo getCalendarInfo(
     );
   }
 
-  // 2. Dashed Line Check (Gray Day)
-  // TODO: Implement checks for nodes, perigee, squares.
   bool isNearNode = ephemeris.isNearNode(time);
   bool isNearPerigee = ephemeris.isNearPerigee(time);
   bool isGrayDay = isNearNode || isNearPerigee;
@@ -40,6 +92,8 @@ CalendarInfo getCalendarInfo(
     message = 'Gray Day: Near Lunar Perigee.';
   }
 
+  final planets = ephemeris.getPlanets(time);
+
   if (isGrayDay) {
     final moonPhase = ephemeris.getMoonPhase(time);
     return CalendarInfo(
@@ -49,26 +103,22 @@ CalendarInfo getCalendarInfo(
       sapFlow: '',
       vitality: '',
       moonPhase: moonPhase,
-      planets: includePlanets ? ephemeris.getPlanets(time) : [],
+      planets: includePlanets ? planets : [],
     );
   }
 
-  // 3. Trine Search
-  // TODO: Implement trine checks.
-  PlantQuality trineQuality = PlantQuality.none;
-
-  // 4. Baseline Sidereal Assignment
+  final trineResult = calculateTrineQuality(planets, boundaries);
+  PlantQuality trineQuality = trineResult.quality;
   PlantQuality quality = PlantQuality.none;
   if (trineQuality == PlantQuality.none) {
     quality = getQualityFromLongitude(moonLongitude, boundaries);
   } else {
     quality = trineQuality;
+    if (message.isEmpty) {
+      message = trineResult.message;
+    }
   }
 
-  // 5. Distance Modification
-  // TODO: Check for apogee and override to Flower if needed.
-
-  // 6. Sap Flow Vector
   String sapFlow = 'Ascending: Sap rises; good for harvesting fruit/cuttings.';
   if (includePlanets) {
     double dec1 = ephemeris.getMoonDeclination(time);
@@ -80,7 +130,6 @@ CalendarInfo getCalendarInfo(
         : "Descending: Sap recedes; 'transplanting time' for root development.";
   }
 
-  // 7. Vitality Index
   final moonPhase = ephemeris.getMoonPhase(time);
   String vitality = moonPhase.name;
   if (moonPhase.isWaxing) {
@@ -89,9 +138,6 @@ CalendarInfo getCalendarInfo(
     vitality += ' (Decreasing moisture; good for storage)';
   }
 
-  // 8. Planets
-  final planets = includePlanets ? ephemeris.getPlanets(time) : <PlanetInfo>[];
-
   return CalendarInfo(
     quality: quality,
     isGrayDay: false,
@@ -99,6 +145,6 @@ CalendarInfo getCalendarInfo(
     sapFlow: sapFlow,
     vitality: vitality,
     moonPhase: moonPhase,
-    planets: planets,
+    planets: includePlanets ? planets : <PlanetInfo>[],
   );
 }
