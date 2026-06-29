@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Full help and reference screen explaining calendar usage, concepts, and history.
+/// Full help and reference screen explaining calendar usage, concepts, practical applications, and history.
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
 
@@ -11,7 +11,7 @@ class HelpScreen extends StatelessWidget {
       backgroundColor: const Color(0xFF1E1E2E),
       appBar: AppBar(
         title: Text(
-          'Magic Calendar Guide & Reference',
+          'Magic Calendar Guide & Practice',
           style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color(0xFF11111B),
@@ -43,7 +43,7 @@ class HelpScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            _buildSectionHeader(context, 'Core Concepts & Plant Qualities', Icons.eco),
+            _buildSectionHeader(context, 'Plant Qualities & Practical Application', Icons.eco),
             const SizedBox(height: 8),
             _buildCard(
               context,
@@ -51,45 +51,57 @@ class HelpScreen extends StatelessWidget {
                 _buildQualityItem(
                   'Root (Earth)',
                   const Color(0xFF8D6E63),
-                  'Triggered by Taurus, Virgo, and Capricorn. Focuses energy into roots and tubers. Ideal for carrots, potatoes, radishes, beets, and soil preparation.',
+                  'Triggered by Taurus, Virgo, and Capricorn. Focuses energy into roots and tubers.',
+                  practical: 'Sow, plant, and cultivate carrots, potatoes, radishes, beets, onions, and celeriac. Deep hoeing and soil aeration on Root days encourages downward root penetration. Harvest root crops on Root days for long winter storage without rotting.',
                 ),
                 _buildQualityItem(
                   'Leaf (Water)',
                   const Color(0xFF66BB6A),
-                  'Triggered by Cancer, Scorpio, and Pisces. Stimulates leafy biomass and sap flow. Ideal for lettuce, spinach, cabbage, leafy herbs, and lawn watering.',
+                  'Triggered by Cancer, Scorpio, and Pisces. Stimulates leafy biomass and sap flow.',
+                  practical: 'Sow and transplant lettuce, spinach, cabbage, kale, swiss chard, and celery. Water lawns, crops, and houseplants on Leaf days as plants absorb water most efficiently. Avoid harvesting crops for long cellar storage on Leaf days, as high moisture content invites mold.',
                 ),
                 _buildQualityItem(
                   'Flower (Air / Light)',
                   const Color(0xFFAB47BC),
-                  'Triggered by Gemini, Libra, and Aquarius. Enhances fragrance and inflorescence. Ideal for flowers, broccoli, medicinal herbs, and essential oil harvesting.',
+                  'Triggered by Gemini, Libra, and Aquarius. Enhances fragrance and inflorescence.',
+                  practical: 'Sow and cultivate annual/perennial flowers, broccoli, cauliflower, and artichokes. Cut fresh flowers on Flower days for vibrant colors and longer vase life. Harvest medicinal herbs (chamomile, lavender) mid-morning on Flower days for peak essential oil potency.',
                 ),
                 _buildQualityItem(
                   'Fruit / Seed (Fire / Warmth)',
                   const Color(0xFFFFA726),
-                  'Triggered by Aries, Leo, and Sagittarius. Concentrates sugars and seed vitality. Ideal for tomatoes, peppers, squash, grains, and fruit trees.',
+                  'Triggered by Aries, Leo, and Sagittarius. Concentrates natural sugars and seed vitality.',
+                  practical: 'Sow and prick out tomatoes, peppers, squash, cucumbers, beans, peas, corn, and fruit trees. Prune fruit trees and vines to stimulate fruit buds. Harvest grains, berries, fruits, and seeds on Fruit days for maximum sweetness, aroma, and seed germination viability.',
                 ),
               ],
             ),
             const SizedBox(height: 24),
 
-            _buildSectionHeader(context, 'Special & Gray Days', Icons.stars),
+            _buildSectionHeader(context, 'Practical Execution: Special & Gray Days', Icons.stars),
             const SizedBox(height: 8),
             _buildCard(
               context,
               children: [
                 _buildHelpItem(
                   'Special Days (Aspekt-gunstig / Ag-)',
-                  'Highlighted with a glowing gold border and star icon. Occur when major planets (such as Jupiter, Venus, or Saturn) form harmonious 120° trine aspects with the Moon while transiting matching elemental constellations. These brief windows transfer extra-concentrated cosmic energy to the corresponding plant organ.',
+                  'Highlighted with a glowing gold border and star icon. Occur when major planets (Jupiter, Venus, Saturn) form harmonious 120° trines with the Moon in matching elemental constellations.',
                   badgeColor: const Color(0xFFFFD700),
+                  practical: 'Treat as "Prime Execution Hours". Reserve delicate sowings, high-value grafting, taking cuttings, or harvesting medicinal herbs for these 4-to-12 hour windows for extra-strong plant vigor.',
                 ),
                 _buildHelpItem(
                   'Gray Days (Unfavorable Windows)',
-                  'Marked with a gray hatched background and warning symbol. Occur during Moon Node crossings (when the Moon crosses the ecliptic plane) and Moon Perigee (when the Moon is closest to Earth). Gravitational and cosmic interference during these hours causes erratic germination, rot, and weak growth. Avoid sowing or grafting during Gray Days.',
+                  'Marked with a gray hatched background and warning symbol. Occur during Moon Node crossings (crossing the ecliptic plane) and Moon Perigee (closest point to Earth).',
                   badgeColor: Colors.grey[400],
+                  practical: 'Treat as "Rest & Maintenance Hours". Gravitational interference causes erratic germination, weak roots, and fungal susceptibility. Avoid sowing, transplanting, pruning, or grafting. Use this time for sharpening tools, repairing beds, or building compost.',
                 ),
                 _buildHelpItem(
-                  'Sap Flow & Vitality Rhythms',
-                  'Reflects lunar ascent/descent and waxing/waning cycles. Ascending/Waxing moon pulls sap into upper stems and foliage (best for grafting and harvesting above-ground crops). Descending/Waning moon directs sap downward into root systems and soil (best for transplanting and root cultivation).',
+                  'Multi-Organ Crops & Dual Purposes',
+                  'Many plants have multiple edible parts. Apply the calendar according to the specific organ you intend to harvest.',
+                  practical: 'Grow celery for stalks on Leaf days, but celeriac for roots on Root days. Sow broccoli on Flower days for compact heads, but silage corn on Leaf days for foliage biomass.',
+                ),
+                _buildHelpItem(
+                  'Sap Flow & Sap Vitality Rhythms',
+                  'Reflects lunar ascent/descent and waxing/waning cycles governing plant sap pressure.',
+                  practical: 'Ascending/Waxing Moon: Sap rises into foliage (ideal for taking greenwood cuttings, grafting, and harvesting above-ground fruits). Descending/Waning Moon: Sap drops into roots and soil (ideal for transplanting seedlings as roots establish rapidly, root pruning, and spreading compost).',
                 ),
               ],
             ),
@@ -154,9 +166,14 @@ class HelpScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHelpItem(String title, String description, {Color? badgeColor}) {
+  Widget _buildHelpItem(
+    String title,
+    String description, {
+    Color? badgeColor,
+    String? practical,
+  }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: const EdgeInsets.only(bottom: 14.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -194,14 +211,47 @@ class HelpScreen extends StatelessWidget {
               height: 1.4,
             ),
           ),
+          if (practical != null) ...[
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.build, size: 12, color: Color(0xFFFFD700)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'In Practice: $practical',
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        color: Color(0xFFFFD700),
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildQualityItem(String title, Color color, String description) {
+  Widget _buildQualityItem(
+    String title,
+    Color color,
+    String description, {
+    required String practical,
+  }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: const EdgeInsets.only(bottom: 14.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -234,6 +284,32 @@ class HelpScreen extends StatelessWidget {
                     fontSize: 11,
                     color: Colors.white70,
                     height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.04),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.build, size: 12, color: Color(0xFF818CF8)),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'In Practice: $practical',
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            color: Color(0xFFC7D2FE),
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
