@@ -12,6 +12,7 @@ import 'src/ui/components/planetary_ribbon.dart';
 import 'src/ui/components/planting_icons.dart';
 import 'src/services/weather_service.dart';
 import 'src/ui/painters/moon_painter.dart';
+import 'src/ui/views/help_screen.dart';
 
 void main() async {
   enableFlutterDriverExtension();
@@ -279,6 +280,14 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                 if (date != null) {
                   _onTimeSelected(date);
                 }
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.help_outline, color: Colors.white),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const HelpScreen()),
+                );
               },
             ),
           ],
