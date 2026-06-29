@@ -170,6 +170,7 @@ class _TimeScrollViewState extends State<TimeScrollView>
             interval.start.isAtSameMomentAs(last.end)) {
           if (last.quality == interval.quality &&
               last.isGrayDay == interval.isGrayDay &&
+              last.isSpecial == interval.isSpecial &&
               last.message == interval.message) {
             final maxEnd =
                 interval.end.isAfter(last.end) ? interval.end : last.end;
@@ -178,6 +179,7 @@ class _TimeScrollViewState extends State<TimeScrollView>
               end: maxEnd,
               quality: last.quality,
               isGrayDay: last.isGrayDay,
+              isSpecial: last.isSpecial,
               message: last.message,
             );
           } else if (interval.end.isAfter(last.end)) {
