@@ -22,7 +22,7 @@ final class OpenMeteoClient {
     final endStr = end.toUtc().toIso8601String().substring(0, 10);
 
     final url = Uri.parse(
-      'https://archive-api.open-meteo.com/v1/archive?latitude=$lat&longitude=$lon&start_date=$startStr&end_date=$endStr&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,cloudcover,precipitation',
+      'https://archive-api.open-meteo.com/v1/archive?latitude=$lat&longitude=$lon&start_date=$startStr&end_date=$endStr&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,cloudcover,precipitation&windspeed_unit=ms',
     );
 
     final response = await _client.get(url);
