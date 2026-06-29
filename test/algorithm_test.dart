@@ -121,4 +121,11 @@ void main() async {
       expect(info.quality, expectedQuality, reason: 'Failed quality for $label');
     }
   });
+
+  test('verify July 4 2026 timeline window is clean', () {
+    final service = AstronomiaEphemerisService();
+    final jul4 = DateTime.utc(2026, 7, 4, 21, 0);
+    final info = getCalendarInfo(jul4, service, boundaries: customCalendarBoundaries);
+    expect(info.isSpecial, isFalse);
+  });
 }

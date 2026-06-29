@@ -16,7 +16,7 @@ import 'dornach_boundaries.dart';
       final p2 = planets[j];
 
       final isMoonTrine = p1.name == 'Moon' || p2.name == 'Moon';
-      final orb = isMoonTrine ? 6.0 : 2.5;
+      final orb = isMoonTrine ? 4.8 : 0.5;
 
       double diff = (p1.longitude - p2.longitude).abs() % 360.0;
       if (diff > 180.0) {
