@@ -15,35 +15,22 @@ import 'dornach_boundaries.dart';
       final p1 = planets[i];
       final p2 = planets[j];
 
-      if (p1.name != 'Moon' && p2.name != 'Moon') {
-        continue;
-      }
-
       double diff = (p1.longitude - p2.longitude).abs() % 360.0;
       if (diff > 180.0) {
         diff = 360.0 - diff;
       }
 
-      // Trine aspect is 120 degrees with a 4 degree orb tolerance for Moon trines
-      if ((diff - 120.0).abs() <= 4.0) {
+      // Trine aspect is 120 degrees with a tight 2.0 degree orb tolerance
+      if ((diff - 120.0).abs() <= 2.0) {
         final q1 = getQualityFromLongitude(p1.longitude, boundaries);
         final q2 = getQualityFromLongitude(p2.longitude, boundaries);
 
-        PlantQuality aspectQuality = PlantQuality.none;
+        // Requires BOTH planets to be in constellations sharing the exact same element
         if (q1 == q2 && q1 != PlantQuality.none) {
-          aspectQuality = q1;
-        } else if (p1.name == 'Moon') {
-          aspectQuality = q1;
-        } else if (p2.name == 'Moon') {
-          aspectQuality = q2;
-        }
-
-        if (aspectQuality != PlantQuality.none) {
           final qualityName =
-              aspectQuality.name[0].toUpperCase() +
-              aspectQuality.name.substring(1);
+              q1.name[0].toUpperCase() + q1.name.substring(1);
           return (
-            quality: aspectQuality,
+            quality: q1,
             message:
                 'Special $qualityName Day: Planetary Trine between ${p1.name} and ${p2.name}.',
           );
