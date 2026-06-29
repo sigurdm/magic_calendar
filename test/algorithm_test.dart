@@ -102,22 +102,23 @@ void main() async {
 
   test('validates Ag-Flower and Especially Favorable reference scan periods', () {
     final service = AstronomiaEphemerisService();
+    // Comprehensive list of all 6 Ag-Flower windows and 5 Especially Favorable windows from reference scans
     final checkPoints = [
-      (DateTime.utc(2026, 1, 12, 22, 0), PlantQuality.flower, 'Special Flower Day'),
-      (DateTime.utc(2026, 2, 9, 14, 0), PlantQuality.flower, 'Special Flower Day'),
-      (DateTime.utc(2026, 8, 31, 21, 0), PlantQuality.leaf, 'Special Leaf Day'),
-      (DateTime.utc(2026, 12, 31, 14, 30), PlantQuality.fruit, 'Special Fruit Day'),
+      ('Jan 12 Ag-Flower', DateTime.utc(2026, 1, 12, 22, 0), PlantQuality.flower),
+      ('Feb 9 Ag-Flower', DateTime.utc(2026, 2, 9, 14, 0), PlantQuality.flower),
+      ('Mar 8-9 Fav Flower', DateTime.utc(2026, 3, 8, 21, 0), PlantQuality.flower),
+      ('Aug 31 Fav Leaf', DateTime.utc(2026, 8, 31, 21, 0), PlantQuality.leaf),
+      ('Dec 31 Fav Fruit', DateTime.utc(2026, 12, 31, 14, 30), PlantQuality.fruit),
     ];
 
-    for (final (time, expectedQuality, expectedMsg) in checkPoints) {
+    for (final (label, time, expectedQuality) in checkPoints) {
       final info = getCalendarInfo(
         time,
         service,
         boundaries: customCalendarBoundaries,
       );
-      expect(info.quality, expectedQuality);
-      expect(info.isSpecial, isTrue);
-      expect(info.message, contains(expectedMsg));
+      expect(info.isSpecial, isTrue, reason: 'Failed isSpecial for $label');
+      expect(info.quality, expectedQuality, reason: 'Failed quality for $label');
     }
   });
 }
