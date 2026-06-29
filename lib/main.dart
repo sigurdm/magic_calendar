@@ -349,30 +349,27 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
       desc = info.message;
     } else if (info.message.startsWith('Special')) {
       title = info.message.split(':').first;
-      String explanation = '';
       switch (info.quality) {
         case PlantQuality.flower:
-          explanation =
-              'In biodynamic gardening, planetary trines in Air/Light constellations create exceptional cosmic energy for flowering plants. Ideal for sowing, cultivating, and picking cut flowers, medicinal herbs, and broccoli/cauliflower to maximize aroma, fragrance, and essential oils.';
+          desc =
+              'Exceptional cosmic energy for flowering plants, medicinal herbs & essential oils.';
           break;
         case PlantQuality.fruit:
-          explanation =
-              'In biodynamic gardening, planetary trines in Fire constellations concentrate warmth and energy into seed formation and fruit ripening. Excellent for harvesting tomatoes, apples, squash, and grains for long-term storage and superior flavor.';
+          desc =
+              'Exceptional warmth energy for seed formation, fruit ripening & long storage.';
           break;
         case PlantQuality.leaf:
-          explanation =
-              'In biodynamic gardening, planetary trines in Water constellations channel intense moisture impulses. Peak time for sowing leafy greens, lettuce, spinach, and herbs, promoting lush foliage and preventing early bolting.';
+          desc =
+              'Exceptional moisture impulse for lush leafy greens, spinach & herbs.';
           break;
         case PlantQuality.root:
-          explanation =
-              'In biodynamic gardening, planetary trines in Earth constellations focus gravitational earth forces deep into root systems. Optimal for planting and harvesting long-storing root vegetables like carrots, potatoes, parsnips, and beets.';
+          desc =
+              'Exceptional gravitational earth focus for carrots, beets & root vegetables.';
           break;
         default:
-          explanation =
-              'Special planetary alignment boosting elemental plant development.';
+          desc = 'Special planetary alignment boosting elemental plant development.';
           break;
       }
-      desc = '${info.message}\n\n$explanation';
     } else {
       switch (info.quality) {
         case PlantQuality.root:
@@ -429,11 +426,19 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                 ],
               ),
               const SizedBox(height: 16),
-              Text(
-                desc,
-                style: GoogleFonts.outfit(
-                  fontSize: 16,
-                  color: Colors.white.withValues(alpha: 0.9),
+              SizedBox(
+                height: 48,
+                child: Center(
+                  child: Text(
+                    desc,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.outfit(
+                      fontSize: 16,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                  ),
                 ),
               ),
             ],
