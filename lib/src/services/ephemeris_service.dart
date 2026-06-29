@@ -80,7 +80,10 @@ final class CalendarInfo {
   /// True if Gray Day.
   final bool isGrayDay;
 
-  /// Message describing Gray Day condition.
+  /// True if Special Day (e.g. planetary trine aspect).
+  final bool isSpecial;
+
+  /// Message describing Gray Day condition or Special Day.
   final String message;
 
   /// Sap flow vector text.
@@ -99,6 +102,7 @@ final class CalendarInfo {
   CalendarInfo({
     required this.quality,
     required this.isGrayDay,
+    this.isSpecial = false,
     required this.message,
     required this.sapFlow,
     required this.vitality,
@@ -129,25 +133,25 @@ PlantQuality getQualityFromLongitude(
   return PlantQuality.none;
 }
 
-/// Contract for astronomical ephemeris calculations.
-abstract class EphemerisService {
-  /// Calculates moon longitude for [time].
+/// Abstract contract for ephemeris services computing astronomical data.
+abstract mixin class EphemerisService {
+  /// Obtains moon ecliptic longitude at [time].
   double getMoonLongitude(DateTime time);
 
-  /// Checks if moon is near a node at [time].
+  /// True if Moon is near ascending or descending node at [time].
   bool isNearNode(DateTime time);
 
-  /// Checks if moon is near perigee at [time].
+  /// True if Moon is near perigee at [time].
   bool isNearPerigee(DateTime time);
 
-  /// Checks if moon is square node at [time].
+  /// True if Moon is square node at [time].
   bool isMoonSquareNode(DateTime time);
+
+  /// Calculates declination of Moon at [time].
+  double getMoonDeclination(DateTime time);
 
   /// Calculates moon phase for [time].
   MoonPhaseInfo getMoonPhase(DateTime time);
-
-  /// Calculates moon declination for [time].
-  double getMoonDeclination(DateTime time);
 
   /// Calculates positions of planets at [time].
   List<PlanetInfo> getPlanets(DateTime time);
@@ -173,6 +177,9 @@ final class CalendarInterval {
   /// True if Gray Day.
   final bool isGrayDay;
 
+  /// True if Special Day.
+  final bool isSpecial;
+
   /// Message explaining quality or Gray Day.
   final String message;
 
@@ -182,6 +189,7 @@ final class CalendarInterval {
     required this.end,
     required this.quality,
     required this.isGrayDay,
+    this.isSpecial = false,
     required this.message,
   });
 }
@@ -494,7 +502,7 @@ final class AstronomiaEphemerisService implements EphemerisService {
         double exactJD =
             t + step * (0 - pos1.latitude) / (pos2.latitude - pos1.latitude);
         double diffHours = (exactJD - jd) * 24.0;
-        return diffHours.abs() <= 3.95;
+        return diffHours.abs() <= 6.0;
       }
     }
     return false;
@@ -560,12 +568,14 @@ final class AstronomiaEphemerisService implements EphemerisService {
         final last = intervals.last;
         if (last.quality == info.quality &&
             last.isGrayDay == info.isGrayDay &&
+            last.isSpecial == info.isSpecial &&
             last.message == info.message) {
           intervals[intervals.length - 1] = CalendarInterval(
             start: last.start,
             end: intervalEnd,
             quality: last.quality,
             isGrayDay: last.isGrayDay,
+            isSpecial: last.isSpecial,
             message: last.message,
           );
           current = intervalEnd;
@@ -579,6 +589,7 @@ final class AstronomiaEphemerisService implements EphemerisService {
           end: intervalEnd,
           quality: info.quality,
           isGrayDay: info.isGrayDay,
+          isSpecial: info.isSpecial,
           message: info.message,
         ),
       );
