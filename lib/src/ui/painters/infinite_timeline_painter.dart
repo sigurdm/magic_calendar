@@ -285,6 +285,7 @@ final class InfiniteTimelinePainter extends CustomPainter {
           Colors.grey[400]!,
           interval.quality,
           true,
+          false,
         );
       } else if (interval.quality != PlantQuality.none) {
         final color = _getColorForQuality(interval.quality);
@@ -297,6 +298,7 @@ final class InfiniteTimelinePainter extends CustomPainter {
           color,
           interval.quality,
           false,
+          interval.isSpecial,
         );
       }
     }
@@ -506,6 +508,7 @@ final class InfiniteTimelinePainter extends CustomPainter {
     Color color,
     PlantQuality quality,
     bool isGrayDay,
+    bool isSpecial,
   ) {
     final rect = Rect.fromLTWH(x, 5, width, 20);
     final paint = Paint()
@@ -515,6 +518,17 @@ final class InfiniteTimelinePainter extends CustomPainter {
       RRect.fromRectAndRadius(rect, const Radius.circular(3)),
       paint,
     );
+
+    if (isSpecial) {
+      final borderPaint = Paint()
+        ..color = const Color(0xFFFFD700)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, const Radius.circular(3)),
+        borderPaint,
+      );
+    }
 
     if (width > 15) {
       final iconSize = math.min(width * 0.6, 14.0);
@@ -554,9 +568,11 @@ final class InfiniteTimelinePainter extends CustomPainter {
         canvas.drawImageRect(image, src, dst, Paint());
 
         final framePaint = Paint()
-          ..color = Colors.white.withValues(alpha: 0.7)
+          ..color = isSpecial
+              ? const Color(0xFFFFD700)
+              : Colors.white.withValues(alpha: 0.7)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5;
+          ..strokeWidth = isSpecial ? 2.0 : 1.5;
         canvas.drawRRect(
           RRect.fromRectAndRadius(dst, const Radius.circular(2)),
           framePaint,

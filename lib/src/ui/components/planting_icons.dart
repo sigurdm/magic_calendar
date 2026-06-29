@@ -15,6 +15,9 @@ final class PlantingQualityIcon extends StatelessWidget {
   /// Flag indicating if day is a Gray Day.
   final bool isGrayDay;
 
+  /// Flag indicating if day is a Special Day (planetary trine).
+  final bool isSpecial;
+
   /// Creates a [PlantingQualityIcon].
   const PlantingQualityIcon({
     super.key,
@@ -22,6 +25,7 @@ final class PlantingQualityIcon extends StatelessWidget {
     this.size = 24,
     this.color,
     this.isGrayDay = false,
+    this.isSpecial = false,
   });
 
   @override
@@ -49,18 +53,46 @@ final class PlantingQualityIcon extends StatelessWidget {
       }
     }
 
+    final borderColor = isSpecial
+        ? const Color(0xFFFFD700)
+        : Colors.white.withValues(alpha: 0.7);
+    final borderWidth = isSpecial ? 2.5 : 1.5;
+
     return SizedBox(
       width: size,
       height: size,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.7),
-            width: 1.5,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              border: Border.all(color: borderColor, width: borderWidth),
+              borderRadius: BorderRadius.circular(4),
+              boxShadow: isSpecial
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFFFFD700).withValues(alpha: 0.6),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Image.asset(assetPath, fit: BoxFit.contain),
           ),
-          borderRadius: BorderRadius.circular(2),
-        ),
-        child: Image.asset(assetPath, fit: BoxFit.contain),
+          if (isSpecial)
+            Positioned(
+              top: -size * 0.15,
+              right: -size * 0.15,
+              child: Icon(
+                Icons.stars_rounded,
+                color: const Color(0xFFFFD700),
+                size: size * 0.45,
+              ),
+            ),
+        ],
       ),
     );
   }

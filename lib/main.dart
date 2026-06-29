@@ -413,6 +413,7 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                   PlantingQualityIcon(
                     quality: info.quality,
                     isGrayDay: info.isGrayDay,
+                    isSpecial: info.isSpecial,
                     size: 200,
                     color: Colors.white,
                   ),
