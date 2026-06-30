@@ -41,10 +41,10 @@ import 'dornach_boundaries.dart';
         if (q1 == q2 && q1 != PlantQuality.none) {
           aspectQuality = q1;
         } 
-        // Rule 2: Moon aspect transfer for Flower quality (Ag-Flower / Air constellation trines)
-        else if (p1.name == 'Moon' && q2 == PlantQuality.flower && (otherPlanet == 'Jupiter' || otherPlanet == 'Venus')) {
+        // Rule 2: Moon aspect transfer from non-Moon planet's elemental constellation
+        else if (p1.name == 'Moon' && q2 != PlantQuality.none) {
           aspectQuality = q2;
-        } else if (p2.name == 'Moon' && q1 == PlantQuality.flower && (otherPlanet == 'Jupiter' || otherPlanet == 'Venus')) {
+        } else if (p2.name == 'Moon' && q1 != PlantQuality.none) {
           aspectQuality = q1;
         }
 
