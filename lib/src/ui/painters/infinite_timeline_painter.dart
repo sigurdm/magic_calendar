@@ -582,11 +582,9 @@ final class InfiniteTimelinePainter extends CustomPainter {
         canvas.drawImageRect(image, src, dst, Paint());
 
         final framePaint = Paint()
-          ..color = isSpecial
-              ? const Color(0xFFFFD700)
-              : Colors.white.withValues(alpha: 0.7)
+          ..color = Colors.white.withValues(alpha: 0.7)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = isSpecial ? 2.0 : 1.5;
+          ..strokeWidth = 1.5;
         canvas.drawRRect(
           RRect.fromRectAndRadius(dst, const Radius.circular(2)),
           framePaint,
