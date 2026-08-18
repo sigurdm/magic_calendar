@@ -1,0 +1,1916 @@
+[
+  {
+    "id": "carrot",
+    "name_da": "Gulerod",
+    "name_en": "Carrot",
+    "quality": "root",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 14,
+      "end_week": 26
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 26,
+      "end_week": 44
+    }
+  },
+  {
+    "id": "beetroot",
+    "name_da": "Rødbede",
+    "name_en": "Beetroot",
+    "quality": "root",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 16,
+      "end_week": 26
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 30,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "potato",
+    "name_da": "Kartoffel",
+    "name_en": "Potato",
+    "quality": "root",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 8,
+      "end_week": 12
+    },
+    "sow_outdoor": {
+      "start_week": 14,
+      "end_week": 18
+    },
+    "plant_out": {
+      "start_week": 14,
+      "end_week": 18
+    },
+    "harvest": {
+      "start_week": 24,
+      "end_week": 38
+    }
+  },
+  {
+    "id": "radish",
+    "name_da": "Radise",
+    "name_en": "Radish",
+    "quality": "root",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 12,
+      "end_week": 35
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 18,
+      "end_week": 40
+    }
+  },
+  {
+    "id": "onion",
+    "name_da": "Løg (Stikløg)",
+    "name_en": "Onion",
+    "quality": "root",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 14,
+      "end_week": 18
+    },
+    "plant_out": {
+      "start_week": 14,
+      "end_week": 18
+    },
+    "harvest": {
+      "start_week": 30,
+      "end_week": 38
+    }
+  },
+  {
+    "id": "garlic",
+    "name_da": "Hvidløg",
+    "name_en": "Garlic",
+    "quality": "root",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 40,
+      "end_week": 46
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 28,
+      "end_week": 32
+    }
+  },
+  {
+    "id": "parsnip",
+    "name_da": "Pastinak",
+    "name_en": "Parsnip",
+    "quality": "root",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 14,
+      "end_week": 20
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 38,
+      "end_week": 52
+    }
+  },
+  {
+    "id": "turnip",
+    "name_da": "Majroe",
+    "name_en": "Turnip",
+    "quality": "root",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 14,
+      "end_week": 32
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 22,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "celeriac",
+    "name_da": "Knoldselleri",
+    "name_en": "Celeriac",
+    "quality": "root",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 8,
+      "end_week": 12
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 19,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 38,
+      "end_week": 44
+    }
+  },
+  {
+    "id": "jerusalem_artichoke",
+    "name_da": "Jordskok",
+    "name_en": "Jerusalem Artichoke",
+    "quality": "root",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 10,
+      "end_week": 18
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 40,
+      "end_week": 52
+    }
+  },
+  {
+    "id": "scorzonera",
+    "name_da": "Skorzonerrod",
+    "name_en": "Scorzonera",
+    "quality": "root",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 14,
+      "end_week": 18
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 40,
+      "end_week": 52
+    }
+  },
+  {
+    "id": "lettuce",
+    "name_da": "Salat",
+    "name_en": "Lettuce",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 16
+    },
+    "sow_outdoor": {
+      "start_week": 14,
+      "end_week": 32
+    },
+    "plant_out": {
+      "start_week": 16,
+      "end_week": 34
+    },
+    "harvest": {
+      "start_week": 20,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "spinach",
+    "name_da": "Spinat",
+    "name_en": "Spinach",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 12,
+      "end_week": 34
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 18,
+      "end_week": 40
+    }
+  },
+  {
+    "id": "kale",
+    "name_da": "Grønkål",
+    "name_en": "Kale",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 14,
+      "end_week": 18
+    },
+    "sow_outdoor": {
+      "start_week": 18,
+      "end_week": 24
+    },
+    "plant_out": {
+      "start_week": 20,
+      "end_week": 26
+    },
+    "harvest": {
+      "start_week": 40,
+      "end_week": 52
+    }
+  },
+  {
+    "id": "white_cabbage",
+    "name_da": "Hvidkål",
+    "name_en": "White Cabbage",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 16
+    },
+    "sow_outdoor": {
+      "start_week": 16,
+      "end_week": 20
+    },
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 32,
+      "end_week": 44
+    }
+  },
+  {
+    "id": "red_cabbage",
+    "name_da": "Rødkål",
+    "name_en": "Red Cabbage",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 16
+    },
+    "sow_outdoor": {
+      "start_week": 16,
+      "end_week": 20
+    },
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 36,
+      "end_week": 46
+    }
+  },
+  {
+    "id": "brussels_sprouts",
+    "name_da": "Rosenkål",
+    "name_en": "Brussels Sprouts",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 16
+    },
+    "sow_outdoor": {
+      "start_week": 16,
+      "end_week": 20
+    },
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 42,
+      "end_week": 52
+    }
+  },
+  {
+    "id": "leek",
+    "name_da": "Porre",
+    "name_en": "Leek",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 8,
+      "end_week": 14
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 32,
+      "end_week": 52
+    }
+  },
+  {
+    "id": "chard",
+    "name_da": "Bladbede",
+    "name_en": "Swiss Chard",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 14,
+      "end_week": 18
+    },
+    "sow_outdoor": {
+      "start_week": 18,
+      "end_week": 26
+    },
+    "plant_out": {
+      "start_week": 20,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 26,
+      "end_week": 44
+    }
+  },
+  {
+    "id": "kohlrabi",
+    "name_da": "Glaskål",
+    "name_en": "Kohlrabi",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 18
+    },
+    "sow_outdoor": {
+      "start_week": 18,
+      "end_week": 28
+    },
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 24,
+      "end_week": 40
+    }
+  },
+  {
+    "id": "parsley",
+    "name_da": "Persille",
+    "name_en": "Parsley",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 14
+    },
+    "sow_outdoor": {
+      "start_week": 14,
+      "end_week": 26
+    },
+    "plant_out": {
+      "start_week": 16,
+      "end_week": 20
+    },
+    "harvest": {
+      "start_week": 22,
+      "end_week": 52
+    }
+  },
+  {
+    "id": "cilantro",
+    "name_da": "Koriander",
+    "name_en": "Cilantro",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 12,
+      "end_week": 16
+    },
+    "sow_outdoor": {
+      "start_week": 16,
+      "end_week": 30
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 22,
+      "end_week": 36
+    }
+  },
+  {
+    "id": "basil",
+    "name_da": "Basilikum",
+    "name_en": "Basil",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 12,
+      "end_week": 20
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 22,
+      "end_week": 26
+    },
+    "harvest": {
+      "start_week": 24,
+      "end_week": 38
+    }
+  },
+  {
+    "id": "rucola",
+    "name_da": "Rucola",
+    "name_en": "Arugula",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 14,
+      "end_week": 32
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 18,
+      "end_week": 38
+    }
+  },
+  {
+    "id": "broccoli",
+    "name_da": "Broccoli",
+    "name_en": "Broccoli",
+    "quality": "flower",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 18
+    },
+    "sow_outdoor": {
+      "start_week": 18,
+      "end_week": 24
+    },
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 28,
+      "end_week": 44
+    }
+  },
+  {
+    "id": "cauliflower",
+    "name_da": "Blomkål",
+    "name_en": "Cauliflower",
+    "quality": "flower",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 16
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 26,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "artichoke",
+    "name_da": "Artiskok",
+    "name_en": "Artichoke",
+    "quality": "flower",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 6,
+      "end_week": 10
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 20,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 32,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "chamomile",
+    "name_da": "Kamille",
+    "name_en": "Chamomile",
+    "quality": "flower",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 14
+    },
+    "sow_outdoor": {
+      "start_week": 16,
+      "end_week": 24
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 24,
+      "end_week": 34
+    }
+  },
+  {
+    "id": "marigold",
+    "name_da": "Morgenfrue",
+    "name_en": "Marigold",
+    "quality": "flower",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 14,
+      "end_week": 18
+    },
+    "sow_outdoor": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "plant_out": {
+      "start_week": 20,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 24,
+      "end_week": 38
+    }
+  },
+  {
+    "id": "tomato",
+    "name_da": "Tomat",
+    "name_en": "Tomato",
+    "quality": "fruit",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 14
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 20,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 28,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "cucumber",
+    "name_da": "Agurk",
+    "name_en": "Cucumber",
+    "quality": "fruit",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 14,
+      "end_week": 18
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 21,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 26,
+      "end_week": 38
+    }
+  },
+  {
+    "id": "zucchini",
+    "name_da": "Squash",
+    "name_en": "Zucchini",
+    "quality": "fruit",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 16,
+      "end_week": 18
+    },
+    "sow_outdoor": {
+      "start_week": 21,
+      "end_week": 24
+    },
+    "plant_out": {
+      "start_week": 21,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 28,
+      "end_week": 40
+    }
+  },
+  {
+    "id": "pumpkin",
+    "name_da": "Græskar",
+    "name_en": "Pumpkin",
+    "quality": "fruit",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 16,
+      "end_week": 18
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 21,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 36,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "chili",
+    "name_da": "Chili",
+    "name_en": "Chili",
+    "quality": "fruit",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 6,
+      "end_week": 10
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 21,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 30,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "pepper",
+    "name_da": "Peberfrugt",
+    "name_en": "Bell Pepper",
+    "quality": "fruit",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 8,
+      "end_week": 12
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 21,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 30,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "corn",
+    "name_da": "Majs",
+    "name_en": "Sweet Corn",
+    "quality": "fruit",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 18,
+      "end_week": 20
+    },
+    "sow_outdoor": {
+      "start_week": 20,
+      "end_week": 22
+    },
+    "plant_out": {
+      "start_week": 20,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 32,
+      "end_week": 38
+    }
+  },
+  {
+    "id": "pea",
+    "name_da": "Ært",
+    "name_en": "Pea",
+    "quality": "fruit",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 14,
+      "end_week": 26
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 24,
+      "end_week": 34
+    }
+  },
+  {
+    "id": "green_bean",
+    "name_da": "Bønne",
+    "name_en": "Green Bean",
+    "quality": "fruit",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 18,
+      "end_week": 20
+    },
+    "sow_outdoor": {
+      "start_week": 21,
+      "end_week": 26
+    },
+    "plant_out": {
+      "start_week": 22,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 30,
+      "end_week": 38
+    }
+  },
+  {
+    "id": "strawberry",
+    "name_da": "Jordbær",
+    "name_en": "Strawberry",
+    "quality": "fruit",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 30,
+      "end_week": 36
+    },
+    "harvest": {
+      "start_week": 24,
+      "end_week": 28
+    }
+  },
+  {
+    "id": "yacon",
+    "name_da": "Yacon",
+    "name_en": "Yacon",
+    "quality": "root",
+    "sources": [
+      "Frøsamlerne (Esoteric/Exotic Danish varieties)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 16
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 20,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 42,
+      "end_week": 48
+    }
+  },
+  {
+    "id": "oca",
+    "name_da": "Oca (Knoldsyrlis)",
+    "name_en": "Oca",
+    "quality": "root",
+    "sources": [
+      "Frøsamlerne (Esoteric/Exotic Danish varieties)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 14
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 20,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 44,
+      "end_week": 52
+    }
+  },
+  {
+    "id": "sweet_potato",
+    "name_da": "Sød kartoffel (Batat)",
+    "name_en": "Sweet Potato",
+    "quality": "root",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 8,
+      "end_week": 12
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 22,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 38,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "nz_spinach",
+    "name_da": "Newzealandsk Spinat",
+    "name_en": "New Zealand Spinach",
+    "quality": "leaf",
+    "sources": [
+      "Praktisk Økologi (Climate adaptation)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 14,
+      "end_week": 16
+    },
+    "sow_outdoor": {
+      "start_week": 20,
+      "end_week": 24
+    },
+    "plant_out": {
+      "start_week": 20,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 26,
+      "end_week": 44
+    }
+  },
+  {
+    "id": "shiso",
+    "name_da": "Shiso (Perilla)",
+    "name_en": "Shiso",
+    "quality": "leaf",
+    "sources": [
+      "Frøsamlerne (Esoteric/Exotic Danish varieties)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 12,
+      "end_week": 16
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 22,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 26,
+      "end_week": 40
+    }
+  },
+  {
+    "id": "nasturtium",
+    "name_da": "Tallerkensmækker",
+    "name_en": "Nasturtium",
+    "quality": "flower",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 14,
+      "end_week": 16
+    },
+    "sow_outdoor": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 24,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "borage",
+    "name_da": "Hjulkrone",
+    "name_en": "Borage",
+    "quality": "flower",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 16,
+      "end_week": 24
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 22,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "cornflower",
+    "name_da": "Kornblomst",
+    "name_en": "Cornflower",
+    "quality": "flower",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 14,
+      "end_week": 20
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 24,
+      "end_week": 36
+    }
+  },
+  {
+    "id": "tomatillo",
+    "name_da": "Tomatillo",
+    "name_en": "Tomatillo",
+    "quality": "fruit",
+    "sources": [
+      "Frøsamlerne (Esoteric/Exotic Danish varieties)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 14
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 20,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 32,
+      "end_week": 40
+    }
+  },
+  {
+    "id": "physalis",
+    "name_da": "Ananaskirsebær (Incabær)",
+    "name_en": "Cape Gooseberry",
+    "quality": "fruit",
+    "sources": [
+      "Havenyt.dk (Sowing & harvest dates)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 8,
+      "end_week": 12
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 20,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 30,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "cucamelon",
+    "name_da": "Mexikansk Dværgagurk",
+    "name_en": "Cucamelon",
+    "quality": "fruit",
+    "sources": [
+      "Frøsamlerne (Esoteric/Exotic Danish varieties)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 14,
+      "end_week": 18
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 22,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 30,
+      "end_week": 40
+    }
+  },
+  {
+    "id": "dill",
+    "name_da": "Dild",
+    "name_en": "Dill",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 14,
+      "end_week": 28
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 22,
+      "end_week": 40
+    }
+  },
+  {
+    "id": "chives",
+    "name_da": "Purløg (Flerårig)",
+    "name_en": "Chives",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Perennial Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 14
+    },
+    "sow_outdoor": {
+      "start_week": 16,
+      "end_week": 24
+    },
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 18,
+      "end_week": 44
+    }
+  },
+  {
+    "id": "parsley",
+    "name_da": "Persille",
+    "name_en": "Parsley",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 14
+    },
+    "sow_outdoor": {
+      "start_week": 16,
+      "end_week": 24
+    },
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 20,
+      "end_week": 46
+    }
+  },
+  {
+    "id": "thyme",
+    "name_da": "Timian (Flerårig)",
+    "name_en": "Thyme",
+    "quality": "flower",
+    "sources": [
+      "Havenyt.dk (Perennial Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 14
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 20,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "rosemary",
+    "name_da": "Rosmarin (Flerårig)",
+    "name_en": "Rosemary",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Perennial Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 8,
+      "end_week": 12
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 20,
+      "end_week": 44
+    }
+  },
+  {
+    "id": "sage",
+    "name_da": "Salvie (Flerårig)",
+    "name_en": "Sage",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Perennial Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 14
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 22,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "oregano",
+    "name_da": "Oregano / Kyst-Merian (Flerårig)",
+    "name_en": "Oregano",
+    "quality": "flower",
+    "sources": [
+      "Havenyt.dk (Perennial Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 14
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 24,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "mint",
+    "name_da": "Peppermynte / Grøn Mynte (Flerårig)",
+    "name_en": "Mint",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Perennial Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 16,
+      "end_week": 24
+    },
+    "harvest": {
+      "start_week": 20,
+      "end_week": 44
+    }
+  },
+  {
+    "id": "tarragon",
+    "name_da": "Fransk Estragon (Flerårig)",
+    "name_en": "French Tarragon",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Perennial Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 22,
+      "end_week": 40
+    }
+  },
+  {
+    "id": "chervil",
+    "name_da": "Kørvel",
+    "name_en": "Chervil",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 12,
+      "end_week": 30
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 18,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "coriander",
+    "name_da": "Koriander",
+    "name_en": "Coriander",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 16,
+      "end_week": 26
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 22,
+      "end_week": 40
+    }
+  },
+  {
+    "id": "chamomile_herb",
+    "name_da": "Læge-Kamille",
+    "name_en": "Chamomile",
+    "quality": "flower",
+    "sources": [
+      "Havenyt.dk (Medicinal Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 14,
+      "end_week": 22
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 22,
+      "end_week": 38
+    }
+  },
+  {
+    "id": "lavender",
+    "name_da": "Lavendel (Flerårig)",
+    "name_en": "Lavender",
+    "quality": "flower",
+    "sources": [
+      "Havenyt.dk (Perennial Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 8,
+      "end_week": 12
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 28,
+      "end_week": 36
+    }
+  },
+  {
+    "id": "rhubarb",
+    "name_da": "Rhabarber (Flerårig)",
+    "name_en": "Rhubarb",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Perennials)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 12,
+      "end_week": 18
+    },
+    "harvest": {
+      "start_week": 18,
+      "end_week": 26
+    }
+  },
+  {
+    "id": "asparagus",
+    "name_da": "Asparges (Flerårig)",
+    "name_en": "Asparagus",
+    "quality": "root",
+    "sources": [
+      "Havenyt.dk (Perennials)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 14,
+      "end_week": 18
+    },
+    "harvest": {
+      "start_week": 18,
+      "end_week": 25
+    }
+  },
+  {
+    "id": "strawberry",
+    "name_da": "Jordbær (Flerårig)",
+    "name_en": "Strawberry",
+    "quality": "fruit",
+    "sources": [
+      "Havenyt.dk (Perennials)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 14,
+      "end_week": 18
+    },
+    "harvest": {
+      "start_week": 24,
+      "end_week": 30
+    }
+  },
+  {
+    "id": "raspberry",
+    "name_da": "Hindbær (Flerårig)",
+    "name_en": "Raspberry",
+    "quality": "fruit",
+    "sources": [
+      "Havenyt.dk (Perennials)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 10,
+      "end_week": 16
+    },
+    "harvest": {
+      "start_week": 28,
+      "end_week": 38
+    }
+  },
+  {
+    "id": "gooseberry",
+    "name_da": "Stikkelsbær (Flerårig)",
+    "name_en": "Gooseberry",
+    "quality": "fruit",
+    "sources": [
+      "Havenyt.dk (Perennials)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 10,
+      "end_week": 16
+    },
+    "harvest": {
+      "start_week": 26,
+      "end_week": 32
+    }
+  },
+  {
+    "id": "blackcurrant",
+    "name_da": "Solbær (Flerårig)",
+    "name_en": "Blackcurrant",
+    "quality": "fruit",
+    "sources": [
+      "Havenyt.dk (Perennials)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 10,
+      "end_week": 16
+    },
+    "harvest": {
+      "start_week": 27,
+      "end_week": 32
+    }
+  },
+  {
+    "id": "redcurrant",
+    "name_da": "Ribs (Flerårig)",
+    "name_en": "Redcurrant",
+    "quality": "fruit",
+    "sources": [
+      "Havenyt.dk (Perennials)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 10,
+      "end_week": 16
+    },
+    "harvest": {
+      "start_week": 26,
+      "end_week": 30
+    }
+  },
+  {
+    "id": "horseradish",
+    "name_da": "Peberrod (Flerårig)",
+    "name_en": "Horseradish",
+    "quality": "root",
+    "sources": [
+      "Havenyt.dk (Perennials)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 12,
+      "end_week": 18
+    },
+    "harvest": {
+      "start_week": 40,
+      "end_week": 52
+    }
+  },
+  {
+    "id": "welsh_onion",
+    "name_da": "Pibeløg / Purløg (Flerårig)",
+    "name_en": "Welsh Onion",
+    "quality": "root",
+    "sources": [
+      "Havenyt.dk (Perennials)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 14,
+      "end_week": 22
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 20,
+      "end_week": 46
+    }
+  },
+  {
+    "id": "ramson",
+    "name_da": "Ramsløg (Flerårig)",
+    "name_en": "Wild Garlic / Ramson",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Perennials)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 36,
+      "end_week": 44
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 12,
+      "end_week": 20
+    }
+  },
+  {
+    "id": "echinacea",
+    "name_da": "Rødhættet Solhat / Echinacea (Lægeplante)",
+    "name_en": "Echinacea / Purple Coneflower",
+    "quality": "flower",
+    "sources": [
+      "Lægeplanter.dk",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 14
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 28,
+      "end_week": 38
+    }
+  },
+  {
+    "id": "calendula",
+    "name_da": "Morgenfrue / Ringblomst (Lægeplante)",
+    "name_en": "Calendula / Pot Marigold",
+    "quality": "flower",
+    "sources": [
+      "Havenyt.dk (Medicinal Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 14,
+      "end_week": 24
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 22,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "st_johns_wort",
+    "name_da": "Prikbladet Perikon / Johannesurt (Lægeplante)",
+    "name_en": "St. John's Wort",
+    "quality": "flower",
+    "sources": [
+      "Lægeplanter.dk",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 14
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 26,
+      "end_week": 32
+    }
+  },
+  {
+    "id": "valerian_herb",
+    "name_da": "Læge-Valerian / Baldrian (Lægeplante)",
+    "name_en": "Valerian",
+    "quality": "flower",
+    "sources": [
+      "Biodynamic BD 507 source",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 12,
+      "end_week": 16
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 24,
+      "end_week": 48
+    }
+  },
+  {
+    "id": "yarrow_herb",
+    "name_da": "Almindelig Røllike (Lægeplante)",
+    "name_en": "Yarrow",
+    "quality": "flower",
+    "sources": [
+      "Biodynamic BD 502 source",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 14,
+      "end_week": 22
+    },
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 24,
+      "end_week": 38
+    }
+  },
+  {
+    "id": "stinging_nettle",
+    "name_da": "Brændenælde (Lægeplante)",
+    "name_en": "Stinging Nettle",
+    "quality": "leaf",
+    "sources": [
+      "Biodynamic BD 504 source",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": null,
+    "plant_out": null,
+    "harvest": {
+      "start_week": 14,
+      "end_week": 40
+    }
+  },
+  {
+    "id": "lemon_balm",
+    "name_da": "Citronmelisse / Hjertensfryd (Lægeplante)",
+    "name_en": "Lemon Balm",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Medicinal Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 14
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 20,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "comfrey",
+    "name_da": "Læge-Kulsukker (Lægeplante)",
+    "name_en": "Comfrey",
+    "quality": "root",
+    "sources": [
+      "Havenyt.dk (Medicinal Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 14,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 18,
+      "end_week": 42
+    }
+  },
+  {
+    "id": "dandelion_herb",
+    "name_da": "Mælkebøtte (Lægeplante)",
+    "name_en": "Dandelion",
+    "quality": "flower",
+    "sources": [
+      "Biodynamic BD 506 source",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": null,
+    "plant_out": null,
+    "harvest": {
+      "start_week": 14,
+      "end_week": 36
+    }
+  },
+  {
+    "id": "elecampane",
+    "name_da": "Læge-Alant (Lægeplante)",
+    "name_en": "Elecampane",
+    "quality": "root",
+    "sources": [
+      "Lægeplanter.dk",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": {
+      "start_week": 10,
+      "end_week": 14
+    },
+    "sow_outdoor": null,
+    "plant_out": {
+      "start_week": 18,
+      "end_week": 22
+    },
+    "harvest": {
+      "start_week": 38,
+      "end_week": 48
+    }
+  },
+  {
+    "id": "sweet_cicely",
+    "name_da": "Sødskærm / Spansk Kørvel (Lægeplante)",
+    "name_en": "Sweet Cicely",
+    "quality": "leaf",
+    "sources": [
+      "Havenyt.dk (Medicinal Herbs)",
+      "Maria Thun (Biodynamic classification)"
+    ],
+    "sow_indoor": null,
+    "sow_outdoor": {
+      "start_week": 36,
+      "end_week": 44
+    },
+    "plant_out": null,
+    "harvest": {
+      "start_week": 16,
+      "end_week": 36
+    }
+  }
+]

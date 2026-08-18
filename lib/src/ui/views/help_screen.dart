@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Full help and reference screen explaining calendar usage, concepts, practical applications, prioritization, and history.
-class HelpScreen extends StatelessWidget {
+/// Full help and reference screen explaining calendar usage, concepts, practical applications,
+/// prioritization rules, biodynamic preparations, and historical context.
+final class HelpScreen extends StatelessWidget {
+  /// Creates an immutable [HelpScreen].
   const HelpScreen({super.key});
 
   @override
@@ -22,7 +24,11 @@ class HelpScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionHeader(context, 'How to Use the Calendar', Icons.touch_app),
+            _buildSectionHeader(
+              context,
+              'How to Use the Calendar',
+              Icons.touch_app,
+            ),
             const SizedBox(height: 8),
             _buildCard(
               context,
@@ -43,7 +49,11 @@ class HelpScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            _buildSectionHeader(context, 'Plant Qualities & Practical Application', Icons.eco),
+            _buildSectionHeader(
+              context,
+              'Plant Qualities & Practical Application',
+              Icons.eco,
+            ),
             const SizedBox(height: 8),
             _buildCard(
               context,
@@ -76,13 +86,17 @@ class HelpScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            _buildSectionHeader(context, 'Special Days & Sap Rhythms', Icons.stars),
+            _buildSectionHeader(
+              context,
+              'Special Days & Sap Rhythms',
+              Icons.stars,
+            ),
             const SizedBox(height: 8),
             _buildCard(
               context,
               children: [
                 _buildHelpItem(
-                  'Special Days (Aspekt-gunstig / Ag-)',
+                  'Special Days (Aspekt-günstig / Ag-)',
                   'Highlighted with a glowing gold border and star icon. Occur when major planets (Jupiter, Venus, Saturn) form harmonious 120° trines with the Moon in matching elemental constellations.',
                   badgeColor: const Color(0xFFFFD700),
                   practical: 'Treat as "Prime Execution Hours". Reserve delicate sowings, high-value grafting, taking cuttings, or harvesting medicinal herbs for these 4-to-12 hour windows for extra-strong plant vigor.',
@@ -93,7 +107,7 @@ class HelpScreen extends StatelessWidget {
                   practical: 'Grow celery for stalks on Leaf days, but celeriac for roots on Root days. Sow broccoli on Flower days for compact heads, but silage corn on Leaf days for foliage biomass.',
                 ),
                 _buildHelpItem(
-                  'Sap Flow & Sap Vitality Rhythms',
+                  'Sap Flow & Vitality Rhythms',
                   'Reflects lunar ascent/descent and waxing/waning cycles governing plant sap pressure.',
                   practical: 'Ascending/Waxing Moon: Sap rises into foliage (ideal for taking greenwood cuttings, grafting, and harvesting above-ground fruits). Descending/Waning Moon: Sap drops into roots and soil (ideal for transplanting seedlings as roots establish rapidly, root pruning, and spreading compost).',
                 ),
@@ -101,7 +115,39 @@ class HelpScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            _buildSectionHeader(context, 'Prioritization & Gray Day Consequences', Icons.warning_amber),
+            _buildSectionHeader(
+              context,
+              'Biodynamic Field Preparations',
+              Icons.science_outlined,
+            ),
+            const SizedBox(height: 8),
+            _buildCard(
+              context,
+              children: [
+                _buildHelpItem(
+                  'BD 500 (Horn Manure) & Soil Humus',
+                  'Steiner foundation preparation for subterranean biological life, mycorrhizal fungal symbiosis, and deep root anchorage.',
+                  practical: 'Stir 1 hour with alternating vortex/chaos rhythms. Spray in late afternoon / sunset during Descending Moon (Earth Inhalation) as large coarse droplets on moist soil.',
+                ),
+                _buildHelpItem(
+                  'BD 501 (Horn Silica) & Light / Warmth Forces',
+                  'Enhances chlorophyll photosynthetic capacity, starch-to-sugar conversion, and natural fungal resilience.',
+                  practical: 'Stir 1 hour at daybreak. Spray at sunrise during Ascending Moon on Flower or Fruit days as an atomized fine mist floating into the foliage canopy.',
+                ),
+                _buildHelpItem(
+                  'BD 508 (Equisetum Horsetail) Fungal Shield',
+                  'Rich in organic bio-available silica. Natural fungicide preventing mildew, potato blight, rust, and damping-off.',
+                  practical: 'Simmer dried horsetail for 20-30 minutes, steep 24 hours, dilute 1:5, dynamize 15-20 minutes, and spray on clear sunny mornings around Full Moon.',
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            _buildSectionHeader(
+              context,
+              'Prioritization & Gray Day Consequences',
+              Icons.warning_amber,
+            ),
             const SizedBox(height: 8),
             _buildCard(
               context,
@@ -121,7 +167,11 @@ class HelpScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            _buildSectionHeader(context, 'Historical Context & References', Icons.menu_book),
+            _buildSectionHeader(
+              context,
+              'Historical Context & References',
+              Icons.menu_book,
+            ),
             const SizedBox(height: 8),
             _buildCard(
               context,
@@ -147,7 +197,11 @@ class HelpScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title,
+    IconData icon,
+  ) {
     return Row(
       children: [
         Icon(icon, color: const Color(0xFF646CFF), size: 22),
@@ -167,11 +221,11 @@ class HelpScreen extends StatelessWidget {
   Widget _buildCard(BuildContext context, {required List<Widget> children}) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,8 +273,8 @@ class HelpScreen extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             description,
-            style: const TextStyle(
-              fontSize: 11,
+            style: GoogleFonts.outfit(
+              fontSize: 11.5,
               color: Colors.white70,
               height: 1.4,
             ),
@@ -228,23 +282,23 @@ class HelpScreen extends StatelessWidget {
           if (practical != null) ...[
             const SizedBox(height: 6),
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.build, size: 12, color: Color(0xFFFFD700)),
-                  const SizedBox(width: 6),
+                  const Icon(Icons.build, size: 13, color: Color(0xFFFFD700)),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'In Practice: $practical',
-                      style: const TextStyle(
-                        fontSize: 10.5,
-                        color: Color(0xFFFFD700),
+                      style: GoogleFonts.outfit(
+                        fontSize: 11,
+                        color: const Color(0xFFFFD700),
                         height: 1.35,
                       ),
                     ),
@@ -294,31 +348,37 @@ class HelpScreen extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   description,
-                  style: const TextStyle(
-                    fontSize: 11,
+                  style: GoogleFonts.outfit(
+                    fontSize: 11.5,
                     color: Colors.white70,
                     height: 1.4,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.04),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.build, size: 12, color: Color(0xFF818CF8)),
-                      const SizedBox(width: 6),
+                      const Icon(
+                        Icons.build,
+                        size: 13,
+                        color: Color(0xFF818CF8),
+                      ),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'In Practice: $practical',
-                          style: const TextStyle(
-                            fontSize: 10.5,
-                            color: Color(0xFFC7D2FE),
+                          style: GoogleFonts.outfit(
+                            fontSize: 11,
+                            color: const Color(0xFFC7D2FE),
                             height: 1.35,
                           ),
                         ),

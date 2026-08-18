@@ -14,6 +14,10 @@ final class MockEphemerisService implements EphemerisService {
   @override
   bool isNearPerigee(DateTime time) => false;
   @override
+  bool isNearApogee(DateTime time) => false;
+  @override
+  bool isMoonSaturnOpposition(DateTime time) => false;
+  @override
   bool isMoonSquareNode(DateTime time) => false;
   @override
   double getMoonDeclination(DateTime time) => 0.0;
@@ -90,6 +94,58 @@ void main() {
       isTrue,
       reason:
           'Flinging right should move time to the past. '
+          'Start: $startTime, After: $timeAfterFling',
+    );
+  });
+
+  testWidgets('Fling left scrolls to future', (WidgetTester tester) async {
+    DateTime? selectedTime;
+    final mockEphemeris = MockEphemerisService();
+    final mockWeather = MockWeatherService();
+    final controller = TimeScrollController();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: TimeScrollView(
+            ephemeris: mockEphemeris,
+            weatherService: mockWeather,
+            controller: controller,
+            onTimeSelected: (time, {immediate = false}) {
+              selectedTime = time;
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    controller.scrollToNow();
+    await tester.pump();
+
+    final startTime = selectedTime;
+    expect(startTime, isNotNull);
+
+    // Perform a fling gesture to the left (drag from right to left)
+    await tester.fling(
+      find.byType(TimeScrollView),
+      const Offset(-200, 0),
+      1000,
+    );
+
+    await tester.pump(); // Start animation
+    await tester.pump(const Duration(milliseconds: 100)); // Advance animation
+
+    final timeAfterFling = selectedTime;
+    expect(timeAfterFling, isNotNull);
+
+    // Flinging left should pull content from right (future) into view.
+    // So the center time should move to the future (increase).
+    expect(
+      timeAfterFling!.isAfter(startTime!),
+      isTrue,
+      reason:
+          'Flinging left should move time to the future. '
           'Start: $startTime, After: $timeAfterFling',
     );
   });

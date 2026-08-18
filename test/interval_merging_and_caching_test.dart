@@ -33,6 +33,10 @@ final class TrackingEphemerisService implements EphemerisService {
   @override
   bool isNearPerigee(DateTime time) => false;
   @override
+  bool isNearApogee(DateTime time) => false;
+  @override
+  bool isMoonSaturnOpposition(DateTime time) => false;
+  @override
   bool isMoonSquareNode(DateTime time) => false;
   @override
   double getMoonDeclination(DateTime time) => 0.0;
@@ -49,7 +53,8 @@ final class TrackingEphemerisService implements EphemerisService {
 
 final class DummyWeatherService implements WeatherService {
   @override
-  Future<List<WeatherDataPoint>> getForecast(double lat, double lon) async => [];
+  Future<List<WeatherDataPoint>> getForecast(double lat, double lon) async =>
+      [];
   @override
   Future<List<WeatherDataPoint>> getHistoricalData(
     double lat,
@@ -90,7 +95,9 @@ void main() async {
   });
 
   group('Precaching and Scroll Threshold Discovery', () {
-    testWidgets('loads initial 120-day cache window on mount', (WidgetTester tester) async {
+    testWidgets('loads initial 120-day cache window on mount', (
+      WidgetTester tester,
+    ) async {
       final trackingEphemeris = TrackingEphemerisService();
       final dummyWeather = DummyWeatherService();
 
@@ -115,7 +122,9 @@ void main() async {
       expect(duration.inDays, 120);
     });
 
-    testWidgets('does not trigger recalculation when scrolling within buffer', (WidgetTester tester) async {
+    testWidgets('does not trigger recalculation when scrolling within buffer', (
+      WidgetTester tester,
+    ) async {
       final trackingEphemeris = TrackingEphemerisService();
       final dummyWeather = DummyWeatherService();
 
@@ -144,33 +153,39 @@ void main() async {
       expect(trackingEphemeris.getIntervalsCalls.length, 1);
     });
 
-    testWidgets('triggers recalculation when scrolling past threshold boundary', (WidgetTester tester) async {
-      final trackingEphemeris = TrackingEphemerisService();
-      final dummyWeather = DummyWeatherService();
+    testWidgets(
+      'triggers recalculation when scrolling past threshold boundary',
+      (WidgetTester tester) async {
+        final trackingEphemeris = TrackingEphemerisService();
+        final dummyWeather = DummyWeatherService();
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: TimeScrollView(
-              ephemeris: trackingEphemeris,
-              weatherService: dummyWeather,
-              onTimeSelected: (_) {},
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: TimeScrollView(
+                ephemeris: trackingEphemeris,
+                weatherService: dummyWeather,
+                onTimeSelected: (_) {},
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
-      expect(trackingEphemeris.getIntervalsCalls.length, 1);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 200));
+        expect(trackingEphemeris.getIntervalsCalls.length, 1);
 
-      // Perform large drags to scroll past 45 days threshold
-      for (int i = 0; i < 15; i++) {
-        await tester.drag(find.byType(TimeScrollView), const Offset(-3000, 0));
-        await tester.pump(const Duration(milliseconds: 120));
-      }
+        // Perform large drags to scroll past 45 days threshold
+        for (int i = 0; i < 15; i++) {
+          await tester.drag(
+            find.byType(TimeScrollView),
+            const Offset(-3000, 0),
+          );
+          await tester.pump(const Duration(milliseconds: 120));
+        }
 
-      expect(trackingEphemeris.getIntervalsCalls.length, greaterThan(1));
-    });
+        expect(trackingEphemeris.getIntervalsCalls.length, greaterThan(1));
+      },
+    );
   });
 }

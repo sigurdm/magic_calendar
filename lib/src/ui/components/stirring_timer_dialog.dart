@@ -1,0 +1,600 @@
+import 'dart:async';
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+/// Preparation configuration for biodynamic dynamization stirring.
+enum StirringPrepType {
+  /// Horn Manure (BD 500): 60 minutes stirring, Descending Moon, late afternoon.
+  bd500,
+
+  /// Horn Silica (BD 501): 60 minutes stirring, Ascending Moon, early morning sunrise.
+  bd501,
+
+  /// Horsetail decoction (BD 508): 20 minutes gentle dynamization.
+  bd508,
+
+  /// General compost tea / plant concoction (15 minutes).
+  generalTea,
+}
+
+/// Interactive modal dialog providing countdown, vortex cycle tracking,
+/// direction reversal alerts, and ±1 minute manual adjustments.
+final class StirringTimerDialog extends StatefulWidget {
+  /// Initial preparation type to configure timer for.
+  final StirringPrepType initialPrep;
+
+  /// Creates an immutable [StirringTimerDialog].
+  const StirringTimerDialog({
+    super.key,
+    this.initialPrep = StirringPrepType.bd500,
+  });
+
+  /// Shows the dialog with backdrop blur and responsive constraints.
+  static Future<void> show(
+    BuildContext context, {
+    StirringPrepType prep = StirringPrepType.bd500,
+  }) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StirringTimerDialog(initialPrep: prep),
+    );
+  }
+
+  @override
+  State<StirringTimerDialog> createState() => _StirringTimerDialogState();
+}
+
+final class _StirringTimerDialogState extends State<StirringTimerDialog> {
+  late StirringPrepType _selectedPrep;
+  late int _totalDurationSeconds;
+  int _remainingSeconds = 3600;
+  bool _isRunning = false;
+  Timer? _timer;
+
+  // Vortex cycle length is 75 seconds (vortex buildup -> crater chaos -> direction reversal).
+  static const int _cycleLengthSeconds = 75;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedPrep = widget.initialPrep;
+    _setDurationForPrep(_selectedPrep);
+  }
+
+  void _setDurationForPrep(StirringPrepType prep) {
+    _selectedPrep = prep;
+    switch (prep) {
+      case StirringPrepType.bd500:
+      case StirringPrepType.bd501:
+        _totalDurationSeconds = 3600; // 60 minutes
+        break;
+      case StirringPrepType.bd508:
+        _totalDurationSeconds = 1200; // 20 minutes
+        break;
+      case StirringPrepType.generalTea:
+        _totalDurationSeconds = 900; // 15 minutes
+        break;
+    }
+    _remainingSeconds = _totalDurationSeconds;
+  }
+
+  void _toggleTimer() {
+    if (_isRunning) {
+      _timer?.cancel();
+      setState(() {
+        _isRunning = false;
+      });
+    } else {
+      setState(() {
+        _isRunning = true;
+      });
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (_remainingSeconds > 0) {
+          setState(() {
+            _remainingSeconds--;
+          });
+          // Play audible click on 75s reversal rhythm and warning cues
+          if (_secondsUntilReversal == _cycleLengthSeconds ||
+              _secondsUntilReversal <= 3) {
+            SystemSound.play(SystemSoundType.click);
+          }
+        } else {
+          _timer?.cancel();
+          setState(() {
+            _isRunning = false;
+          });
+          SystemSound.play(SystemSoundType.click);
+          _showCompletionAlert();
+        }
+      });
+    }
+  }
+
+  void _skipSeconds(int deltaSeconds) {
+    setState(() {
+      _remainingSeconds = (_remainingSeconds + deltaSeconds).clamp(
+        0,
+        _totalDurationSeconds,
+      );
+    });
+  }
+
+  void _resetTimer() {
+    _timer?.cancel();
+    setState(() {
+      _isRunning = false;
+      _remainingSeconds = _totalDurationSeconds;
+    });
+  }
+
+  void _showCompletionAlert() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: const Color(0xFF10B981),
+        content: Text(
+          'Stirring Complete! Apply dynamized preparation immediately within 1-2 hours.',
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  int get _elapsedSeconds => _totalDurationSeconds - _remainingSeconds;
+  int get _currentCycleIndex =>
+      (_elapsedSeconds / _cycleLengthSeconds).floor() + 1;
+  int get _totalCycles => (_totalDurationSeconds / _cycleLengthSeconds).ceil();
+  int get _cycleSecondsElapsed => _elapsedSeconds % _cycleLengthSeconds;
+  int get _secondsUntilReversal => _cycleLengthSeconds - _cycleSecondsElapsed;
+
+  bool get _isReversalWarning => _isRunning && _secondsUntilReversal <= 5;
+  bool get _isClockwise => (_currentCycleIndex % 2) != 0;
+
+  String _formatTime(int totalSecs) {
+    final minutes = totalSecs ~/ 60;
+    final seconds = totalSecs % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = _totalDurationSeconds > 0
+        ? _elapsedSeconds / _totalDurationSeconds
+        : 0.0;
+    final cycleProgress = _cycleLengthSeconds > 0
+        ? _cycleSecondsElapsed / _cycleLengthSeconds
+        : 0.0;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 480),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E2E).withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF646CFF)
+                                  .withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.cyclone,
+                              color: Color(0xFF818CF8),
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Biodynamic Stirrer',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Text(
+                                'Dynamization Vortex Timer',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 12,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minWidth: 48,
+                          minHeight: 48,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white70),
+                          onPressed: () {
+                            _timer?.cancel();
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Preparation Selector Tabs
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildPrepTab(
+                          'BD 500 (Manure)',
+                          StirringPrepType.bd500,
+                        ),
+                        const SizedBox(width: 6),
+                        _buildPrepTab(
+                          'BD 501 (Silica)',
+                          StirringPrepType.bd501,
+                        ),
+                        const SizedBox(width: 6),
+                        _buildPrepTab(
+                          'BD 508 (Horsetail)',
+                          StirringPrepType.bd508,
+                        ),
+                        const SizedBox(width: 6),
+                        _buildPrepTab(
+                          'Concoction Tea',
+                          StirringPrepType.generalTea,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Reversal Alert Banner
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _isReversalWarning
+                          ? const Color(0xFFEF4444).withValues(alpha: 0.25)
+                          : (_isRunning
+                                ? const Color(0xFF10B981)
+                                      .withValues(alpha: 0.15)
+                                : Colors.white.withValues(alpha: 0.05)),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _isReversalWarning
+                            ? const Color(0xFFEF4444)
+                            : (_isRunning
+                                  ? const Color(0xFF10B981)
+                                        .withValues(alpha: 0.4)
+                                  : Colors.white.withValues(alpha: 0.1)),
+                        width: _isReversalWarning ? 2.0 : 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _isReversalWarning
+                              ? Icons.warning_amber_rounded
+                              : (_isClockwise
+                                    ? Icons.rotate_right
+                                    : Icons.rotate_left),
+                          color: _isReversalWarning
+                              ? const Color(0xFFEF4444)
+                              : (_isClockwise
+                                    ? const Color(0xFF60A5FA)
+                                    : const Color(0xFFF59E0B)),
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _isReversalWarning
+                                    ? 'REVERSE VORTEX! (${_secondsUntilReversal}s)'
+                                    : (_isClockwise
+                                          ? 'Stir Clockwise (Build Deep Vortex)'
+                                          : 'Stir Counter-Clockwise (Break & Chaos)'),
+                                style: GoogleFonts.outfit(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: _isReversalWarning
+                                      ? const Color(0xFFEF4444)
+                                      : Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _isReversalWarning
+                                    ? 'Break the vortex crater now to create dynamic chaos!'
+                                    : 'Vortex Cycle $_currentCycleIndex of $_totalCycles (${_secondsUntilReversal}s until reverse)',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 11,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Main Circular Progress & Timer Display
+                  Center(
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 200,
+                          height: 200,
+                          child: CircularProgressIndicator(
+                            value: progress,
+                            strokeWidth: 8,
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.1,
+                            ),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Color(0xFF646CFF),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 175,
+                          height: 175,
+                          child: CircularProgressIndicator(
+                            value: cycleProgress,
+                            strokeWidth: 4,
+                            backgroundColor: Colors.transparent,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              _isReversalWarning
+                                  ? const Color(0xFFEF4444)
+                                  : (_isClockwise
+                                        ? const Color(0xFF60A5FA)
+                                        : const Color(0xFFF59E0B)),
+                            ),
+                          ),
+                        ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _formatTime(_remainingSeconds),
+                              style: GoogleFonts.outfit(
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Cycle $_currentCycleIndex/$_totalCycles',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF818CF8),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // ±1 Minute Skip Controls
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minWidth: 48,
+                          minHeight: 48,
+                        ),
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white70,
+                            side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.2),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
+                          ),
+                          onPressed: () => _skipSeconds(-60),
+                          icon: const Icon(Icons.replay_10, size: 16),
+                          label: Text(
+                            '-1 min',
+                            style: GoogleFonts.outfit(fontSize: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minWidth: 48,
+                          minHeight: 48,
+                        ),
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white70,
+                            side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.2),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
+                          ),
+                          onPressed: () => _skipSeconds(60),
+                          icon: const Icon(Icons.forward_10, size: 16),
+                          label: Text(
+                            '+1 min',
+                            style: GoogleFonts.outfit(fontSize: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Main Timer Action Buttons (Play / Pause, Reset)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 52,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _isRunning
+                                  ? const Color(0xFFEF4444)
+                                        .withValues(alpha: 0.8)
+                                  : const Color(0xFF646CFF),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            onPressed: _toggleTimer,
+                            icon: Icon(
+                              _isRunning ? Icons.pause : Icons.play_arrow,
+                            ),
+                            label: Text(
+                              _isRunning ? 'Pause Stirring' : 'Start Stirring',
+                              style: GoogleFonts.outfit(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minWidth: 48,
+                          minHeight: 52,
+                        ),
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white70,
+                            side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.2),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            padding: const EdgeInsets.all(14),
+                          ),
+                          onPressed: _resetTimer,
+                          child: const Icon(Icons.refresh),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrepTab(String title, StirringPrepType prep) {
+    final isSelected = _selectedPrep == prep;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+      child: InkWell(
+        onTap: () {
+          if (!_isRunning) {
+            _setDurationForPrep(prep);
+          }
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color(0xFF646CFF).withValues(alpha: 0.3)
+                : Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected
+                  ? const Color(0xFF646CFF)
+                  : Colors.white.withValues(alpha: 0.1),
+            ),
+          ),
+          child: Text(
+            title,
+            style: GoogleFonts.outfit(
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected ? Colors.white : Colors.white60,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

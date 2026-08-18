@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../services/ephemeris_service.dart';
 
 /// Widget rendering plant quality icon badges.
