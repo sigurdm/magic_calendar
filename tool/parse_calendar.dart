@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'dart:io';
 
 void main() {
@@ -45,18 +46,23 @@ void main() {
     }
 
     final cells = trimmed.split('|').map((s) => s.trim()).toList();
-    if (cells.length < 5)
+    if (cells.length < 5) {
       continue; // | empty | Date | Time | Activity | empty |
+    }
 
     final dateStr = cells[1];
     final timeStr = cells[2];
     final activity = cells[3];
 
-    if (dateStr.isEmpty || timeStr.isEmpty || activity.isEmpty) continue;
+    if (dateStr.isEmpty || timeStr.isEmpty || activity.isEmpty) {
+      continue;
+    }
 
     // Parse day: "1. Jan (To)" -> day = 1
     final dayMatch = RegExp(r'^(\d+)\.').firstMatch(dateStr);
-    if (dayMatch == null) continue;
+    if (dayMatch == null) {
+      continue;
+    }
     final day = int.parse(dayMatch.group(1)!);
 
     // Parse time: "00:00 - 10:00"
