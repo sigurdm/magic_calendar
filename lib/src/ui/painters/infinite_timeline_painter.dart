@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import 'dart:ui' as ui;
 import 'dart:math' as math;
+
 import '../../services/ephemeris_service.dart';
 import '../../services/weather_service.dart';
 
@@ -21,6 +23,8 @@ final class InfiniteTimelinePainter extends CustomPainter {
   final ui.Image? noneImage;
   final ui.Image? grayDayImage;
 
+  final bool showBiodynamicOverlay;
+
   InfiniteTimelinePainter({
     required this.centerTime,
     required this.hourWidth,
@@ -29,6 +33,7 @@ final class InfiniteTimelinePainter extends CustomPainter {
     required this.ephemeris,
     required this.latitude,
     required this.longitude,
+    this.showBiodynamicOverlay = false,
     this.rootImage,
     this.leafImage,
     this.flowerImage,
@@ -544,6 +549,28 @@ final class InfiniteTimelinePainter extends CustomPainter {
       );
     }
 
+    if (showBiodynamicOverlay) {
+      final prepStripRect = Rect.fromLTWH(x, 2, width, 3);
+      final prepPaint = Paint();
+      final isEvening =
+          label != 'gray' && (quality == PlantQuality.root || label == 'root');
+      final isMorning =
+          label != 'gray' &&
+          (quality == PlantQuality.flower || quality == PlantQuality.fruit);
+
+      if (isEvening) {
+        prepPaint.color = const Color(
+          0xFFD7CCC8,
+        ); // BD 500 Horn Manure Earth strip
+        canvas.drawRect(prepStripRect, prepPaint);
+      } else if (isMorning) {
+        prepPaint.color = const Color(
+          0xFF80DEEA,
+        ); // BD 501 Horn Silica Air/Light strip
+        canvas.drawRect(prepStripRect, prepPaint);
+      }
+    }
+
     if (width > 15) {
       final iconSize = math.min(width * 0.6, 14.0);
       ui.Image? image;
@@ -633,6 +660,7 @@ final class InfiniteTimelinePainter extends CustomPainter {
         oldDelegate.weatherData != weatherData ||
         oldDelegate.latitude != latitude ||
         oldDelegate.longitude != longitude ||
+        oldDelegate.showBiodynamicOverlay != showBiodynamicOverlay ||
         oldDelegate.rootImage != rootImage ||
         oldDelegate.leafImage != leafImage ||
         oldDelegate.flowerImage != flowerImage ||

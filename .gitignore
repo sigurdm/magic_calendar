@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+android/build/
+android/app/build/
+
+# Local packages and shared objects
+packages/
+*.so
+flutter_*.png

@@ -1,18 +1,23 @@
 import 'dart:async';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_driver/driver_extension.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'dart:ui';
+import 'package:path_provider/path_provider.dart';
 import 'package:sweph/sweph.dart';
 
+import 'src/core/algorithm.dart' as algo;
 import 'src/services/ephemeris_service.dart';
-import 'src/ui/views/time_scroll_view.dart';
+import 'src/services/weather_service.dart';
+import 'src/ui/components/biodynamic_card.dart';
+import 'src/ui/components/plant_recommendations_card.dart';
 import 'src/ui/components/planetary_ribbon.dart';
 import 'src/ui/components/planting_icons.dart';
-import 'src/services/weather_service.dart';
 import 'src/ui/painters/moon_painter.dart';
 import 'src/ui/views/help_screen.dart';
+import 'src/ui/views/time_scroll_view.dart';
 
 void main() async {
   enableFlutterDriverExtension();
@@ -23,12 +28,18 @@ void main() async {
     dmiService: DmiWeatherService(),
   );
 
-  await Sweph.init();
-  await EphemerisWorker.init();
+  String? epheFilesPath;
+  try {
+    final appSupportDir = await getApplicationSupportDirectory();
+    epheFilesPath = '${appSupportDir.path}/ephe_files';
+  } catch (_) {
+    // Fallback if path_provider fails in non-app environments
+  }
 
-  runApp(
-    MyApp(ephemeris: IsolateEphemerisService(), weather: weatherService),
-  );
+  await Sweph.init(epheFilesPath: epheFilesPath);
+  await EphemerisWorker.init(epheFilesPath: epheFilesPath);
+
+  runApp(MyApp(ephemeris: IsolateEphemerisService(), weather: weatherService));
 }
 
 final class MyApp extends StatelessWidget {
@@ -98,10 +109,16 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
     }
   }
 
-  void _updateInfo(DateTime time, {bool immediate = false}) async {
-    final info = await EphemerisWorker.getCalendarInfo(time, true);
-    if (mounted) {
+  void _updateInfo(DateTime time, {bool immediate = false}) {
+    try {
+      final info = algo.getCalendarInfo(
+        time,
+        widget.ephemeris,
+        includePlanets: true,
+      );
       _infoNotifier.value = info;
+    } catch (e) {
+      debugPrint('Failed to update calendar info: $e');
     }
   }
 
@@ -132,21 +149,32 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
           ),
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: constraints.maxWidth,
+                    maxWidth: constraints.maxWidth,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildHeader(),
                 const SizedBox(height: 20),
                 ValueListenableBuilder<DateTime>(
                   valueListenable: _selectedDateNotifier,
                   builder: (context, date, _) {
-                    return Text(
-                      DateFormat('EEEE, MMM d, y - HH:00').format(date),
-                      style: GoogleFonts.outfit(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      child: Text(
+                        DateFormat('EEEE, MMM d, y - HH:00').format(date),
+                        style: GoogleFonts.outfit(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
                       ),
                     );
                   },
@@ -170,6 +198,9 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                       weatherService: _weatherService,
                       controller: _timeScrollController,
                       onTimeSelected: _onTimeSelected,
+                      onWeatherDataChanged: (weather) {
+                        _weatherNotifier.value = weather;
+                      },
                       latitude: _latNotifier.value,
                       longitude: _lonNotifier.value,
                     );
@@ -187,108 +218,161 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                     if (info == null) {
                       return const SizedBox();
                     }
-                    return _buildDetailsCard(info);
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildDetailsCard(info),
+                        const SizedBox(height: 20),
+                        ValueListenableBuilder<DateTime>(
+                          valueListenable: _selectedDateNotifier,
+                          builder: (context, date, _) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                BiodynamicCard(
+                                  info: info,
+                                  selectedDate: date,
+                                  onTimeJump: _onTimeSelected,
+                                ),
+                                const SizedBox(height: 20),
+                                PlantRecommendationsCard(
+                                  info: info,
+                                  selectedDate: date,
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ),
+  ),
+),
+);
+}
+
+  Widget _buildHeader() {
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        GestureDetector(
+          onTap: _showLocationPicker,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 48),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 8,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.location_on,
+                  size: 18,
+                  color: Colors.white70,
+                ),
+                const SizedBox(width: 4),
+                ValueListenableBuilder<double>(
+                  valueListenable: _latNotifier,
+                  builder: (context, lat, _) {
+                    return ValueListenableBuilder<double>(
+                      valueListenable: _lonNotifier,
+                      builder: (context, lon, _) {
+                        return Text(
+                          '${lat.toStringAsFixed(1)}°, ${lon.toStringAsFixed(1)}°',
+                          style: GoogleFonts.outfit(
+                            fontSize: 12,
+                            color: Colors.white70,
+                          ),
+                        );
+                      },
+                    );
                   },
                 ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            GestureDetector(
-              onTap: _showLocationPicker,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on,
-                      size: 18,
-                      color: Colors.white70,
-                    ),
-                    const SizedBox(width: 4),
-                    ValueListenableBuilder<double>(
-                      valueListenable: _latNotifier,
-                      builder: (context, lat, _) {
-                        return ValueListenableBuilder<double>(
-                          valueListenable: _lonNotifier,
-                          builder: (context, lon, _) {
-                            return Text(
-                              '${lat.toStringAsFixed(1)}°, ${lon.toStringAsFixed(1)}°',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.white70,
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Magic Calendar',
-              style: GoogleFonts.outfit(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ],
+        Text(
+          'Magic Calendar',
+          style: GoogleFonts.outfit(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            TextButton.icon(
-              onPressed: () {
-                _timeScrollController.scrollToNow();
-              },
-              icon: const Icon(Icons.history, color: Colors.white),
-              label: const Text('NOW', style: TextStyle(color: Colors.white)),
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.white.withValues(alpha: 0.1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: TextButton.icon(
+                onPressed: () {
+                  _timeScrollController.scrollToNow();
+                },
+                icon: const Icon(Icons.history, color: Colors.white, size: 18),
+                label: Text(
+                  'NOW',
+                  style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.white.withValues(alpha: 0.1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(Icons.calendar_month, color: Colors.white),
-              onPressed: () async {
-                final date = await showDatePicker(
-                  context: context,
-                  initialDate: _selectedDateNotifier.value,
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime(2100),
-                );
-                if (date != null) {
-                  _onTimeSelected(date);
-                }
-              },
+            const SizedBox(width: 4),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              child: IconButton(
+                icon: const Icon(Icons.calendar_month, color: Colors.white),
+                onPressed: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedDateNotifier.value,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                  );
+                  if (date != null) {
+                    _onTimeSelected(date);
+                  }
+                },
+              ),
             ),
-            IconButton(
-              icon: const Icon(Icons.help_outline, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const HelpScreen()),
-                );
-              },
+            ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              child: IconButton(
+                icon: const Icon(Icons.help_outline, color: Colors.white),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const HelpScreen()),
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -307,7 +391,7 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Set Location'),
+        title: Text('Set Location', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -330,7 +414,7 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel', style: GoogleFonts.outfit()),
           ),
           ElevatedButton(
             onPressed: () {
@@ -342,7 +426,7 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
               }
               Navigator.pop(context);
             },
-            child: const Text('Save'),
+            child: Text('Save', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -423,7 +507,7 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                     size: 200,
                     color: Colors.white,
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(height: 16),
                   Text(
                     title,
                     style: GoogleFonts.outfit(
@@ -435,18 +519,14 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                 ],
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                height: 48,
-                child: Center(
-                  child: Text(
-                    desc,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.outfit(
-                      fontSize: 16,
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  desc,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(
+                    fontSize: 16,
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
               ),
@@ -479,22 +559,22 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
 
           final isAscending = dec2 > dec1;
           final sapExplanation = isAscending
-              ? "Sap rises, bringing energy to leaves, flowers and fruits. Ideal for harvesting above-ground crops."
-              : "Sap recedes to the soil. Ideal for planting, pruning, and harvesting root crops.";
+              ? 'Sap rises, bringing energy to leaves, flowers and fruits. Ideal for harvesting above-ground crops.'
+              : 'Sap recedes to the soil. Ideal for planting, pruning, and harvesting root crops.';
 
           final vitalityExplanation = moonPhase.isWaxing
-              ? "Increasing lunar vitality stimulates above-ground growth and germination."
-              : "Decreasing lunar vitality supports root development and soil consolidation.";
+              ? 'Increasing lunar vitality stimulates above-ground growth and germination.'
+              : 'Decreasing lunar vitality supports root development and soil consolidation.';
 
           String illumExplanation;
           if (moonPhase.illuminatedFraction > 0.8) {
             illumExplanation =
-                "High nocturnal light stimulates foliage growth.";
+                'High nocturnal light stimulates foliage growth.';
           } else if (moonPhase.illuminatedFraction < 0.2) {
             illumExplanation =
-                "Dark nights encourage root formation and plant rest.";
+                'Dark nights encourage root formation and plant rest.';
           } else {
-            illumExplanation = "Balanced lunar light influence.";
+            illumExplanation = 'Balanced lunar light influence.';
           }
 
           return ValueListenableBuilder<List<WeatherDataPoint>?>(
@@ -609,13 +689,13 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
           children: [
             Text(
               label,
-              style: GoogleFonts.outfit(fontSize: 16, color: Colors.white70),
+              style: GoogleFonts.outfit(fontSize: 14, color: Colors.white70),
             ),
             Expanded(
               child: Text(
                 value,
                 style: GoogleFonts.outfit(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Colors.white,
                 ),

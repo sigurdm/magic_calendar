@@ -23,7 +23,9 @@ final class CombinedWeatherService implements WeatherService {
     DateTime start,
     DateTime end,
   ) async {
-    if (lat >= 54.5 && lat <= 57.8 && lon >= 8.0 && lon <= 12.7) {
+    // Denmark bounding box: latitude 54.5°N to 57.8°N, longitude 8.0°E to 15.3°E
+    // (includes Bornholm: ~14.68°E to 15.19°E).
+    if (lat >= 54.5 && lat <= 57.8 && lon >= 8.0 && lon <= 15.3) {
       try {
         return await dmiService.getHistoricalData(lat, lon, start, end);
       } catch (e) {

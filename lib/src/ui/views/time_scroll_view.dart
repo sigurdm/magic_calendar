@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/physics.dart';
+
 import 'dart:ui' as ui;
 import 'dart:async';
+
 import 'package:flutter/services.dart';
+
 import '../../services/ephemeris_service.dart';
 import '../../services/weather_service.dart';
 import '../painters/infinite_timeline_painter.dart';
@@ -14,6 +17,9 @@ final class TimeScrollController {
 
   /// Scrolls the timeline to the current date and time.
   void scrollToNow() => _state?._scrollToNow();
+
+  /// Scrolls the timeline to a specific date and time.
+  void scrollToTime(DateTime time) => _state?._scrollToTime(time);
 }
 
 /// Interactive timeline scroll view showing celestial events, biodynamic qualities, and weather.
@@ -36,15 +42,23 @@ final class TimeScrollView extends StatefulWidget {
   /// Longitude coordinate.
   final double longitude;
 
+  /// Whether to show biodynamic prep overlay indicators on timeline.
+  final bool showBiodynamicOverlay;
+
+  /// Optional callback dispatched whenever visible weather observations or forecasts change.
+  final ValueChanged<List<WeatherDataPoint>>? onWeatherDataChanged;
+
   /// Creates a [TimeScrollView].
   const TimeScrollView({
     super.key,
     required this.ephemeris,
     required this.weatherService,
     required this.onTimeSelected,
+    this.onWeatherDataChanged,
     this.controller,
     this.latitude = 54.9037,
     this.longitude = 10.6074,
+    this.showBiodynamicOverlay = false,
   });
 
   @override
@@ -57,11 +71,12 @@ class _TimeScrollViewState extends State<TimeScrollView>
   late DateTime _baseTime;
   double _panOffset = 0.0;
   double _viewportWidth = 400.0;
-  double _hourWidth = 40.0;
-  final double _minHourWidth = 2.5;
+  double _hourWidth = 400.0 / (7 * 24);
+  final double _minHourWidth = 0.5;
   final double _maxHourWidth = 500.0;
+  bool _initialZoomSet = false;
 
-  double _baseScaleHourWidth = 40.0;
+  double _baseScaleHourWidth = 400.0 / (7 * 24);
 
   List<CalendarInterval> _visibleIntervals = [];
   List<WeatherDataPoint> _weatherData = [];
@@ -172,8 +187,9 @@ class _TimeScrollViewState extends State<TimeScrollView>
               last.isGrayDay == interval.isGrayDay &&
               last.isSpecial == interval.isSpecial &&
               last.message == interval.message) {
-            final maxEnd =
-                interval.end.isAfter(last.end) ? interval.end : last.end;
+            final maxEnd = interval.end.isAfter(last.end)
+                ? interval.end
+                : last.end;
             merged[merged.length - 1] = CalendarInterval(
               start: last.start,
               end: maxEnd,
@@ -207,7 +223,9 @@ class _TimeScrollViewState extends State<TimeScrollView>
     if (_cachedStart == null ||
         _centerTime.difference(_cachedStart!).inDays.abs() < 30 ||
         _cachedEnd!.difference(_centerTime).inDays.abs() < 30) {
-      setState(() => _isLoading = true);
+      if (_visibleIntervals.isEmpty) {
+        setState(() => _isLoading = true);
+      }
 
       final intervals = await widget.ephemeris.getIntervals(start, end);
       if (!mounted) {
@@ -263,6 +281,7 @@ class _TimeScrollViewState extends State<TimeScrollView>
         setState(() {
           _weatherData = combinedWeather;
         });
+        widget.onWeatherDataChanged?.call(combinedWeather);
       }
     }
   }
@@ -274,6 +293,12 @@ class _TimeScrollViewState extends State<TimeScrollView>
       oldWidget.controller?._state = null;
       widget.controller?._state = this;
     }
+    if (widget.latitude != oldWidget.latitude ||
+        widget.longitude != oldWidget.longitude) {
+      _cachedStart = null;
+      _cachedEnd = null;
+      _scheduleUpdate(immediate: true);
+    }
   }
 
   void _scrollToNow() {
@@ -284,6 +309,19 @@ class _TimeScrollViewState extends State<TimeScrollView>
       _panOffset = 0.0;
     });
     widget.onTimeSelected(_centerTime);
+    _scheduleUpdate(immediate: true);
+  }
+
+  void _scrollToTime(DateTime time) {
+    if (_centerTime.difference(time).inSeconds.abs() < 2) {
+      return;
+    }
+    _momentumController.stop();
+    setState(() {
+      _centerTime = time;
+      _baseTime = _centerTime;
+      _panOffset = 0.0;
+    });
     _scheduleUpdate(immediate: true);
   }
 
@@ -300,6 +338,14 @@ class _TimeScrollViewState extends State<TimeScrollView>
     return LayoutBuilder(
       builder: (context, constraints) {
         _viewportWidth = constraints.maxWidth;
+        if (!_initialZoomSet && constraints.maxWidth > 0) {
+          _hourWidth = (_viewportWidth / (7 * 24)).clamp(
+            _minHourWidth,
+            _maxHourWidth,
+          );
+          _baseScaleHourWidth = _hourWidth;
+          _initialZoomSet = true;
+        }
         final canvasWidth = _viewportWidth * 3;
 
         return SizedBox(
@@ -347,7 +393,7 @@ class _TimeScrollViewState extends State<TimeScrollView>
               onScaleEnd: (details) {
                 final velocity = details.velocity.pixelsPerSecond.dx;
                 if (velocity.abs() > 100) {
-                  final simulation = FrictionSimulation(0.1, 0.0, -velocity);
+                  final simulation = FrictionSimulation(0.1, 0.0, velocity);
                   _lastMomentumValue = 0.0;
                   _momentumController.animateWith(simulation);
                 }
@@ -376,6 +422,8 @@ class _TimeScrollViewState extends State<TimeScrollView>
                                   ephemeris: widget.ephemeris,
                                   latitude: widget.latitude,
                                   longitude: widget.longitude,
+                                  showBiodynamicOverlay:
+                                      widget.showBiodynamicOverlay,
                                   rootImage: _rootImage,
                                   leafImage: _leafImage,
                                   flowerImage: _flowerImage,

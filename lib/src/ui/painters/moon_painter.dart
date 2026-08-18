@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import 'dart:math' as math;
+
 import '../../services/ephemeris_service.dart';
 
 /// CustomPainter for rendering real-time moon phase graphics.

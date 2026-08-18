@@ -40,6 +40,12 @@ final class MockEphemerisService implements EphemerisService {
   List<PlanetInfo> getPlanets(DateTime time) => [];
 
   @override
+  bool isNearApogee(DateTime time) => false;
+
+  @override
+  bool isMoonSaturnOpposition(DateTime time) => false;
+
+  @override
   SunriseSunsetInfo getSunriseSunset(DateTime date, double lat, double lon) {
     return SunriseSunsetInfo(noon: DateTime.now());
   }
