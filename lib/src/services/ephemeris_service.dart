@@ -6,161 +6,9 @@ import 'package:sweph/sweph.dart';
 
 import '../core/dornach_boundaries.dart';
 import '../core/algorithm.dart' as algo;
+import '../core/models/models.dart';
 
-/// Plant qualities for agricultural biodynamic calendar.
-enum PlantQuality { root, leaf, flower, fruit, none }
-
-/// Info class for sunrise, sunset, and solar noon times.
-final class SunriseSunsetInfo {
-  /// Sunrise time, if applicable.
-  final DateTime? sunrise;
-
-  /// Sunset time, if applicable.
-  final DateTime? sunset;
-
-  /// Solar noon time.
-  final DateTime noon;
-
-  /// Creates [SunriseSunsetInfo].
-  SunriseSunsetInfo({this.sunrise, this.sunset, required this.noon});
-}
-
-/// Represents position information for a planet.
-final class PlanetInfo {
-  /// Name of planet.
-  final String name;
-
-  /// Ecliptic longitude (0-360 degrees).
-  final double longitude;
-
-  /// Creates [PlanetInfo].
-  const PlanetInfo({required this.name, required this.longitude});
-}
-
-/// Represents lunar phase calculations.
-final class MoonPhaseInfo {
-  /// Fraction illuminated (0.0 to 1.0).
-  final double illuminatedFraction;
-
-  /// True if waxing, false if waning.
-  final bool isWaxing;
-
-  /// Phase angle in degrees.
-  final double phaseAngle;
-
-  /// Creates [MoonPhaseInfo].
-  const MoonPhaseInfo({
-    required this.illuminatedFraction,
-    required this.isWaxing,
-    required this.phaseAngle,
-  });
-
-  /// Name of moon phase.
-  String get name {
-    if (illuminatedFraction > 0.97) {
-      return 'Full Moon';
-    }
-    if (illuminatedFraction < 0.03) {
-      return 'New Moon';
-    }
-    if (illuminatedFraction >= 0.48 && illuminatedFraction <= 0.52) {
-      return isWaxing ? 'First Quarter' : 'Last Quarter';
-    }
-    if (isWaxing) {
-      return illuminatedFraction < 0.5 ? 'Waxing Crescent' : 'Waxing Gibbous';
-    } else {
-      return illuminatedFraction > 0.5 ? 'Waning Gibbous' : 'Waning Crescent';
-    }
-  }
-}
-
-/// Aggregated calendar information for a given timestamp.
-final class CalendarInfo {
-  /// Plant quality.
-  final PlantQuality quality;
-
-  /// True if Gray Day.
-  final bool isGrayDay;
-
-  /// True if Special Day (e.g. planetary trine aspect).
-  final bool isSpecial;
-
-  /// True if Moon is near Apogee (Ag).
-  final bool isApogee;
-
-  /// True if Moon is in opposition (180 deg) with Saturn.
-  final bool isMoonSaturnOpposition;
-
-  /// Message describing Gray Day condition or Special Day.
-  final String message;
-
-  /// Sap flow vector text.
-  final String sapFlow;
-
-  /// Vitality description text.
-  final String vitality;
-
-  /// Moon phase info.
-  final MoonPhaseInfo moonPhase;
-
-  /// List of planetary positions.
-  final List<PlanetInfo> planets;
-
-  /// Creates [CalendarInfo].
-  CalendarInfo({
-    required this.quality,
-    required this.isGrayDay,
-    this.isSpecial = false,
-    this.isApogee = false,
-    this.isMoonSaturnOpposition = false,
-    required this.message,
-    required this.sapFlow,
-    required this.vitality,
-    required this.moonPhase,
-    required this.planets,
-  });
-}
-
-/// Maps ecliptic [longitude] to [PlantQuality] based on constellation boundaries.
-PlantQuality getQualityFromLongitude(
-  double longitude, [
-  List<ConstellationBoundary> boundaries = dornachBoundaries,
-]) {
-  double normLon = longitude % 360.0;
-  if (normLon < 0) {
-    normLon += 360.0;
-  }
-  for (var boundary in boundaries) {
-    if (boundary.startDegree <= boundary.endDegree) {
-      if (normLon >= boundary.startDegree && normLon < boundary.endDegree) {
-        switch (boundary.element) {
-          case 'Earth':
-            return PlantQuality.root;
-          case 'Water':
-            return PlantQuality.leaf;
-          case 'Air':
-            return PlantQuality.flower;
-          case 'Fire':
-            return PlantQuality.fruit;
-        }
-      }
-    } else {
-      if (normLon >= boundary.startDegree || normLon < boundary.endDegree) {
-        switch (boundary.element) {
-          case 'Earth':
-            return PlantQuality.root;
-          case 'Water':
-            return PlantQuality.leaf;
-          case 'Air':
-            return PlantQuality.flower;
-          case 'Fire':
-            return PlantQuality.fruit;
-        }
-      }
-    }
-  }
-  return PlantQuality.none;
-}
+export '../core/models/models.dart';
 
 /// Abstract contract for ephemeris services computing astronomical data.
 abstract mixin class EphemerisService {
@@ -199,36 +47,6 @@ abstract mixin class EphemerisService {
 }
 
 /// Time interval quality entry.
-final class CalendarInterval {
-  /// Start time of interval.
-  final DateTime start;
-
-  /// End time of interval.
-  final DateTime end;
-
-  /// Plant quality.
-  final PlantQuality quality;
-
-  /// True if Gray Day.
-  final bool isGrayDay;
-
-  /// True if Special Day.
-  final bool isSpecial;
-
-  /// Message explaining quality or Gray Day.
-  final String message;
-
-  /// Creates [CalendarInterval].
-  CalendarInterval({
-    required this.start,
-    required this.end,
-    required this.quality,
-    required this.isGrayDay,
-    this.isSpecial = false,
-    required this.message,
-  });
-}
-
 enum _WorkerCommand { getInfo, getIntervals }
 
 final class _WorkerRequest {
@@ -271,7 +89,11 @@ final class EphemerisWorker {
           'includePlanets': includePlanets,
         }),
       );
-      return await port.first as CalendarInfo;
+      final res = await port.first;
+      if (res is Map && res.containsKey('error')) {
+        throw Exception('EphemerisWorker error: ${res['error']}');
+      }
+      return res as CalendarInfo;
     } finally {
       port.close();
     }
@@ -291,7 +113,11 @@ final class EphemerisWorker {
           'end': end,
         }),
       );
-      return await port.first as List<CalendarInterval>;
+      final res = await port.first;
+      if (res is Map && res.containsKey('error')) {
+        throw Exception('EphemerisWorker error: ${res['error']}');
+      }
+      return res as List<CalendarInterval>;
     } finally {
       port.close();
     }
@@ -308,19 +134,30 @@ final class EphemerisWorker {
 
     await for (var message in receivePort) {
       if (message is _WorkerRequest) {
-        if (message.command == _WorkerCommand.getInfo) {
-          final info = algo.getCalendarInfo(
-            message.params['time'],
-            service,
-            includePlanets: message.params['includePlanets'],
-          );
-          message.replyPort.send(info);
-        } else if (message.command == _WorkerCommand.getIntervals) {
-          final intervals = service.getIntervals(
-            message.params['start'],
-            message.params['end'],
-          );
-          message.replyPort.send(intervals);
+        try {
+          if (message.command == _WorkerCommand.getInfo) {
+            final info = algo.getCalendarInfo(
+              message.params['time'],
+              service,
+              includePlanets: message.params['includePlanets'],
+            );
+            message.replyPort.send(info);
+          } else if (message.command == _WorkerCommand.getIntervals) {
+            final intervals = service.getIntervals(
+              message.params['start'],
+              message.params['end'],
+            );
+            message.replyPort.send(intervals);
+          } else {
+            message.replyPort.send({
+              'error': 'Unhandled command: ${message.command}',
+            });
+          }
+        } catch (e, st) {
+          message.replyPort.send({
+            'error': e.toString(),
+            'stackTrace': st.toString(),
+          });
         }
       }
     }

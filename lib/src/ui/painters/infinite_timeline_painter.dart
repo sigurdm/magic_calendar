@@ -5,7 +5,6 @@ import 'dart:ui' as ui;
 import 'dart:math' as math;
 
 import '../../services/ephemeris_service.dart';
-import '../../services/weather_service.dart';
 
 /// CustomPainter for rendering an interactive infinite timeline of celestial and weather events.
 final class InfiniteTimelinePainter extends CustomPainter {
@@ -44,7 +43,7 @@ final class InfiniteTimelinePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (size.width <= 0) {
+    if (size.width <= 0 || hourWidth <= 0) {
       return;
     }
     final centerX = size.width / 2;
@@ -68,7 +67,7 @@ final class InfiniteTimelinePainter extends CustomPainter {
         .inSeconds
         .toDouble();
 
-    final int sampleCount = math.max(100, (totalDuration / 1800).toInt());
+    final int sampleCount = math.max(100, (totalDuration / 1800).clamp(100, 360).toInt());
     final List<Color> finalColors = [];
     final List<double> finalStops = [];
 
@@ -101,9 +100,8 @@ final class InfiniteTimelinePainter extends CustomPainter {
           15.0;
       final hRad = h * math.pi / 180.0;
 
-      final altRad = math.asin(
-        sinLat * sinDec + cosLat * cosDec * math.cos(hRad),
-      );
+      final sinAlt = (sinLat * sinDec + cosLat * cosDec * math.cos(hRad)).clamp(-1.0, 1.0);
+      final altRad = math.asin(sinAlt);
       final alt = altRad * 180.0 / math.pi;
 
       Color c;
@@ -145,7 +143,7 @@ final class InfiniteTimelinePainter extends CustomPainter {
         canvasStartTime.day,
       );
       d.isBefore(canvasEndTime.add(const Duration(days: 1)));
-      d = d.add(const Duration(days: 1))
+      d = DateTime(d.year, d.month, d.day + 1)
     ) {
       final ss = ephemeris.getSunriseSunset(d, latitude, longitude);
 
@@ -196,77 +194,87 @@ final class InfiniteTimelinePainter extends CustomPainter {
       dateLabelFrequencyInDays = 1;
     }
 
-    final firstTickTime = DateTime(
-      startTime.year,
-      startTime.month,
-      startTime.day,
-      (startTime.hour ~/ tickFrequency) * tickFrequency,
-    );
-
-    final epoch = DateTime(2000, 1, 1);
-
+    // Draw daily midnight lines and date headers immune to DST drift
     for (
-      var t = firstTickTime;
-      t.isBefore(endTime);
-      t = t.add(Duration(hours: tickFrequency))
+      var d = DateTime(startTime.year, startTime.month, startTime.day);
+      d.isBefore(endTime.add(const Duration(days: 1)));
+      d = DateTime(d.year, d.month, d.day + 1)
     ) {
-      final offsetInHours = t.difference(centerTime).inSeconds / 3600.0;
+      final midnight = DateTime(d.year, d.month, d.day);
+      final offsetInHours = midnight.difference(centerTime).inSeconds / 3600.0;
       final x = centerX + (offsetInHours * hourWidth);
 
-      final isHourLabelTime = t.hour % hourLabelFrequency == 0;
-      final isMidnight = t.hour == 0;
+      canvas.drawLine(
+        Offset(x, 0),
+        Offset(x, size.height),
+        tickPaint..color = Colors.white24,
+      );
 
-      if (isHourLabelTime || isMidnight) {
-        if (isMidnight) {
-          canvas.drawLine(
-            Offset(x, 0),
-            Offset(x, size.height),
-            tickPaint..color = Colors.white24,
-          );
-        } else {
-          canvas.drawLine(
-            Offset(x, 25),
-            Offset(x, 49),
-            tickPaint..color = Colors.white54,
-          );
-        }
-
-        if (showHourLabels && !isMidnight) {
-          final hourPainter = TextPainter(
-            text: TextSpan(
-              text: '${t.hour.toString().padLeft(2, '0')}:00',
-              style: const TextStyle(color: Colors.white38, fontSize: 10),
+      final totalDaysFromEpoch = DateTime.utc(
+        d.year,
+        d.month,
+        d.day,
+      ).difference(DateTime.utc(2000, 1, 1)).inDays;
+      final mod =
+          (totalDaysFromEpoch % dateLabelFrequencyInDays +
+              dateLabelFrequencyInDays) %
+          dateLabelFrequencyInDays;
+      if (mod == 0) {
+        final datePainter = TextPainter(
+          text: TextSpan(
+            text: DateFormat('EEE, MMM d').format(midnight),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
             ),
-            textDirection: ui.TextDirection.ltr,
-          );
-          hourPainter.layout();
-          hourPainter.paint(canvas, Offset(x - hourPainter.width / 2, 50));
-        }
+          ),
+          textDirection: ui.TextDirection.ltr,
+        );
+        datePainter.layout();
+        datePainter.paint(canvas, Offset(x + 5, size.height - 18));
+      }
+    }
 
-        if (isMidnight) {
-          final totalDaysFromEpoch = t.difference(epoch).inDays;
-          if (totalDaysFromEpoch % dateLabelFrequencyInDays == 0) {
-            final datePainter = TextPainter(
-              text: TextSpan(
-                text: DateFormat('EEE, MMM d').format(t),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              textDirection: ui.TextDirection.ltr,
+    // Draw sub-daily tick marks and hour labels
+    if (showHourLabels || tickFrequency < 24) {
+      for (
+        var d = DateTime(startTime.year, startTime.month, startTime.day);
+        d.isBefore(endTime.add(const Duration(days: 1)));
+        d = DateTime(d.year, d.month, d.day + 1)
+      ) {
+        for (int h = tickFrequency; h < 24; h += tickFrequency) {
+          final t = DateTime(d.year, d.month, d.day, h);
+          if (t.isBefore(startTime) || t.isAfter(endTime)) continue;
+          final offsetInHours = t.difference(centerTime).inSeconds / 3600.0;
+          final x = centerX + (offsetInHours * hourWidth);
+
+          final isHourLabelTime = h % hourLabelFrequency == 0;
+          if (isHourLabelTime) {
+            canvas.drawLine(
+              Offset(x, 25),
+              Offset(x, 49),
+              tickPaint..color = Colors.white54,
             );
-            datePainter.layout();
-            datePainter.paint(canvas, Offset(x + 5, size.height - 18));
+            if (showHourLabels) {
+              final hourPainter = TextPainter(
+                text: TextSpan(
+                  text: '${h.toString().padLeft(2, '0')}:00',
+                  style: const TextStyle(color: Colors.white38, fontSize: 10),
+                ),
+                textDirection: ui.TextDirection.ltr,
+              );
+              hourPainter.layout();
+              hourPainter.paint(canvas, Offset(x - hourPainter.width / 2, 50));
+            }
+          } else {
+            canvas.drawLine(
+              Offset(x, 32),
+              Offset(x, 42),
+              tickPaint..color = Colors.white24,
+            );
           }
         }
-      } else {
-        canvas.drawLine(
-          Offset(x, 32),
-          Offset(x, 42),
-          tickPaint..color = Colors.white24,
-        );
       }
     }
 
@@ -393,7 +401,7 @@ final class InfiniteTimelinePainter extends CustomPainter {
     canvas.drawPath(windPath, windLinePaint);
 
     for (final wd in weatherData) {
-      final hour = wd.time.hour;
+      final hour = wd.time.toLocal().hour;
       bool showLabel = false;
 
       if (hourWidth < 10) {

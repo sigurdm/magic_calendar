@@ -132,6 +132,7 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
   }
 
   void _showCompletionAlert() {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: const Color(0xFF10B981),
@@ -185,7 +186,7 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 480),
+            constraints: const BoxConstraints(maxWidth: 540),
             decoration: BoxDecoration(
               color: const Color(0xFF1E1E2E).withValues(alpha: 0.95),
               borderRadius: BorderRadius.circular(24),
@@ -244,6 +245,8 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                           minHeight: 48,
                         ),
                         child: IconButton(
+                          key: const ValueKey('close_stirring_dialog'),
+                          tooltip: 'Close',
                           icon: const Icon(Icons.close, color: Colors.white70),
                           onPressed: () {
                             _timer?.cancel();
@@ -258,6 +261,7 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                   // Preparation Selector Tabs
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
                     child: Row(
                       children: [
                         _buildPrepTab(

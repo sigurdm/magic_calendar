@@ -50,3 +50,4 @@ android/app/build/
 packages/
 *.so
 flutter_*.png
+.jetski/

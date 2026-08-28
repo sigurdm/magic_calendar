@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../services/weather_service.dart';
+import '../core/models/weather_data_point.dart';
 
 /// Client repository module for fetching historical weather data from Open-Meteo.
 final class OpenMeteoClient {
@@ -33,7 +33,7 @@ final class OpenMeteoClient {
     final endStr = end.toUtc().toIso8601String().substring(0, 10);
 
     final url = Uri.parse(
-      'https://archive-api.open-meteo.com/v1/archive?latitude=$lat&longitude=$lon&start_date=$startStr&end_date=$endStr&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,cloudcover,precipitation&windspeed_unit=ms',
+      'https://archive-api.open-meteo.com/v1/archive?latitude=$lat&longitude=$lon&start_date=$startStr&end_date=$endStr&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,cloudcover,precipitation&windspeed_unit=ms&timezone=UTC',
     );
 
     final response = await _client
@@ -72,9 +72,13 @@ final class OpenMeteoClient {
             ? (precip[i] as num?)?.toDouble() ?? 0.0
             : 0.0;
 
+        final parsedTime = timeStr.endsWith('Z')
+            ? DateTime.parse(timeStr)
+            : DateTime.parse('${timeStr}Z');
+
         results.add(
           WeatherDataPoint(
-            time: DateTime.parse(timeStr),
+            time: parsedTime,
             temperature: temp,
             windSpeed: wind,
             windDirection: windDir,

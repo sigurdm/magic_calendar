@@ -330,6 +330,12 @@ class _TimeScrollViewState extends State<TimeScrollView>
     _updateTimer?.cancel();
     _momentumController.dispose();
     widget.controller?._state = null;
+    _rootImage?.dispose();
+    _leafImage?.dispose();
+    _flowerImage?.dispose();
+    _fruitImage?.dispose();
+    _noneImage?.dispose();
+    _grayDayImage?.dispose();
     super.dispose();
   }
 
@@ -440,15 +446,33 @@ class _TimeScrollViewState extends State<TimeScrollView>
                     IgnorePointer(
                       child: Align(
                         alignment: Alignment.center,
-                        child: Container(
-                          width: 2,
-                          height: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent,
-                            boxShadow: const [
-                              BoxShadow(color: Colors.black26, blurRadius: 4),
-                            ],
-                          ),
+                        child: Stack(
+                          alignment: Alignment.topCenter,
+                          children: [
+                            Container(
+                              width: 2,
+                              height: double.infinity,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEF4444),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFEF4444)
+                                        .withValues(alpha: 0.5),
+                                    blurRadius: 6,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFEF4444),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
