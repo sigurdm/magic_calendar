@@ -54,10 +54,36 @@ final class PlantingQualityIcon extends StatelessWidget {
       }
     }
 
+    Color glowColor;
+    if (isGrayDay) {
+      glowColor = const Color(0xFF64748B);
+    } else {
+      switch (quality) {
+        case PlantQuality.flower:
+          glowColor = const Color(0xFFFBBF24);
+          break;
+        case PlantQuality.fruit:
+          glowColor = const Color(0xFFF87171);
+          break;
+        case PlantQuality.leaf:
+          glowColor = const Color(0xFF34D399);
+          break;
+        case PlantQuality.root:
+          glowColor = const Color(0xFFF59E0B);
+          break;
+        case PlantQuality.none:
+          glowColor = const Color(0xFF94A3B8);
+          break;
+      }
+    }
+
     final borderColor = isSpecial
         ? const Color(0xFFFFD700)
-        : Colors.white.withValues(alpha: 0.7);
-    final borderWidth = isSpecial ? 2.5 : 1.5;
+        : (size > 48
+            ? glowColor.withValues(alpha: 0.5)
+            : Colors.white.withValues(alpha: 0.7));
+    final borderWidth = isSpecial ? 2.5 : (size > 48 ? 2.0 : 1.5);
+    final borderRadius = BorderRadius.circular(size > 48 ? 24 : 4);
 
     return SizedBox(
       width: size,
@@ -70,27 +96,35 @@ final class PlantingQualityIcon extends StatelessWidget {
             height: size,
             decoration: BoxDecoration(
               border: Border.all(color: borderColor, width: borderWidth),
-              borderRadius: BorderRadius.circular(4),
-              boxShadow: isSpecial
-                  ? [
-                      BoxShadow(
-                        color: const Color(0xFFFFD700).withValues(alpha: 0.6),
-                        blurRadius: 10,
-                        spreadRadius: 1,
-                      ),
-                    ]
-                  : null,
+              borderRadius: borderRadius,
+              boxShadow: [
+                if (isSpecial)
+                  BoxShadow(
+                    color: const Color(0xFFFFD700).withValues(alpha: 0.6),
+                    blurRadius: 16,
+                    spreadRadius: 2,
+                  )
+                else if (size > 48)
+                  BoxShadow(
+                    color: glowColor.withValues(alpha: 0.25),
+                    blurRadius: 24,
+                    spreadRadius: 2,
+                  ),
+              ],
             ),
-            child: Image.asset(assetPath, fit: BoxFit.contain),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(size > 48 ? 22 : 3),
+              child: Image.asset(assetPath, fit: BoxFit.contain),
+            ),
           ),
           if (isSpecial)
             Positioned(
-              top: -size * 0.15,
-              right: -size * 0.15,
+              top: -size * 0.12,
+              right: -size * 0.12,
               child: Icon(
                 Icons.stars_rounded,
                 color: const Color(0xFFFFD700),
-                size: size * 0.45,
+                size: size * 0.4,
               ),
             ),
         ],

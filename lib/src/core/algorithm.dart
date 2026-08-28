@@ -137,16 +137,13 @@ CalendarInfo getCalendarInfo(
     }
   }
 
-  String sapFlow = 'Ascending: Sap rises; good for harvesting fruit/cuttings.';
-  if (includePlanets) {
-    double dec1 = ephemeris.getMoonDeclination(time);
-    double dec2 = ephemeris.getMoonDeclination(
-      time.add(const Duration(hours: 1)),
-    );
-    sapFlow = dec2 > dec1
-        ? 'Ascending: Sap rises; good for harvesting fruit/cuttings.'
-        : "Descending: Sap recedes; 'transplanting time' for root development.";
-  }
+  final dec1 = ephemeris.getMoonDeclination(time);
+  final dec2 = ephemeris.getMoonDeclination(
+    time.add(const Duration(hours: 1)),
+  );
+  final sapFlow = dec2 > dec1
+      ? 'Ascending: Sap rises; good for harvesting fruit/cuttings.'
+      : "Descending: Sap recedes; 'transplanting time' for root development.";
 
   final moonPhase = ephemeris.getMoonPhase(time);
   String vitality = moonPhase.name;

@@ -15,7 +15,7 @@ final class MoonPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
+    final radius = math.min(size.width, size.height) / 2;
 
     final bgPaint = Paint()..color = const Color(0xFF1E1E2E);
     final lightPaint = Paint()..color = const Color(0xFFFFF9C4);
@@ -97,5 +97,5 @@ final class MoonPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant MoonPainter oldDelegate) =>
-      oldDelegate.info.phaseAngle != info.phaseAngle;
+      oldDelegate.info != info;
 }

@@ -305,6 +305,8 @@ final class _ConcoctionAssistantDialogState
                           minHeight: 48,
                         ),
                         child: IconButton(
+                          key: const ValueKey('close_concoction_dialog'),
+                          tooltip: 'Close',
                           icon: const Icon(Icons.close, color: Colors.white70),
                           onPressed: () => Navigator.of(context).pop(),
                         ),
@@ -391,11 +393,19 @@ final class _ConcoctionAssistantDialogState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _selectedRecipe.displayName,
+                          _selectedRecipe.titleEn,
                           style: GoogleFonts.outfit(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: const Color(0xFF34D399),
+                          ),
+                        ),
+                        Text(
+                          _selectedRecipe.titleDa,
+                          style: GoogleFonts.outfit(
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                            color: Colors.white54,
                           ),
                         ),
                         const SizedBox(height: 6),
