@@ -13,6 +13,9 @@ enum StirringPrepType {
   /// Horn Silica (BD 501): 60 minutes stirring, Ascending Moon, early morning sunrise.
   bd501,
 
+  /// Cow Pat Pit / Maria Thun Barrel Compost (CPP): 20 minutes dynamization (16 cycles of 75s).
+  cpp,
+
   /// Horsetail decoction (BD 508): 20 minutes gentle dynamization.
   bd508,
 
@@ -21,7 +24,7 @@ enum StirringPrepType {
 }
 
 /// Interactive modal dialog providing countdown, vortex cycle tracking,
-/// direction reversal alerts, and ±1 minute manual adjustments.
+/// direction reversal alerts, Goethean dynamization guidance, and ±1 minute manual adjustments.
 final class StirringTimerDialog extends StatefulWidget {
   /// Initial preparation type to configure timer for.
   final StirringPrepType initialPrep;
@@ -72,8 +75,9 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
       case StirringPrepType.bd501:
         _totalDurationSeconds = 3600; // 60 minutes
         break;
+      case StirringPrepType.cpp:
       case StirringPrepType.bd508:
-        _totalDurationSeconds = 1200; // 20 minutes
+        _totalDurationSeconds = 1200; // 20 minutes (16 cycles of 75s)
         break;
       case StirringPrepType.generalTea:
         _totalDurationSeconds = 900; // 15 minutes
@@ -169,6 +173,19 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
+  String _getDropletGuidanceForPrep(StirringPrepType prep) {
+    switch (prep) {
+      case StirringPrepType.bd500:
+      case StirringPrepType.cpp:
+        return 'Coarse Soil Droplets: Apply close to soil with natural birch broom or coarse nozzle. Droplets should fall heavily like warm rain; do not aerosolize into fine mist.';
+      case StirringPrepType.bd501:
+        return 'Ultra-Fine Floating Mist: Atomize high into the early morning sunrise air above crop foliage, creating a drifting radiant dew.';
+      case StirringPrepType.bd508:
+      case StirringPrepType.generalTea:
+        return 'Fine Foliar Spray: Even misty coating across foliage to establish natural fungal defense barrier without dripping runoff.';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final progress = _totalDurationSeconds > 0
@@ -207,7 +224,7 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               color: const Color(0xFF646CFF)
-                                  .withValues(alpha: 0.2),
+                                   .withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
@@ -272,6 +289,11 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                         _buildPrepTab(
                           'BD 501 (Silica)',
                           StirringPrepType.bd501,
+                        ),
+                        const SizedBox(width: 6),
+                        _buildPrepTab(
+                          'CPP (Barrel Compost)',
+                          StirringPrepType.cpp,
                         ),
                         const SizedBox(width: 6),
                         _buildPrepTab(
@@ -555,12 +577,126 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 24),
+
+                  // Goethean Dynamization & Application Guidance Section
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.08),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.auto_awesome,
+                              size: 16,
+                              color: Color(0xFF818CF8),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Goethean Dynamization Guidance',
+                              style: GoogleFonts.outfit(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        _buildGuidanceRow(
+                          icon: Icons.water_drop_outlined,
+                          iconColor: const Color(0xFF60A5FA),
+                          title: 'Water Source & Warmth',
+                          description:
+                              'Clean rainwater recommended (or living spring water). Warm to approx. 35°C (blood warmth) before dynamizing. Avoid treated, chlorinated tap water.',
+                        ),
+                        const SizedBox(height: 10),
+                        _buildGuidanceRow(
+                          icon: Icons.nature_outlined,
+                          iconColor: const Color(0xFFF59E0B),
+                          title: 'Vessel Materiality',
+                          description:
+                              'Natural materials: Oak or larch wooden barrel, glazed earthenware crock, or hammered copper vat. Avoid synthetic plastic containers which dampen energetic resonance.',
+                        ),
+                        const SizedBox(height: 10),
+                        _buildGuidanceRow(
+                          icon: Icons.cyclone,
+                          iconColor: const Color(0xFF818CF8),
+                          title: 'Vortex & Dynamic Chaos',
+                          description:
+                              'Stir along perimeter to form a deep funnel reaching the bottom of the barrel, then reverse sharply to shatter into dynamic foaming chaos.',
+                        ),
+                        const SizedBox(height: 10),
+                        _buildGuidanceRow(
+                          icon: Icons.grain,
+                          iconColor: const Color(0xFF10B981),
+                          title: 'Droplet Atomization & Spraying',
+                          description: _getDropletGuidanceForPrep(_selectedPrep),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildGuidanceRow({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String description,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 14, color: iconColor),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.outfit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withValues(alpha: 0.9),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                description,
+                style: GoogleFonts.outfit(
+                  fontSize: 11,
+                  color: Colors.white70,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -571,7 +707,9 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
       child: InkWell(
         onTap: () {
           if (!_isRunning) {
-            _setDurationForPrep(prep);
+            setState(() {
+              _setDurationForPrep(prep);
+            });
           }
         },
         borderRadius: BorderRadius.circular(12),

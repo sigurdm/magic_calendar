@@ -70,7 +70,28 @@ CalendarInfo getCalendarInfo(
   EphemerisService ephemeris, {
   bool includePlanets = false,
   List<ConstellationBoundary> boundaries = dornachBoundaries,
+  double latitude = 47.4814,
+  double longitude = 7.6178,
 }) {
+  DiurnalRhythmInfo? diurnalRhythm;
+  try {
+    final sunTimes = ephemeris.getSunriseSunset(time, latitude, longitude);
+    diurnalRhythm = DiurnalRhythmInfo.fromSunTimes(
+      time: time,
+      sunrise: sunTimes.sunrise,
+      sunset: sunTimes.sunset,
+      solarNoon: sunTimes.noon,
+    );
+  } catch (_) {
+    final fallbackNoon = DateTime(time.year, time.month, time.day, 12);
+    diurnalRhythm = DiurnalRhythmInfo.fromSunTimes(
+      time: time,
+      sunrise: fallbackNoon.subtract(const Duration(hours: 6)),
+      sunset: fallbackNoon.add(const Duration(hours: 6)),
+      solarNoon: fallbackNoon,
+    );
+  }
+
   double moonLongitude;
   try {
     moonLongitude = ephemeris.getMoonLongitude(time);
@@ -87,13 +108,25 @@ CalendarInfo getCalendarInfo(
         phaseAngle: 0,
       ),
       planets: [],
+      diurnalRhythm: diurnalRhythm,
+      transitionEnvelope: TransitionEnvelope.none,
     );
   }
+
+  final transitionEnvelope = TransitionEnvelope.fromLongitude(
+    moonLongitude,
+    boundaries,
+  );
 
   bool isNearNode = ephemeris.isNearNode(time);
   bool isNearPerigee = ephemeris.isNearPerigee(time);
   bool isNearApogee = ephemeris.isNearApogee(time);
   bool isMoonSaturnOpp = ephemeris.isMoonSaturnOpposition(time);
+  bool isEclipse = false;
+  try {
+    isEclipse = ephemeris.isNearEclipse(time);
+  } catch (_) {}
+
   bool isGrayDay = isNearNode || isNearPerigee;
   String message = '';
 
@@ -101,6 +134,8 @@ CalendarInfo getCalendarInfo(
     message = 'Gray Day: Near Lunar Node.';
   } else if (isNearPerigee) {
     message = 'Gray Day: Near Lunar Perigee (Pg).';
+  } else if (isEclipse) {
+    message = 'Eclipse Window: 24h Cosmic Rest Window. Sowing discouraged.';
   } else if (isNearApogee) {
     message = 'Apogee Window (Ag): High Light & Warmth Impulse.';
   } else if (isMoonSaturnOpp) {
@@ -109,19 +144,28 @@ CalendarInfo getCalendarInfo(
   }
 
   final planets = ephemeris.getPlanets(time);
+  List<PlanetaryAspect> activeAspects = const [];
+  try {
+    activeAspects = ephemeris.getAspects(time);
+  } catch (_) {}
 
   if (isGrayDay) {
     final moonPhase = ephemeris.getMoonPhase(time);
     return CalendarInfo(
       quality: PlantQuality.none,
       isGrayDay: true,
+      isSpecial: false,
       isApogee: isNearApogee,
       isMoonSaturnOpposition: isMoonSaturnOpp,
+      isEclipse: isEclipse,
+      activeAspects: activeAspects,
       message: message,
       sapFlow: '',
       vitality: '',
       moonPhase: moonPhase,
       planets: includePlanets ? planets : [],
+      diurnalRhythm: diurnalRhythm,
+      transitionEnvelope: transitionEnvelope,
     );
   }
 
@@ -141,9 +185,31 @@ CalendarInfo getCalendarInfo(
   final dec2 = ephemeris.getMoonDeclination(
     time.add(const Duration(hours: 1)),
   );
-  final sapFlow = dec2 > dec1
-      ? 'Ascending: Sap rises; good for harvesting fruit/cuttings.'
-      : "Descending: Sap recedes; 'transplanting time' for root development.";
+  final isAscending = dec2 > dec1;
+  final declinationPart = isAscending
+      ? 'Ascending: Sap rises.'
+      : 'Descending: Sap recedes.';
+
+  final String diurnalPart;
+  switch (diurnalRhythm.phase) {
+    case DiurnalPhase.morningExhalation:
+      diurnalPart =
+          'Morning Exhalation: Earth breathes out, optimal for foliar misting & above-ground harvest.';
+      break;
+    case DiurnalPhase.solarNoonStillness:
+      diurnalPart =
+          'Solar Noon Stillness: Transpiration pause, avoid disturbance.';
+      break;
+    case DiurnalPhase.eveningInhalation:
+      diurnalPart =
+          'Evening Inhalation: Earth breathes in, optimal for seed sowing & soil spray.';
+      break;
+    case DiurnalPhase.nightRest:
+      diurnalPart =
+          'Night Rest: Subterranean consolidation and plant rest.';
+      break;
+  }
+  final sapFlow = '$declinationPart $diurnalPart';
 
   final moonPhase = ephemeris.getMoonPhase(time);
   String vitality = moonPhase.name;
@@ -160,10 +226,14 @@ CalendarInfo getCalendarInfo(
         trineQuality != PlantQuality.none || isMoonSaturnOpp || isNearApogee,
     isApogee: isNearApogee,
     isMoonSaturnOpposition: isMoonSaturnOpp,
+    isEclipse: isEclipse,
+    activeAspects: activeAspects,
     message: message,
     sapFlow: sapFlow,
     vitality: vitality,
     moonPhase: moonPhase,
     planets: includePlanets ? planets : <PlanetInfo>[],
+    diurnalRhythm: diurnalRhythm,
+    transitionEnvelope: transitionEnvelope,
   );
 }

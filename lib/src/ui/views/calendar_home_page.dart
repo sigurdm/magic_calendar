@@ -70,6 +70,8 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
         time,
         widget.ephemeris,
         includePlanets: true,
+        latitude: _latNotifier.value,
+        longitude: _lonNotifier.value,
       );
       _infoNotifier.value = info;
     } catch (e) {
@@ -195,6 +197,9 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                                       PlantRecommendationsCard(
                                         info: info,
                                         selectedDate: date,
+                                        weatherNotifier: _weatherNotifier,
+                                        ephemeris: widget.ephemeris,
+                                        latitude: _latNotifier.value,
                                       ),
                                     ],
                                   );

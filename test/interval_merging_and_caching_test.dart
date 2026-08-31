@@ -5,7 +5,7 @@ import 'package:magic_calendar/src/services/weather_service.dart';
 import 'package:magic_calendar/src/ui/views/time_scroll_view.dart';
 import 'package:sweph/sweph.dart';
 
-final class TrackingEphemerisService implements EphemerisService {
+final class TrackingEphemerisService with EphemerisService {
   final List<({DateTime start, DateTime end})> getIntervalsCalls = [];
   List<CalendarInterval> mockIntervalsToReturn = [];
 

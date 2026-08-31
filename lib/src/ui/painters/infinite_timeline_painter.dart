@@ -278,43 +278,13 @@ final class InfiniteTimelinePainter extends CustomPainter {
       }
     }
 
-    for (final interval in intervals) {
-      if (interval.end.isBefore(startTime) || interval.start.isAfter(endTime)) {
-        continue;
-      }
-      final startOffsetInHours =
-          interval.start.difference(centerTime).inSeconds / 3600.0;
-      final endOffsetInHours =
-          interval.end.difference(centerTime).inSeconds / 3600.0;
-      final xStart = centerX + (startOffsetInHours * hourWidth);
-      final xEnd = centerX + (endOffsetInHours * hourWidth);
-      final width = xEnd - xStart;
-      if (interval.isGrayDay) {
-        _drawBlock(
-          canvas,
-          xStart,
-          width,
-          'gray',
-          Colors.grey[400]!,
-          interval.quality,
-          true,
-          false,
-        );
-      } else if (interval.quality != PlantQuality.none) {
-        final color = _getColorForQuality(interval.quality);
-        final label = _getLabelForQuality(interval.quality);
-        _drawBlock(
-          canvas,
-          xStart,
-          width,
-          label,
-          color,
-          interval.quality,
-          false,
-          interval.isSpecial,
-        );
-      }
-    }
+    _paintIntervalsWithTransitions(
+      canvas,
+      size,
+      startTime,
+      endTime,
+      centerX,
+    );
 
     final tempRowY = 65.0;
     final tempRowHeight = 50.0;
@@ -527,24 +497,212 @@ final class InfiniteTimelinePainter extends CustomPainter {
     canvas.restore();
   }
 
-  void _drawBlock(
+  void _paintIntervalsWithTransitions(
+    Canvas canvas,
+    Size size,
+    DateTime startTime,
+    DateTime endTime,
+    double centerX,
+  ) {
+    if (intervals.isEmpty) return;
+
+    final visibleIntervals = <CalendarInterval>[];
+    for (final interval in intervals) {
+      if (interval.end.isBefore(startTime) || interval.start.isAfter(endTime)) {
+        continue;
+      }
+      visibleIntervals.add(interval);
+    }
+
+    if (visibleIntervals.isEmpty) return;
+
+    final maxHalfBlendPx = (1.5 / 2.0) * hourWidth; // ~0.75 hours in pixels
+    final count = visibleIntervals.length;
+    final xStarts = List<double>.filled(count, 0.0);
+    final xEnds = List<double>.filled(count, 0.0);
+    final colors = List<Color>.filled(count, Colors.transparent);
+
+    for (int i = 0; i < count; i++) {
+      final interval = visibleIntervals[i];
+      final startOffsetInHours =
+          interval.start.difference(centerTime).inSeconds / 3600.0;
+      final endOffsetInHours =
+          interval.end.difference(centerTime).inSeconds / 3600.0;
+      xStarts[i] = centerX + (startOffsetInHours * hourWidth);
+      xEnds[i] = centerX + (endOffsetInHours * hourWidth);
+
+      if (interval.isGrayDay) {
+        colors[i] = Colors.grey[400]!.withValues(alpha: 0.8);
+      } else if (interval.quality != PlantQuality.none) {
+        colors[i] = _getColorForQuality(interval.quality).withValues(alpha: 0.8);
+      } else {
+        colors[i] = Colors.transparent;
+      }
+    }
+
+    final leftOffsets = List<double>.filled(count, 0.0);
+    final rightOffsets = List<double>.filled(count, 0.0);
+
+    for (int i = 0; i < count - 1; i++) {
+      final curr = visibleIntervals[i];
+      final next = visibleIntervals[i + 1];
+      final touches = (next.start.difference(curr.end).inSeconds).abs() <= 120;
+      if (touches) {
+        final hasTransition = colors[i] != colors[i + 1];
+        if (hasTransition) {
+          final currWidth = xEnds[i] - xStarts[i];
+          final nextWidth = xEnds[i + 1] - xStarts[i + 1];
+          final leftHalf = math.min(maxHalfBlendPx, currWidth / 2.0);
+          final rightHalf = math.min(maxHalfBlendPx, nextWidth / 2.0);
+
+          rightOffsets[i] = leftHalf;
+          leftOffsets[i + 1] = rightHalf;
+        }
+      }
+    }
+
+    for (int i = 0; i < count; i++) {
+      final interval = visibleIntervals[i];
+      if (interval.isGrayDay) {
+        final currWidth = xEnds[i] - xStarts[i];
+        if (leftOffsets[i] == 0.0) {
+          leftOffsets[i] = math.min(maxHalfBlendPx * 2.0, currWidth / 3.0);
+        }
+        if (rightOffsets[i] == 0.0) {
+          rightOffsets[i] = math.min(maxHalfBlendPx * 2.0, currWidth / 3.0);
+        }
+      }
+    }
+
+    // 1. Draw solid fills
+    for (int i = 0; i < count; i++) {
+      final color = colors[i];
+      if (color.a == 0.0) continue;
+
+      final solidStart = xStarts[i] + leftOffsets[i];
+      final solidEnd = xEnds[i] - rightOffsets[i];
+
+      if (solidEnd > solidStart) {
+        final rect = Rect.fromLTWH(solidStart, 5, solidEnd - solidStart, 20);
+        final paint = Paint()
+          ..color = color
+          ..style = PaintingStyle.fill;
+
+        final hasLeftNeighbor = i > 0 &&
+            (visibleIntervals[i].start.difference(visibleIntervals[i - 1].end).inSeconds).abs() <= 120;
+        final hasRightNeighbor = i < count - 1 &&
+            (visibleIntervals[i + 1].start.difference(visibleIntervals[i].end).inSeconds).abs() <= 120;
+
+        final isLeftIsolated = !hasLeftNeighbor && leftOffsets[i] == 0.0;
+        final isRightIsolated = !hasRightNeighbor && rightOffsets[i] == 0.0;
+
+        if (isLeftIsolated || isRightIsolated) {
+          canvas.drawRRect(
+            RRect.fromRectAndCorners(
+              rect,
+              topLeft: isLeftIsolated ? const Radius.circular(3) : Radius.zero,
+              bottomLeft: isLeftIsolated ? const Radius.circular(3) : Radius.zero,
+              topRight: isRightIsolated ? const Radius.circular(3) : Radius.zero,
+              bottomRight: isRightIsolated ? const Radius.circular(3) : Radius.zero,
+            ),
+            paint,
+          );
+        } else {
+          canvas.drawRect(rect, paint);
+        }
+      }
+    }
+
+    // 2. Draw soft linear gradient transitions across boundaries
+    for (int i = 0; i < count - 1; i++) {
+      if (rightOffsets[i] > 0.0 && leftOffsets[i + 1] > 0.0) {
+        final xBoundary = xEnds[i];
+        final leftHalf = rightOffsets[i];
+        final rightHalf = leftOffsets[i + 1];
+        final blendStart = xBoundary - leftHalf;
+        final blendEnd = xBoundary + rightHalf;
+        final blendWidth = blendEnd - blendStart;
+
+        if (blendWidth > 0) {
+          final rect = Rect.fromLTWH(blendStart, 5, blendWidth, 20);
+          final gradientPaint = Paint()
+            ..shader = ui.Gradient.linear(
+              Offset(blendStart, 0),
+              Offset(blendEnd, 0),
+              [colors[i], colors[i + 1]],
+              const [0.0, 1.0],
+            );
+          canvas.drawRect(rect, gradientPaint);
+        }
+      }
+    }
+
+    // 3. Feather Gray Day entry / exit
+    for (int i = 0; i < count; i++) {
+      final interval = visibleIntervals[i];
+      if (interval.isGrayDay) {
+        final hasLeftTransitionNeighbor = i > 0 &&
+            (visibleIntervals[i].start.difference(visibleIntervals[i - 1].end).inSeconds).abs() <= 120 &&
+            rightOffsets[i - 1] > 0.0;
+        if (!hasLeftTransitionNeighbor && leftOffsets[i] > 0.0) {
+          final rect = Rect.fromLTWH(xStarts[i], 5, leftOffsets[i], 20);
+          final paint = Paint()
+            ..shader = ui.Gradient.linear(
+              Offset(xStarts[i], 0),
+              Offset(xStarts[i] + leftOffsets[i], 0),
+              [colors[i].withValues(alpha: 0.0), colors[i]],
+              const [0.0, 1.0],
+            );
+          canvas.drawRect(rect, paint);
+        }
+
+        final hasRightTransitionNeighbor = i < count - 1 &&
+            (visibleIntervals[i + 1].start.difference(visibleIntervals[i].end).inSeconds).abs() <= 120 &&
+            leftOffsets[i + 1] > 0.0;
+        if (!hasRightTransitionNeighbor && rightOffsets[i] > 0.0) {
+          final exitStart = xEnds[i] - rightOffsets[i];
+          final rect = Rect.fromLTWH(exitStart, 5, rightOffsets[i], 20);
+          final paint = Paint()
+            ..shader = ui.Gradient.linear(
+              Offset(exitStart, 0),
+              Offset(xEnds[i], 0),
+              [colors[i], colors[i].withValues(alpha: 0.0)],
+              const [0.0, 1.0],
+            );
+          canvas.drawRect(rect, paint);
+        }
+      }
+    }
+
+    // 4. Draw decorations (borders, biodynamic strip, and icons)
+    for (int i = 0; i < count; i++) {
+      final interval = visibleIntervals[i];
+      final xStart = xStarts[i];
+      final width = xEnds[i] - xStart;
+      final label = interval.isGrayDay ? "gray" : _getLabelForQuality(interval.quality);
+
+      _drawBlockDecorations(
+        canvas,
+        xStart,
+        width,
+        label,
+        interval.quality,
+        interval.isGrayDay,
+        interval.isSpecial,
+      );
+    }
+  }
+
+  void _drawBlockDecorations(
     Canvas canvas,
     double x,
     double width,
     String label,
-    Color color,
     PlantQuality quality,
     bool isGrayDay,
     bool isSpecial,
   ) {
     final rect = Rect.fromLTWH(x, 5, width, 20);
-    final paint = Paint()
-      ..color = color.withValues(alpha: 0.8)
-      ..style = PaintingStyle.fill;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(rect, const Radius.circular(3)),
-      paint,
-    );
 
     if (isSpecial) {
       final borderPaint = Paint()
@@ -561,9 +719,9 @@ final class InfiniteTimelinePainter extends CustomPainter {
       final prepStripRect = Rect.fromLTWH(x, 2, width, 3);
       final prepPaint = Paint();
       final isEvening =
-          label != 'gray' && (quality == PlantQuality.root || label == 'root');
+          label != "gray" && (quality == PlantQuality.root || label == "root");
       final isMorning =
-          label != 'gray' &&
+          label != "gray" &&
           (quality == PlantQuality.flower || quality == PlantQuality.fruit);
 
       if (isEvening) {

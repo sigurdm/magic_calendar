@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/biodynamic_prep.dart';
 import '../../services/ephemeris_service.dart';
 import 'concoction_assistant_dialog.dart';
 import 'stirring_timer_dialog.dart';
 
-/// Interactive card widget summarizing biodynamic field preparation windows (BD 500, 501, 508)
+/// Interactive card widget summarizing biodynamic field preparation windows (BD 500, BD 501, CPP, BD 508),
+/// seasonal compost preparation burial cycles (BD 502–507),
 /// and providing direct access to the stirring timer and concoction assistant.
 final class BiodynamicCard extends StatelessWidget {
   /// Current calendar context information.
@@ -33,6 +35,13 @@ final class BiodynamicCard extends StatelessWidget {
     final isAscending = info.sapFlow.startsWith('Ascending');
     final hour = selectedDate.hour;
 
+    // Evaluate CPP suitability
+    final cppSuitability = BiodynamicPrepEvaluator.evaluateSpray(
+      prep: BiodynamicPrepType.cpp,
+      time: selectedDate,
+      calendarInfo: info,
+    );
+
     String currentPrepStatus;
     Color statusColor;
     IconData statusIcon;
@@ -42,9 +51,9 @@ final class BiodynamicCard extends StatelessWidget {
           'Gray Day: Avoid stirring and spraying field preparations today.';
       statusColor = Colors.grey[400]!;
       statusIcon = Icons.do_not_disturb_on_outlined;
-    } else if (isDescending && hour >= 15 && hour <= 20) {
+    } else if (cppSuitability.isFavorable || (isDescending && hour >= 15 && hour <= 20)) {
       currentPrepStatus =
-          'Optimal Window: BD 500 Horn Manure (Earth Inhalation / Root Activation)';
+          'Optimal Window: BD 500 Horn Manure & CPP Cow Pat Pit (Earth Inhalation / Soil Vitality)';
       statusColor = const Color(0xFF8D6E63);
       statusIcon = Icons.terrain;
     } else if (isAscending &&
@@ -64,11 +73,13 @@ final class BiodynamicCard extends StatelessWidget {
       statusIcon = Icons.shield_outlined;
     } else {
       currentPrepStatus = isDescending
-          ? 'Descending Moon: Soil biology active. Prepare BD 500 for evening application.'
+          ? 'Descending Moon: Soil biology active. Prepare BD 500 & CPP for evening application.'
           : 'Ascending Moon: Sap rising. Prepare BD 501 / foliar teas for morning misting.';
       statusColor = const Color(0xFF818CF8);
       statusIcon = Icons.eco_outlined;
     }
+
+    final burialProgress = BiodynamicPrepEvaluator.getSeasonalBurialProgress(selectedDate);
 
     return Container(
       width: double.infinity,
@@ -227,7 +238,7 @@ final class BiodynamicCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // Action Buttons: Stirring Timer & Concoction Guide
+          // Action Buttons: Stirring Timer, CPP Stirrer & Concoction Guide
           Wrap(
             spacing: 12,
             runSpacing: 12,
@@ -256,6 +267,40 @@ final class BiodynamicCard extends StatelessWidget {
                   ),
                   label: Text(
                     'Stirring Timer (1 Hr)',
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF8D6E63)
+                        .withValues(alpha: 0.3),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: const BorderSide(color: Color(0xFF8D6E63)),
+                    ),
+                  ),
+                  onPressed: () => StirringTimerDialog.show(
+                    context,
+                    prep: StirringPrepType.cpp,
+                  ),
+                  icon: const Icon(
+                    Icons.timer_outlined,
+                    size: 18,
+                    color: Color(0xFFD7CCC8),
+                  ),
+                  label: Text(
+                    'CPP Stirrer (20 Min)',
                     style: GoogleFonts.outfit(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -296,7 +341,145 @@ final class BiodynamicCard extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+
+          // Seasonal BD 502–507 Compost Preparation Burial Cycle Card
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                LayoutBuilder(
+                  builder: (context, headerConstraints) {
+                    final isNarrow = headerConstraints.maxWidth < 420;
+                    final seasonBadge = Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: (burialProgress.isUndergroundBurial
+                                ? const Color(0xFF8D6E63)
+                                : const Color(0xFF10B981))
+                            .withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: (burialProgress.isUndergroundBurial
+                                  ? const Color(0xFF8D6E63)
+                                  : const Color(0xFF10B981))
+                              .withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Text(
+                        burialProgress.seasonName,
+                        style: GoogleFonts.outfit(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: burialProgress.isUndergroundBurial
+                              ? const Color(0xFFD7CCC8)
+                              : const Color(0xFF6EE7B7),
+                        ),
+                      ),
+                    );
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.eco,
+                              size: 16,
+                              color: Color(0xFF10B981),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Compost Preparations (BD 502–507)',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            if (!isNarrow) ...[
+                              const SizedBox(width: 8),
+                              seasonBadge,
+                            ],
+                          ],
+                        ),
+                        if (isNarrow) ...[
+                          const SizedBox(height: 6),
+                          seasonBadge,
+                        ],
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  burialProgress.stageDescription,
+                  style: GoogleFonts.outfit(
+                    fontSize: 11.5,
+                    color: Colors.white70,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: burialProgress.progressFraction,
+                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      burialProgress.isUndergroundBurial
+                          ? const Color(0xFF8D6E63)
+                          : const Color(0xFF10B981),
+                    ),
+                    minHeight: 6,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    _buildPrepOrganChip('BD 502 Yarrow', 'Stag bladder'),
+                    _buildPrepOrganChip('BD 503 Chamomile', 'Cow intestine'),
+                    _buildPrepOrganChip('BD 504 Nettle', 'Peat mantle'),
+                    _buildPrepOrganChip('BD 505 Oak Bark', 'Animal skull'),
+                    _buildPrepOrganChip('BD 506 Dandelion', 'Mesentery'),
+                    _buildPrepOrganChip('BD 507 Valerian', 'Amber glass'),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPrepOrganChip(String name, String organ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Text(
+        '$name: $organ',
+        style: GoogleFonts.outfit(
+          fontSize: 10.5,
+          color: Colors.white70,
+        ),
       ),
     );
   }

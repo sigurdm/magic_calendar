@@ -4,7 +4,7 @@ import 'algorithm.dart' as algo;
 /// Categories of biodynamic preparations.
 enum PrepCategory { fieldSpray, compostPrep }
 
-/// Individual biodynamic preparations (BD 500 to BD 508).
+/// Individual biodynamic preparations (BD 500 to BD 508, plus CPP).
 enum BiodynamicPrepType {
   bd500(
     'BD 500',
@@ -68,6 +68,13 @@ enum BiodynamicPrepType {
     PrepCategory.fieldSpray,
     'Prevents fungal blights and balances excessive watery forces in damp conditions.',
     20,
+  ),
+  cpp(
+    'CPP',
+    'Cow Pat Pit (Maria Thun Barrel Compost)',
+    PrepCategory.fieldSpray,
+    'Concentrated barrel compost inoculating soil with all compost preparations, basalt, and eggshell forces.',
+    20,
   );
 
   final String code;
@@ -83,6 +90,32 @@ enum BiodynamicPrepType {
     this.description,
     this.stirringMinutes,
   );
+
+  /// Traditional sheath organ or container used during fermentation and seasonal burial.
+  String get sheathOrgan {
+    switch (this) {
+      case BiodynamicPrepType.bd500:
+        return 'Cow horn (Bovine cornu)';
+      case BiodynamicPrepType.bd501:
+        return 'Cow horn (Bovine cornu)';
+      case BiodynamicPrepType.bd502:
+        return "Stag's bladder (Cervus elaphus urinary bladder)";
+      case BiodynamicPrepType.bd503:
+        return 'Bovine small intestine (Cow intestine)';
+      case BiodynamicPrepType.bd504:
+        return 'Soil & peat mantle (organ-free, full 1-year burial)';
+      case BiodynamicPrepType.bd505:
+        return 'Domestic animal skull (Bovine or sheep cranium)';
+      case BiodynamicPrepType.bd506:
+        return 'Bovine mesentery (Cow peritoneum / caul)';
+      case BiodynamicPrepType.bd507:
+        return 'Amber glass bottle (Liquid flower fermentation)';
+      case BiodynamicPrepType.bd508:
+        return 'None (Fresh or dried herb decoction)';
+      case BiodynamicPrepType.cpp:
+        return 'Sunken oak barrel / earthen pit';
+    }
+  }
 }
 
 /// Rating of current conditions for applying or preparing a preparation.
@@ -139,12 +172,33 @@ final class BurialStageInfo {
   final String description;
   final String recommendedAction;
   final bool isActiveWindow;
+  final String? sheathOrgan;
 
   const BurialStageInfo({
     required this.stage,
     required this.description,
     required this.recommendedAction,
     required this.isActiveWindow,
+    this.sheathOrgan,
+  });
+}
+
+/// Seasonal cycle progress tracking Michaelmas (Sept 29) to Easter burial rhythms.
+final class BurialCycleProgress {
+  final String seasonName;
+  final String stageDescription;
+  final double progressFraction;
+  final bool isUndergroundBurial;
+  final DateTime michaelmas;
+  final DateTime easter;
+
+  const BurialCycleProgress({
+    required this.seasonName,
+    required this.stageDescription,
+    required this.progressFraction,
+    required this.isUndergroundBurial,
+    required this.michaelmas,
+    required this.easter,
   });
 }
 
@@ -328,6 +382,65 @@ abstract final class BiodynamicPrepEvaluator {
         }
         break;
 
+      case BiodynamicPrepType.cpp:
+        if (calendarInfo.isGrayDay) {
+          negative.add('Gray Day: Avoid spraying during cosmic blackout.');
+          astroOk = false;
+        }
+
+        if (isDescending) {
+          positive.add(
+            'Descending Moon (Earth Inhalation draws barrel compost vitality into soil)',
+          );
+        } else {
+          negative.add('Ascending Moon (Sap rising away from soil)');
+          astroOk = false;
+        }
+
+        if (calendarInfo.quality == PlantQuality.root) {
+          positive.add(
+            'Root Day (Earth impulse optimizes soil microbial activity)',
+          );
+        }
+
+        if (hour >= 15 && hour <= 20) {
+          positive.add('Late Afternoon / Evening window (15:00–20:00, Earth Inhalation)');
+        } else {
+          negative.add('Best applied in late afternoon or early evening during Earth Inhalation (15:00–20:00)');
+        }
+
+        if (temperature != null) {
+          if (temperature >= 8.0) {
+            positive.add(
+              'Favorable temperature (>= 8°C: ${temperature.round()}°C)',
+            );
+          } else {
+            negative.add(
+              'Cold temperature (< 8°C: ${temperature.round()}°C) inhibits soil biological activity',
+            );
+            weatherOk = false;
+          }
+        }
+
+        if (windSpeed != null) {
+          if (windSpeed <= 5.0) {
+            positive.add('Calm wind (<= 5 m/s: ${windSpeed.toStringAsFixed(1)} m/s)');
+          } else {
+            negative.add(
+              'Wind speed too high for soil spray (> 5 m/s: ${windSpeed.toStringAsFixed(1)} m/s)',
+            );
+            weatherOk = false;
+          }
+        }
+
+        if (precipitation != null && precipitation > 1.0) {
+          negative.add(
+            'Rain likely (${precipitation.toStringAsFixed(1)} mm) - spray may wash away',
+          );
+          weatherOk = false;
+        }
+        break;
+
       default:
         break;
     }
@@ -377,6 +490,7 @@ abstract final class BiodynamicPrepEvaluator {
             recommendedAction:
                 'Bury BD 500 horns during Descending Moon in Autumn.',
             isActiveWindow: true,
+            sheathOrgan: prep.sheathOrgan,
           );
         } else if (month >= 12 || month <= 2) {
           return BurialStageInfo(
@@ -384,6 +498,7 @@ abstract final class BiodynamicPrepEvaluator {
             description: 'Horns absorb earth forces and cosmic magnetism during cold months.',
             recommendedAction: 'Allow horns to rest undisturbed in soil.',
             isActiveWindow: false,
+            sheathOrgan: prep.sheathOrgan,
           );
         } else if (month >= 3 && month <= 5) {
           return BurialStageInfo(
@@ -391,6 +506,7 @@ abstract final class BiodynamicPrepEvaluator {
             description: 'Unearth horns. Manure should be transformed into dark, sweet-smelling humus.',
             recommendedAction: 'Retrieve BD 500 horns and store in wooden boxes surrounded by peat/coir.',
             isActiveWindow: true,
+            sheathOrgan: prep.sheathOrgan,
           );
         } else {
           return BurialStageInfo(
@@ -398,6 +514,7 @@ abstract final class BiodynamicPrepEvaluator {
             description: 'Prep stored in dark container ready for spring/autumn soil applications.',
             recommendedAction: 'Keep moist in cool storage.',
             isActiveWindow: false,
+            sheathOrgan: prep.sheathOrgan,
           );
         }
 
@@ -410,6 +527,7 @@ abstract final class BiodynamicPrepEvaluator {
             recommendedAction:
                 'Bury BD 501 horns to capture summer sun forces.',
             isActiveWindow: true,
+            sheathOrgan: prep.sheathOrgan,
           );
         } else if (month >= 6 && month <= 8) {
           return BurialStageInfo(
@@ -417,6 +535,7 @@ abstract final class BiodynamicPrepEvaluator {
             description: 'Quartz captures intense solar light and summer astral impulses.',
             recommendedAction: 'Maintain clean, unshaded burial plot.',
             isActiveWindow: false,
+            sheathOrgan: prep.sheathOrgan,
           );
         } else if (month >= 9 && month <= 11) {
           return BurialStageInfo(
@@ -425,6 +544,7 @@ abstract final class BiodynamicPrepEvaluator {
             recommendedAction:
                 'Retrieve BD 501 and store in glass jars in direct sunlight.',
             isActiveWindow: true,
+            sheathOrgan: prep.sheathOrgan,
           );
         } else {
           return BurialStageInfo(
@@ -432,43 +552,400 @@ abstract final class BiodynamicPrepEvaluator {
             description: 'Stored in clear glass in window sill receiving direct sunlight.',
             recommendedAction: 'Ready for early morning spring spray.',
             isActiveWindow: false,
+            sheathOrgan: prep.sheathOrgan,
           );
         }
 
       case BiodynamicPrepType.bd502:
-      case BiodynamicPrepType.bd503:
-      case BiodynamicPrepType.bd504:
-      case BiodynamicPrepType.bd505:
-      case BiodynamicPrepType.bd506:
-      case BiodynamicPrepType.bd507:
-        if (month >= 9 || month <= 2) {
+        final organ502 = prep.sheathOrgan;
+        if (month == 9 || month == 10) {
           return BurialStageInfo(
-            stage: 'Compost Insertion & Winter Ripening',
+            stage: 'Michaelmas Burial Window (Autumn)',
             description:
-                '${prep.commonName} herbal preparation active in compost heap ($hemisphereText).',
+                'Pack yarrow blossoms into stag’s bladder and bury 30cm deep in topsoil at Michaelmas ($hemisphereText).',
             recommendedAction:
-                'Insert small portion into 50cm deep hole in compost pile.',
+                'Bury BD 502 stag’s bladder in fertile soil around Michaelmas (Sept 29).',
             isActiveWindow: true,
+            sheathOrgan: organ502,
+          );
+        } else if (month >= 11 || month <= 2) {
+          return BurialStageInfo(
+            stage: 'Subterranean Winter Ripening (Winter)',
+            description:
+                'Yarrow stag’s bladder absorbs sulfur and potassium forces in winter soil ($hemisphereText).',
+            recommendedAction:
+                'Allow yarrow preparation to rest undisturbed underground.',
+            isActiveWindow: false,
+            sheathOrgan: organ502,
+          );
+        } else if (month == 3 || month == 4) {
+          return BurialStageInfo(
+            stage: 'Easter Retrieval Window (Spring)',
+            description:
+                'Unearth BD 502 around Easter; blossoms have transformed into dark humified substance ($hemisphereText).',
+            recommendedAction:
+                'Retrieve BD 502 from bladder and store in crocks lined with moist peat moss.',
+            isActiveWindow: true,
+            sheathOrgan: organ502,
           );
         } else {
           return BurialStageInfo(
-            stage: 'Humification & Soil Integration',
+            stage: 'Compost Inoculation & Summer Sun (Summer)',
             description:
-                'Compost preps transforming organic heap into rich humus.',
-            recommendedAction: 'Keep compost pile moist and covered.',
+                'Store mature BD 502 in peat or hang fresh blossoms in stag’s bladder in summer sunlight ($hemisphereText).',
+            recommendedAction:
+                'Inoculate compost heaps (1-2g per pile) or hang newly gathered blossoms in sun.',
             isActiveWindow: false,
+            sheathOrgan: organ502,
+          );
+        }
+
+      case BiodynamicPrepType.bd503:
+        final organ503 = prep.sheathOrgan;
+        if (month == 9 || month == 10) {
+          return BurialStageInfo(
+            stage: 'Michaelmas Burial Window (Autumn)',
+            description:
+                'Pack dried chamomile flowers into bovine small intestine casings and bury at Michaelmas ($hemisphereText).',
+            recommendedAction:
+                'Bury BD 503 chamomile sausages in fertile soil around Michaelmas (Sept 29).',
+            isActiveWindow: true,
+            sheathOrgan: organ503,
+          );
+        } else if (month >= 11 || month <= 2) {
+          return BurialStageInfo(
+            stage: 'Subterranean Winter Ripening (Winter)',
+            description:
+                'Chamomile intestines absorb winter calcium and nitrogen forces in cold soil ($hemisphereText).',
+            recommendedAction:
+                'Rest undisturbed beneath winter frost and snow.',
+            isActiveWindow: false,
+            sheathOrgan: organ503,
+          );
+        } else if (month == 3 || month == 4) {
+          return BurialStageInfo(
+            stage: 'Easter Retrieval Window (Spring)',
+            description:
+                'Unearth BD 503 around Easter; transformed into fragrant, living compost inoculum ($hemisphereText).',
+            recommendedAction:
+                'Harvest fermented chamomile from casings and store in glazed crocks with peat.',
+            isActiveWindow: true,
+            sheathOrgan: organ503,
+          );
+        } else {
+          return BurialStageInfo(
+            stage: 'Compost Inoculation & Storage (Summer)',
+            description:
+                'BD 503 stabilized to regulate nitrogen and calcium breakdown in compost ($hemisphereText).',
+            recommendedAction:
+                'Insert small portions into compost heaps or cow pat pit.',
+            isActiveWindow: false,
+            sheathOrgan: organ503,
+          );
+        }
+
+      case BiodynamicPrepType.bd504:
+        final organ504 = prep.sheathOrgan;
+        if (month == 9 || month == 10) {
+          return BurialStageInfo(
+            stage: 'Michaelmas Burial Window (Autumn)',
+            description:
+                'Pack whole stinging nettle plants into an earthen trench encased in peat mantle ($hemisphereText).',
+            recommendedAction:
+                'Bury fresh nettle plants surrounded by 5cm peat mantle around Michaelmas for full year.',
+            isActiveWindow: true,
+            sheathOrgan: organ504,
+          );
+        } else if (month >= 11 || month <= 2) {
+          return BurialStageInfo(
+            stage: 'Subterranean Humification (Winter)',
+            description:
+                'Nettle decomposes slowly underground, structuring iron balance and soil intelligence ($hemisphereText).',
+            recommendedAction:
+                'Maintain peat layer and undisturbed soil cover.',
+            isActiveWindow: false,
+            sheathOrgan: organ504,
+          );
+        } else if (month == 3 || month == 4) {
+          return BurialStageInfo(
+            stage: 'Spring Earth Fermentation (Spring)',
+            description:
+                'Nettle continuing its year-long subterranean transformation ($hemisphereText).',
+            recommendedAction:
+                'Keep covered; full year burial concludes the following Michaelmas.',
+            isActiveWindow: false,
+            sheathOrgan: organ504,
+          );
+        } else {
+          return BurialStageInfo(
+            stage: 'Summer Maturation (Summer)',
+            description:
+                'Nettle transforms into rich, black humic substance in summer warmth ($hemisphereText).',
+            recommendedAction:
+                'Prepare storage crocks for Michaelmas unearthing.',
+            isActiveWindow: false,
+            sheathOrgan: organ504,
+          );
+        }
+
+      case BiodynamicPrepType.bd505:
+        final organ505 = prep.sheathOrgan;
+        if (month == 9 || month == 10) {
+          return BurialStageInfo(
+            stage: 'Michaelmas Burial Window (Autumn)',
+            description:
+                'Pack scraped oak bark into skull cavity and bury in a marshy ditch or wet mud ($hemisphereText).',
+            recommendedAction:
+                'Bury filled skull in water runoff or boggy ground around Michaelmas (Sept 29).',
+            isActiveWindow: true,
+            sheathOrgan: organ505,
+          );
+        } else if (month >= 11 || month <= 2) {
+          return BurialStageInfo(
+            stage: 'Watery Winter Ripening (Winter)',
+            description:
+                'Oak bark absorbs watery calcium forces in swampy, freezing environment ($hemisphereText).',
+            recommendedAction:
+                'Keep skull submerged in moist/marshy conditions.',
+            isActiveWindow: false,
+            sheathOrgan: organ505,
+          );
+        } else if (month == 3 || month == 4) {
+          return BurialStageInfo(
+            stage: 'Easter Retrieval Window (Spring)',
+            description:
+                'Unearth BD 505 skull around Easter; calcium forces transformed to prevent plant rot ($hemisphereText).',
+            recommendedAction:
+                'Retrieve oak bark humus from skull cavity and store in peat-lined earthenware.',
+            isActiveWindow: true,
+            sheathOrgan: organ505,
+          );
+        } else {
+          return BurialStageInfo(
+            stage: 'Compost Inoculation & Storage (Summer)',
+            description:
+                'BD 505 oak bark ready to buffer fungal proliferation and regulate calcium ($hemisphereText).',
+            recommendedAction:
+                'Insert into compost piles or barrel compost to resist plant diseases.',
+            isActiveWindow: false,
+            sheathOrgan: organ505,
+          );
+        }
+
+      case BiodynamicPrepType.bd506:
+        final organ506 = prep.sheathOrgan;
+        if (month == 9 || month == 10) {
+          return BurialStageInfo(
+            stage: 'Michaelmas Burial Window (Autumn)',
+            description:
+                'Enfold dried dandelion flowers in bovine mesentery (cow caul) and stitch closed ($hemisphereText).',
+            recommendedAction:
+                'Bury BD 506 mesentery parcels in fertile topsoil at Michaelmas (Sept 29).',
+            isActiveWindow: true,
+            sheathOrgan: organ506,
+          );
+        } else if (month >= 11 || month <= 2) {
+          return BurialStageInfo(
+            stage: 'Subterranean Winter Ripening (Winter)',
+            description:
+                'Dandelion mesentery gathers planetary forces and silica affinity during winter ($hemisphereText).',
+            recommendedAction:
+                'Rest undisturbed in cold earth.',
+            isActiveWindow: false,
+            sheathOrgan: organ506,
+          );
+        } else if (month == 3 || month == 4) {
+          return BurialStageInfo(
+            stage: 'Easter Retrieval Window (Spring)',
+            description:
+                'Unearth BD 506 around Easter; flowers transformed into light-sensitive humus ($hemisphereText).',
+            recommendedAction:
+                'Retrieve decomposed dandelion from mesentery and store in glass jar with peat.',
+            isActiveWindow: true,
+            sheathOrgan: organ506,
+          );
+        } else {
+          return BurialStageInfo(
+            stage: 'Compost Inoculation & Harvest (Summer)',
+            description:
+                'Harvest fresh dandelion blossoms on sunny mornings and store previous year’s prep ($hemisphereText).',
+            recommendedAction:
+                'Pick yellow flower heads on sunny spring/summer mornings for autumn burial.',
+            isActiveWindow: false,
+            sheathOrgan: organ506,
+          );
+        }
+
+      case BiodynamicPrepType.bd507:
+        final organ507 = prep.sheathOrgan;
+        if (month == 9 || month == 10) {
+          return BurialStageInfo(
+            stage: 'Autumn Compost Finishing',
+            description:
+                'Valerian fermented blossom juice stored in amber glass; warmth mantle over compost ($hemisphereText).',
+            recommendedAction:
+                'Dilute a few drops in warm water, stir 10 mins, spray over completed compost pile.',
+            isActiveWindow: true,
+            sheathOrgan: organ507,
+          );
+        } else if (month >= 11 || month <= 2) {
+          return BurialStageInfo(
+            stage: 'Winter Warmth Mantle',
+            description:
+                'Protective warmth envelope preserving inner heat of compost heaps against freezing ($hemisphereText).',
+            recommendedAction:
+                'Spray over compost heaps or delicate orchard branches before severe frost.',
+            isActiveWindow: false,
+            sheathOrgan: organ507,
+          );
+        } else if (month == 3 || month == 4) {
+          return BurialStageInfo(
+            stage: 'Spring Blossom Protection',
+            description:
+                'Warmth radiation buffering early fruit tree blossoms against spring frost ($hemisphereText).',
+            recommendedAction:
+                'Spray fine mist over evening blossoms when frost threatens.',
+            isActiveWindow: true,
+            sheathOrgan: organ507,
+          );
+        } else {
+          return BurialStageInfo(
+            stage: 'Blossom Extraction Season (Summer)',
+            description:
+                'Harvest fragrant valerian blossoms in summer evening; press and ferment flower juice ($hemisphereText).',
+            recommendedAction:
+                'Bottle fermented juice in dark amber glass; keeps for years.',
+            isActiveWindow: true,
+            sheathOrgan: organ507,
           );
         }
 
       case BiodynamicPrepType.bd508:
         return const BurialStageInfo(
           stage: 'Fresh Tea / Decoction Preparation',
-          description: 'Boil dried horsetail (Equisetum arvense) for 20-60 mins to extract silica.',
+          description:
+              'Boil dried horsetail (Equisetum arvense) for 20-60 mins to extract silica.',
           recommendedAction:
               'Stir for 20 mins and spray during humid/fungal periods.',
           isActiveWindow: true,
+          sheathOrgan: 'None (Fresh or dried herb decoction)',
         );
+
+      case BiodynamicPrepType.cpp:
+        final organCpp = prep.sheathOrgan;
+        if (month == 9 || month == 10) {
+          return BurialStageInfo(
+            stage: 'Autumn Barrel Inoculation',
+            description:
+                'Mix fresh cow manure with basalt and eggshells; inoculate with BD 502–507 in sunken oak barrel ($hemisphereText).',
+            recommendedAction:
+                'Stir 1 hour initially, place into half-sunken wooden barrel, insert preps 502–507.',
+            isActiveWindow: true,
+            sheathOrgan: organCpp,
+          );
+        } else if (month >= 11 || month <= 2) {
+          return BurialStageInfo(
+            stage: 'Subterranean Barrel Humification (Winter)',
+            description:
+                'Barrel compost matures underground for 2–3 months into colloidal humus ($hemisphereText).',
+            recommendedAction:
+                'Keep covered with wooden lid or moist sacking; protect from drying.',
+            isActiveWindow: false,
+            sheathOrgan: organCpp,
+          );
+        } else if (month == 3 || month == 4) {
+          return BurialStageInfo(
+            stage: 'Spring Soil Application Window',
+            description:
+                'Mature Maria Thun Barrel Compost ready to energize spring soil microbiology ($hemisphereText).',
+            recommendedAction:
+                'Dynamize 35g/100m² in lukewarm water for 20 minutes; apply to soil in late afternoon.',
+            isActiveWindow: true,
+            sheathOrgan: organCpp,
+          );
+        } else {
+          return BurialStageInfo(
+            stage: 'Summer Compost & Soil Maintenance',
+            description:
+                'Use mature CPP as starter inoculant for summer compost piles or liquid manure teas ($hemisphereText).',
+            recommendedAction:
+                'Apply during Descending Moon evenings or add to summer heaps.',
+            isActiveWindow: false,
+            sheathOrgan: organCpp,
+          );
+        }
     }
+  }
+
+  /// Computes the seasonal burial cycle progress between Michaelmas (Sept 29) and Easter (~April 5).
+  /// Returns a [BurialCycleProgress] representing progress and current stage.
+  static BurialCycleProgress getSeasonalBurialProgress(
+    DateTime date, {
+    double latitude = 50.0,
+  }) {
+    final isNorthern = latitude >= 0;
+    // Normalize date for southern hemisphere (shift 6 months) if needed
+    final effectiveDate = isNorthern
+        ? date
+        : DateTime(
+            date.year,
+            ((date.month + 5) % 12) + 1,
+            date.day,
+            date.hour,
+            date.minute,
+          );
+
+    final year = effectiveDate.year;
+    final thisYearMichaelmas = DateTime(year, 9, 29);
+    final thisYearEaster = DateTime(year, 4, 5);
+
+    bool isUnderground;
+    double progress;
+    String seasonName;
+    String stageDescription;
+    DateTime michaelmas;
+    DateTime easter;
+
+    if (effectiveDate.isBefore(thisYearEaster)) {
+      michaelmas = DateTime(year - 1, 9, 29);
+      easter = thisYearEaster;
+      isUnderground = true;
+      final totalDays = easter.difference(michaelmas).inDays;
+      final elapsed = effectiveDate.difference(michaelmas).inDays;
+      progress = (elapsed / totalDays).clamp(0.0, 1.0);
+      seasonName = 'Winter Subterranean Ripening';
+      stageDescription =
+          'Preparations resting underground from Michaelmas (Sept 29) to Easter (${(progress * 100).round()}% through winter burial).';
+    } else if (effectiveDate.isBefore(thisYearMichaelmas)) {
+      easter = thisYearEaster;
+      michaelmas = thisYearMichaelmas;
+      isUnderground = false;
+      final totalDays = michaelmas.difference(easter).inDays;
+      final elapsed = effectiveDate.difference(easter).inDays;
+      progress = (elapsed / totalDays).clamp(0.0, 1.0);
+      seasonName = 'Summer Compost & Maturation Season';
+      stageDescription =
+          'Preparations unburied at Easter and active in compost & summer sun (${(progress * 100).round()}% to next Michaelmas).';
+    } else {
+      michaelmas = thisYearMichaelmas;
+      easter = DateTime(year + 1, 4, 5);
+      isUnderground = true;
+      final totalDays = easter.difference(michaelmas).inDays;
+      final elapsed = effectiveDate.difference(michaelmas).inDays;
+      progress = (elapsed / totalDays).clamp(0.0, 1.0);
+      seasonName = 'Michaelmas Burial Window';
+      stageDescription =
+          'Preparations sheathed in organs and buried around Michaelmas (Sept 29) (${(progress * 100).round()}% into winter burial).';
+    }
+
+    return BurialCycleProgress(
+      seasonName: seasonName,
+      stageDescription: stageDescription,
+      progressFraction: progress,
+      isUndergroundBurial: isUnderground,
+      michaelmas: michaelmas,
+      easter: easter,
+    );
   }
 
   /// Searches forward or backward from [startTime] for the next/previous optimal spray window for [prep],

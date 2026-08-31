@@ -1,7 +1,10 @@
 import '../dornach_boundaries.dart';
+import 'celestial_aspect.dart';
+import 'diurnal_rhythm.dart';
 import 'moon_phase_info.dart';
 import 'planet_info.dart';
 import 'plant_quality.dart';
+import 'transition_envelope.dart';
 
 /// Aggregated calendar information for a given timestamp.
 final class CalendarInfo {
@@ -20,6 +23,12 @@ final class CalendarInfo {
   /// True if Moon is in opposition (180 deg) with Saturn.
   final bool isMoonSaturnOpposition;
 
+  /// True if solar or lunar eclipse is active.
+  final bool isEclipse;
+
+  /// Active planetary aspects at this timestamp.
+  final List<PlanetaryAspect> activeAspects;
+
   /// Message describing Gray Day condition or Special Day.
   final String message;
 
@@ -35,6 +44,12 @@ final class CalendarInfo {
   /// List of planetary positions.
   final List<PlanetInfo> planets;
 
+  /// Diurnal Earth rhythm info (Earth's daily breathing phase).
+  final DiurnalRhythmInfo? diurnalRhythm;
+
+  /// Transition envelope info (cusp blending with adjacent constellation).
+  final TransitionEnvelope? transitionEnvelope;
+
   /// Creates [CalendarInfo].
   CalendarInfo({
     required this.quality,
@@ -42,11 +57,15 @@ final class CalendarInfo {
     this.isSpecial = false,
     this.isApogee = false,
     this.isMoonSaturnOpposition = false,
+    this.isEclipse = false,
+    this.activeAspects = const [],
     required this.message,
     required this.sapFlow,
     required this.vitality,
     required this.moonPhase,
     required this.planets,
+    this.diurnalRhythm,
+    this.transitionEnvelope,
   });
 }
 
@@ -70,6 +89,9 @@ final class CalendarInterval {
   /// Message explaining quality or Gray Day.
   final String message;
 
+  /// Transition envelope info (cusp blending with adjacent constellation).
+  final TransitionEnvelope? transitionEnvelope;
+
   /// Creates [CalendarInterval].
   CalendarInterval({
     required this.start,
@@ -78,6 +100,7 @@ final class CalendarInterval {
     required this.isGrayDay,
     this.isSpecial = false,
     required this.message,
+    this.transitionEnvelope,
   });
 }
 

@@ -3,7 +3,7 @@ import 'package:magic_calendar/src/core/biodynamic_prep.dart';
 import 'package:magic_calendar/src/services/ephemeris_service.dart';
 import 'package:sweph/sweph.dart';
 
-final class MockPrepEphemerisService implements EphemerisService {
+final class MockPrepEphemerisService with EphemerisService {
   final PlantQuality mockQuality;
   final bool mockIsGrayDay;
   final String mockSapFlow;
@@ -277,6 +277,155 @@ void main() async {
       expect(morningEval.positiveFactors.any((f) => f.contains('05:00–09:00')), isTrue);
       expect(morningEval.positiveFactors.any((f) => f.contains('Ascending Moon')), isTrue);
       expect(morningEval.positiveFactors.any((f) => f.contains('Flower')), isTrue);
+    });
+  });
+
+  group('BiodynamicPrepEvaluator - CPP (Cow Pat Pit / Maria Thun Barrel Compost)', () {
+    final descRootInfo = CalendarInfo(
+      quality: PlantQuality.root,
+      isGrayDay: false,
+      message: '',
+      sapFlow: 'Descending: Earth Inhalation',
+      vitality: 'Waning Gibbous',
+      moonPhase: const MoonPhaseInfo(
+        illuminatedFraction: 0.75,
+        isWaxing: false,
+        phaseAngle: 220.0,
+      ),
+      planets: const [],
+    );
+
+    test('evaluates CPP as optimal during Descending Moon, evening (15-20), temp >= 8°C, wind <= 5 m/s', () {
+      final eval = BiodynamicPrepEvaluator.evaluateSpray(
+        prep: BiodynamicPrepType.cpp,
+        time: DateTime(2026, 5, 12, 17, 30),
+        calendarInfo: descRootInfo,
+        temperature: 15.0,
+        windSpeed: 3.0,
+        precipitation: 0.0,
+      );
+
+      expect(eval.level, equals(PrepSuitabilityLevel.optimal));
+      expect(eval.isFavorable, isTrue);
+      expect(eval.score, equals(1.0));
+      expect(eval.positiveFactors.any((f) => f.contains('Descending Moon')), isTrue);
+      expect(eval.positiveFactors.any((f) => f.contains('15:00–20:00')), isTrue);
+      expect(eval.positiveFactors.any((f) => f.contains('>= 8°C')), isTrue);
+      expect(eval.positiveFactors.any((f) => f.contains('<= 5 m/s')), isTrue);
+      expect(eval.negativeFactors, isEmpty);
+    });
+
+    test('penalizes CPP when temperature is below 8°C', () {
+      final eval = BiodynamicPrepEvaluator.evaluateSpray(
+        prep: BiodynamicPrepType.cpp,
+        time: DateTime(2026, 4, 15, 17, 0),
+        calendarInfo: descRootInfo,
+        temperature: 6.0,
+        windSpeed: 2.0,
+      );
+
+      expect(eval.level, equals(PrepSuitabilityLevel.unfavorable));
+      expect(eval.weatherSuitable, isFalse);
+      expect(eval.negativeFactors.any((f) => f.contains('< 8°C')), isTrue);
+    });
+
+    test('penalizes CPP when wind speed exceeds 5 m/s', () {
+      final eval = BiodynamicPrepEvaluator.evaluateSpray(
+        prep: BiodynamicPrepType.cpp,
+        time: DateTime(2026, 5, 15, 17, 0),
+        calendarInfo: descRootInfo,
+        temperature: 16.0,
+        windSpeed: 6.5,
+      );
+
+      expect(eval.level, equals(PrepSuitabilityLevel.unfavorable));
+      expect(eval.weatherSuitable, isFalse);
+      expect(eval.negativeFactors.any((f) => f.contains('> 5 m/s')), isTrue);
+    });
+
+    test('penalizes CPP during Ascending Moon', () {
+      final ascInfo = CalendarInfo(
+        quality: PlantQuality.leaf,
+        isGrayDay: false,
+        message: '',
+        sapFlow: 'Ascending: Earth Exhalation',
+        vitality: '',
+        moonPhase: const MoonPhaseInfo(
+          illuminatedFraction: 0.5,
+          isWaxing: true,
+          phaseAngle: 90.0,
+        ),
+        planets: const [],
+      );
+
+      final eval = BiodynamicPrepEvaluator.evaluateSpray(
+        prep: BiodynamicPrepType.cpp,
+        time: DateTime(2026, 5, 15, 17, 0),
+        calendarInfo: ascInfo,
+        temperature: 16.0,
+        windSpeed: 2.0,
+      );
+
+      expect(eval.astronomicalSuitable, isFalse);
+      expect(eval.negativeFactors.any((f) => f.contains('Ascending Moon')), isTrue);
+    });
+  });
+
+  group('BiodynamicPrepEvaluator - getBurialStatus and Sheath Organs', () {
+    test('verifies animal sheath organs for BD 502–507 and CPP', () {
+      expect(BiodynamicPrepType.bd502.sheathOrgan.toLowerCase(), contains('stag'));
+      expect(BiodynamicPrepType.bd503.sheathOrgan.toLowerCase(), contains('intestine'));
+      expect(BiodynamicPrepType.bd504.sheathOrgan.toLowerCase(), contains('peat'));
+      expect(BiodynamicPrepType.bd505.sheathOrgan.toLowerCase(), contains('skull'));
+      expect(BiodynamicPrepType.bd506.sheathOrgan.toLowerCase(), contains('mesentery'));
+      expect(BiodynamicPrepType.bd507.sheathOrgan.toLowerCase(), contains('glass'));
+      expect(BiodynamicPrepType.cpp.sheathOrgan.toLowerCase(), contains('barrel'));
+    });
+
+    test('BD 502 Yarrow shows Michaelmas burial window in October and Easter retrieval in April', () {
+      final autumnDate = DateTime(2026, 10, 5);
+      final autumnStatus = BiodynamicPrepEvaluator.getBurialStatus(
+        prep: BiodynamicPrepType.bd502,
+        date: autumnDate,
+        latitude: 55.6,
+      );
+      expect(autumnStatus.isActiveWindow, isTrue);
+      expect(autumnStatus.stage, contains('Michaelmas'));
+      expect(autumnStatus.sheathOrgan?.toLowerCase(), contains('stag'));
+
+      final winterDate = DateTime(2026, 1, 15);
+      final winterStatus = BiodynamicPrepEvaluator.getBurialStatus(
+        prep: BiodynamicPrepType.bd502,
+        date: winterDate,
+        latitude: 55.6,
+      );
+      expect(winterStatus.isActiveWindow, isFalse);
+      expect(winterStatus.stage, contains('Subterranean Winter'));
+
+      final springDate = DateTime(2026, 4, 10);
+      final springStatus = BiodynamicPrepEvaluator.getBurialStatus(
+        prep: BiodynamicPrepType.bd502,
+        date: springDate,
+        latitude: 55.6,
+      );
+      expect(springStatus.isActiveWindow, isTrue);
+      expect(springStatus.stage, contains('Easter'));
+    });
+
+    test('getSeasonalBurialProgress accurately calculates burial rhythm progress', () {
+      final winterDate = DateTime(2026, 1, 1);
+      final winterProgress = BiodynamicPrepEvaluator.getSeasonalBurialProgress(winterDate);
+      expect(winterProgress.isUndergroundBurial, isTrue);
+      expect(winterProgress.progressFraction, greaterThan(0.0));
+      expect(winterProgress.progressFraction, lessThan(1.0));
+      expect(winterProgress.seasonName, contains('Winter'));
+
+      final summerDate = DateTime(2026, 7, 1);
+      final summerProgress = BiodynamicPrepEvaluator.getSeasonalBurialProgress(summerDate);
+      expect(summerProgress.isUndergroundBurial, isFalse);
+      expect(summerProgress.progressFraction, greaterThan(0.0));
+      expect(summerProgress.progressFraction, lessThan(1.0));
+      expect(summerProgress.seasonName, contains('Summer'));
     });
   });
 
