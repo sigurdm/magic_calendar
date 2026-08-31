@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../theme/biodynamic_icons.dart';
 
 /// Preparation configuration for biodynamic dynamization stirring.
 enum StirringPrepType {
@@ -227,8 +228,8 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                                    .withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(
-                              Icons.cyclone,
+                            child: const BiodynamicIcon(
+                              type: BiodynamicIconType.dynamizationVortex,
                               color: Color(0xFF818CF8),
                               size: 22,
                             ),
@@ -629,7 +630,11 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                         ),
                         const SizedBox(height: 10),
                         _buildGuidanceRow(
-                          icon: Icons.cyclone,
+                          customIcon: const BiodynamicIcon(
+                            type: BiodynamicIconType.dynamizationVortex,
+                            size: 14,
+                            color: Color(0xFF818CF8),
+                          ),
                           iconColor: const Color(0xFF818CF8),
                           title: 'Vortex & Dynamic Chaos',
                           description:
@@ -655,7 +660,8 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
   }
 
   Widget _buildGuidanceRow({
-    required IconData icon,
+    IconData? icon,
+    Widget? customIcon,
     required Color iconColor,
     required String title,
     required String description,
@@ -669,7 +675,7 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
             color: iconColor.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 14, color: iconColor),
+          child: customIcon ?? Icon(icon, size: 14, color: iconColor),
         ),
         const SizedBox(width: 10),
         Expanded(

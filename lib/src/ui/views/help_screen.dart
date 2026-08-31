@@ -1,3 +1,4 @@
+import '../theme/biodynamic_icons.dart';
 import '../theme/goethean_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -90,7 +91,12 @@ final class HelpScreen extends StatelessWidget {
                         _buildSectionHeader(
               context,
               'The Farm as a Living Organism — Farm Tasks',
-              Icons.agriculture,
+              null,
+              customIcon: const BiodynamicIcon(
+                type: BiodynamicIconType.farmOrganism,
+                color: Color(0xFF646CFF),
+                size: 22,
+              ),
             ),
             const SizedBox(height: 8),
             _buildCard(
@@ -260,7 +266,12 @@ _buildSectionHeader(
             _buildSectionHeader(
               context,
               'Biodynamic Field Preparations',
-              Icons.science_outlined,
+              null,
+              customIcon: const BiodynamicIcon(
+                type: BiodynamicIconType.herbalCauldron,
+                color: Color(0xFF646CFF),
+                size: 22,
+              ),
             ),
             const SizedBox(height: 8),
             _buildCard(
@@ -342,11 +353,12 @@ _buildSectionHeader(
   Widget _buildSectionHeader(
     BuildContext context,
     String title,
-    IconData icon,
-  ) {
+    IconData? icon, {
+    Widget? customIcon,
+  }) {
     return Row(
       children: [
-        Icon(icon, color: const Color(0xFF646CFF), size: 22),
+        customIcon ?? Icon(icon, color: const Color(0xFF646CFF), size: 22),
         const SizedBox(width: 8),
         Text(
           title,
