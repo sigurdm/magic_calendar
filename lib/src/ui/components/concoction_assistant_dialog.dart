@@ -2,6 +2,7 @@ import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:google_fonts/google_fonts.dart";
+import "../theme/biodynamic_icons.dart";
 
 /// Unit system for dosage calculations.
 enum UnitSystem {
@@ -288,8 +289,8 @@ final class _ConcoctionAssistantDialogState
                                   .withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(
-                              Icons.science_outlined,
+                            child: const BiodynamicIcon(
+                              type: BiodynamicIconType.herbalCauldron,
                               color: Color(0xFF34D399),
                               size: 22,
                             ),

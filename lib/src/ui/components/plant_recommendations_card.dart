@@ -7,6 +7,7 @@ import '../../core/agricultural_task_evaluator.dart';
 import '../../core/ecological_synthesis.dart';
 import '../../core/vegetable_database.dart';
 import '../../services/ephemeris_service.dart';
+import '../theme/biodynamic_icons.dart';
 import '../theme/goethean_palette.dart';
 
 /// Navigation section within the plant recommendations card.
@@ -523,7 +524,13 @@ final class _PlantRecommendationsCardState
           Expanded(
             child: _buildSectionButton(
               title: 'Farm Organism Tasks',
-              icon: Icons.agriculture_outlined,
+              customIcon: BiodynamicIcon(
+                type: BiodynamicIconType.farmOrganism,
+                size: 15,
+                color: _selectedSection == _RecommendationsSection.farmOrganismTasks
+                    ? Colors.white
+                    : Colors.white60,
+              ),
               isSelected:
                   _selectedSection == _RecommendationsSection.farmOrganismTasks,
               onTap: () {
@@ -540,7 +547,8 @@ final class _PlantRecommendationsCardState
 
   Widget _buildSectionButton({
     required String title,
-    required IconData icon,
+    IconData? icon,
+    Widget? customIcon,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
@@ -566,11 +574,12 @@ final class _PlantRecommendationsCardState
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 15,
-                color: isSelected ? Colors.white : Colors.white60,
-              ),
+              customIcon ??
+                  Icon(
+                    icon,
+                    size: 15,
+                    color: isSelected ? Colors.white : Colors.white60,
+                  ),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
@@ -840,8 +849,8 @@ final class _PlantRecommendationsCardState
                   color: badgeColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
-                  advice.icon ?? Icons.agriculture,
+                child: BiodynamicIcon.fromTask(
+                  advice.task,
                   size: 18,
                   color: badgeColor,
                 ),

@@ -5,6 +5,7 @@ import '../../core/biodynamic_prep.dart';
 import '../../services/ephemeris_service.dart';
 import 'concoction_assistant_dialog.dart';
 import 'stirring_timer_dialog.dart';
+import '../theme/biodynamic_icons.dart';
 
 /// Interactive card widget summarizing biodynamic field preparation windows (BD 500, BD 501, CPP, BD 508),
 /// seasonal compost preparation burial cycles (BD 502–507),
@@ -260,8 +261,8 @@ final class BiodynamicCard extends StatelessWidget {
                     ),
                   ),
                   onPressed: () => StirringTimerDialog.show(context),
-                  icon: const Icon(
-                    Icons.cyclone,
+                  icon: const BiodynamicIcon(
+                    type: BiodynamicIconType.dynamizationVortex,
                     size: 18,
                     color: Color(0xFF818CF8),
                   ),
@@ -325,8 +326,8 @@ final class BiodynamicCard extends StatelessWidget {
                     ),
                   ),
                   onPressed: () => ConcoctionAssistantDialog.show(context),
-                  icon: const Icon(
-                    Icons.science_outlined,
+                  icon: const BiodynamicIcon(
+                    type: BiodynamicIconType.herbalCauldron,
                     size: 18,
                     color: Color(0xFF34D399),
                   ),
