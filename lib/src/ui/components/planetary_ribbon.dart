@@ -171,7 +171,11 @@ final class RibbonPainter extends CustomPainter {
       final textPainter = TextPainter(
         text: TextSpan(
           text: _getPlanetSymbol(planet.name),
-          style: const TextStyle(color: Colors.white, fontSize: 16),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontFamilyFallback: ['DejaVu Sans', 'Symbola', 'Noto Sans Symbols'],
+          ),
         ),
         textDirection: ui.TextDirection.ltr,
       );
