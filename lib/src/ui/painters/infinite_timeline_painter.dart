@@ -224,6 +224,7 @@ final class InfiniteTimelinePainter extends CustomPainter {
           text: TextSpan(
             text: DateFormat('EEE, MMM d').format(midnight),
             style: const TextStyle(
+              fontFamily: 'Outfit',
               color: Colors.white,
               fontSize: 12,
               fontWeight: FontWeight.bold,
@@ -260,7 +261,11 @@ final class InfiniteTimelinePainter extends CustomPainter {
               final hourPainter = TextPainter(
                 text: TextSpan(
                   text: '${h.toString().padLeft(2, '0')}:00',
-                  style: const TextStyle(color: Colors.white38, fontSize: 10),
+                  style: const TextStyle(
+                    fontFamily: 'Outfit',
+                    color: Colors.white38,
+                    fontSize: 10,
+                  ),
                 ),
                 textDirection: ui.TextDirection.ltr,
               );
@@ -444,7 +449,11 @@ final class InfiniteTimelinePainter extends CustomPainter {
     final tp = TextPainter(
       text: TextSpan(
         text: text,
-        style: TextStyle(color: Colors.white70, fontSize: fontSize),
+        style: TextStyle(
+          fontFamily: 'Outfit',
+          color: Colors.white70,
+          fontSize: fontSize,
+        ),
       ),
       textDirection: ui.TextDirection.ltr,
     );
@@ -462,7 +471,10 @@ final class InfiniteTimelinePainter extends CustomPainter {
     final tp = TextPainter(
       text: TextSpan(
         text: icon,
-        style: TextStyle(fontSize: fontSize),
+        style: TextStyle(
+          fontSize: fontSize,
+          fontFamilyFallback: const ['Symbola', 'DejaVu Sans', 'Noto Color Emoji'],
+        ),
       ),
       textDirection: ui.TextDirection.ltr,
     );
@@ -772,12 +784,17 @@ final class InfiniteTimelinePainter extends CustomPainter {
           image.height.toDouble(),
         );
         final dst = Rect.fromLTWH(0, 0, iconSize, iconSize);
-        canvas.drawImageRect(image, src, dst, Paint());
+        canvas.drawImageRect(
+          image,
+          src,
+          dst,
+          Paint()..filterQuality = FilterQuality.medium,
+        );
 
         final framePaint = Paint()
-          ..color = Colors.white.withValues(alpha: 0.7)
+          ..color = Colors.white.withValues(alpha: 0.35)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5;
+          ..strokeWidth = 0.75;
         canvas.drawRRect(
           RRect.fromRectAndRadius(dst, const Radius.circular(2)),
           framePaint,
