@@ -3,7 +3,7 @@ import 'package:magic_calendar/main.dart';
 import 'package:magic_calendar/src/services/ephemeris_service.dart';
 import 'package:magic_calendar/src/services/weather_service.dart';
 
-final class MockEphemerisService implements EphemerisService {
+final class MockEphemerisService with EphemerisService {
   final double _mockLongitude;
   final bool _mockIsNearNode;
   final bool _mockIsNearPerigee;

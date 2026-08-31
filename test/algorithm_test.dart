@@ -4,7 +4,7 @@ import 'package:magic_calendar/src/core/dornach_boundaries.dart';
 import 'package:magic_calendar/src/services/ephemeris_service.dart';
 import 'package:sweph/sweph.dart';
 
-final class MockEphemerisService implements EphemerisService {
+final class MockEphemerisService with EphemerisService {
   final double _mockLongitude;
   final bool _mockIsNearNode;
   final bool _mockIsNearPerigee;

@@ -44,6 +44,19 @@ abstract mixin class EphemerisService {
 
   /// Calculates sunrise and sunset for [date] at [lat], [lon].
   SunriseSunsetInfo getSunriseSunset(DateTime date, double lat, double lon);
+
+  /// Sets topocentric observer coordinates.
+  void setObserverLocation(
+    double latitude,
+    double longitude, [
+    double altitude = 0.0,
+  ]) {}
+
+  /// Returns active planetary aspects at [time].
+  List<PlanetaryAspect> getAspects(DateTime time) => const [];
+
+  /// True if Moon or Sun is within an eclipse blackout window (±12 hours).
+  bool isNearEclipse(DateTime time) => false;
 }
 
 /// Time interval quality entry.
@@ -208,6 +221,21 @@ final class IsolateEphemerisService implements EphemerisService {
   @override
   SunriseSunsetInfo getSunriseSunset(DateTime date, double lat, double lon) =>
       _syncService.getSunriseSunset(date, lat, lon);
+
+  @override
+  void setObserverLocation(
+    double latitude,
+    double longitude, [
+    double altitude = 0.0,
+  ]) =>
+      _syncService.setObserverLocation(latitude, longitude, altitude);
+
+  @override
+  List<PlanetaryAspect> getAspects(DateTime time) =>
+      _syncService.getAspects(time);
+
+  @override
+  bool isNearEclipse(DateTime time) => _syncService.isNearEclipse(time);
 }
 
 /// Swiss Ephemeris service implementing [EphemerisService].
@@ -217,6 +245,24 @@ final class AstronomiaEphemerisService implements EphemerisService {
 
   static const int _topoFlags = 2 | 256 | 32768;
   static const int _geoFlags = 2 | 256;
+
+  double _observerLat = 47.4814;
+  double _observerLon = 7.6178;
+  double _observerAlt = 350.0;
+
+  @override
+  void setObserverLocation(
+    double latitude,
+    double longitude, [
+    double altitude = 0.0,
+  ]) {
+    _observerLat = latitude;
+    _observerLon = longitude;
+    _observerAlt = altitude;
+    Sweph.swe_set_topo(longitude, latitude, altitude);
+    _phaseCache.clear();
+    _lastJd = null;
+  }
 
   final Map<DateTime, MoonPhaseInfo> _phaseCache = {};
 
@@ -263,7 +309,7 @@ final class AstronomiaEphemerisService implements EphemerisService {
 
   @override
   double getMoonDeclination(DateTime time) {
-    Sweph.swe_set_topo(7.6178, 47.4814, 350.0);
+    Sweph.swe_set_topo(_observerLon, _observerLat, _observerAlt);
     double jd = _toJD(time);
     final pos = Sweph.swe_calc_ut(
       jd,
@@ -281,7 +327,7 @@ final class AstronomiaEphemerisService implements EphemerisService {
       return _phaseCache[cacheKey]!;
     }
 
-    Sweph.swe_set_topo(7.6178, 47.4814, 350.0);
+    Sweph.swe_set_topo(_observerLon, _observerLat, _observerAlt);
     double jd = _toJD(time);
     final sun = Sweph.swe_calc_ut(
       jd,
@@ -317,7 +363,7 @@ final class AstronomiaEphemerisService implements EphemerisService {
 
   @override
   List<PlanetInfo> getPlanets(DateTime time) {
-    Sweph.swe_set_topo(7.6178, 47.4814, 350.0);
+    Sweph.swe_set_topo(_observerLon, _observerLat, _observerAlt);
 
     double jd = _toJD(time);
     final flags = SwephFlag(_topoFlags);
@@ -336,6 +382,111 @@ final class AstronomiaEphemerisService implements EphemerisService {
       getPl(HeavenlyBody.SE_JUPITER, 'Jupiter'),
       getPl(HeavenlyBody.SE_SATURN, 'Saturn'),
     ];
+  }
+
+  @override
+  List<PlanetaryAspect> getAspects(DateTime time) {
+    final planets = getPlanets(time);
+    final aspects = <PlanetaryAspect>[];
+
+    for (int i = 0; i < planets.length; i++) {
+      for (int j = i + 1; j < planets.length; j++) {
+        final p1 = planets[i];
+        final p2 = planets[j];
+
+        double diff = (p1.longitude - p2.longitude).abs() % 360.0;
+        if (diff > 180.0) diff = 360.0 - diff;
+
+        // Conjunction: 0° ± 2.5°
+        if (diff <= 2.5) {
+          final isStress = (p1.name == 'Moon' || p2.name == 'Moon') &&
+              (p1.name == 'Saturn' ||
+                  p2.name == 'Saturn' ||
+                  p1.name == 'Mars' ||
+                  p2.name == 'Mars');
+          aspects.add(PlanetaryAspect(
+            body1: p1.name,
+            body2: p2.name,
+            type: AspectType.conjunction,
+            separationDegrees: diff,
+            orbDegrees: diff,
+            isFavorable: !isStress,
+            agriculturalEffect: isStress
+                ? 'Conjunction with ${p1.name == "Moon" ? p2.name : p1.name}: Gravitational compression. Rest window.'
+                : 'Conjunction between ${p1.name} and ${p2.name}.',
+          ));
+        }
+        // Square: 90° ± 2.5°
+        else if ((diff - 90.0).abs() <= 2.5) {
+          aspects.add(PlanetaryAspect(
+            body1: p1.name,
+            body2: p2.name,
+            type: AspectType.square,
+            separationDegrees: diff,
+            orbDegrees: (diff - 90.0).abs(),
+            isFavorable: false,
+            agriculturalEffect:
+                'Planetary Square (90°): Elemental quadrature conflict between ${p1.name} and ${p2.name}. Stress period.',
+          ));
+        }
+        // Trine: 120° ± 3.0°
+        else if ((diff - 120.0).abs() <= 3.0) {
+          aspects.add(PlanetaryAspect(
+            body1: p1.name,
+            body2: p2.name,
+            type: AspectType.trine,
+            separationDegrees: diff,
+            orbDegrees: (diff - 120.0).abs(),
+            isFavorable: true,
+            agriculturalEffect:
+                'Planetary Trine (120°): Harmonious elemental resonance between ${p1.name} and ${p2.name}.',
+          ));
+        }
+        // Opposition: 180° ± 4.0°
+        else if ((diff - 180.0).abs() <= 4.0) {
+          final isMoonSaturn = (p1.name == 'Moon' && p2.name == 'Saturn') ||
+              (p1.name == 'Saturn' && p2.name == 'Moon');
+          aspects.add(PlanetaryAspect(
+            body1: p1.name,
+            body2: p2.name,
+            type: AspectType.opposition,
+            separationDegrees: diff,
+            orbDegrees: (diff - 180.0).abs(),
+            isFavorable: isMoonSaturn,
+            agriculturalEffect: isMoonSaturn
+                ? 'Moon-Saturn Opposition (180°): Fungal Resistance & Strong Root Vigor.'
+                : 'Planetary Opposition (180°) between ${p1.name} and ${p2.name}.',
+          ));
+        }
+      }
+    }
+    return aspects;
+  }
+
+  @override
+  bool isNearEclipse(DateTime time) {
+    final jd = _toJD(time);
+    for (double t = jd - 0.5; t <= jd + 0.5; t += 1.0 / 24.0) {
+      final sun = Sweph.swe_calc_ut(
+        t,
+        HeavenlyBody.SE_SUN,
+        SwephFlag(_geoFlags),
+      );
+      final moon = Sweph.swe_calc_ut(
+        t,
+        HeavenlyBody.SE_MOON,
+        SwephFlag(_geoFlags),
+      );
+
+      if (moon.latitude.abs() <= 0.85) {
+        double diff = (moon.longitude - sun.longitude).abs() % 360.0;
+        if (diff > 180.0) diff = 360.0 - diff;
+        if (diff <= 1.5 || (diff - 180.0).abs() <= 1.5) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   @override

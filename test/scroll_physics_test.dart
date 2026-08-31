@@ -4,7 +4,7 @@ import 'package:magic_calendar/src/ui/views/time_scroll_view.dart';
 import 'package:magic_calendar/src/services/ephemeris_service.dart';
 import 'package:magic_calendar/src/services/weather_service.dart';
 
-final class MockEphemerisService implements EphemerisService {
+final class MockEphemerisService with EphemerisService {
   @override
   List<CalendarInterval> getIntervals(DateTime start, DateTime end) => [];
   @override

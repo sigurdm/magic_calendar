@@ -99,6 +99,24 @@ final class ConcoctionCatalog {
       ],
     ),
     ConcoctionRecipe(
+      id: "cpp_barrel_compost",
+      titleDa: "Maria Thun Tøndekompost (CPP)",
+      titleEn: "Cow Pat Pit (Maria Thun Barrel Compost)",
+      purpose:
+          "Universal soil inoculant, humus builder, and microbial booster enriched with preparations BD 502–507, basalt, and eggshells.",
+      cosmicTiming:
+          "Apply late afternoon / sunset during Descending Moon (Earth Inhalation) on Root or Fruit days.",
+      herbGramsPer100Sqm: 35.0, // 35g per 100 sqm
+      waterLitersPer100Sqm: 5.0, // 5L lukewarm rainwater per 100 sqm
+      dilutionRatio: 1, // Ready to spray directly after 20-min stirring
+      steps: [
+        "1. Weigh Barrel Compost: Dissolve 35g of mature Cow Pat Pit barrel compost per 100 m² of garden or field.",
+        "2. Water Preparation: Warm clean rainwater to lukewarm (approx. 35°C) in a wooden or stoneware vessel.",
+        "3. 20-Minute Dynamization: Stir vigorously for 20 minutes (16 cycles of 75 seconds), creating deep vortex funnels and breaking them into dynamic chaos.",
+        "4. Coarse Droplet Spraying: Apply immediately within 1-2 hours using a hearth broom or coarse droplet sprayer onto bare soil, mulch, or fresh compost.",
+      ],
+    ),
+    ConcoctionRecipe(
       id: "bd501_horn_silica",
       titleDa: "BD 501 Hornkisel (Kvartsmel)",
       titleEn: "BD 501 Horn Silica",

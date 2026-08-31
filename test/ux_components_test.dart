@@ -9,7 +9,7 @@ import 'package:magic_calendar/src/ui/components/plant_recommendations_card.dart
 import 'package:magic_calendar/src/ui/components/stirring_timer_dialog.dart';
 import 'package:magic_calendar/src/ui/views/help_screen.dart';
 
-final class _MockEphemerisService implements EphemerisService {
+final class _MockEphemerisService with EphemerisService {
   @override
   List<CalendarInterval> getIntervals(DateTime start, DateTime end) => [];
 
@@ -103,11 +103,7 @@ void main() {
       expect(find.byIcon(Icons.location_on), findsOneWidget);
       expect(find.byIcon(Icons.calendar_month), findsOneWidget);
       expect(find.byIcon(Icons.help_outline), findsOneWidget);
-      final ex = tester.takeException();
-      if (ex != null) {
-        debugPrint("CAUGHT EXCEPTION: $ex");
-      }
-      expect(ex, isNull);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('PlantRecommendationsCard displays crops and switches tabs', (

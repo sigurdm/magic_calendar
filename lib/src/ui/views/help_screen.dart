@@ -1,3 +1,4 @@
+import '../theme/goethean_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -86,7 +87,148 @@ final class HelpScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
+                        _buildSectionHeader(
+              context,
+              'The Farm as a Living Organism — Farm Tasks',
+              Icons.agriculture,
+            ),
+            const SizedBox(height: 8),
+            _buildCard(
+              context,
+              children: [
+                _buildHelpItem(
+                  'Soil Cultivation & Aeration',
+                  "Cultivation rhythm must follow the Earth's daily breath: morning shallow hoeing vs afternoon deep root aeration.",
+                  badgeColor: GoetheanPalette.rootEarth,
+                  practical:
+                      'Morning (Exhalation): Hoe shallowly (top 1-2 cm) to scalp weeds; rising sun desiccates severed weeds without disturbing deeper moisture. Afternoon (Inhalation): Deeply aerate beds with broadfork or deep hoe to open soil pores to atmospheric nitrogen and warmth forces as sap descends.',
+                ),
+                _buildHelpItem(
+                  'Fruit Tree & Vine Pruning',
+                  'Optimal during Descending Moon + Fruit Day. Strictly prohibited during Ascending Moon or Leaf/Water days.',
+                  badgeColor: GoetheanPalette.fruitWarmth,
+                  practical:
+                      'Descending Moon concentrates sap into root reservoirs, preventing pruning wounds from bleeding. Fruit Days focus differentiation into fruit spurs. Pruning on Ascending Moon causes severe sap loss, while Leaf/Water days invite bacterial canker and silver leaf fungal rot.',
+                ),
+                _buildHelpItem(
+                  'Cellar Storage vs. Fresh Consumption Harvest',
+                  'Storage and table harvests require opposing lunar phases.',
+                  badgeColor: GoetheanPalette.leafWater,
+                  practical:
+                      'Cellar Storage: Harvest during Waning Moon on Root or Fruit days when moisture is drawn down; dry matter is concentrated and decay fungi are inhibited. Fresh Table Eating: Harvest during Waxing Moon during morning exhalation when turgor pressure, aromatic oils, and crisp vitality are at their peak.',
+                ),
+                _buildHelpItem(
+                  'Timber Felling (Mondholz / Moon Wood)',
+                  'Ancient European forestry practice: Felling during Waning Moon in Capricorn (Earth/Root).',
+                  badgeColor: const Color(0xFF10B981),
+                  practical:
+                      'Sap is drained to the absolute minimum and wood fibers contract with extraordinary density. Felled Mondholz does not warp, twist, split, or rot, and resists wood-boring beetles and fire naturally without chemical preservatives.',
+                ),
+                _buildHelpItem(
+                  'Weed & Pest Peppering (Veraschung)',
+                  "Steiner's homeopathic bio-control method of incinerating weed seeds and insect pests to ash.",
+                  badgeColor: const Color(0xFFEF4444),
+                  practical:
+                      "Weed Seeds: Ash in Leo (Fire/Warmth). Leo's intense cosmic warmth impulse extinguishes the seed's reproductive germination capacity. Insect Pests: Ash in Scorpio (Water element governing invertebrate generation) to dissolve the species' local reproductive impulse.",
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
             _buildSectionHeader(
+              context,
+              'Ecological Synthesis: The Stars Incline, They Do Not Compel',
+              Icons.thunderstorm_outlined,
+            ),
+            const SizedBox(height: 8),
+            _buildCard(
+              context,
+              children: [
+                _buildHelpItem(
+                  'Terrestrial Weather Overrides (Astra Inclinant)',
+                  'Maria Thun and Rudolf Steiner repeatedly emphasize that physical soil moisture and local weather take absolute precedence over astronomical calendar dates.',
+                  practical:
+                      'Working wet, waterlogged soil on a "perfect" Root day damages soil crumb structure far worse than waiting for dry conditions. When weather conflicts arise, follow the guidance banners.',
+                ),
+                _buildHelpItem(
+                  'Soil Waterlogging (Precipitation > 2.0 mm)',
+                  'Water-saturated soil aggregates are fragile and easily destroyed by mechanical force or foot traffic.',
+                  badgeColor: const Color(0xFFEF4444),
+                  practical:
+                      'Cease all tillage, hoeing, and bed disturbance immediately. Compacting wet soil smears pore spaces, suffocates aerobic bacteria, and produces an impenetrable hardpan.',
+                ),
+                _buildHelpItem(
+                  'Freezing Conditions (Air Temp <= 0°C)',
+                  'Sub-zero soil halts biochemical germination enzymes and tears seedling rootlets.',
+                  badgeColor: const Color(0xFF3B82F6),
+                  practical:
+                      'Postpone outdoor ground sowing. Start cold-sensitive seedlings indoors in greenhouse seedling flats or heated propagation hotbeds until soil thaws.',
+                ),
+                _buildHelpItem(
+                  'Spray Drift Under High Wind (Wind Speed > 5.5 m/s)',
+                  'Ultra-fine atomized sprays (such as BD 501 Horn Silica) require calm conditions.',
+                  badgeColor: const Color(0xFFF59E0B),
+                  practical:
+                      'Suspend foliar sprays when wind exceeds 5.5 m/s. Spray droplets will drift off-target, desiccate prematurely, and fail to coat foliage canopies evenly.',
+                ),
+                _buildHelpItem(
+                  'Spring Blossom Frost Risk (Air Temp < 2.0°C)',
+                  'Late spring frost poses acute threats to blooming fruit trees, berries, and tender shoots.',
+                  badgeColor: GoetheanPalette.flowerAir,
+                  practical:
+                      'Spray BD 507 (Valerian preparation) in late afternoon or evening. Valerian mobilizes phosphorus warmth processes, creating an invisible thermal blanket that buffers flowers against sub-zero frost damage.',
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            _buildSectionHeader(
+              context,
+              'Goethean Aesthetics & Organic Color Theory',
+              Icons.palette_outlined,
+            ),
+            const SizedBox(height: 8),
+            _buildCard(
+              context,
+              children: [
+                _buildHelpItem(
+                  "Goethe's Theory of Colours (Zur Farbenlehre)",
+                  'Magic Calendar replaces artificial, eye-straining digital primaries with living, grounded nature tones reflecting the four elemental plant organs and living compost.',
+                ),
+                _buildQualityItem(
+                  'Warm Terracotta & Burnt Sienna (#C86D51)',
+                  GoetheanPalette.rootEarth,
+                  'Earth / Root Organ: Grounded in fertile clay, humus, and subterranean mineral forces.',
+                  practical: 'Applied across Root day crops, deep soil aeration, and seed root beds.',
+                ),
+                _buildQualityItem(
+                  'Living Sap Green (#5B8A4E)',
+                  GoetheanPalette.leafWater,
+                  'Water / Leaf Organ: Lush, chlorophyll-rich vegetative growth and atmospheric humidity.',
+                  practical: 'Applied across Leaf day crops, foliage irrigation, and compost watering.',
+                ),
+                _buildQualityItem(
+                  'Radiant Morning Lavender (#A594C4)',
+                  GoetheanPalette.flowerAir,
+                  'Air-Light / Flower Organ: Subtle, luminous lavender reflecting morning light and pollinators.',
+                  practical: 'Applied across Flower day crops, light sprays (BD 501), and aromatic herbs.',
+                ),
+                _buildQualityItem(
+                  'Sun Gold & Warm Ochre (#E5A93C)',
+                  GoetheanPalette.fruitWarmth,
+                  'Fire / Warmth / Fruit Organ: Golden solar warmth concentrating ripening sugars and seed vitality.',
+                  practical: 'Applied across Fruit day crops, seed harvesting, and fruit tree pruning.',
+                ),
+                _buildQualityItem(
+                  'Deep Compost Dark (#191715) & Topsoil (#221F1B)',
+                  GoetheanPalette.compostDark,
+                  'Subterranean Humus Background: Rich organic foundation grounding visual elements.',
+                  practical: 'Provides the restful dark backdrop that allows nature tones to breathe.',
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+_buildSectionHeader(
               context,
               'Special Days & Sap Rhythms',
               Icons.stars,
