@@ -29,26 +29,29 @@ void main() {
   }
 
   group('AgriculturalTaskEvaluator - Pruning Logic', () {
-    test('Descending Moon + Fruit Day is optimal for fruit tree and vine pruning', () {
-      final info = createTestCalendarInfo(
-        quality: PlantQuality.fruit,
-        isDescending: true,
-        isWaxing: false,
-        isGrayDay: false,
-      );
+    test(
+      'Descending Moon + Fruit Day is optimal for fruit tree and vine pruning',
+      () {
+        final info = createTestCalendarInfo(
+          quality: PlantQuality.fruit,
+          isDescending: true,
+          isWaxing: false,
+          isGrayDay: false,
+        );
 
-      final advice = AgriculturalTaskEvaluator.evaluateTask(
-        task: AgriculturalTaskType.pruning,
-        calendarInfo: info,
-        time: DateTime.utc(2026, 3, 15, 14, 0),
-      );
+        final advice = AgriculturalTaskEvaluator.evaluateTask(
+          task: AgriculturalTaskType.pruning,
+          calendarInfo: info,
+          time: DateTime.utc(2026, 3, 15, 14, 0),
+        );
 
-      expect(advice.suitability, TaskSuitability.optimal);
-      expect(advice.cosmicReasoning, contains('OPTIMAL'));
-      expect(advice.cosmicReasoning, contains('Fruit/Warmth'));
-      expect(advice.practicalAction, contains('Prune fruit trees'));
-      expect(advice.hasWeatherConflict, isFalse);
-    });
+        expect(advice.suitability, TaskSuitability.optimal);
+        expect(advice.cosmicReasoning, contains('OPTIMAL'));
+        expect(advice.cosmicReasoning, contains('Fruit/Warmth'));
+        expect(advice.practicalAction, contains('Prune fruit trees'));
+        expect(advice.hasWeatherConflict, isFalse);
+      },
+    );
 
     test('Ascending Moon strictly prohibits pruning due to sap bleeding', () {
       final info = createTestCalendarInfo(
@@ -70,25 +73,28 @@ void main() {
       expect(advice.cosmicReasoning, contains('bleeding'));
     });
 
-    test('Leaf/Water Day strictly prohibits pruning due to fungal rot risk', () {
-      final info = createTestCalendarInfo(
-        quality: PlantQuality.leaf, // Leaf day!
-        isDescending: true,
-        isWaxing: false,
-        isGrayDay: false,
-      );
+    test(
+      'Leaf/Water Day strictly prohibits pruning due to fungal rot risk',
+      () {
+        final info = createTestCalendarInfo(
+          quality: PlantQuality.leaf, // Leaf day!
+          isDescending: true,
+          isWaxing: false,
+          isGrayDay: false,
+        );
 
-      final advice = AgriculturalTaskEvaluator.evaluateTask(
-        task: AgriculturalTaskType.pruning,
-        calendarInfo: info,
-        time: DateTime.utc(2026, 3, 15, 14, 0),
-      );
+        final advice = AgriculturalTaskEvaluator.evaluateTask(
+          task: AgriculturalTaskType.pruning,
+          calendarInfo: info,
+          time: DateTime.utc(2026, 3, 15, 14, 0),
+        );
 
-      expect(advice.suitability, TaskSuitability.restricted);
-      expect(advice.cosmicReasoning, contains('PROHIBITED'));
-      expect(advice.cosmicReasoning, contains('Leaf/Water Day'));
-      expect(advice.terrestrialReasoning, contains('canker'));
-    });
+        expect(advice.suitability, TaskSuitability.restricted);
+        expect(advice.cosmicReasoning, contains('PROHIBITED'));
+        expect(advice.cosmicReasoning, contains('Leaf/Water Day'));
+        expect(advice.terrestrialReasoning, contains('canker'));
+      },
+    );
 
     test('Pruning on Gray Day is restricted', () {
       final info = createTestCalendarInfo(
@@ -157,52 +163,58 @@ void main() {
       expect(advice.hasWeatherConflict, isFalse);
     });
 
-    test('Afternoon deep cultivation aerates roots during Earth inhalation', () {
-      final info = createTestCalendarInfo(
-        quality: PlantQuality.root,
-        isDescending: true,
-        isWaxing: false,
-      );
+    test(
+      'Afternoon deep cultivation aerates roots during Earth inhalation',
+      () {
+        final info = createTestCalendarInfo(
+          quality: PlantQuality.root,
+          isDescending: true,
+          isWaxing: false,
+        );
 
-      final advice = AgriculturalTaskEvaluator.evaluateTask(
-        task: AgriculturalTaskType.soilCultivation,
-        calendarInfo: info,
-        time: DateTime.utc(2026, 5, 10, 15, 0), // Afternoon: 15:00
-      );
+        final advice = AgriculturalTaskEvaluator.evaluateTask(
+          task: AgriculturalTaskType.soilCultivation,
+          calendarInfo: info,
+          time: DateTime.utc(2026, 5, 10, 15, 0), // Afternoon: 15:00
+        );
 
-      expect(advice.title, contains('Afternoon Deep Cultivation'));
-      expect(advice.suitability, TaskSuitability.optimal);
-      expect(advice.cosmicReasoning, contains('Inhalation'));
-      expect(advice.practicalAction, contains('Deep root aeration'));
-      expect(advice.hasWeatherConflict, isFalse);
-    });
+        expect(advice.title, contains('Afternoon Deep Cultivation'));
+        expect(advice.suitability, TaskSuitability.optimal);
+        expect(advice.cosmicReasoning, contains('Inhalation'));
+        expect(advice.practicalAction, contains('Deep root aeration'));
+        expect(advice.hasWeatherConflict, isFalse);
+      },
+    );
 
-    test('Waterlogging (> 2.0 mm rain) restricts tillage to protect soil structure', () {
-      final info = createTestCalendarInfo(
-        quality: PlantQuality.root,
-        isDescending: true,
-      );
-      final wetWeather = WeatherDataPoint(
-        time: DateTime.utc(2026, 5, 10, 15, 0),
-        temperature: 15.0,
-        windSpeed: 2.0,
-        windDirection: 90,
-        cloudCover: 100,
-        precipitation: 4.5, // > 2.0 mm!
-      );
+    test(
+      'Waterlogging (> 2.0 mm rain) restricts tillage to protect soil structure',
+      () {
+        final info = createTestCalendarInfo(
+          quality: PlantQuality.root,
+          isDescending: true,
+        );
+        final wetWeather = WeatherDataPoint(
+          time: DateTime.utc(2026, 5, 10, 15, 0),
+          temperature: 15.0,
+          windSpeed: 2.0,
+          windDirection: 90,
+          cloudCover: 100,
+          precipitation: 4.5, // > 2.0 mm!
+        );
 
-      final advice = AgriculturalTaskEvaluator.evaluateTask(
-        task: AgriculturalTaskType.soilCultivation,
-        calendarInfo: info,
-        time: DateTime.utc(2026, 5, 10, 15, 0),
-        weather: wetWeather,
-      );
+        final advice = AgriculturalTaskEvaluator.evaluateTask(
+          task: AgriculturalTaskType.soilCultivation,
+          calendarInfo: info,
+          time: DateTime.utc(2026, 5, 10, 15, 0),
+          weather: wetWeather,
+        );
 
-      expect(advice.hasWeatherConflict, isTrue);
-      expect(advice.suitability, TaskSuitability.restricted);
-      expect(advice.terrestrialReasoning, contains('waterlogged'));
-      expect(advice.practicalAction, contains('Cease all tillage'));
-    });
+        expect(advice.hasWeatherConflict, isTrue);
+        expect(advice.suitability, TaskSuitability.restricted);
+        expect(advice.terrestrialReasoning, contains('waterlogged'));
+        expect(advice.practicalAction, contains('Cease all tillage'));
+      },
+    );
   });
 
   group('AgriculturalTaskEvaluator - Storage vs Fresh Harvest', () {
@@ -255,23 +267,26 @@ void main() {
       expect(adviceLeaf.cosmicReasoning, contains('Leaf/Water Day'));
     });
 
-    test('Waxing Moon during morning exhalation is optimal for fresh harvest', () {
-      final info = createTestCalendarInfo(
-        quality: PlantQuality.leaf,
-        isWaxing: true, // Waxing!
-      );
+    test(
+      'Waxing Moon during morning exhalation is optimal for fresh harvest',
+      () {
+        final info = createTestCalendarInfo(
+          quality: PlantQuality.leaf,
+          isWaxing: true, // Waxing!
+        );
 
-      final advice = AgriculturalTaskEvaluator.evaluateTask(
-        task: AgriculturalTaskType.harvestFresh,
-        calendarInfo: info,
-        time: DateTime.utc(2026, 6, 12, 9, 0), // 09:00 Morning!
-      );
+        final advice = AgriculturalTaskEvaluator.evaluateTask(
+          task: AgriculturalTaskType.harvestFresh,
+          calendarInfo: info,
+          time: DateTime.utc(2026, 6, 12, 9, 0), // 09:00 Morning!
+        );
 
-      expect(advice.suitability, TaskSuitability.optimal);
-      expect(advice.cosmicReasoning, contains('Waxing Moon'));
-      expect(advice.cosmicReasoning, contains('Morning Exhalation'));
-      expect(advice.terrestrialReasoning, contains('turgor'));
-    });
+        expect(advice.suitability, TaskSuitability.optimal);
+        expect(advice.cosmicReasoning, contains('Waxing Moon'));
+        expect(advice.cosmicReasoning, contains('Morning Exhalation'));
+        expect(advice.terrestrialReasoning, contains('turgor'));
+      },
+    );
   });
 
   group('AgriculturalTaskEvaluator - Timber Felling & Peppering', () {
@@ -312,9 +327,7 @@ void main() {
     });
 
     test('Weed peppering is optimal when Moon is in Leo', () {
-      final info = createTestCalendarInfo(
-        quality: PlantQuality.fruit,
-      );
+      final info = createTestCalendarInfo(quality: PlantQuality.fruit);
 
       final advice = AgriculturalTaskEvaluator.evaluateTask(
         task: AgriculturalTaskType.peppering,
@@ -330,9 +343,7 @@ void main() {
     });
 
     test('Pest peppering is optimal when Moon is in Scorpio', () {
-      final info = createTestCalendarInfo(
-        quality: PlantQuality.leaf,
-      );
+      final info = createTestCalendarInfo(quality: PlantQuality.leaf);
 
       final advice = AgriculturalTaskEvaluator.evaluateTask(
         task: AgriculturalTaskType.peppering,
@@ -372,10 +383,22 @@ void main() {
       expect(GoetheanPalette.compostDark, const Color(0xFF191715));
       expect(GoetheanPalette.topsoilWarm, const Color(0xFF221F1B));
 
-      expect(GoetheanPalette.getColor(PlantQuality.root), GoetheanPalette.rootEarth);
-      expect(GoetheanPalette.getColor(PlantQuality.leaf), GoetheanPalette.leafWater);
-      expect(GoetheanPalette.getColor(PlantQuality.flower), GoetheanPalette.flowerAir);
-      expect(GoetheanPalette.getColor(PlantQuality.fruit), GoetheanPalette.fruitWarmth);
+      expect(
+        GoetheanPalette.getColor(PlantQuality.root),
+        GoetheanPalette.rootEarth,
+      );
+      expect(
+        GoetheanPalette.getColor(PlantQuality.leaf),
+        GoetheanPalette.leafWater,
+      );
+      expect(
+        GoetheanPalette.getColor(PlantQuality.flower),
+        GoetheanPalette.flowerAir,
+      );
+      expect(
+        GoetheanPalette.getColor(PlantQuality.fruit),
+        GoetheanPalette.fruitWarmth,
+      );
     });
   });
 }

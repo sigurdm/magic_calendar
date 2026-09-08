@@ -49,7 +49,8 @@ final class _MockEphemerisService with EphemerisService {
 
 final class _MockWeatherService implements WeatherService {
   @override
-  Future<List<WeatherDataPoint>> getForecast(double lat, double lon) async => [];
+  Future<List<WeatherDataPoint>> getForecast(double lat, double lon) async =>
+      [];
 
   @override
   Future<List<WeatherDataPoint>> getHistoricalData(
@@ -83,28 +84,29 @@ void main() {
   );
 
   group('UX & UI Component Tests', () {
-    testWidgets('Responsive Header renders on narrow screen (360px) without overflow', (
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(360, 740);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
+    testWidgets(
+      'Responsive Header renders on narrow screen (360px) without overflow',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(360, 740);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
 
-      await tester.pumpWidget(
-        MyApp(
-          ephemeris: _MockEphemerisService(),
-          weather: _MockWeatherService(),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          MyApp(
+            ephemeris: _MockEphemerisService(),
+            weather: _MockWeatherService(),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Magic Calendar'), findsOneWidget);
-      expect(find.text('NOW'), findsOneWidget);
-      expect(find.byIcon(Icons.location_on), findsOneWidget);
-      expect(find.byIcon(Icons.calendar_month), findsOneWidget);
-      expect(find.byIcon(Icons.help_outline), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
+        expect(find.text('Magic Calendar'), findsOneWidget);
+        expect(find.text('NOW'), findsOneWidget);
+        expect(find.byIcon(Icons.location_on), findsOneWidget);
+        expect(find.byIcon(Icons.calendar_month), findsOneWidget);
+        expect(find.byIcon(Icons.help_outline), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
 
     testWidgets('PlantRecommendationsCard displays crops and switches tabs', (
       WidgetTester tester,
@@ -210,27 +212,28 @@ void main() {
       },
     );
 
-    testWidgets('StirringTimerDialog renders in landscape without vertical overflow', (
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(800, 360);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
+    testWidgets(
+      'StirringTimerDialog renders in landscape without vertical overflow',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(800, 360);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: Center(child: StirringTimerDialog())),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(body: Center(child: StirringTimerDialog())),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Biodynamic Stirrer'), findsOneWidget);
-      final ex = tester.takeException();
-      if (ex != null) {
-        debugPrint("CAUGHT EXCEPTION: $ex");
-      }
-      expect(ex, isNull);
-    });
+        expect(find.text('Biodynamic Stirrer'), findsOneWidget);
+        final ex = tester.takeException();
+        if (ex != null) {
+          debugPrint("CAUGHT EXCEPTION: $ex");
+        }
+        expect(ex, isNull);
+      },
+    );
 
     testWidgets(
       'ConcoctionAssistantDialog calculates metric & imperial dosages accurately',

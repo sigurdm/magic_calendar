@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../views/element_cards_gallery_page.dart';
 import '../views/help_screen.dart';
 import 'location_picker_dialog.dart';
 
@@ -150,6 +151,23 @@ final class HomeHeader extends StatelessWidget {
             ConstrainedBox(
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               child: IconButton(
+                key: const ValueKey('element_gallery_button'),
+                tooltip: 'Goethean Watercolor Elements Gallery',
+                icon: const Icon(Icons.palette_outlined, color: Colors.white),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => ElementCardsGalleryPage(
+                        onBackToApp: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              child: IconButton(
                 key: const ValueKey('help_screen_button'),
                 tooltip: 'Help',
                 icon: const Icon(Icons.help_outline, color: Colors.white),
@@ -270,11 +288,7 @@ final class HomeHeader extends StatelessWidget {
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            locationWidget,
-            titleWidget,
-            actionButtons,
-          ],
+          children: [locationWidget, titleWidget, actionButtons],
         );
       },
     );

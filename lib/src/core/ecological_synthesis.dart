@@ -10,11 +10,7 @@ enum EcologicalAlertType {
 }
 
 /// Severity of ecological alerts.
-enum EcologicalAlertSeverity {
-  info,
-  warning,
-  critical,
-}
+enum EcologicalAlertSeverity { info, warning, critical }
 
 /// An actionable ecological alert synthesizing cosmic recommendations with real-time weather.
 final class EcologicalAlert {
@@ -69,7 +65,8 @@ final class EcologicalAlert {
   );
 
   @override
-  String toString() => 'EcologicalAlert(type: $type, title: $title, severity: $severity)';
+  String toString() =>
+      'EcologicalAlert(type: $type, title: $title, severity: $severity)';
 }
 
 /// Result of synthesizing astronomical rhythms with physical weather conditions.
@@ -193,7 +190,9 @@ abstract final class EcologicalSynthesis {
     if (weather.temperature < 2.0) {
       final isNorthern = latitude >= 0;
       final month = time.month;
-      final isSpring = isNorthern ? (month >= 3 && month <= 5) : (month >= 9 && month <= 11);
+      final isSpring = isNorthern
+          ? (month >= 3 && month <= 5)
+          : (month >= 9 && month <= 11);
 
       final title = isSpring
           ? 'Spring Frost Risk (< 2°C)'

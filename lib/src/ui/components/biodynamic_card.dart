@@ -52,7 +52,8 @@ final class BiodynamicCard extends StatelessWidget {
           'Gray Day: Avoid stirring and spraying field preparations today.';
       statusColor = Colors.grey[400]!;
       statusIcon = Icons.do_not_disturb_on_outlined;
-    } else if (cppSuitability.isFavorable || (isDescending && hour >= 15 && hour <= 20)) {
+    } else if (cppSuitability.isFavorable ||
+        (isDescending && hour >= 15 && hour <= 20)) {
       currentPrepStatus =
           'Optimal Window: BD 500 Horn Manure & CPP Cow Pat Pit (Earth Inhalation / Soil Vitality)';
       statusColor = const Color(0xFF8D6E63);
@@ -80,7 +81,9 @@ final class BiodynamicCard extends StatelessWidget {
       statusIcon = Icons.eco_outlined;
     }
 
-    final burialProgress = BiodynamicPrepEvaluator.getSeasonalBurialProgress(selectedDate);
+    final burialProgress = BiodynamicPrepEvaluator.getSeasonalBurialProgress(
+      selectedDate,
+    );
 
     return Container(
       width: double.infinity,
@@ -194,31 +197,31 @@ final class BiodynamicCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (currentPrepStatus.startsWith('Optimal Window:')) ...[
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: statusColor.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: statusColor.withValues(alpha: 0.4),
-                                ),
-                              ),
-                              child: Text(
-                                'RECOMMENDED WINDOW',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.5,
-                                  color: statusColor,
-                                ),
+                        FittedBox(
+                          alignment: Alignment.centerLeft,
+                          fit: BoxFit.scaleDown,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: statusColor.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: statusColor.withValues(alpha: 0.4),
                               ),
                             ),
-                          ],
+                            child: Text(
+                              'RECOMMENDED WINDOW',
+                              style: GoogleFonts.outfit(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                                color: statusColor,
+                              ),
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 6),
                       ],
@@ -248,8 +251,9 @@ final class BiodynamicCard extends StatelessWidget {
                 constraints: const BoxConstraints(minHeight: 48),
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF646CFF)
-                        .withValues(alpha: 0.3),
+                    backgroundColor: const Color(
+                      0xFF646CFF,
+                    ).withValues(alpha: 0.3),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -279,8 +283,9 @@ final class BiodynamicCard extends StatelessWidget {
                 constraints: const BoxConstraints(minHeight: 48),
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8D6E63)
-                        .withValues(alpha: 0.3),
+                    backgroundColor: const Color(
+                      0xFF8D6E63,
+                    ).withValues(alpha: 0.3),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -313,8 +318,9 @@ final class BiodynamicCard extends StatelessWidget {
                 constraints: const BoxConstraints(minHeight: 48),
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981)
-                        .withValues(alpha: 0.25),
+                    backgroundColor: const Color(
+                      0xFF10B981,
+                    ).withValues(alpha: 0.25),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -364,16 +370,18 @@ final class BiodynamicCard extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: (burialProgress.isUndergroundBurial
-                                ? const Color(0xFF8D6E63)
-                                : const Color(0xFF10B981))
-                            .withValues(alpha: 0.2),
+                        color:
+                            (burialProgress.isUndergroundBurial
+                                    ? const Color(0xFF8D6E63)
+                                    : const Color(0xFF10B981))
+                                .withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: (burialProgress.isUndergroundBurial
-                                  ? const Color(0xFF8D6E63)
-                                  : const Color(0xFF10B981))
-                              .withValues(alpha: 0.4),
+                          color:
+                              (burialProgress.isUndergroundBurial
+                                      ? const Color(0xFF8D6E63)
+                                      : const Color(0xFF10B981))
+                                  .withValues(alpha: 0.4),
                         ),
                       ),
                       child: Text(
@@ -477,10 +485,7 @@ final class BiodynamicCard extends StatelessWidget {
       ),
       child: Text(
         '$name: $organ',
-        style: GoogleFonts.outfit(
-          fontSize: 10.5,
-          color: Colors.white70,
-        ),
+        style: GoogleFonts.outfit(fontSize: 10.5, color: Colors.white70),
       ),
     );
   }

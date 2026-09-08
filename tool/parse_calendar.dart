@@ -80,10 +80,9 @@ void main() {
 
     final startUtc =
         'DateTime.utc(2026, $currentMonth, $day, $startHour, $startMin)';
-    final endUtc =
-        endHour == 24
-            ? 'DateTime.utc(2026, $currentMonth, $day).add(const Duration(days: 1))'
-            : 'DateTime.utc(2026, $currentMonth, $day, $endHour, $endMin)';
+    final endUtc = endHour == 24
+        ? 'DateTime.utc(2026, $currentMonth, $day).add(const Duration(days: 1))'
+        : 'DateTime.utc(2026, $currentMonth, $day, $endHour, $endMin)';
 
     // Determine quality and isGrayDay
     String quality;

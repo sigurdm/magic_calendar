@@ -108,46 +108,69 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12.0,
-                  vertical: 8.0,
-                ),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minWidth: constraints.maxWidth,
-                    maxWidth: constraints.maxWidth,
+              final isMobile = constraints.maxWidth < 600;
+              final horizontalPadding = isMobile ? 8.0 : 16.0;
+              final sectionSpacing = isMobile ? 14.0 : 20.0;
+
+              return CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        horizontalPadding,
+                        8.0,
+                        horizontalPadding,
+                        sectionSpacing,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          HomeHeader(
+                            latNotifier: _latNotifier,
+                            lonNotifier: _lonNotifier,
+                            selectedDateNotifier: _selectedDateNotifier,
+                            onNowPressed: () {
+                              _timeScrollController.scrollToNow();
+                            },
+                            onDateSelected: _onTimeSelected,
+                          ),
+                          SizedBox(height: sectionSpacing),
+                          ValueListenableBuilder<CalendarInfo?>(
+                            valueListenable: _infoNotifier,
+                            builder: (context, info, _) {
+                              if (info == null) {
+                                return const SizedBox(height: 140);
+                              }
+                              return ValueListenableBuilder<DateTime>(
+                                valueListenable: _selectedDateNotifier,
+                                builder: (context, selectedTime, _) {
+                                  return PlantQualityCard(
+                                    info: info,
+                                    selectedTime: selectedTime,
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      HomeHeader(
-                        latNotifier: _latNotifier,
-                        lonNotifier: _lonNotifier,
-                        selectedDateNotifier: _selectedDateNotifier,
-                        onNowPressed: () {
-                          _timeScrollController.scrollToNow();
-                        },
-                        onDateSelected: _onTimeSelected,
-                      ),
-                      const SizedBox(height: 20),
-                      ValueListenableBuilder<CalendarInfo?>(
-                        valueListenable: _infoNotifier,
-                        builder: (context, info, _) {
-                          if (info == null) {
-                            return const SizedBox(height: 140);
-                          }
-                          return PlantQualityCard(info: info);
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      ListenableBuilder(
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _StickyTimelineDelegate(
+                      height: 200.0,
+                      horizontalPadding: horizontalPadding,
+                      child: ListenableBuilder(
                         listenable: Listenable.merge([
                           _latNotifier,
                           _lonNotifier,
                         ]),
                         builder: (context, _) {
                           return TimeScrollView(
+                            key: const PageStorageKey(
+                              'sticky_time_scroll_view',
+                            ),
                             ephemeris: widget.ephemeris,
                             weatherService: _weatherService,
                             controller: _timeScrollController,
@@ -160,64 +183,151 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                           );
                         },
                       ),
-                      const SizedBox(height: 20),
-                      PlanetaryRibbon(
-                        timeNotifier: _selectedDateNotifier,
-                        ephemeris: widget.ephemeris,
-                      ),
-                      const SizedBox(height: 20),
-                      ValueListenableBuilder<CalendarInfo?>(
-                        valueListenable: _infoNotifier,
-                        builder: (context, info, _) {
-                          if (info == null) {
-                            return const SizedBox();
-                          }
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CelestialDetailsCard(
-                                selectedDateNotifier: _selectedDateNotifier,
-                                weatherNotifier: _weatherNotifier,
-                                ephemeris: widget.ephemeris,
-                              ),
-                              const SizedBox(height: 20),
-                              ValueListenableBuilder<DateTime>(
-                                valueListenable: _selectedDateNotifier,
-                                builder: (context, date, _) {
-                                  return Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      BiodynamicCard(
-                                        info: info,
-                                        selectedDate: date,
-                                        onTimeJump: _onTimeSelected,
-                                      ),
-                                      const SizedBox(height: 20),
-                                      PlantRecommendationsCard(
-                                        info: info,
-                                        selectedDate: date,
-                                        weatherNotifier: _weatherNotifier,
-                                        ephemeris: widget.ephemeris,
-                                        latitude: _latNotifier.value,
-                                      ),
-                                    ],
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 24),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        horizontalPadding,
+                        sectionSpacing,
+                        horizontalPadding,
+                        24.0,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          PlanetaryRibbon(
+                            timeNotifier: _selectedDateNotifier,
+                            ephemeris: widget.ephemeris,
+                          ),
+                          SizedBox(height: sectionSpacing),
+                          ValueListenableBuilder<CalendarInfo?>(
+                            valueListenable: _infoNotifier,
+                            builder: (context, info, _) {
+                              if (info == null) {
+                                return const SizedBox();
+                              }
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  CelestialDetailsCard(
+                                    selectedDateNotifier: _selectedDateNotifier,
+                                    weatherNotifier: _weatherNotifier,
+                                    ephemeris: widget.ephemeris,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  ValueListenableBuilder<DateTime>(
+                                    valueListenable: _selectedDateNotifier,
+                                    builder: (context, date, _) {
+                                      return Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          PlantRecommendationsCard(
+                                            info: info,
+                                            selectedDate: date,
+                                            weatherNotifier: _weatherNotifier,
+                                            ephemeris: widget.ephemeris,
+                                            latitude: _latNotifier.value,
+                                          ),
+                                          const SizedBox(height: 20),
+                                          BiodynamicCard(
+                                            info: info,
+                                            selectedDate: date,
+                                            onTimeJump: _onTimeSelected,
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: 24),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               );
             },
           ),
         ),
       ),
     );
+  }
+}
+
+/// Delegate that pins the [TimeScrollView] timeline to the top of the viewport when scrolling down.
+final class _StickyTimelineDelegate extends SliverPersistentHeaderDelegate {
+  /// Height of the timeline header.
+  final double height;
+
+  /// Horizontal padding matching the page margins.
+  final double horizontalPadding;
+
+  /// The timeline content.
+  final Widget child;
+
+  /// Creates a [_StickyTimelineDelegate].
+  ///
+  /// Preconditions:
+  /// * [height] must be non-negative. It is an error if [height] is negative.
+  /// * [horizontalPadding] must be non-negative. It is an error if [horizontalPadding] is negative.
+  _StickyTimelineDelegate({
+    required this.height,
+    required this.horizontalPadding,
+    required this.child,
+  }) : assert(height >= 0),
+       assert(horizontalPadding >= 0);
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final isPinned = overlapsContent || shrinkOffset > 0;
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: const Color(0xFF181826),
+        border: Border(
+          bottom: BorderSide(
+            color: isPinned
+                ? Colors.white.withValues(alpha: 0.12)
+                : Colors.transparent,
+            width: 1.0,
+          ),
+        ),
+        boxShadow: isPinned
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+        child: child,
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _StickyTimelineDelegate oldDelegate) {
+    return oldDelegate.height != height ||
+        oldDelegate.horizontalPadding != horizontalPadding ||
+        oldDelegate.child != child;
   }
 }

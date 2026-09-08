@@ -255,9 +255,13 @@ abstract final class BiodynamicPrepEvaluator {
         }
 
         if (hour >= 15 && hour <= 20) {
-          positive.add('Late Afternoon / Evening window (15:00–20:00, Sun setting)');
+          positive.add(
+            'Late Afternoon / Evening window (15:00–20:00, Sun setting)',
+          );
         } else {
-          negative.add('Best applied in late afternoon or early evening (15:00–20:00)');
+          negative.add(
+            'Best applied in late afternoon or early evening (15:00–20:00)',
+          );
         }
 
         if (windSpeed != null) {
@@ -299,7 +303,9 @@ abstract final class BiodynamicPrepEvaluator {
         if (hour >= 5 && hour <= 9) {
           positive.add('Early Morning / Sunrise window (05:00–09:00)');
         } else {
-          negative.add('Best applied at sunrise or early morning fine mist (05:00–09:00)');
+          negative.add(
+            'Best applied at sunrise or early morning fine mist (05:00–09:00)',
+          );
         }
 
         if (cloudCover != null) {
@@ -404,9 +410,13 @@ abstract final class BiodynamicPrepEvaluator {
         }
 
         if (hour >= 15 && hour <= 20) {
-          positive.add('Late Afternoon / Evening window (15:00–20:00, Earth Inhalation)');
+          positive.add(
+            'Late Afternoon / Evening window (15:00–20:00, Earth Inhalation)',
+          );
         } else {
-          negative.add('Best applied in late afternoon or early evening during Earth Inhalation (15:00–20:00)');
+          negative.add(
+            'Best applied in late afternoon or early evening during Earth Inhalation (15:00–20:00)',
+          );
         }
 
         if (temperature != null) {
@@ -424,7 +434,9 @@ abstract final class BiodynamicPrepEvaluator {
 
         if (windSpeed != null) {
           if (windSpeed <= 5.0) {
-            positive.add('Calm wind (<= 5 m/s: ${windSpeed.toStringAsFixed(1)} m/s)');
+            positive.add(
+              'Calm wind (<= 5 m/s: ${windSpeed.toStringAsFixed(1)} m/s)',
+            );
           } else {
             negative.add(
               'Wind speed too high for soil spray (> 5 m/s: ${windSpeed.toStringAsFixed(1)} m/s)',
@@ -495,7 +507,8 @@ abstract final class BiodynamicPrepEvaluator {
         } else if (month >= 12 || month <= 2) {
           return BurialStageInfo(
             stage: 'Underground Fermentation (Winter)',
-            description: 'Horns absorb earth forces and cosmic magnetism during cold months.',
+            description:
+                'Horns absorb earth forces and cosmic magnetism during cold months.',
             recommendedAction: 'Allow horns to rest undisturbed in soil.',
             isActiveWindow: false,
             sheathOrgan: prep.sheathOrgan,
@@ -503,15 +516,18 @@ abstract final class BiodynamicPrepEvaluator {
         } else if (month >= 3 && month <= 5) {
           return BurialStageInfo(
             stage: 'Retrieval Window (Spring)',
-            description: 'Unearth horns. Manure should be transformed into dark, sweet-smelling humus.',
-            recommendedAction: 'Retrieve BD 500 horns and store in wooden boxes surrounded by peat/coir.',
+            description:
+                'Unearth horns. Manure should be transformed into dark, sweet-smelling humus.',
+            recommendedAction:
+                'Retrieve BD 500 horns and store in wooden boxes surrounded by peat/coir.',
             isActiveWindow: true,
             sheathOrgan: prep.sheathOrgan,
           );
         } else {
           return BurialStageInfo(
             stage: 'Storage / Usage Season (Summer)',
-            description: 'Prep stored in dark container ready for spring/autumn soil applications.',
+            description:
+                'Prep stored in dark container ready for spring/autumn soil applications.',
             recommendedAction: 'Keep moist in cool storage.',
             isActiveWindow: false,
             sheathOrgan: prep.sheathOrgan,
@@ -532,7 +548,8 @@ abstract final class BiodynamicPrepEvaluator {
         } else if (month >= 6 && month <= 8) {
           return BurialStageInfo(
             stage: 'Summer Sun Absorption',
-            description: 'Quartz captures intense solar light and summer astral impulses.',
+            description:
+                'Quartz captures intense solar light and summer astral impulses.',
             recommendedAction: 'Maintain clean, unshaded burial plot.',
             isActiveWindow: false,
             sheathOrgan: prep.sheathOrgan,
@@ -549,7 +566,8 @@ abstract final class BiodynamicPrepEvaluator {
         } else {
           return BurialStageInfo(
             stage: 'Storage / Solar Exposure (Winter)',
-            description: 'Stored in clear glass in window sill receiving direct sunlight.',
+            description:
+                'Stored in clear glass in window sill receiving direct sunlight.',
             recommendedAction: 'Ready for early morning spring spray.',
             isActiveWindow: false,
             sheathOrgan: prep.sheathOrgan,
@@ -749,8 +767,7 @@ abstract final class BiodynamicPrepEvaluator {
             stage: 'Subterranean Winter Ripening (Winter)',
             description:
                 'Dandelion mesentery gathers planetary forces and silica affinity during winter ($hemisphereText).',
-            recommendedAction:
-                'Rest undisturbed in cold earth.',
+            recommendedAction: 'Rest undisturbed in cold earth.',
             isActiveWindow: false,
             sheathOrgan: organ506,
           );

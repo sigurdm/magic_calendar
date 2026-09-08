@@ -65,8 +65,8 @@ final class TransitionEnvelope {
       if (delta.abs() <= thresholdDegrees) {
         final fromQuality = elementToQuality(prevBoundary.element);
         final toQuality = elementToQuality(nextBoundary.element);
-        final progress =
-            ((delta + thresholdDegrees) / (2.0 * thresholdDegrees)).clamp(0.0, 1.0);
+        final progress = ((delta + thresholdDegrees) / (2.0 * thresholdDegrees))
+            .clamp(0.0, 1.0);
         final percent = (progress * 100).round();
         final description =
             "Cusp transition from ${qualityLabel(fromQuality)} to ${qualityLabel(toQuality)} ($percent% complete)";
@@ -83,7 +83,10 @@ final class TransitionEnvelope {
     }
 
     // Outside any transition envelope: determine current stable quality
-    final currentQuality = _getQualityFromLongitudeInternal(normLon, boundaries);
+    final currentQuality = _getQualityFromLongitudeInternal(
+      normLon,
+      boundaries,
+    );
     return TransitionEnvelope(
       isTransition: false,
       fromQuality: currentQuality,

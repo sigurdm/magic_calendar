@@ -7,9 +7,11 @@ import 'package:sweph/sweph.dart';
 import 'src/services/ephemeris_service.dart';
 import 'src/services/weather_service.dart';
 import 'src/ui/views/calendar_home_page.dart';
+import 'src/ui/views/element_cards_gallery_page.dart';
 
 export 'src/ui/components/moon_phase_widget.dart';
 export 'src/ui/views/calendar_home_page.dart';
+export 'src/ui/views/element_cards_gallery_page.dart';
 
 void main() async {
   enableFlutterDriverExtension();
@@ -38,16 +40,43 @@ final class MyApp extends StatelessWidget {
   final EphemerisService ephemeris;
   final WeatherService weather;
 
+  /// Rapid preview flag: when true, renders all 4 Goethean watercolor element
+  /// cards simultaneously in a 2x2 grid.
+  static const bool showGallery = false;
+
+  /// Mobile preview flag: when true, renders the screen inside a 390x844 mobile viewport.
+  static const bool previewMobile = false;
+
   const MyApp({super.key, required this.ephemeris, required this.weather});
 
   @override
   Widget build(BuildContext context) {
+    final Widget page = showGallery
+        ? const ElementCardsGalleryPage()
+        : CalendarHomePage(ephemeris: ephemeris, weather: weather);
+
     return MaterialApp(
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF121212),
         textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
       ),
-      home: CalendarHomePage(ephemeris: ephemeris, weather: weather),
+      home: previewMobile
+          ? Scaffold(
+              backgroundColor: const Color(0xFF0A0A0E),
+              body: Center(
+                child: Container(
+                  width: 390,
+                  height: 844,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.white24, width: 1.5),
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: page,
+                ),
+              ),
+            )
+          : page,
     );
   }
 }

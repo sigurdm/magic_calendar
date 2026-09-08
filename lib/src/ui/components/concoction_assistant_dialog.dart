@@ -2,6 +2,7 @@ import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:google_fonts/google_fonts.dart";
+
 import "../theme/biodynamic_icons.dart";
 
 /// Unit system for dosage calculations.
@@ -69,7 +70,8 @@ final class ConcoctionCatalog {
       id: "bd508_horsetail",
       titleDa: "BD 508 Agerpadderok (Equisetum)",
       titleEn: "BD 508 Horsetail Decoction",
-      purpose: "Natural organic fungicide against mildew, potato blight, rust, and damping-off.",
+      purpose:
+          "Natural organic fungicide against mildew, potato blight, rust, and damping-off.",
       cosmicTiming:
           "Apply on sunny mornings during Full Moon or Moon opposite Saturn.",
       herbGramsPer100Sqm: 20.0, // 20g dried per 100 sqm (or 100g per 500 sqm)
@@ -89,7 +91,8 @@ final class ConcoctionCatalog {
       titleEn: "BD 500 Horn Manure",
       purpose:
           "Root depth stimulation, soil humus buildup, and microbial vitality.",
-      cosmicTiming: "Apply late afternoon / sunset during Descending Moon (Earth Inhalation).",
+      cosmicTiming:
+          "Apply late afternoon / sunset during Descending Moon (Earth Inhalation).",
       herbGramsPer100Sqm: 5.0, // ~50-60g per hectare, ~5g per 100 sqm garden
       waterLitersPer100Sqm: 3.5,
       dilutionRatio: 1, // Ready to spray directly after 1 hour stirring
@@ -121,7 +124,8 @@ final class ConcoctionCatalog {
       id: "bd501_horn_silica",
       titleDa: "BD 501 Hornkisel (Kvartsmel)",
       titleEn: "BD 501 Horn Silica",
-      purpose: "Enhances photosynthesis, fruit aroma, sugar content, and fungal resistance.",
+      purpose:
+          "Enhances photosynthesis, fruit aroma, sugar content, and fungal resistance.",
       cosmicTiming:
           "Apply at sunrise on Ascending Moon during Flower or Fruit days.",
       herbGramsPer100Sqm: 0.1, // ~1-2g per hectare, tiny pinch per 100 sqm
@@ -137,7 +141,8 @@ final class ConcoctionCatalog {
       id: "nettle_ferment",
       titleDa: "Brændenælegødning (Urtica)",
       titleEn: "Fermented Stinging Nettle Tea",
-      purpose: "Rich nitrogen & iron liquid fertilizer; activates leaf chlorophyll and strengthens immunity.",
+      purpose:
+          "Rich nitrogen & iron liquid fertilizer; activates leaf chlorophyll and strengthens immunity.",
       cosmicTiming:
           "Water on Leaf days (Water element) in the morning or early evening.",
       herbGramsPer100Sqm: 100.0, // Fresh nettles
@@ -155,7 +160,8 @@ final class ConcoctionCatalog {
       titleDa: "BD 507 Baldrian Varme-spray",
       titleEn: "BD 507 Valerian Warmth Spray",
       purpose: "Frost protection envelope and blossom setting impulse.",
-      cosmicTiming: "Apply in the evening before forecasted late spring frost or cold snaps.",
+      cosmicTiming:
+          "Apply in the evening before forecasted late spring frost or cold snaps.",
       herbGramsPer100Sqm: 0.05, // 5-10 drops
       waterLitersPer100Sqm: 2.5,
       dilutionRatio: 1,
@@ -285,8 +291,9 @@ final class _ConcoctionAssistantDialogState
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF10B981)
-                                  .withValues(alpha: 0.2),
+                              color: const Color(
+                                0xFF10B981,
+                              ).withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const BiodynamicIcon(
@@ -362,8 +369,9 @@ final class _ConcoctionAssistantDialogState
                                     alignment: Alignment.center,
                                     decoration: BoxDecoration(
                                       color: isSelected
-                                          ? const Color(0xFF10B981)
-                                                .withValues(alpha: 0.3)
+                                          ? const Color(
+                                              0xFF10B981,
+                                            ).withValues(alpha: 0.3)
                                           : Colors.white.withValues(
                                               alpha: 0.05,
                                             ),
@@ -617,8 +625,9 @@ final class _ConcoctionAssistantDialogState
                     height: 48,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981)
-                            .withValues(alpha: 0.3),
+                        backgroundColor: const Color(
+                          0xFF10B981,
+                        ).withValues(alpha: 0.3),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

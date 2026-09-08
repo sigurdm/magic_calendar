@@ -182,9 +182,7 @@ CalendarInfo getCalendarInfo(
   }
 
   final dec1 = ephemeris.getMoonDeclination(time);
-  final dec2 = ephemeris.getMoonDeclination(
-    time.add(const Duration(hours: 1)),
-  );
+  final dec2 = ephemeris.getMoonDeclination(time.add(const Duration(hours: 1)));
   final isAscending = dec2 > dec1;
   final declinationPart = isAscending
       ? 'Ascending: Sap rises.'
@@ -205,8 +203,7 @@ CalendarInfo getCalendarInfo(
           'Evening Inhalation: Earth breathes in, optimal for seed sowing & soil spray.';
       break;
     case DiurnalPhase.nightRest:
-      diurnalPart =
-          'Night Rest: Subterranean consolidation and plant rest.';
+      diurnalPart = 'Night Rest: Subterranean consolidation and plant rest.';
       break;
   }
   final sapFlow = '$declinationPart $diurnalPart';

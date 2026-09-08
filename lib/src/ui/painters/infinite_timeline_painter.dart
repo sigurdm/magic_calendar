@@ -56,111 +56,141 @@ final class InfiniteTimelinePainter extends CustomPainter {
       Duration(hours: (visibleHours / 2).ceil() + 24),
     );
 
+    // Exact pixel-to-time mapping for canvas edges:
+    // x = 0 corresponds to centerTime - (centerX / hourWidth) hours.
+    // x = size.width corresponds to centerTime + ((size.width - centerX) / hourWidth) hours.
+    final startSeconds = (centerX / hourWidth) * 3600.0;
+    final endSeconds = ((size.width - centerX) / hourWidth) * 3600.0;
     final canvasStartTime = centerTime.subtract(
-      Duration(hours: (visibleHours / 2).ceil()),
+      Duration(microseconds: (startSeconds * 1000000).round()),
     );
     final canvasEndTime = centerTime.add(
-      Duration(hours: (visibleHours / 2).ceil()),
+      Duration(microseconds: (endSeconds * 1000000).round()),
     );
-    final totalDuration = canvasEndTime
-        .difference(canvasStartTime)
-        .inSeconds
-        .toDouble();
 
-    final int sampleCount = math.max(100, (totalDuration / 1800).clamp(100, 360).toInt());
-    final List<Color> finalColors = [];
-    final List<double> finalStops = [];
+    // Zoom-adaptive Level of Detail (LOD) factor [0.0 = extreme zoom out, 1.0 = zoomed in]
+    final lodFactor = ((hourWidth - 1.5) / 6.5).clamp(0.0, 1.0);
 
-    final latRad = latitude * math.pi / 180.0;
-    final sinLat = math.sin(latRad);
-    final cosLat = math.cos(latRad);
+    // Strip layout: 12px-18px height, positioned between quality ribbon (y=5..25) and ticks (y=49+)
+    final stripHeight = ui.lerpDouble(12.0, 18.0, lodFactor)!;
+    final stripY = 37.0 - (stripHeight / 2.0);
+    final stripRRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, stripY, size.width, stripHeight),
+      const Radius.circular(3),
+    );
 
-    for (int i = 0; i <= sampleCount; i++) {
-      final t = i / sampleCount;
-      final time = canvasStartTime.add(
-        Duration(seconds: (totalDuration * t).toInt()),
-      );
+    // 1. Base nocturnal track
+    final nightPaint = Paint()
+      ..color = const Color(0xFF13131D)
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(stripRRect, nightPaint);
 
-      final utc = time.toUtc();
-      final dayOfYear = utc.difference(DateTime.utc(utc.year, 1, 1)).inDays + 1;
-      final decRad =
-          -23.44 *
-          math.cos((360.0 / 365.0) * (dayOfYear + 10) * math.pi / 180.0) *
-          math.pi /
-          180.0;
-      final sinDec = math.sin(decRad);
-      final cosDec = math.cos(decRad);
+    // 2. Daytime solar capsules and sunrise/sunset celestial markers
+    final iconAlpha = hourWidth >= 3.5
+        ? ((hourWidth - 3.5) / 4.0).clamp(0.0, 1.0)
+        : 0.0;
+    final iconY = stripY + (stripHeight - 11.0) / 2.0;
 
-      final h =
-          (utc.hour +
-              utc.minute / 60.0 +
-              utc.second / 3600.0 -
-              12.0 +
-              longitude / 15.0) *
-          15.0;
-      final hRad = h * math.pi / 180.0;
+    final rangeStartDate = DateTime(
+      canvasStartTime.year,
+      canvasStartTime.month,
+      canvasStartTime.day,
+    ).subtract(const Duration(days: 1));
+    final rangeEndDate = DateTime(
+      canvasEndTime.year,
+      canvasEndTime.month,
+      canvasEndTime.day,
+    ).add(const Duration(days: 1));
 
-      final sinAlt = (sinLat * sinDec + cosLat * cosDec * math.cos(hRad)).clamp(-1.0, 1.0);
-      final altRad = math.asin(sinAlt);
-      final alt = altRad * 180.0 / math.pi;
+    // Clip solar capsules cleanly to the ribbon rounded bounds
+    canvas.save();
+    canvas.clipRRect(stripRRect);
 
-      Color c;
-      if (alt > 0) {
-        final factor = (alt / 40.0).clamp(0.0, 1.0);
-        c = Color.lerp(
-          const Color(0xFFFFB74D),
-          const Color(0xFFFFFDE7),
-          factor,
-        )!;
-      } else if (alt > -6) {
-        final factor = ((alt + 6) / 6.0).clamp(0.0, 1.0);
-        c = Color.lerp(
-          const Color(0xFF121212),
-          const Color(0xFFFFB74D),
-          factor,
-        )!;
-      } else {
-        c = const Color(0xFF121212);
-      }
-
-      finalColors.add(c);
-      finalStops.add(t);
-    }
-
-    final paint = Paint()
-      ..shader = ui.Gradient.linear(
-        Offset(0, 0),
-        Offset(size.width, 0),
-        finalColors,
-        finalStops,
-      );
-    canvas.drawRect(Rect.fromLTWH(0, 27, size.width, 20), paint);
+    final dayAlpha = ui.lerpDouble(0.75, 0.95, lodFactor)!;
+    const dawnGold = Color(0xFFE5A93C); // Warm amber dawn/dusk
+    const peakSun = Color(0xFFFFF176); // Radiant sunlight gold
 
     for (
-      var d = DateTime(
-        canvasStartTime.year,
-        canvasStartTime.month,
-        canvasStartTime.day,
-      );
-      d.isBefore(canvasEndTime.add(const Duration(days: 1)));
+      var d = rangeStartDate;
+      d.isBefore(rangeEndDate);
       d = DateTime(d.year, d.month, d.day + 1)
     ) {
       final ss = ephemeris.getSunriseSunset(d, latitude, longitude);
 
-      if (ss.sunrise != null) {
-        final x =
+      if (ss.sunrise != null && ss.sunset != null) {
+        final xRise =
             centerX +
             (ss.sunrise!.difference(centerTime).inSeconds / 3600.0 * hourWidth);
-        if (x >= 0 && x <= size.width) {
-          _drawIcon(canvas, x, '☀️', 10, 37);
-        }
-      }
-      if (ss.sunset != null) {
-        final x =
+        final xSet =
             centerX +
             (ss.sunset!.difference(centerTime).inSeconds / 3600.0 * hourWidth);
-        if (x >= 0 && x <= size.width) {
-          _drawIcon(canvas, x, '🌙', 10, 37);
+        final xNoon =
+            centerX +
+            (ss.noon.difference(centerTime).inSeconds / 3600.0 * hourWidth);
+
+        // 30-minute twilight transition envelope before sunrise and after sunset
+        final twilightPx = 0.5 * hourWidth;
+        final startX = xRise - twilightPx;
+        final endX = xSet + twilightPx;
+
+        // Skip if outside canvas
+        if (endX >= 0 && startX <= size.width) {
+          final dayWidth = endX - startX;
+          if (dayWidth > 0) {
+            final tRise = ((xRise - startX) / dayWidth).clamp(0.0, 1.0);
+            final tNoon = ((xNoon - startX) / dayWidth).clamp(0.0, 1.0);
+            final tSet = ((xSet - startX) / dayWidth).clamp(0.0, 1.0);
+
+            final dayShader = ui.Gradient.linear(
+              Offset(startX, 0),
+              Offset(endX, 0),
+              [
+                const Color(0xFF13131D),
+                dawnGold.withValues(alpha: dayAlpha),
+                peakSun.withValues(alpha: dayAlpha),
+                dawnGold.withValues(alpha: dayAlpha),
+                const Color(0xFF13131D),
+              ],
+              [0.0, tRise, tNoon, tSet, 1.0],
+            );
+
+            canvas.drawRect(
+              Rect.fromLTRB(startX, stripY, endX, stripY + stripHeight),
+              Paint()..shader = dayShader,
+            );
+          }
+        }
+      }
+    }
+    canvas.restore();
+
+    // 3. Draw sun/moon icons smoothly fading in from hourWidth >= 3.5
+    if (iconAlpha > 0) {
+      for (
+        var d = rangeStartDate;
+        d.isBefore(rangeEndDate);
+        d = DateTime(d.year, d.month, d.day + 1)
+      ) {
+        final ss = ephemeris.getSunriseSunset(d, latitude, longitude);
+        if (ss.sunrise != null) {
+          final x =
+              centerX +
+              (ss.sunrise!.difference(centerTime).inSeconds /
+                  3600.0 *
+                  hourWidth);
+          if (x >= 0 && x <= size.width) {
+            _drawIcon(canvas, x, '☀️', 10, iconY, iconAlpha);
+          }
+        }
+        if (ss.sunset != null) {
+          final x =
+              centerX +
+              (ss.sunset!.difference(centerTime).inSeconds /
+                  3600.0 *
+                  hourWidth);
+          if (x >= 0 && x <= size.width) {
+            _drawIcon(canvas, x, '🌙', 10, iconY, iconAlpha);
+          }
         }
       }
     }
@@ -283,13 +313,7 @@ final class InfiniteTimelinePainter extends CustomPainter {
       }
     }
 
-    _paintIntervalsWithTransitions(
-      canvas,
-      size,
-      startTime,
-      endTime,
-      centerX,
-    );
+    _paintIntervalsWithTransitions(canvas, size, startTime, endTime, centerX);
 
     final tempRowY = 65.0;
     final tempRowHeight = 50.0;
@@ -467,13 +491,19 @@ final class InfiniteTimelinePainter extends CustomPainter {
     String icon,
     double fontSize, [
     double? y,
+    double opacity = 1.0,
   ]) {
     final tp = TextPainter(
       text: TextSpan(
         text: icon,
         style: TextStyle(
           fontSize: fontSize,
-          fontFamilyFallback: const ['Symbola', 'DejaVu Sans', 'Noto Color Emoji'],
+          color: Colors.white.withValues(alpha: opacity),
+          fontFamilyFallback: const [
+            'Symbola',
+            'DejaVu Sans',
+            'Noto Color Emoji',
+          ],
         ),
       ),
       textDirection: ui.TextDirection.ltr,
@@ -546,7 +576,9 @@ final class InfiniteTimelinePainter extends CustomPainter {
       if (interval.isGrayDay) {
         colors[i] = Colors.grey[400]!.withValues(alpha: 0.8);
       } else if (interval.quality != PlantQuality.none) {
-        colors[i] = _getColorForQuality(interval.quality).withValues(alpha: 0.8);
+        colors[i] = _getColorForQuality(
+          interval.quality,
+        ).withValues(alpha: 0.8);
       } else {
         colors[i] = Colors.transparent;
       }
@@ -600,10 +632,20 @@ final class InfiniteTimelinePainter extends CustomPainter {
           ..color = color
           ..style = PaintingStyle.fill;
 
-        final hasLeftNeighbor = i > 0 &&
-            (visibleIntervals[i].start.difference(visibleIntervals[i - 1].end).inSeconds).abs() <= 120;
-        final hasRightNeighbor = i < count - 1 &&
-            (visibleIntervals[i + 1].start.difference(visibleIntervals[i].end).inSeconds).abs() <= 120;
+        final hasLeftNeighbor =
+            i > 0 &&
+            (visibleIntervals[i].start
+                        .difference(visibleIntervals[i - 1].end)
+                        .inSeconds)
+                    .abs() <=
+                120;
+        final hasRightNeighbor =
+            i < count - 1 &&
+            (visibleIntervals[i + 1].start
+                        .difference(visibleIntervals[i].end)
+                        .inSeconds)
+                    .abs() <=
+                120;
 
         final isLeftIsolated = !hasLeftNeighbor && leftOffsets[i] == 0.0;
         final isRightIsolated = !hasRightNeighbor && rightOffsets[i] == 0.0;
@@ -613,9 +655,15 @@ final class InfiniteTimelinePainter extends CustomPainter {
             RRect.fromRectAndCorners(
               rect,
               topLeft: isLeftIsolated ? const Radius.circular(3) : Radius.zero,
-              bottomLeft: isLeftIsolated ? const Radius.circular(3) : Radius.zero,
-              topRight: isRightIsolated ? const Radius.circular(3) : Radius.zero,
-              bottomRight: isRightIsolated ? const Radius.circular(3) : Radius.zero,
+              bottomLeft: isLeftIsolated
+                  ? const Radius.circular(3)
+                  : Radius.zero,
+              topRight: isRightIsolated
+                  ? const Radius.circular(3)
+                  : Radius.zero,
+              bottomRight: isRightIsolated
+                  ? const Radius.circular(3)
+                  : Radius.zero,
             ),
             paint,
           );
@@ -653,8 +701,13 @@ final class InfiniteTimelinePainter extends CustomPainter {
     for (int i = 0; i < count; i++) {
       final interval = visibleIntervals[i];
       if (interval.isGrayDay) {
-        final hasLeftTransitionNeighbor = i > 0 &&
-            (visibleIntervals[i].start.difference(visibleIntervals[i - 1].end).inSeconds).abs() <= 120 &&
+        final hasLeftTransitionNeighbor =
+            i > 0 &&
+            (visibleIntervals[i].start
+                        .difference(visibleIntervals[i - 1].end)
+                        .inSeconds)
+                    .abs() <=
+                120 &&
             rightOffsets[i - 1] > 0.0;
         if (!hasLeftTransitionNeighbor && leftOffsets[i] > 0.0) {
           final rect = Rect.fromLTWH(xStarts[i], 5, leftOffsets[i], 20);
@@ -668,8 +721,13 @@ final class InfiniteTimelinePainter extends CustomPainter {
           canvas.drawRect(rect, paint);
         }
 
-        final hasRightTransitionNeighbor = i < count - 1 &&
-            (visibleIntervals[i + 1].start.difference(visibleIntervals[i].end).inSeconds).abs() <= 120 &&
+        final hasRightTransitionNeighbor =
+            i < count - 1 &&
+            (visibleIntervals[i + 1].start
+                        .difference(visibleIntervals[i].end)
+                        .inSeconds)
+                    .abs() <=
+                120 &&
             leftOffsets[i + 1] > 0.0;
         if (!hasRightTransitionNeighbor && rightOffsets[i] > 0.0) {
           final exitStart = xEnds[i] - rightOffsets[i];
@@ -691,7 +749,9 @@ final class InfiniteTimelinePainter extends CustomPainter {
       final interval = visibleIntervals[i];
       final xStart = xStarts[i];
       final width = xEnds[i] - xStart;
-      final label = interval.isGrayDay ? "gray" : _getLabelForQuality(interval.quality);
+      final label = interval.isGrayDay
+          ? "gray"
+          : _getLabelForQuality(interval.quality);
 
       _drawBlockDecorations(
         canvas,
@@ -836,19 +896,5 @@ final class InfiniteTimelinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant InfiniteTimelinePainter oldDelegate) {
-    return oldDelegate.centerTime != centerTime ||
-        oldDelegate.hourWidth != hourWidth ||
-        oldDelegate.intervals != intervals ||
-        oldDelegate.weatherData != weatherData ||
-        oldDelegate.latitude != latitude ||
-        oldDelegate.longitude != longitude ||
-        oldDelegate.showBiodynamicOverlay != showBiodynamicOverlay ||
-        oldDelegate.rootImage != rootImage ||
-        oldDelegate.leafImage != leafImage ||
-        oldDelegate.flowerImage != flowerImage ||
-        oldDelegate.fruitImage != fruitImage ||
-        oldDelegate.noneImage != noneImage ||
-        oldDelegate.grayDayImage != grayDayImage;
-  }
+  bool shouldRepaint(covariant InfiniteTimelinePainter oldDelegate) => true;
 }

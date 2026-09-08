@@ -61,7 +61,8 @@ final class _LocationPickerDialogState extends State<LocationPickerDialog> {
     final lon = double.tryParse(_lonController.text);
     if (lat == null || lon == null) {
       setState(() {
-        _errorMessage = 'Please enter valid decimal numbers for latitude and longitude.';
+        _errorMessage =
+            'Please enter valid decimal numbers for latitude and longitude.';
       });
       return;
     }

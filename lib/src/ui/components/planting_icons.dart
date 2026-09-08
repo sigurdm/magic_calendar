@@ -19,6 +19,12 @@ final class PlantingQualityIcon extends StatelessWidget {
   /// Flag indicating if day is a Special Day (planetary trine).
   final bool isSpecial;
 
+  /// Whether to render a framed border and container background around the icon.
+  ///
+  /// Defaults to `true`. When `false`, the icon artwork is rendered directly
+  /// without a rectangular container border.
+  final bool showBorder;
+
   /// Creates a [PlantingQualityIcon].
   const PlantingQualityIcon({
     super.key,
@@ -27,6 +33,7 @@ final class PlantingQualityIcon extends StatelessWidget {
     this.color,
     this.isGrayDay = false,
     this.isSpecial = false,
+    this.showBorder = true,
   });
 
   @override
@@ -77,11 +84,41 @@ final class PlantingQualityIcon extends StatelessWidget {
       }
     }
 
+    if (!showBorder) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Center(
+              child: Image.asset(
+                assetPath,
+                width: size,
+                height: size,
+                fit: BoxFit.contain,
+              ),
+            ),
+            if (isSpecial)
+              Positioned(
+                top: -size * 0.08,
+                right: -size * 0.08,
+                child: Icon(
+                  Icons.stars_rounded,
+                  color: const Color(0xFFFFD700),
+                  size: size * 0.35,
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
     final borderColor = isSpecial
         ? const Color(0xFFFFD700)
         : (size > 48
-            ? glowColor.withValues(alpha: 0.5)
-            : Colors.white.withValues(alpha: 0.7));
+              ? glowColor.withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.7));
     final borderWidth = isSpecial ? 2.5 : (size > 48 ? 2.0 : 1.5);
     final borderRadius = BorderRadius.circular(size > 48 ? 24 : 4);
 

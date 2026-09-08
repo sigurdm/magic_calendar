@@ -60,13 +60,10 @@ final class DiurnalRhythmInfo {
   }) {
     final effectiveSunrise =
         sunrise ?? solarNoon.subtract(const Duration(hours: 6));
-    final effectiveSunset =
-        sunset ?? solarNoon.add(const Duration(hours: 6));
+    final effectiveSunset = sunset ?? solarNoon.add(const Duration(hours: 6));
 
-    final noonStillnessStart =
-        solarNoon.subtract(const Duration(minutes: 45));
-    final noonStillnessEnd =
-        solarNoon.add(const Duration(minutes: 45));
+    final noonStillnessStart = solarNoon.subtract(const Duration(minutes: 45));
+    final noonStillnessEnd = solarNoon.add(const Duration(minutes: 45));
 
     final DiurnalPhase phase;
     if (time.isBefore(effectiveSunrise)) {

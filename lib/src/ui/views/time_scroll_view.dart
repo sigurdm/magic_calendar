@@ -456,8 +456,9 @@ class _TimeScrollViewState extends State<TimeScrollView>
                                 color: const Color(0xFFEF4444),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFFEF4444)
-                                        .withValues(alpha: 0.5),
+                                    color: const Color(
+                                      0xFFEF4444,
+                                    ).withValues(alpha: 0.5),
                                     blurRadius: 6,
                                     spreadRadius: 1,
                                   ),
