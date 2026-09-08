@@ -60,14 +60,14 @@ final class PlanetaryAspect {
 
   @override
   int get hashCode => Object.hash(
-        body1,
-        body2,
-        type,
-        separationDegrees,
-        orbDegrees,
-        isFavorable,
-        agriculturalEffect,
-      );
+    body1,
+    body2,
+    type,
+    separationDegrees,
+    orbDegrees,
+    isFavorable,
+    agriculturalEffect,
+  );
 
   @override
   String toString() =>

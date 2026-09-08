@@ -14,10 +14,10 @@ abstract final class GoetheanPalette {
   /// Water / Leaf organ: Living Sap Green (#5B8A4E).
   static const Color leafWater = Color(0xFF5B8A4E);
 
-  /// Air-Light / Flower organ: Radiant Morning Lavender (#A594C4).
+  /// Air / Flower organ: Radiant Morning Lavender (#A594C4).
   static const Color flowerAir = Color(0xFFA594C4);
 
-  /// Warmth-Fire / Fruit organ: Sun Gold & Ochre (#E5A93C).
+  /// Fire / Fruit organ: Sun Gold & Ochre (#E5A93C).
   static const Color fruitWarmth = Color(0xFFE5A93C);
 
   /// Deep organic compost dark background (#191715).
@@ -58,7 +58,7 @@ abstract final class GoetheanPalette {
       case PlantQuality.flower:
         return 'Flower (Air / Radiant Lavender)';
       case PlantQuality.fruit:
-        return 'Fruit (Warmth / Sun Gold)';
+        return 'Fruit (Fire / Sun Gold)';
       case PlantQuality.none:
         return 'Cosmic Rest (Compost Gray)';
     }

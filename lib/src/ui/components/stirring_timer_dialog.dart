@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../theme/biodynamic_icons.dart';
 
 /// Preparation configuration for biodynamic dynamization stirring.
@@ -224,8 +225,9 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF646CFF)
-                                   .withValues(alpha: 0.2),
+                              color: const Color(
+                                0xFF646CFF,
+                              ).withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const BiodynamicIcon(
@@ -322,16 +324,18 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                       color: _isReversalWarning
                           ? const Color(0xFFEF4444).withValues(alpha: 0.25)
                           : (_isRunning
-                                ? const Color(0xFF10B981)
-                                      .withValues(alpha: 0.15)
+                                ? const Color(
+                                    0xFF10B981,
+                                  ).withValues(alpha: 0.15)
                                 : Colors.white.withValues(alpha: 0.05)),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: _isReversalWarning
                             ? const Color(0xFFEF4444)
                             : (_isRunning
-                                  ? const Color(0xFF10B981)
-                                        .withValues(alpha: 0.4)
+                                  ? const Color(
+                                      0xFF10B981,
+                                    ).withValues(alpha: 0.4)
                                   : Colors.white.withValues(alpha: 0.1)),
                         width: _isReversalWarning ? 2.0 : 1.0,
                       ),
@@ -533,8 +537,9 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _isRunning
-                                  ? const Color(0xFFEF4444)
-                                        .withValues(alpha: 0.8)
+                                  ? const Color(
+                                      0xFFEF4444,
+                                    ).withValues(alpha: 0.8)
                                   : const Color(0xFF646CFF),
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
@@ -645,7 +650,9 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                           icon: Icons.grain,
                           iconColor: const Color(0xFF10B981),
                           title: 'Droplet Atomization & Spraying',
-                          description: _getDropletGuidanceForPrep(_selectedPrep),
+                          description: _getDropletGuidanceForPrep(
+                            _selectedPrep,
+                          ),
                         ),
                       ],
                     ),

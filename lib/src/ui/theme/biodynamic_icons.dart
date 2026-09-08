@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/models/agricultural_tasks.dart';
 
 /// Supported types of custom biodynamic vector icons.
@@ -58,17 +59,41 @@ final class BiodynamicIcon extends StatelessWidget {
   }) {
     switch (task) {
       case AgriculturalTaskType.soilCultivation:
-        return BiodynamicIcon(type: BiodynamicIconType.broadfork, size: size, color: color);
+        return BiodynamicIcon(
+          type: BiodynamicIconType.broadfork,
+          size: size,
+          color: color,
+        );
       case AgriculturalTaskType.pruning:
-        return BiodynamicIcon(type: BiodynamicIconType.pruningShears, size: size, color: color);
+        return BiodynamicIcon(
+          type: BiodynamicIconType.pruningShears,
+          size: size,
+          color: color,
+        );
       case AgriculturalTaskType.harvestStorage:
-        return BiodynamicIcon(type: BiodynamicIconType.cellarCrate, size: size, color: color);
+        return BiodynamicIcon(
+          type: BiodynamicIconType.cellarCrate,
+          size: size,
+          color: color,
+        );
       case AgriculturalTaskType.harvestFresh:
-        return BiodynamicIcon(type: BiodynamicIconType.harvestTrug, size: size, color: color);
+        return BiodynamicIcon(
+          type: BiodynamicIconType.harvestTrug,
+          size: size,
+          color: color,
+        );
       case AgriculturalTaskType.timberFelling:
-        return BiodynamicIcon(type: BiodynamicIconType.timberFelling, size: size, color: color);
+        return BiodynamicIcon(
+          type: BiodynamicIconType.timberFelling,
+          size: size,
+          color: color,
+        );
       case AgriculturalTaskType.peppering:
-        return BiodynamicIcon(type: BiodynamicIconType.peppering, size: size, color: color);
+        return BiodynamicIcon(
+          type: BiodynamicIconType.peppering,
+          size: size,
+          color: color,
+        );
     }
   }
 
@@ -145,14 +170,26 @@ final class _BiodynamicIconPainter extends CustomPainter {
   /// Draws a traditional biodynamic broadfork (grelinette).
   void _drawBroadfork(Canvas canvas, Paint stroke, Paint fill) {
     // Top horizontal ergonomic wooden handle bar
-    canvas.drawLine(const Offset(4, 3), const Offset(20, 3), stroke..strokeWidth = 2.0);
+    canvas.drawLine(
+      const Offset(4, 3),
+      const Offset(20, 3),
+      stroke..strokeWidth = 2.0,
+    );
 
     // Two vertical ash shaft uprights
-    canvas.drawLine(const Offset(7, 3), const Offset(7, 13), stroke..strokeWidth = 1.7);
+    canvas.drawLine(
+      const Offset(7, 3),
+      const Offset(7, 13),
+      stroke..strokeWidth = 1.7,
+    );
     canvas.drawLine(const Offset(17, 3), const Offset(17, 13), stroke);
 
     // Heavy forged steel lower cross-beam
-    canvas.drawLine(const Offset(3.5, 13), const Offset(20.5, 13), stroke..strokeWidth = 2.4);
+    canvas.drawLine(
+      const Offset(3.5, 13),
+      const Offset(20.5, 13),
+      stroke..strokeWidth = 2.4,
+    );
 
     // 5 tapered curved aerating tines
     final tineXs = [4.5, 8.25, 12.0, 15.75, 19.5];
@@ -182,7 +219,11 @@ final class _BiodynamicIconPainter extends CustomPainter {
 
     // Pivot bolt (brass screw)
     canvas.drawCircle(const Offset(12, 10.5), 2.0, fill);
-    canvas.drawCircle(const Offset(12, 10.5), 0.8, Paint()..color = Colors.black);
+    canvas.drawCircle(
+      const Offset(12, 10.5),
+      0.8,
+      Paint()..color = Colors.black,
+    );
 
     // Volute spring between handles
     final spring = Path()
@@ -214,11 +255,19 @@ final class _BiodynamicIconPainter extends CustomPainter {
     canvas.drawRRect(crateRect, stroke..strokeWidth = 1.7);
 
     // Horizontal wooden slats
-    canvas.drawLine(const Offset(3, 13), const Offset(21, 13), stroke..strokeWidth = 1.2);
+    canvas.drawLine(
+      const Offset(3, 13),
+      const Offset(21, 13),
+      stroke..strokeWidth = 1.2,
+    );
     canvas.drawLine(const Offset(3, 17), const Offset(21, 17), stroke);
 
     // Wooden vertical corner braces
-    canvas.drawLine(const Offset(6.5, 9), const Offset(6.5, 21), stroke..strokeWidth = 1.3);
+    canvas.drawLine(
+      const Offset(6.5, 9),
+      const Offset(6.5, 21),
+      stroke..strokeWidth = 1.3,
+    );
     canvas.drawLine(const Offset(17.5, 9), const Offset(17.5, 21), stroke);
 
     // Root crops peeking out (carrot tops with feathery greens)
@@ -303,7 +352,10 @@ final class _BiodynamicIconPainter extends CustomPainter {
     canvas.drawPath(log, stroke..strokeWidth = 1.7);
 
     // Tree growth rings on left trunk end
-    canvas.drawOval(const Rect.fromLTWH(2.5, 16.5, 2.5, 5), stroke..strokeWidth = 1.1);
+    canvas.drawOval(
+      const Rect.fromLTWH(2.5, 16.5, 2.5, 5),
+      stroke..strokeWidth = 1.1,
+    );
 
     // Felling Axe head (embedded into undercut wedge notch)
     final axeHead = Path()
@@ -321,7 +373,11 @@ final class _BiodynamicIconPainter extends CustomPainter {
     canvas.drawPath(handle, stroke..strokeWidth = 2.2);
 
     // Undercut notch cut in timber
-    canvas.drawLine(const Offset(11, 16), const Offset(13.5, 13.5), stroke..strokeWidth = 1.2);
+    canvas.drawLine(
+      const Offset(11, 16),
+      const Offset(13.5, 13.5),
+      stroke..strokeWidth = 1.2,
+    );
   }
 
   /// Draws an alchemical mortar & pestle with rising potentizing embers (peppering).
@@ -334,7 +390,11 @@ final class _BiodynamicIconPainter extends CustomPainter {
     canvas.drawPath(bowl, stroke..strokeWidth = 1.7);
 
     // Mortar pedestal foot
-    canvas.drawLine(const Offset(8, 21), const Offset(16, 21), stroke..strokeWidth = 2.2);
+    canvas.drawLine(
+      const Offset(8, 21),
+      const Offset(16, 21),
+      stroke..strokeWidth = 2.2,
+    );
 
     // Diagonal pestle
     final pestle = Path()
@@ -366,11 +426,7 @@ final class _BiodynamicIconPainter extends CustomPainter {
   /// Draws the Farm Organism emblem (terrestrial soil furrow, living sprout, cosmic arc).
   void _drawFarmOrganism(Canvas canvas, Paint stroke, Paint fill) {
     // Outer cosmic aura circle (delicate)
-    canvas.drawCircle(
-      const Offset(12, 12),
-      10.5,
-      stroke..strokeWidth = 1.3,
-    );
+    canvas.drawCircle(const Offset(12, 12), 10.5, stroke..strokeWidth = 1.3);
 
     // Lower soil furrow horizon (undulating Earth)
     final soil = Path()
@@ -413,7 +469,11 @@ final class _BiodynamicIconPainter extends CustomPainter {
     canvas.drawPath(cauldron, stroke..strokeWidth = 1.7);
 
     // Rim collar
-    canvas.drawLine(const Offset(3, 10), const Offset(21, 10), stroke..strokeWidth = 2.2);
+    canvas.drawLine(
+      const Offset(3, 10),
+      const Offset(21, 10),
+      stroke..strokeWidth = 2.2,
+    );
 
     // Two side lifting loop ear handles
     final handleLeft = Path()
@@ -427,7 +487,11 @@ final class _BiodynamicIconPainter extends CustomPainter {
     canvas.drawPath(handleRight, stroke..strokeWidth = 1.4);
 
     // Tripod feet
-    canvas.drawLine(const Offset(6, 18), const Offset(4.5, 22), stroke..strokeWidth = 2.0);
+    canvas.drawLine(
+      const Offset(6, 18),
+      const Offset(4.5, 22),
+      stroke..strokeWidth = 2.0,
+    );
     canvas.drawLine(const Offset(12, 19), const Offset(12, 22), stroke);
     canvas.drawLine(const Offset(18, 18), const Offset(19.5, 22), stroke);
 

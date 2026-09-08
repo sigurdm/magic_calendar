@@ -25,8 +25,11 @@ final class _StubEphemerisService with EphemerisService {
   @override
   bool isMoonSquareNode(DateTime time) => false;
   @override
-  MoonPhaseInfo getMoonPhase(DateTime time) =>
-      const MoonPhaseInfo(illuminatedFraction: 0.5, isWaxing: false, phaseAngle: 90.0);
+  MoonPhaseInfo getMoonPhase(DateTime time) => const MoonPhaseInfo(
+    illuminatedFraction: 0.5,
+    isWaxing: false,
+    phaseAngle: 90.0,
+  );
   @override
   List<PlanetInfo> getPlanets(DateTime time) => [];
   @override
@@ -48,16 +51,19 @@ void main() {
       expect(envelope.description, contains("Stable Root impulse"));
     });
 
-    test("Detects cusp entry ~0.75° before boundary (Aries Fruit -> Taurus Root at 55°)", () {
-      // Boundary is at 55.0. 55.0 - 0.75 = 54.25
-      final envelope = TransitionEnvelope.fromLongitude(54.25);
+    test(
+      "Detects cusp entry ~0.75° before boundary (Aries Fruit -> Taurus Root at 55°)",
+      () {
+        // Boundary is at 55.0. 55.0 - 0.75 = 54.25
+        final envelope = TransitionEnvelope.fromLongitude(54.25);
 
-      expect(envelope.isTransition, isTrue);
-      expect(envelope.fromQuality, PlantQuality.fruit);
-      expect(envelope.toQuality, PlantQuality.root);
-      expect(envelope.progress, closeTo(0.0, 0.01));
-      expect(envelope.description, contains("Fruit to Root"));
-    });
+        expect(envelope.isTransition, isTrue);
+        expect(envelope.fromQuality, PlantQuality.fruit);
+        expect(envelope.toQuality, PlantQuality.root);
+        expect(envelope.progress, closeTo(0.0, 0.01));
+        expect(envelope.description, contains("Fruit to Root"));
+      },
+    );
 
     test("Detects exact cusp boundary crossing (50% progress)", () {
       // Exactly at 55.0
@@ -90,31 +96,42 @@ void main() {
       expect(envelope.toQuality, PlantQuality.root);
     });
 
-    test("Handles 360° / 0° wrap-around boundary (Aquarius Air -> Pisces Water)", () {
-      // Aquarius ends at 360/0, Pisces starts at 0
-      // 359.5° is 0.5° before 360°
-      final beforeWrap = TransitionEnvelope.fromLongitude(359.5);
+    test(
+      "Handles 360° / 0° wrap-around boundary (Aquarius Air -> Pisces Water)",
+      () {
+        // Aquarius ends at 360/0, Pisces starts at 0
+        // 359.5° is 0.5° before 360°
+        final beforeWrap = TransitionEnvelope.fromLongitude(359.5);
 
-      expect(beforeWrap.isTransition, isTrue);
-      expect(beforeWrap.fromQuality, PlantQuality.flower); // Aquarius
-      expect(beforeWrap.toQuality, PlantQuality.leaf); // Pisces
-      expect(beforeWrap.progress, closeTo(0.167, 0.02));
+        expect(beforeWrap.isTransition, isTrue);
+        expect(beforeWrap.fromQuality, PlantQuality.flower); // Aquarius
+        expect(beforeWrap.toQuality, PlantQuality.leaf); // Pisces
+        expect(beforeWrap.progress, closeTo(0.167, 0.02));
 
-      // 0.3° is 0.3° after 0°
-      final afterWrap = TransitionEnvelope.fromLongitude(0.3);
+        // 0.3° is 0.3° after 0°
+        final afterWrap = TransitionEnvelope.fromLongitude(0.3);
 
-      expect(afterWrap.isTransition, isTrue);
-      expect(afterWrap.fromQuality, PlantQuality.flower);
-      expect(afterWrap.toQuality, PlantQuality.leaf);
-      expect(afterWrap.progress, closeTo(0.7, 0.02));
-    });
+        expect(afterWrap.isTransition, isTrue);
+        expect(afterWrap.fromQuality, PlantQuality.flower);
+        expect(afterWrap.toQuality, PlantQuality.leaf);
+        expect(afterWrap.progress, closeTo(0.7, 0.02));
+      },
+    );
 
     test("Custom threshold parameter works", () {
       // With threshold of 1.0 degree: 53.8 is outside, 54.1 is inside
-      final outEnv = TransitionEnvelope.fromLongitude(53.8, dornachBoundaries, 1.0);
+      final outEnv = TransitionEnvelope.fromLongitude(
+        53.8,
+        dornachBoundaries,
+        1.0,
+      );
       expect(outEnv.isTransition, isFalse);
 
-      final inEnv = TransitionEnvelope.fromLongitude(54.1, dornachBoundaries, 1.0);
+      final inEnv = TransitionEnvelope.fromLongitude(
+        54.1,
+        dornachBoundaries,
+        1.0,
+      );
       expect(inEnv.isTransition, isTrue);
       expect(inEnv.fromQuality, PlantQuality.fruit);
       expect(inEnv.toQuality, PlantQuality.root);

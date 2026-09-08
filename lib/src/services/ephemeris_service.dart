@@ -227,8 +227,7 @@ final class IsolateEphemerisService implements EphemerisService {
     double latitude,
     double longitude, [
     double altitude = 0.0,
-  ]) =>
-      _syncService.setObserverLocation(latitude, longitude, altitude);
+  ]) => _syncService.setObserverLocation(latitude, longitude, altitude);
 
   @override
   List<PlanetaryAspect> getAspects(DateTime time) =>
@@ -288,7 +287,8 @@ final class AstronomiaEphemerisService implements EphemerisService {
 
   double _toJD(DateTime time) {
     final utc = time.toUtc();
-    final fractionalHour = utc.hour +
+    final fractionalHour =
+        utc.hour +
         utc.minute / 60.0 +
         (utc.second + utc.millisecond / 1000.0) / 3600.0;
     return Sweph.swe_julday(
@@ -399,64 +399,74 @@ final class AstronomiaEphemerisService implements EphemerisService {
 
         // Conjunction: 0° ± 2.5°
         if (diff <= 2.5) {
-          final isStress = (p1.name == 'Moon' || p2.name == 'Moon') &&
+          final isStress =
+              (p1.name == 'Moon' || p2.name == 'Moon') &&
               (p1.name == 'Saturn' ||
                   p2.name == 'Saturn' ||
                   p1.name == 'Mars' ||
                   p2.name == 'Mars');
-          aspects.add(PlanetaryAspect(
-            body1: p1.name,
-            body2: p2.name,
-            type: AspectType.conjunction,
-            separationDegrees: diff,
-            orbDegrees: diff,
-            isFavorable: !isStress,
-            agriculturalEffect: isStress
-                ? 'Conjunction with ${p1.name == "Moon" ? p2.name : p1.name}: Gravitational compression. Rest window.'
-                : 'Conjunction between ${p1.name} and ${p2.name}.',
-          ));
+          aspects.add(
+            PlanetaryAspect(
+              body1: p1.name,
+              body2: p2.name,
+              type: AspectType.conjunction,
+              separationDegrees: diff,
+              orbDegrees: diff,
+              isFavorable: !isStress,
+              agriculturalEffect: isStress
+                  ? 'Conjunction with ${p1.name == "Moon" ? p2.name : p1.name}: Gravitational compression. Rest window.'
+                  : 'Conjunction between ${p1.name} and ${p2.name}.',
+            ),
+          );
         }
         // Square: 90° ± 2.5°
         else if ((diff - 90.0).abs() <= 2.5) {
-          aspects.add(PlanetaryAspect(
-            body1: p1.name,
-            body2: p2.name,
-            type: AspectType.square,
-            separationDegrees: diff,
-            orbDegrees: (diff - 90.0).abs(),
-            isFavorable: false,
-            agriculturalEffect:
-                'Planetary Square (90°): Elemental quadrature conflict between ${p1.name} and ${p2.name}. Stress period.',
-          ));
+          aspects.add(
+            PlanetaryAspect(
+              body1: p1.name,
+              body2: p2.name,
+              type: AspectType.square,
+              separationDegrees: diff,
+              orbDegrees: (diff - 90.0).abs(),
+              isFavorable: false,
+              agriculturalEffect:
+                  'Planetary Square (90°): Elemental quadrature conflict between ${p1.name} and ${p2.name}. Stress period.',
+            ),
+          );
         }
         // Trine: 120° ± 3.0°
         else if ((diff - 120.0).abs() <= 3.0) {
-          aspects.add(PlanetaryAspect(
-            body1: p1.name,
-            body2: p2.name,
-            type: AspectType.trine,
-            separationDegrees: diff,
-            orbDegrees: (diff - 120.0).abs(),
-            isFavorable: true,
-            agriculturalEffect:
-                'Planetary Trine (120°): Harmonious elemental resonance between ${p1.name} and ${p2.name}.',
-          ));
+          aspects.add(
+            PlanetaryAspect(
+              body1: p1.name,
+              body2: p2.name,
+              type: AspectType.trine,
+              separationDegrees: diff,
+              orbDegrees: (diff - 120.0).abs(),
+              isFavorable: true,
+              agriculturalEffect:
+                  'Planetary Trine (120°): Harmonious elemental resonance between ${p1.name} and ${p2.name}.',
+            ),
+          );
         }
         // Opposition: 180° ± 4.0°
         else if ((diff - 180.0).abs() <= 4.0) {
-          final isMoonSaturn = (p1.name == 'Moon' && p2.name == 'Saturn') ||
+          final isMoonSaturn =
+              (p1.name == 'Moon' && p2.name == 'Saturn') ||
               (p1.name == 'Saturn' && p2.name == 'Moon');
-          aspects.add(PlanetaryAspect(
-            body1: p1.name,
-            body2: p2.name,
-            type: AspectType.opposition,
-            separationDegrees: diff,
-            orbDegrees: (diff - 180.0).abs(),
-            isFavorable: isMoonSaturn,
-            agriculturalEffect: isMoonSaturn
-                ? 'Moon-Saturn Opposition (180°): Fungal Resistance & Strong Root Vigor.'
-                : 'Planetary Opposition (180°) between ${p1.name} and ${p2.name}.',
-          ));
+          aspects.add(
+            PlanetaryAspect(
+              body1: p1.name,
+              body2: p2.name,
+              type: AspectType.opposition,
+              separationDegrees: diff,
+              orbDegrees: (diff - 180.0).abs(),
+              isFavorable: isMoonSaturn,
+              agriculturalEffect: isMoonSaturn
+                  ? 'Moon-Saturn Opposition (180°): Fungal Resistance & Strong Root Vigor.'
+                  : 'Planetary Opposition (180°) between ${p1.name} and ${p2.name}.',
+            ),
+          );
         }
       }
     }
@@ -543,7 +553,8 @@ final class AstronomiaEphemerisService implements EphemerisService {
         SwephFlag(_geoFlags),
       );
 
-      if (pos1.latitude * pos2.latitude <= 0 && pos1.latitude != pos2.latitude) {
+      if (pos1.latitude * pos2.latitude <= 0 &&
+          pos1.latitude != pos2.latitude) {
         double exactJD =
             t + step * (0 - pos1.latitude) / (pos2.latitude - pos1.latitude);
         double diffHours = (exactJD - jd) * 24.0;
@@ -715,9 +726,16 @@ final class AstronomiaEphemerisService implements EphemerisService {
     double prevLatT = startJD;
     const nodeStep = 1.0 / 24.0; // 1 hour steps
     for (double t = startJD; t <= endJD; t += nodeStep) {
-      final p = Sweph.swe_calc_ut(t, HeavenlyBody.SE_MOON, SwephFlag(_geoFlags));
-      if (prevLatT != startJD && prevLat * p.latitude <= 0 && prevLat != p.latitude) {
-        final exactT = prevLatT + nodeStep * (0 - prevLat) / (p.latitude - prevLat);
+      final p = Sweph.swe_calc_ut(
+        t,
+        HeavenlyBody.SE_MOON,
+        SwephFlag(_geoFlags),
+      );
+      if (prevLatT != startJD &&
+          prevLat * p.latitude <= 0 &&
+          prevLat != p.latitude) {
+        final exactT =
+            prevLatT + nodeStep * (0 - prevLat) / (p.latitude - prevLat);
         nodeWindows.add((exactT - 6.0 / 24.0, exactT + 6.0 / 24.0));
       }
       prevLat = p.latitude;
@@ -731,7 +749,11 @@ final class AstronomiaEphemerisService implements EphemerisService {
     double prevDistT2 = startJD;
     const perigeeStep = 2.0 / 24.0; // 2 hour steps
     for (double t = startJD; t <= endJD; t += perigeeStep) {
-      final p = Sweph.swe_calc_ut(t, HeavenlyBody.SE_MOON, SwephFlag(_geoFlags));
+      final p = Sweph.swe_calc_ut(
+        t,
+        HeavenlyBody.SE_MOON,
+        SwephFlag(_geoFlags),
+      );
       if (prevDist2 < prevDist1 && prevDist2 < p.distance) {
         final y1 = prevDist1;
         final y2 = prevDist2;

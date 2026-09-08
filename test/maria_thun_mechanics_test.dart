@@ -26,22 +26,28 @@ void main() {
       // Topocentric declination should reflect the observer's geographic position
       expect(dec1, isNotNull);
       expect(dec2, isNotNull);
-      expect((dec1 - dec2).abs(), greaterThan(0.01),
-          reason: 'Topocentric declination must vary with geographic latitude');
+      expect(
+        (dec1 - dec2).abs(),
+        greaterThan(0.01),
+        reason: 'Topocentric declination must vary with geographic latitude',
+      );
     });
 
-    test('getAspects identifies planetary aspects including squares, trines, and oppositions', () {
-      // Sample test date in 2026
-      final aspects = service.getAspects(DateTime.utc(2026, 1, 1, 12, 0));
-      expect(aspects, isA<List<PlanetaryAspect>>());
+    test(
+      'getAspects identifies planetary aspects including squares, trines, and oppositions',
+      () {
+        // Sample test date in 2026
+        final aspects = service.getAspects(DateTime.utc(2026, 1, 1, 12, 0));
+        expect(aspects, isA<List<PlanetaryAspect>>());
 
-      for (final aspect in aspects) {
-        expect(aspect.body1, isNotEmpty);
-        expect(aspect.body2, isNotEmpty);
-        expect(aspect.agriculturalEffect, isNotEmpty);
-        expect(aspect.separationDegrees, inInclusiveRange(0.0, 180.0));
-      }
-    });
+        for (final aspect in aspects) {
+          expect(aspect.body1, isNotEmpty);
+          expect(aspect.body2, isNotEmpty);
+          expect(aspect.agriculturalEffect, isNotEmpty);
+          expect(aspect.separationDegrees, inInclusiveRange(0.0, 180.0));
+        }
+      },
+    );
 
     test('getCalendarInfo populates activeAspects and isEclipse fields', () {
       final info = getCalendarInfo(
@@ -56,11 +62,15 @@ void main() {
 
     test('isNearEclipse identifies eclipses across 2026', () {
       // Solar eclipse on 2026-02-17 (Annular solar eclipse)
-      final nearEclipse = service.isNearEclipse(DateTime.utc(2026, 2, 17, 12, 0));
+      final nearEclipse = service.isNearEclipse(
+        DateTime.utc(2026, 2, 17, 12, 0),
+      );
       expect(nearEclipse, isTrue);
 
       // Normal date far from eclipse
-      final normalDate = service.isNearEclipse(DateTime.utc(2026, 6, 15, 12, 0));
+      final normalDate = service.isNearEclipse(
+        DateTime.utc(2026, 6, 15, 12, 0),
+      );
       expect(normalDate, isFalse);
     });
   });

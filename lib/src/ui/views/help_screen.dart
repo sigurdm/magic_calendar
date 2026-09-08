@@ -1,5 +1,6 @@
 import '../theme/biodynamic_icons.dart';
 import '../theme/goethean_palette.dart';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -64,31 +65,35 @@ final class HelpScreen extends StatelessWidget {
                   'Root (Earth)',
                   const Color(0xFF8D6E63),
                   'Triggered by Taurus, Virgo, and Capricorn. Focuses energy into roots and tubers.',
-                  practical: 'Sow, plant, and cultivate carrots, potatoes, radishes, beets, onions, and celeriac. Deep hoeing and soil aeration on Root days encourages downward root penetration. Harvest root crops on Root days for long winter storage without rotting.',
+                  practical:
+                      'Sow, plant, and cultivate carrots, potatoes, radishes, beets, onions, and celeriac. Deep hoeing and soil aeration on Root days encourages downward root penetration. Harvest root crops on Root days for long winter storage without rotting.',
                 ),
                 _buildQualityItem(
                   'Leaf (Water)',
                   const Color(0xFF66BB6A),
                   'Triggered by Cancer, Scorpio, and Pisces. Stimulates leafy biomass and sap flow.',
-                  practical: 'Sow and transplant lettuce, spinach, cabbage, kale, swiss chard, and celery. Water lawns, crops, and houseplants on Leaf days as plants absorb water most efficiently. Avoid harvesting crops for long cellar storage on Leaf days, as high moisture content invites mold.',
+                  practical:
+                      'Sow and transplant lettuce, spinach, cabbage, kale, swiss chard, and celery. Water lawns, crops, and houseplants on Leaf days as plants absorb water most efficiently. Avoid harvesting crops for long cellar storage on Leaf days, as high moisture content invites mold.',
                 ),
                 _buildQualityItem(
                   'Flower (Air / Light)',
                   const Color(0xFFAB47BC),
                   'Triggered by Gemini, Libra, and Aquarius. Enhances fragrance and inflorescence.',
-                  practical: 'Sow and cultivate annual/perennial flowers, broccoli, cauliflower, and artichokes. Cut fresh flowers on Flower days for vibrant colors and longer vase life. Harvest medicinal herbs (chamomile, lavender) mid-morning on Flower days for peak essential oil potency.',
+                  practical:
+                      'Sow and cultivate annual/perennial flowers, broccoli, cauliflower, and artichokes. Cut fresh flowers on Flower days for vibrant colors and longer vase life. Harvest medicinal herbs (chamomile, lavender) mid-morning on Flower days for peak essential oil potency.',
                 ),
                 _buildQualityItem(
                   'Fruit / Seed (Fire / Warmth)',
                   const Color(0xFFFFA726),
                   'Triggered by Aries, Leo, and Sagittarius. Concentrates natural sugars and seed vitality.',
-                  practical: 'Sow and prick out tomatoes, peppers, squash, cucumbers, beans, peas, corn, and fruit trees. Prune fruit trees and vines to stimulate fruit buds. Harvest grains, berries, fruits, and seeds on Fruit days for maximum sweetness, aroma, and seed germination viability.',
+                  practical:
+                      'Sow and prick out tomatoes, peppers, squash, cucumbers, beans, peas, corn, and fruit trees. Prune fruit trees and vines to stimulate fruit buds. Harvest grains, berries, fruits, and seeds on Fruit days for maximum sweetness, aroma, and seed germination viability.',
                 ),
               ],
             ),
             const SizedBox(height: 24),
 
-                        _buildSectionHeader(
+            _buildSectionHeader(
               context,
               'The Farm as a Living Organism — Farm Tasks',
               null,
@@ -205,36 +210,41 @@ final class HelpScreen extends StatelessWidget {
                   'Warm Terracotta & Burnt Sienna (#C86D51)',
                   GoetheanPalette.rootEarth,
                   'Earth / Root Organ: Grounded in fertile clay, humus, and subterranean mineral forces.',
-                  practical: 'Applied across Root day crops, deep soil aeration, and seed root beds.',
+                  practical:
+                      'Applied across Root day crops, deep soil aeration, and seed root beds.',
                 ),
                 _buildQualityItem(
                   'Living Sap Green (#5B8A4E)',
                   GoetheanPalette.leafWater,
                   'Water / Leaf Organ: Lush, chlorophyll-rich vegetative growth and atmospheric humidity.',
-                  practical: 'Applied across Leaf day crops, foliage irrigation, and compost watering.',
+                  practical:
+                      'Applied across Leaf day crops, foliage irrigation, and compost watering.',
                 ),
                 _buildQualityItem(
                   'Radiant Morning Lavender (#A594C4)',
                   GoetheanPalette.flowerAir,
                   'Air-Light / Flower Organ: Subtle, luminous lavender reflecting morning light and pollinators.',
-                  practical: 'Applied across Flower day crops, light sprays (BD 501), and aromatic herbs.',
+                  practical:
+                      'Applied across Flower day crops, light sprays (BD 501), and aromatic herbs.',
                 ),
                 _buildQualityItem(
                   'Sun Gold & Warm Ochre (#E5A93C)',
                   GoetheanPalette.fruitWarmth,
                   'Fire / Warmth / Fruit Organ: Golden solar warmth concentrating ripening sugars and seed vitality.',
-                  practical: 'Applied across Fruit day crops, seed harvesting, and fruit tree pruning.',
+                  practical:
+                      'Applied across Fruit day crops, seed harvesting, and fruit tree pruning.',
                 ),
                 _buildQualityItem(
                   'Deep Compost Dark (#191715) & Topsoil (#221F1B)',
                   GoetheanPalette.compostDark,
                   'Subterranean Humus Background: Rich organic foundation grounding visual elements.',
-                  practical: 'Provides the restful dark backdrop that allows nature tones to breathe.',
+                  practical:
+                      'Provides the restful dark backdrop that allows nature tones to breathe.',
                 ),
               ],
             ),
             const SizedBox(height: 24),
-_buildSectionHeader(
+            _buildSectionHeader(
               context,
               'Special Days & Sap Rhythms',
               Icons.stars,
@@ -247,17 +257,20 @@ _buildSectionHeader(
                   'Special Days (Aspekt-günstig / Ag-)',
                   'Highlighted with a glowing gold border and star icon. Occur when major planets (Jupiter, Venus, Saturn) form harmonious 120° trines with the Moon in matching elemental constellations.',
                   badgeColor: const Color(0xFFFFD700),
-                  practical: 'Treat as "Prime Execution Hours". Reserve delicate sowings, high-value grafting, taking cuttings, or harvesting medicinal herbs for these 4-to-12 hour windows for extra-strong plant vigor.',
+                  practical:
+                      'Treat as "Prime Execution Hours". Reserve delicate sowings, high-value grafting, taking cuttings, or harvesting medicinal herbs for these 4-to-12 hour windows for extra-strong plant vigor.',
                 ),
                 _buildHelpItem(
                   'Multi-Organ Crops & Dual Purposes',
                   'Many plants have multiple edible parts. Apply the calendar according to the specific organ you intend to harvest.',
-                  practical: 'Grow celery for stalks on Leaf days, but celeriac for roots on Root days. Sow broccoli on Flower days for compact heads, but silage corn on Leaf days for foliage biomass.',
+                  practical:
+                      'Grow celery for stalks on Leaf days, but celeriac for roots on Root days. Sow broccoli on Flower days for compact heads, but silage corn on Leaf days for foliage biomass.',
                 ),
                 _buildHelpItem(
                   'Sap Flow & Vitality Rhythms',
                   'Reflects lunar ascent/descent and waxing/waning cycles governing plant sap pressure.',
-                  practical: 'Ascending/Waxing Moon: Sap rises into foliage (ideal for taking greenwood cuttings, grafting, and harvesting above-ground fruits). Descending/Waning Moon: Sap drops into roots and soil (ideal for transplanting seedlings as roots establish rapidly, root pruning, and spreading compost).',
+                  practical:
+                      'Ascending/Waxing Moon: Sap rises into foliage (ideal for taking greenwood cuttings, grafting, and harvesting above-ground fruits). Descending/Waning Moon: Sap drops into roots and soil (ideal for transplanting seedlings as roots establish rapidly, root pruning, and spreading compost).',
                 ),
               ],
             ),
@@ -280,17 +293,20 @@ _buildSectionHeader(
                 _buildHelpItem(
                   'BD 500 (Horn Manure) & Soil Humus',
                   'Steiner foundation preparation for subterranean biological life, mycorrhizal fungal symbiosis, and deep root anchorage.',
-                  practical: 'Stir 1 hour with alternating vortex/chaos rhythms. Spray in late afternoon / sunset during Descending Moon (Earth Inhalation) as large coarse droplets on moist soil.',
+                  practical:
+                      'Stir 1 hour with alternating vortex/chaos rhythms. Spray in late afternoon / sunset during Descending Moon (Earth Inhalation) as large coarse droplets on moist soil.',
                 ),
                 _buildHelpItem(
                   'BD 501 (Horn Silica) & Light / Warmth Forces',
                   'Enhances chlorophyll photosynthetic capacity, starch-to-sugar conversion, and natural fungal resilience.',
-                  practical: 'Stir 1 hour at daybreak. Spray at sunrise during Ascending Moon on Flower or Fruit days as an atomized fine mist floating into the foliage canopy.',
+                  practical:
+                      'Stir 1 hour at daybreak. Spray at sunrise during Ascending Moon on Flower or Fruit days as an atomized fine mist floating into the foliage canopy.',
                 ),
                 _buildHelpItem(
                   'BD 508 (Equisetum Horsetail) Fungal Shield',
                   'Rich in organic bio-available silica. Natural fungicide preventing mildew, potato blight, rust, and damping-off.',
-                  practical: 'Simmer dried horsetail for 20-30 minutes, steep 24 hours, dilute 1:5, dynamize 15-20 minutes, and spray on clear sunny mornings around Full Moon.',
+                  practical:
+                      'Simmer dried horsetail for 20-30 minutes, steep 24 hours, dilute 1:5, dynamize 15-20 minutes, and spray on clear sunny mornings around Full Moon.',
                 ),
               ],
             ),
@@ -308,13 +324,15 @@ _buildSectionHeader(
                 _buildHelpItem(
                   'Real-World Prioritization Hierarchy',
                   'Maria Thun stresses that weather conditions and soil moisture take physical precedence. Working wet soil on a "perfect" calendar day causes soil compaction damage. When timing is constrained, follow this hierarchy:',
-                  practical: '1. Avoid Gray Days (Highest Rule): Moving work to ANY clear day is better than working on a Gray Day.\n2. Prioritize Sowing & Planting: Aligning initial seed contact or transplanting gives the strongest lifelong impulse.\n3. Leverage Moon Ascent/Descent: If you miss the exact constellation quality, align with Ascending/Descending moon rhythms.\n4. Secondary Cultivation: Hoeing, weeding, and harvesting can be caught up on subsequent matching days.',
+                  practical:
+                      '1. Avoid Gray Days (Highest Rule): Moving work to ANY clear day is better than working on a Gray Day.\n2. Prioritize Sowing & Planting: Aligning initial seed contact or transplanting gives the strongest lifelong impulse.\n3. Leverage Moon Ascent/Descent: If you miss the exact constellation quality, align with Ascending/Descending moon rhythms.\n4. Secondary Cultivation: Hoeing, weeding, and harvesting can be caught up on subsequent matching days.',
                 ),
                 _buildHelpItem(
                   'Consequences of Working on a Gray Day',
                   'Gray Days mark Moon Node crossings and Moon Perigee, where gravitational and cosmic interference disrupts plant cell division and sap pressure.',
                   badgeColor: Colors.grey[400],
-                  practical: '• Poor & Erratic Germination: Seeds sown on Gray Days show delayed, uneven, or failed sprouting.\n• Structural Weakness: Young plants tend to grow leggy, structurally weak stems and bolt prematurely.\n• Rot & Mold Vulnerability: Crops harvested or pruned during Gray Days retain erratic moisture, causing rapid storage decay and slow pruning wound healing.',
+                  practical:
+                      '• Poor & Erratic Germination: Seeds sown on Gray Days show delayed, uneven, or failed sprouting.\n• Structural Weakness: Young plants tend to grow leggy, structurally weak stems and bolt prematurely.\n• Rot & Mold Vulnerability: Crops harvested or pruned during Gray Days retain erratic moisture, causing rapid storage decay and slow pruning wound healing.',
                 ),
               ],
             ),

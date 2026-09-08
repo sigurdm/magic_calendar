@@ -187,7 +187,9 @@ abstract final class AgriculturalTaskEvaluator {
           'Disturbing soil structure now shocks microbial fungi and beneficial worms.';
       action = 'Rest beds. Postpone cultivation until cosmic forces stabilize.';
     } else if (isAfternoon) {
-      suitability = isDescending ? TaskSuitability.optimal : TaskSuitability.favorable;
+      suitability = isDescending
+          ? TaskSuitability.optimal
+          : TaskSuitability.favorable;
       cosmic = isDescending
           ? 'Descending Moon + Afternoon Earth Inhalation: Vitality is pulled down into the subsoil and root sphere.'
           : 'Afternoon Inhalation: Earth breathes inward, welcoming atmospheric warmth and nitrogen.';
@@ -207,7 +209,8 @@ abstract final class AgriculturalTaskEvaluator {
       suitability = TaskSuitability.neutral;
       cosmic = 'Night Rest: Earth in subterranean consolidation.';
       terrestrial = 'Avoid nocturnal soil disturbance.';
-      action = 'Observe soil moisture and prepare tools for morning cultivation.';
+      action =
+          'Observe soil moisture and prepare tools for morning cultivation.';
     }
 
     // Weather conflicts override cosmic suitability
@@ -411,7 +414,8 @@ abstract final class AgriculturalTaskEvaluator {
 
     if (isGrayDay) {
       suitability = TaskSuitability.unfavorable;
-      cosmic = 'Cosmic Rest Window: Vitality is diminished; flavor lacks aromatic radiance.';
+      cosmic =
+          'Cosmic Rest Window: Vitality is diminished; flavor lacks aromatic radiance.';
       terrestrial = 'Leaves may taste dull or wilt rapidly after harvest.';
       action = 'Harvest lightly if needed for fresh consumption.';
     } else if (isWaxing && isMorning) {
@@ -461,12 +465,14 @@ abstract final class AgriculturalTaskEvaluator {
     String terrestrial;
     String action;
 
-    final isCapricorn = constLower == 'capricorn' ||
+    final isCapricorn =
+        constLower == 'capricorn' ||
         (constLower.isEmpty && quality == PlantQuality.root && isWaning);
 
     if (isGrayDay) {
       suitability = TaskSuitability.restricted;
-      cosmic = 'Cosmic Rest Window: Gravitational instability affects cellular drying.';
+      cosmic =
+          'Cosmic Rest Window: Gravitational instability affects cellular drying.';
       terrestrial = 'Timber felled today tends to crack irregularly.';
       action = 'Halt all forestry and timber felling operations.';
     } else if (isWaning && isCapricorn) {
@@ -535,7 +541,8 @@ abstract final class AgriculturalTaskEvaluator {
 
     if (isGrayDay) {
       suitability = TaskSuitability.restricted;
-      cosmic = 'Cosmic Rest Window: Distorts homeopathic potentization and ash forces.';
+      cosmic =
+          'Cosmic Rest Window: Distorts homeopathic potentization and ash forces.';
       terrestrial = 'Avoid burning preparations on Gray Days.';
       action = 'Do not prepare or spread weed/pest ash today.';
     } else if (isLeo) {
@@ -571,7 +578,8 @@ abstract final class AgriculturalTaskEvaluator {
     } else {
       suitability = TaskSuitability.neutral;
       cosmic = 'Neutral cosmic impulse for weed and pest ashing.';
-      terrestrial = 'Collect seeds and pests and store dry until Leo or Scorpio.';
+      terrestrial =
+          'Collect seeds and pests and store dry until Leo or Scorpio.';
       action = 'Collect specimens; wait for Leo (weeds) or Scorpio (pests).';
     }
 
@@ -579,7 +587,8 @@ abstract final class AgriculturalTaskEvaluator {
       weatherConflict = true;
       terrestrial =
           'High wind (${weather.windSpeed.toStringAsFixed(1)} m/s) prevents controlled combustion and causes ash drift.';
-      action = 'Postpone open-air burning and ash broadcasting until wind calms.';
+      action =
+          'Postpone open-air burning and ash broadcasting until wind calms.';
     }
 
     return AgriculturalTaskAdvice(

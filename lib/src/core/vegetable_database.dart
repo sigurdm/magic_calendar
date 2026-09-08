@@ -107,8 +107,10 @@ final class VegetableDatabase {
       quality: PlantQuality.root,
       sowingMonths: [3, 4, 5, 6],
       harvestMonths: [6, 7, 8, 9, 10, 11],
-      descriptionDa: 'Sås på Rod-dage i let, dybdemuldet jord. Dybdegående hakning under aftagende måne fremmer lige rodudvikling.',
-      descriptionEn: 'Sow on Root days in loose, stone-free soil. Deep aeration during descending moon encourages downward taproot growth.',
+      descriptionDa:
+          'Sås på Rod-dage i let, dybdemuldet jord. Dybdegående hakning under aftagende måne fremmer lige rodudvikling.',
+      descriptionEn:
+          'Sow on Root days in loose, stone-free soil. Deep aeration during descending moon encourages downward taproot growth.',
       companionPlants: ['Løg', 'Porre', 'Rosmarin', 'Salvie'],
       prefersAscendingMoon: false,
       prefersWaxingMoon: false,
@@ -121,8 +123,10 @@ final class VegetableDatabase {
       quality: PlantQuality.root,
       sowingMonths: [4, 5, 6],
       harvestMonths: [7, 8, 9, 10, 11],
-      descriptionDa: 'Trives bedst ved såning på Rod-dage under nedstigende måne. Høst på Rod-dage for maksimal lagringsevne.',
-      descriptionEn: 'Thrives when sown on Root days during descending moon. Harvest on Root days for prolonged winter cellar storage.',
+      descriptionDa:
+          'Trives bedst ved såning på Rod-dage under nedstigende måne. Høst på Rod-dage for maksimal lagringsevne.',
+      descriptionEn:
+          'Thrives when sown on Root days during descending moon. Harvest on Root days for prolonged winter cellar storage.',
       companionPlants: ['Løg', 'Kålrabi', 'Dild', 'Salat'],
       prefersAscendingMoon: false,
       prefersWaxingMoon: false,
@@ -135,8 +139,10 @@ final class VegetableDatabase {
       quality: PlantQuality.root,
       sowingMonths: [3, 4, 5],
       harvestMonths: [6, 7, 8, 9, 10],
-      descriptionDa: 'Lægges på Rod-dage i aftagende/nedstigende måne efter jordtemperatur når 8°C. Hypning på Rod-dage styrker knolddannelse.',
-      descriptionEn: 'Plant seed tubers on Root days during descending moon. Hilling up on Root days stimulates uniform tuber initiation.',
+      descriptionDa:
+          'Lægges på Rod-dage i aftagende/nedstigende måne efter jordtemperatur når 8°C. Hypning på Rod-dage styrker knolddannelse.',
+      descriptionEn:
+          'Plant seed tubers on Root days during descending moon. Hilling up on Root days stimulates uniform tuber initiation.',
       companionPlants: ['Hestebønne', 'Tagetes', 'Kommen', 'Majs'],
       prefersAscendingMoon: false,
       prefersWaxingMoon: false,
@@ -149,8 +155,10 @@ final class VegetableDatabase {
       quality: PlantQuality.root,
       sowingMonths: [3, 4, 5],
       harvestMonths: [8, 9, 10],
-      descriptionDa: 'Sætteløg stikkes på Rod-dage. Undgå kvælstofholdig gødning sent på sæsonen for at forhindre råd under lagring.',
-      descriptionEn: 'Set out onion sets on Root days. Avoid late nitrogen fertilization to maintain solid bulb storage firmness.',
+      descriptionDa:
+          'Sætteløg stikkes på Rod-dage. Undgå kvælstofholdig gødning sent på sæsonen for at forhindre råd under lagring.',
+      descriptionEn:
+          'Set out onion sets on Root days. Avoid late nitrogen fertilization to maintain solid bulb storage firmness.',
       companionPlants: ['Gulerod', 'Rødbede', 'Jordbær', 'Kamille'],
       prefersAscendingMoon: false,
       prefersWaxingMoon: false,
@@ -163,8 +171,10 @@ final class VegetableDatabase {
       quality: PlantQuality.root,
       sowingMonths: [3, 4, 5, 6, 7, 8, 9],
       harvestMonths: [4, 5, 6, 7, 8, 9, 10],
-      descriptionDa: 'Hurtigvoksende mellemafgrøde. Sås hver anden uge på Rod-dage for sprøde, ikke-træede radiser.',
-      descriptionEn: 'Fast-growing succession crop. Sow bi-weekly on Root days for crisp, tender roots without pithiness.',
+      descriptionDa:
+          'Hurtigvoksende mellemafgrøde. Sås hver anden uge på Rod-dage for sprøde, ikke-træede radiser.',
+      descriptionEn:
+          'Fast-growing succession crop. Sow bi-weekly on Root days for crisp, tender roots without pithiness.',
       companionPlants: ['Salat', 'Spinat', 'Gulerod', 'Karse'],
       prefersAscendingMoon: false,
       prefersWaxingMoon: false,
@@ -177,8 +187,10 @@ final class VegetableDatabase {
       quality: PlantQuality.root,
       sowingMonths: [2, 3, 4],
       harvestMonths: [9, 10, 11],
-      descriptionDa: 'Kræver lang udviklingstid. Forkultiveres indendørs og udplantes i maj på en Rod-dag med rigelig kompost.',
-      descriptionEn: 'Long-season root crop. Start indoors and transplant in May on a Root day with abundant compost.',
+      descriptionDa:
+          'Kræver lang udviklingstid. Forkultiveres indendørs og udplantes i maj på en Rod-dag med rigelig kompost.',
+      descriptionEn:
+          'Long-season root crop. Start indoors and transplant in May on a Root day with abundant compost.',
       companionPlants: ['Porre', 'Buskbønne', 'Kål', 'Tomat'],
       prefersAscendingMoon: false,
       prefersWaxingMoon: false,
@@ -193,8 +205,10 @@ final class VegetableDatabase {
       quality: PlantQuality.leaf,
       sowingMonths: [3, 4, 5, 6, 7, 8],
       harvestMonths: [5, 6, 7, 8, 9, 10],
-      descriptionDa: 'Sås og udplantes på Blad-dage under voksende måne for saftige blade. Vanding på Blad-dage udnyttes bedst.',
-      descriptionEn: 'Sow and transplant on Leaf days during waxing moon for succulent foliage. Irrigation on Leaf days is absorbed most efficiently.',
+      descriptionDa:
+          'Sås og udplantes på Blad-dage under voksende måne for saftige blade. Vanding på Blad-dage udnyttes bedst.',
+      descriptionEn:
+          'Sow and transplant on Leaf days during waxing moon for succulent foliage. Irrigation on Leaf days is absorbed most efficiently.',
       companionPlants: ['Gulerod', 'Radise', 'Løg', 'Jordbær'],
       prefersAscendingMoon: true,
       prefersWaxingMoon: true,
@@ -207,8 +221,10 @@ final class VegetableDatabase {
       quality: PlantQuality.leaf,
       sowingMonths: [3, 4, 5, 8, 9],
       harvestMonths: [4, 5, 6, 9, 10, 11],
-      descriptionDa: 'Trives i køligt vejr. Sås tidligt forår og sensommer på Blad-dage for at undgå for tidlig stokløb.',
-      descriptionEn: 'Cool-weather crop. Sow in early spring and late summer on Leaf days to minimize premature bolting.',
+      descriptionDa:
+          'Trives i køligt vejr. Sås tidligt forår og sensommer på Blad-dage for at undgå for tidlig stokløb.',
+      descriptionEn:
+          'Cool-weather crop. Sow in early spring and late summer on Leaf days to minimize premature bolting.',
       companionPlants: ['Jordbær', 'Kål', 'Bønne', 'Radise'],
       prefersAscendingMoon: true,
       prefersWaxingMoon: true,
@@ -221,8 +237,10 @@ final class VegetableDatabase {
       quality: PlantQuality.leaf,
       sowingMonths: [4, 5, 6],
       harvestMonths: [9, 10, 11, 12, 1, 2],
-      descriptionDa: 'Robust vintergrøntsag. Udplantes på Blad-dage under nedstigende måne for stærkt rodnet.',
-      descriptionEn: 'Hardy winter staple. Transplant on Leaf days during descending moon to establish vigorous root support.',
+      descriptionDa:
+          'Robust vintergrøntsag. Udplantes på Blad-dage under nedstigende måne for stærkt rodnet.',
+      descriptionEn:
+          'Hardy winter staple. Transplant on Leaf days during descending moon to establish vigorous root support.',
       companionPlants: ['Tomat', 'Salvie', 'Mynte', 'Timian'],
       prefersAscendingMoon: true,
       prefersWaxingMoon: true,
@@ -235,8 +253,10 @@ final class VegetableDatabase {
       quality: PlantQuality.leaf,
       sowingMonths: [4, 5, 6, 7],
       harvestMonths: [6, 7, 8, 9, 10, 11],
-      descriptionDa: 'Høst de yderste stilke løbende på Blad-dage for kontinuerlig genvækst igennem hele sommeren.',
-      descriptionEn: 'Harvest outer stalks on Leaf days to stimulate continuous flush of new tender stems throughout summer.',
+      descriptionDa:
+          'Høst de yderste stilke løbende på Blad-dage for kontinuerlig genvækst igennem hele sommeren.',
+      descriptionEn:
+          'Harvest outer stalks on Leaf days to stimulate continuous flush of new tender stems throughout summer.',
       companionPlants: ['Løg', 'Kålrabi', 'Bønner'],
       prefersAscendingMoon: true,
       prefersWaxingMoon: true,
@@ -249,8 +269,10 @@ final class VegetableDatabase {
       quality: PlantQuality.leaf,
       sowingMonths: [3, 4, 5],
       harvestMonths: [9, 10, 11, 12, 1, 2, 3],
-      descriptionDa: 'Udplantes dybt på Blad-dage i juni. Hypning giver lange, møre hvide skafter.',
-      descriptionEn: 'Deep-transplant on Leaf days in June. Trenching and hilling creates long, tender blanched shafts.',
+      descriptionDa:
+          'Udplantes dybt på Blad-dage i juni. Hypning giver lange, møre hvide skafter.',
+      descriptionEn:
+          'Deep-transplant on Leaf days in June. Trenching and hilling creates long, tender blanched shafts.',
       companionPlants: ['Gulerod', 'Knoldselleri', 'Jordbær'],
       prefersAscendingMoon: true,
       prefersWaxingMoon: true,
@@ -265,8 +287,10 @@ final class VegetableDatabase {
       quality: PlantQuality.flower,
       sowingMonths: [3, 4, 5, 6],
       harvestMonths: [6, 7, 8, 9, 10, 11],
-      descriptionDa: 'Sås og passes på Blomst-dage for tætte, velformede blomsterknopper uden for tidlig udspring.',
-      descriptionEn: 'Sow and cultivate on Flower days for tight, dense floral heads with prolonged holding quality.',
+      descriptionDa:
+          'Sås og passes på Blomst-dage for tætte, velformede blomsterknopper uden for tidlig udspring.',
+      descriptionEn:
+          'Sow and cultivate on Flower days for tight, dense floral heads with prolonged holding quality.',
       companionPlants: ['Dild', 'Kamille', 'Mynte', 'Rosmarin'],
       prefersAscendingMoon: true,
       prefersWaxingMoon: true,
@@ -279,8 +303,10 @@ final class VegetableDatabase {
       quality: PlantQuality.flower,
       sowingMonths: [3, 4, 5],
       harvestMonths: [6, 7, 8, 9, 10],
-      descriptionDa: 'Følsom over for udtørring. Plejes og gødes på Blomst-dage under opstigende måne.',
-      descriptionEn: 'Sensitive to moisture fluctuations. Cultivate on Flower days during ascending moon for pure white curds.',
+      descriptionDa:
+          'Følsom over for udtørring. Plejes og gødes på Blomst-dage under opstigende måne.',
+      descriptionEn:
+          'Sensitive to moisture fluctuations. Cultivate on Flower days during ascending moon for pure white curds.',
       companionPlants: ['Selleri', 'Bønner', 'Oregano'],
       prefersAscendingMoon: true,
       prefersWaxingMoon: true,
@@ -293,8 +319,10 @@ final class VegetableDatabase {
       quality: PlantQuality.flower,
       sowingMonths: [2, 3, 4],
       harvestMonths: [7, 8, 9, 10],
-      descriptionDa: 'Flerårig pragtplante. Høst de uåbnede blomsterknopper på Blomst-dage for den fineste nøddeagtige smag.',
-      descriptionEn: 'Perennial delicacy. Harvest immature flower buds on Flower days for peak tenderness and aromatic oils.',
+      descriptionDa:
+          'Flerårig pragtplante. Høst de uåbnede blomsterknopper på Blomst-dage for den fineste nøddeagtige smag.',
+      descriptionEn:
+          'Perennial delicacy. Harvest immature flower buds on Flower days for peak tenderness and aromatic oils.',
       companionPlants: ['Solsikke', 'Morgenfrue', 'Lavendel'],
       prefersAscendingMoon: true,
       prefersWaxingMoon: true,
@@ -307,8 +335,10 @@ final class VegetableDatabase {
       quality: PlantQuality.flower,
       sowingMonths: [3, 4, 5, 8, 9],
       harvestMonths: [6, 7, 8, 9],
-      descriptionDa: 'Vigtig biodynamisk præparatplante. Høst blomsterhoveder midt på formiddagen på en solrig Blomst-dag.',
-      descriptionEn: 'Crucial biodynamic compost preparation herb. Harvest flower heads mid-morning on sunny Flower days for maximum essential oils.',
+      descriptionDa:
+          'Vigtig biodynamisk præparatplante. Høst blomsterhoveder midt på formiddagen på en solrig Blomst-dag.',
+      descriptionEn:
+          'Crucial biodynamic compost preparation herb. Harvest flower heads mid-morning on sunny Flower days for maximum essential oils.',
       companionPlants: ['Løg', 'Kål', 'Hvede'],
       prefersAscendingMoon: true,
       prefersWaxingMoon: true,
@@ -321,8 +351,10 @@ final class VegetableDatabase {
       quality: PlantQuality.flower,
       sowingMonths: [4, 5, 6],
       harvestMonths: [8, 9, 10],
-      descriptionDa: 'Kanaliserer lys- og varmeimpulser til jorden. Sås direkte på Blomst-dage.',
-      descriptionEn: 'Channels high light and warmth impulses into soil ecology. Direct-sow on Flower days.',
+      descriptionDa:
+          'Kanaliserer lys- og varmeimpulser til jorden. Sås direkte på Blomst-dage.',
+      descriptionEn:
+          'Channels high light and warmth impulses into soil ecology. Direct-sow on Flower days.',
       companionPlants: ['Agurk', 'Græskar', 'Majs'],
       prefersAscendingMoon: true,
       prefersWaxingMoon: true,
@@ -337,8 +369,10 @@ final class VegetableDatabase {
       quality: PlantQuality.fruit,
       sowingMonths: [2, 3, 4],
       harvestMonths: [7, 8, 9, 10],
-      descriptionDa: 'Forkultiveres i varme. Sideskud fjernes og frugter høstes på Frugt-dage for sødme og aromastoffer.',
-      descriptionEn: 'Start indoors with gentle bottom heat. Prune suckers and harvest on Fruit days for maximum sugar and aromatics.',
+      descriptionDa:
+          'Forkultiveres i varme. Sideskud fjernes og frugter høstes på Frugt-dage for sødme og aromastoffer.',
+      descriptionEn:
+          'Start indoors with gentle bottom heat. Prune suckers and harvest on Fruit days for maximum sugar and aromatics.',
       companionPlants: ['Basilikum', 'Tagetes', 'Hvidløg', 'Gulerod'],
       prefersAscendingMoon: true,
       prefersWaxingMoon: true,
@@ -351,8 +385,10 @@ final class VegetableDatabase {
       quality: PlantQuality.fruit,
       sowingMonths: [2, 3, 4],
       harvestMonths: [7, 8, 9, 10],
-      descriptionDa: 'Varmekrævende afgrøde. Sås tidligt på Frugt-dage i voksende måne for hurtig spiring.',
-      descriptionEn: 'Heat-loving crop. Sow early on Fruit days during waxing moon for vigorous germination and sturdy flowering.',
+      descriptionDa:
+          'Varmekrævende afgrøde. Sås tidligt på Frugt-dage i voksende måne for hurtig spiring.',
+      descriptionEn:
+          'Heat-loving crop. Sow early on Fruit days during waxing moon for vigorous germination and sturdy flowering.',
       companionPlants: ['Basilikum', 'Løg', 'Gulerod', 'Oregano'],
       prefersAscendingMoon: true,
       prefersWaxingMoon: true,
@@ -365,8 +401,10 @@ final class VegetableDatabase {
       quality: PlantQuality.fruit,
       sowingMonths: [4, 5, 6],
       harvestMonths: [7, 8, 9, 10],
-      descriptionDa: 'Sås lunt i maj. Høst løbende på Frugt-dage under opstigende måne for sprøde, saftige frugter.',
-      descriptionEn: 'Sow in warm soil. Pick continuously on Fruit days during ascending moon for crisp, non-bitter yields.',
+      descriptionDa:
+          'Sås lunt i maj. Høst løbende på Frugt-dage under opstigende måne for sprøde, saftige frugter.',
+      descriptionEn:
+          'Sow in warm soil. Pick continuously on Fruit days during ascending moon for crisp, non-bitter yields.',
       companionPlants: ['Bønner', 'Solsikke', 'Dild', 'Majs'],
       prefersAscendingMoon: true,
       prefersWaxingMoon: true,
@@ -379,8 +417,10 @@ final class VegetableDatabase {
       quality: PlantQuality.fruit,
       sowingMonths: [5, 6, 7],
       harvestMonths: [7, 8, 9, 10],
-      descriptionDa: 'Sås når jorden er mindst 12°C. Såning på Frugt-dage under voksende måne giver rigelig bælgdannelse og kvælstoffiksering.',
-      descriptionEn: 'Sow once soil reaches 12°C. Sowing on Fruit days during waxing moon boosts pod set and root nodule nitrogen fixation.',
+      descriptionDa:
+          'Sås når jorden er mindst 12°C. Såning på Frugt-dage under voksende måne giver rigelig bælgdannelse og kvælstoffiksering.',
+      descriptionEn:
+          'Sow once soil reaches 12°C. Sowing on Fruit days during waxing moon boosts pod set and root nodule nitrogen fixation.',
       companionPlants: ['Bønneurt', 'Majs', 'Græskar', 'Kartoffel'],
       prefersAscendingMoon: true,
       prefersWaxingMoon: true,
@@ -393,8 +433,10 @@ final class VegetableDatabase {
       quality: PlantQuality.fruit,
       sowingMonths: [4, 5, 6],
       harvestMonths: [7, 8, 9, 10],
-      descriptionDa: 'Hurtigvoksende og yderig. Høst frugterne unge (15-20 cm) på Frugt-dage for fortsat blomstring.',
-      descriptionEn: 'Prolific producer. Harvest fruits young on Fruit days to stimulate relentless continuous flowering.',
+      descriptionDa:
+          'Hurtigvoksende og yderig. Høst frugterne unge (15-20 cm) på Frugt-dage for fortsat blomstring.',
+      descriptionEn:
+          'Prolific producer. Harvest fruits young on Fruit days to stimulate relentless continuous flowering.',
       companionPlants: ['Majs', 'Morgenfrue', 'Bønner', 'Radise'],
       prefersAscendingMoon: true,
       prefersWaxingMoon: true,

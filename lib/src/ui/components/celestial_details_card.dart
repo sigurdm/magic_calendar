@@ -136,8 +136,9 @@ final class CelestialDetailsCard extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF6366F1)
-                                    .withValues(alpha: 0.2),
+                                color: const Color(
+                                  0xFF6366F1,
+                                ).withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(
@@ -208,10 +209,12 @@ final class CelestialDetailsCard extends StatelessWidget {
                                       Container(
                                         padding: const EdgeInsets.all(6),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF6366F1)
-                                              .withValues(alpha: 0.2),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          color: const Color(
+                                            0xFF6366F1,
+                                          ).withValues(alpha: 0.2),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         child: const Icon(
                                           Icons.auto_awesome,
@@ -275,10 +278,11 @@ final class CelestialDetailsCard extends StatelessWidget {
                                       vertical: 4,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: (moonPhase.isWaxing
-                                              ? const Color(0xFF38BDF8)
-                                              : const Color(0xFFA78BFA))
-                                          .withValues(alpha: 0.15),
+                                      color:
+                                          (moonPhase.isWaxing
+                                                  ? const Color(0xFF38BDF8)
+                                                  : const Color(0xFFA78BFA))
+                                              .withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
@@ -299,104 +303,121 @@ final class CelestialDetailsCard extends StatelessWidget {
                         ),
                       ],
 
-                  // Weather Metrics Grid Section
-                  if (selectedWeather != null) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      child: Divider(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        height: 1,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0284C7)
-                                .withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.wb_sunny_outlined,
-                            color: Color(0xFF38BDF8),
-                            size: 16,
+                      // Weather Metrics Grid Section
+                      if (selectedWeather != null) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          child: Divider(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            height: 1,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Predicted Weather',
-                          style: GoogleFonts.outfit(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFF0284C7,
+                                ).withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.wb_sunny_outlined,
+                                color: Color(0xFF38BDF8),
+                                size: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Predicted Weather',
+                              style: GoogleFonts.outfit(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _buildWeatherMetricCard(
+                              icon: Icons.thermostat,
+                              iconColor: const Color(0xFFF97316),
+                              label: 'Temperature',
+                              value: '${selectedWeather.temperature.round()}°C',
+                              width: isCompact
+                                  ? ((constraints.maxWidth - 8) / 2).clamp(
+                                      100.0,
+                                      200.0,
+                                    )
+                                  : ((constraints.maxWidth - 24) / 4).clamp(
+                                      110.0,
+                                      200.0,
+                                    ),
+                            ),
+                            _buildWeatherMetricCard(
+                              icon: Icons.air,
+                              iconColor: const Color(0xFF38BDF8),
+                              label: 'Wind',
+                              value: '${selectedWeather.windSpeed.round()} m/s',
+                              width: isCompact
+                                  ? ((constraints.maxWidth - 8) / 2).clamp(
+                                      100.0,
+                                      200.0,
+                                    )
+                                  : ((constraints.maxWidth - 24) / 4).clamp(
+                                      110.0,
+                                      200.0,
+                                    ),
+                            ),
+                            _buildWeatherMetricCard(
+                              icon: Icons.cloud_outlined,
+                              iconColor: const Color(0xFF94A3B8),
+                              label: 'Cloud Cover',
+                              value: '${selectedWeather.cloudCover.round()}%',
+                              width: isCompact
+                                  ? ((constraints.maxWidth - 8) / 2).clamp(
+                                      100.0,
+                                      200.0,
+                                    )
+                                  : ((constraints.maxWidth - 24) / 4).clamp(
+                                      110.0,
+                                      200.0,
+                                    ),
+                            ),
+                            _buildWeatherMetricCard(
+                              icon: Icons.water_drop_outlined,
+                              iconColor: const Color(0xFF60A5FA),
+                              label: 'Precipitation',
+                              value:
+                                  '${selectedWeather.precipitation.toStringAsFixed(1)} mm',
+                              width: isCompact
+                                  ? ((constraints.maxWidth - 8) / 2).clamp(
+                                      100.0,
+                                      200.0,
+                                    )
+                                  : ((constraints.maxWidth - 24) / 4).clamp(
+                                      110.0,
+                                      200.0,
+                                    ),
+                            ),
+                          ],
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _buildWeatherMetricCard(
-                          icon: Icons.thermostat,
-                          iconColor: const Color(0xFFF97316),
-                          label: 'Temperature',
-                          value: '${selectedWeather.temperature.round()}°C',
-                          width: isCompact
-                              ? ((constraints.maxWidth - 8) / 2)
-                                  .clamp(100.0, 200.0)
-                              : ((constraints.maxWidth - 24) / 4)
-                                  .clamp(110.0, 200.0),
-                        ),
-                        _buildWeatherMetricCard(
-                          icon: Icons.air,
-                          iconColor: const Color(0xFF38BDF8),
-                          label: 'Wind',
-                          value: '${selectedWeather.windSpeed.round()} m/s',
-                          width: isCompact
-                              ? ((constraints.maxWidth - 8) / 2)
-                                  .clamp(100.0, 200.0)
-                              : ((constraints.maxWidth - 24) / 4)
-                                  .clamp(110.0, 200.0),
-                        ),
-                        _buildWeatherMetricCard(
-                          icon: Icons.cloud_outlined,
-                          iconColor: const Color(0xFF94A3B8),
-                          label: 'Cloud Cover',
-                          value: '${selectedWeather.cloudCover.round()}%',
-                          width: isCompact
-                              ? ((constraints.maxWidth - 8) / 2)
-                                  .clamp(100.0, 200.0)
-                              : ((constraints.maxWidth - 24) / 4)
-                                  .clamp(110.0, 200.0),
-                        ),
-                        _buildWeatherMetricCard(
-                          icon: Icons.water_drop_outlined,
-                          iconColor: const Color(0xFF60A5FA),
-                          label: 'Precipitation',
-                          value:
-                              '${selectedWeather.precipitation.toStringAsFixed(1)} mm',
-                          width: isCompact
-                              ? ((constraints.maxWidth - 8) / 2)
-                                  .clamp(100.0, 200.0)
-                              : ((constraints.maxWidth - 24) / 4)
-                                  .clamp(110.0, 200.0),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
+                    ],
+                  );
+                },
               );
             },
           );
         },
-      );
-    },
-  ),
-);
-}
+      ),
+    );
+  }
 
   Widget _buildWeatherMetricCard({
     required IconData icon,
