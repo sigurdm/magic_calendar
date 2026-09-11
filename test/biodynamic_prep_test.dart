@@ -3,6 +3,8 @@ import 'package:magic_calendar/src/core/biodynamic_prep.dart';
 import 'package:magic_calendar/src/services/ephemeris_service.dart';
 import 'package:sweph/sweph.dart';
 
+import 'support/sweph_test_loader.dart';
+
 final class MockPrepEphemerisService with EphemerisService {
   final PlantQuality mockQuality;
   final bool mockIsGrayDay;
@@ -56,6 +58,7 @@ final class MockPrepEphemerisService with EphemerisService {
 }
 
 void main() async {
+  await ensureSwephLoaded();
   await Sweph.init();
 
   group('BiodynamicPrepEvaluator - BD 508 (Horsetail / Equisetum)', () {

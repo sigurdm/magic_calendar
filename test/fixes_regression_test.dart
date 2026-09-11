@@ -12,8 +12,11 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:sweph/sweph.dart';
 
+import 'support/sweph_test_loader.dart';
+
 void main() {
   setUpAll(() async {
+    await ensureSwephLoaded();
     await Sweph.init();
   });
 

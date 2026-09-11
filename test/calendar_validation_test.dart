@@ -4,7 +4,10 @@ import 'package:magic_calendar/src/services/ephemeris_service.dart';
 import 'package:magic_calendar/src/core/dornach_boundaries.dart';
 import 'package:sweph/sweph.dart';
 
+import 'support/sweph_test_loader.dart';
+
 void main() async {
+  await ensureSwephLoaded();
   await Sweph.init();
   final service = AstronomiaEphemerisService();
 

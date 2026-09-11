@@ -51,3 +51,14 @@ packages/
 *.so
 flutter_*.png
 .jetski/
+
+# Stray build output. `abc/` is a Flutter desktop build directory that was
+# previously committed by accident; `flutter run`/`flutter build` regenerate it.
+/abc/
+
+# Transient VM service endpoint written by tooling.
+vmservice.txt
+
+# Reference photos live unpacked in `thun26/`; the archive is redundant.
+thun26-3-001.zip
+

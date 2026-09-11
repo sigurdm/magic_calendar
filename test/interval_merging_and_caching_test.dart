@@ -5,6 +5,8 @@ import 'package:magic_calendar/src/services/weather_service.dart';
 import 'package:magic_calendar/src/ui/views/time_scroll_view.dart';
 import 'package:sweph/sweph.dart';
 
+import 'support/sweph_test_loader.dart';
+
 final class TrackingEphemerisService with EphemerisService {
   final List<({DateTime start, DateTime end})> getIntervalsCalls = [];
   List<CalendarInterval> mockIntervalsToReturn = [];
@@ -65,6 +67,7 @@ final class DummyWeatherService implements WeatherService {
 }
 
 void main() async {
+  await ensureSwephLoaded();
   await Sweph.init();
 
   group('Interval Merging Logic', () {

@@ -16,6 +16,11 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    # `packages/` holds a local, git-ignored vendored copy of the `sweph`
+    # sources kept for reference only. The build resolves `sweph` from pub.dev
+    # (see pubspec.lock), so this directory is not part of the app and its
+    # analysis errors are not actionable here.
+    - packages/**
 include: package:flutter_lints/flutter.yaml
 
 linter:

@@ -4,6 +4,8 @@ import 'package:magic_calendar/src/core/dornach_boundaries.dart';
 import 'package:magic_calendar/src/services/ephemeris_service.dart';
 import 'package:sweph/sweph.dart';
 
+import 'support/sweph_test_loader.dart';
+
 final class MockEphemerisService with EphemerisService {
   final double _mockLongitude;
   final bool _mockIsNearNode;
@@ -83,6 +85,7 @@ final class MockEphemerisService with EphemerisService {
 }
 
 void main() async {
+  await ensureSwephLoaded();
   await Sweph.init();
 
   test('getCalendarInfo returns a valid CalendarInfo', () {
