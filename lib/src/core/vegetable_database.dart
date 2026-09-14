@@ -1,4 +1,4 @@
-import '../services/ephemeris_service.dart';
+import 'models/models.dart';
 
 /// Represents a vegetable or crop entry with astronomical and seasonal planting attributes.
 final class VegetableEntry {

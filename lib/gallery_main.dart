@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_driver/driver_extension.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import 'src/ui/theme/app_theme.dart';
 import 'src/ui/views/element_cards_gallery_page.dart';
 
 /// Standalone entrypoint for rapidly previewing and hot-reloading all 4
 /// Goethean watercolor element cards in an all-in-one grid.
 void main() {
-  enableFlutterDriverExtension();
   runApp(const ElementGalleryApp());
 }
 
@@ -21,10 +19,7 @@ final class ElementGalleryApp extends StatelessWidget {
     return MaterialApp(
       title: 'Goethean Elements Gallery',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF121212),
-        textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
-      ),
+      theme: buildAppTheme(),
       home: const ElementCardsGalleryPage(),
     );
   }

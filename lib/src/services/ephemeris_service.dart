@@ -5,7 +5,6 @@ import 'dart:math' as math;
 import 'package:sweph/sweph.dart';
 
 import '../core/dornach_boundaries.dart';
-import '../core/algorithm.dart' as algo;
 import '../core/models/models.dart';
 
 export '../core/models/models.dart';
@@ -59,14 +58,40 @@ abstract mixin class EphemerisService {
   bool isNearEclipse(DateTime time) => false;
 }
 
-/// Time interval quality entry.
-enum _WorkerCommand { getInfo, getIntervals }
-
-final class _WorkerRequest {
-  final _WorkerCommand command;
+/// Request for a range of calendar intervals, sent to the worker isolate.
+///
+/// A typed message rather than a `Map<String, dynamic>`: the previous payload
+/// handed `dynamic` values directly to typed parameters, which is unchecked at
+/// compile time and only fails once the isolate is already running.
+final class _IntervalsRequest {
+  /// Port on which the worker sends its reply.
   final SendPort replyPort;
-  final Map<String, dynamic> params;
-  _WorkerRequest(this.command, this.replyPort, this.params);
+
+  /// Start of the requested range.
+  final DateTime start;
+
+  /// End of the requested range.
+  final DateTime end;
+
+  const _IntervalsRequest({
+    required this.replyPort,
+    required this.start,
+    required this.end,
+  });
+}
+
+/// Failure reply from the worker isolate.
+final class _WorkerError {
+  /// Description of the original error.
+  final String message;
+
+  /// Stack trace of the original error, as a string.
+  ///
+  /// [StackTrace] itself is not sendable across isolates, so it is carried as
+  /// text and rehydrated with [StackTrace.fromString] by the receiver.
+  final String stackTrace;
+
+  const _WorkerError(this.message, this.stackTrace);
 }
 
 /// Background isolate worker managing Swiss Ephemeris FFI computations.
@@ -88,30 +113,6 @@ final class EphemerisWorker {
     _sendPort = await receivePort.first as SendPort;
   }
 
-  /// Obtains calendar info in background isolate.
-  static Future<CalendarInfo> getCalendarInfo(
-    DateTime time,
-    bool includePlanets,
-  ) async {
-    await init();
-    final port = ReceivePort();
-    try {
-      _sendPort!.send(
-        _WorkerRequest(_WorkerCommand.getInfo, port.sendPort, {
-          'time': time,
-          'includePlanets': includePlanets,
-        }),
-      );
-      final res = await port.first;
-      if (res is Map && res.containsKey('error')) {
-        throw Exception('EphemerisWorker error: ${res['error']}');
-      }
-      return res as CalendarInfo;
-    } finally {
-      port.close();
-    }
-  }
-
   /// Generates interval sequence across [start] and [end].
   static Future<List<CalendarInterval>> getIntervals(
     DateTime start,
@@ -121,14 +122,16 @@ final class EphemerisWorker {
     final port = ReceivePort();
     try {
       _sendPort!.send(
-        _WorkerRequest(_WorkerCommand.getIntervals, port.sendPort, {
-          'start': start,
-          'end': end,
-        }),
+        _IntervalsRequest(replyPort: port.sendPort, start: start, end: end),
       );
       final res = await port.first;
-      if (res is Map && res.containsKey('error')) {
-        throw Exception('EphemerisWorker error: ${res['error']}');
+      if (res is _WorkerError) {
+        // Rethrow with the worker's original stack trace rather than the
+        // (useless) trace of this receiving frame.
+        Error.throwWithStackTrace(
+          Exception('EphemerisWorker error: ${res.message}'),
+          StackTrace.fromString(res.stackTrace),
+        );
       }
       return res as List<CalendarInterval>;
     } finally {
@@ -136,7 +139,7 @@ final class EphemerisWorker {
     }
   }
 
-  static void _isolateEntry(Map<String, dynamic> initData) async {
+  static Future<void> _isolateEntry(Map<String, dynamic> initData) async {
     final sendPort = initData['sendPort'] as SendPort;
     final epheFilesPath = initData['epheFilesPath'] as String?;
     await Sweph.init(epheFilesPath: epheFilesPath);
@@ -145,33 +148,14 @@ final class EphemerisWorker {
 
     sendPort.send(receivePort.sendPort);
 
-    await for (var message in receivePort) {
-      if (message is _WorkerRequest) {
-        try {
-          if (message.command == _WorkerCommand.getInfo) {
-            final info = algo.getCalendarInfo(
-              message.params['time'],
-              service,
-              includePlanets: message.params['includePlanets'],
-            );
-            message.replyPort.send(info);
-          } else if (message.command == _WorkerCommand.getIntervals) {
-            final intervals = service.getIntervals(
-              message.params['start'],
-              message.params['end'],
-            );
-            message.replyPort.send(intervals);
-          } else {
-            message.replyPort.send({
-              'error': 'Unhandled command: ${message.command}',
-            });
-          }
-        } catch (e, st) {
-          message.replyPort.send({
-            'error': e.toString(),
-            'stackTrace': st.toString(),
-          });
-        }
+    await for (final message in receivePort) {
+      if (message is! _IntervalsRequest) {
+        continue;
+      }
+      try {
+        message.replyPort.send(service.getIntervals(message.start, message.end));
+      } catch (e, st) {
+        message.replyPort.send(_WorkerError(e.toString(), st.toString()));
       }
     }
   }
@@ -722,6 +706,13 @@ final class AstronomiaEphemerisService implements EphemerisService {
 
     // 1. Scan for Node crossings across [searchStart, searchEnd]
     final nodeWindows = <(double, double)>[];
+    // `hasPrevious` rather than comparing against `startJD`: the previous
+    // version tested `prevLatT != startJD`, but `prevLatT` was re-assigned
+    // `startJD` on the first iteration, so the second iteration was skipped
+    // too and a crossing in the first hour of the window was lost. A sentinel
+    // `prevLat` would be wrong for the same reason, since 0.0 is itself a
+    // legal ecliptic latitude (it is exactly what a node crossing looks like).
+    bool hasPrevious = false;
     double prevLat = 0.0;
     double prevLatT = startJD;
     const nodeStep = 1.0 / 24.0; // 1 hour steps
@@ -731,15 +722,14 @@ final class AstronomiaEphemerisService implements EphemerisService {
         HeavenlyBody.SE_MOON,
         SwephFlag(_geoFlags),
       );
-      if (prevLatT != startJD &&
-          prevLat * p.latitude <= 0 &&
-          prevLat != p.latitude) {
+      if (hasPrevious && prevLat * p.latitude <= 0 && prevLat != p.latitude) {
         final exactT =
             prevLatT + nodeStep * (0 - prevLat) / (p.latitude - prevLat);
         nodeWindows.add((exactT - 6.0 / 24.0, exactT + 6.0 / 24.0));
       }
       prevLat = p.latitude;
       prevLatT = t;
+      hasPrevious = true;
     }
 
     // 2. Scan for Perigee extrema across [searchStart, searchEnd]

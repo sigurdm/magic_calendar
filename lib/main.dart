@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_driver/driver_extension.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sweph/sweph.dart';
 
 import 'src/services/ephemeris_service.dart';
 import 'src/services/weather_service.dart';
+import 'src/ui/theme/app_theme.dart';
 import 'src/ui/views/calendar_home_page.dart';
-import 'src/ui/views/element_cards_gallery_page.dart';
 
-export 'src/ui/components/moon_phase_widget.dart';
-export 'src/ui/views/calendar_home_page.dart';
-export 'src/ui/views/element_cards_gallery_page.dart';
+/// Entry point for the Magic Calendar application.
+Future<void> main() async {
+  // Must run before any platform channel use (`getApplicationSupportDirectory`
+  // below) and before `runApp`. This was previously satisfied only as a side
+  // effect of `enableFlutterDriverExtension()` constructing the binding.
+  WidgetsFlutterBinding.ensureInitialized();
 
-void main() async {
-  enableFlutterDriverExtension();
   final weatherService = CombinedWeatherService(
     yrNoService: YrNoWeatherService(
       userAgent: 'MagicCalendar/1.0 post@sigurdmeldgaard.dk',
@@ -36,47 +35,22 @@ void main() async {
   runApp(MyApp(ephemeris: IsolateEphemerisService(), weather: weatherService));
 }
 
+/// Root widget of the Magic Calendar application.
 final class MyApp extends StatelessWidget {
+  /// Source of astronomical data.
   final EphemerisService ephemeris;
+
+  /// Source of weather forecasts and history.
   final WeatherService weather;
 
-  /// Rapid preview flag: when true, renders all 4 Goethean watercolor element
-  /// cards simultaneously in a 2x2 grid.
-  static const bool showGallery = false;
-
-  /// Mobile preview flag: when true, renders the screen inside a 390x844 mobile viewport.
-  static const bool previewMobile = false;
-
+  /// Creates the application root.
   const MyApp({super.key, required this.ephemeris, required this.weather});
 
   @override
   Widget build(BuildContext context) {
-    final Widget page = showGallery
-        ? const ElementCardsGalleryPage()
-        : CalendarHomePage(ephemeris: ephemeris, weather: weather);
-
     return MaterialApp(
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF121212),
-        textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme),
-      ),
-      home: previewMobile
-          ? Scaffold(
-              backgroundColor: const Color(0xFF0A0A0E),
-              body: Center(
-                child: Container(
-                  width: 390,
-                  height: 844,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white24, width: 1.5),
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: page,
-                ),
-              ),
-            )
-          : page,
+      theme: buildAppTheme(),
+      home: CalendarHomePage(ephemeris: ephemeris, weather: weather),
     );
   }
 }
