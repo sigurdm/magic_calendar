@@ -53,8 +53,8 @@ abstract final class AgriculturalTaskEvaluator {
     final constName = constellation ?? '';
     final constLower = constName.toLowerCase();
 
-    final isDescending = calendarInfo.sapFlow.contains('Descending');
-    final isAscending = calendarInfo.sapFlow.contains('Ascending');
+    final isDescending = calendarInfo.isMoonDescending;
+    final isAscending = calendarInfo.isMoonAscending;
     final isWaxing = calendarInfo.moonPhase.isWaxing;
     final isWaning = !isWaxing;
     final quality = calendarInfo.quality;
@@ -193,11 +193,11 @@ abstract final class AgriculturalTaskEvaluator {
       terrestrial =
           'CRITICAL: Soil is waterlogged (${weather.precipitation.toStringAsFixed(1)} mm rain). Tillage will smear soil aggregates, cause compaction, and create anaerobic hardpan.';
       action = 'Cease all tillage and heavy bed traffic immediately. Wait for topsoil to dry to crumbly tilth.';
-    } else if (weather != null && weather.temperature <= 0.0) {
+    } else if (weather?.temperature != null && weather!.temperature! <= 0.0) {
       weatherConflict = true;
       suitability = TaskSuitability.restricted;
       terrestrial =
-          'Soil is frozen (${weather.temperature.toStringAsFixed(1)}°C). Breaking frozen ground destroys soil crumb structure.';
+          'Soil is frozen (${weather.temperature!.toStringAsFixed(1)}°C). Breaking frozen ground destroys soil crumb structure.';
       action = 'Postpone cultivation until ground fully thaws.';
     }
 
@@ -258,11 +258,11 @@ abstract final class AgriculturalTaskEvaluator {
       action = 'Limit pruning to corrective or emergency sanitization.';
     }
 
-    if (weather != null && weather.temperature <= 0.0) {
+    if (weather?.temperature != null && weather!.temperature! <= 0.0) {
       weatherConflict = true;
       suitability = TaskSuitability.restricted;
       terrestrial =
-          'Freezing weather (${weather.temperature.toStringAsFixed(1)}°C) causes bark splitting and frost necrosis at fresh cuts.';
+          'Freezing weather (${weather.temperature!.toStringAsFixed(1)}°C) causes bark splitting and frost necrosis at fresh cuts.';
       action = 'Suspend pruning until frost subsides and wood is pliable.';
     } else if (weather != null && weather.precipitation > 2.0) {
       weatherConflict = true;

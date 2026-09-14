@@ -348,7 +348,8 @@ final class InfiniteTimelinePainter extends CustomPainter {
 
     final tempPath = Path();
     final windPath = Path();
-    bool first = true;
+    bool firstTemp = true;
+    bool firstWind = true;
 
     double mapTempToY(double temp) {
       final clamped = temp.clamp(0.0, 30.0);
@@ -363,7 +364,16 @@ final class InfiniteTimelinePainter extends CustomPainter {
     for (final wd in weatherData) {
       final offsetInHours = wd.time.difference(centerTime).inSeconds / 3600.0;
       final x = centerX + (offsetInHours * hourWidth);
-      final yTemp = mapTempToY(wd.temperature);
+      final temp = wd.temperature;
+      if (temp != null) {
+        final yTemp = mapTempToY(temp);
+        if (firstTemp) {
+          tempPath.moveTo(x, yTemp);
+          firstTemp = false;
+        } else {
+          tempPath.lineTo(x, yTemp);
+        }
+      }
       final yWind = mapWindToY(wd.windSpeed);
 
       if (wd.precipitation > 0) {
@@ -386,12 +396,10 @@ final class InfiniteTimelinePainter extends CustomPainter {
         );
       }
 
-      if (first) {
-        tempPath.moveTo(x, yTemp);
+      if (firstWind) {
         windPath.moveTo(x, yWind);
-        first = false;
+        firstWind = false;
       } else {
-        tempPath.lineTo(x, yTemp);
         windPath.lineTo(x, yWind);
       }
     }
@@ -419,8 +427,13 @@ final class InfiniteTimelinePainter extends CustomPainter {
       final x = centerX + (offsetInHours * hourWidth);
 
       if (x >= 0 && x <= size.width) {
-        final yTemp = mapTempToY(wd.temperature);
-        _drawText(canvas, x, '${wd.temperature.round()}°', 10, yTemp - 12);
+        final temp = wd.temperature;
+        final yTemp = temp != null
+            ? mapTempToY(temp)
+            : tempRowY + tempRowHeight / 2;
+        if (temp != null) {
+          _drawText(canvas, x, '${temp.round()}°', 10, yTemp - 12);
+        }
 
         if (wd.cloudCover > 30) {
           _drawIcon(canvas, x, '☁️', 12, yTemp + 5);

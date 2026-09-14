@@ -152,15 +152,17 @@ abstract final class EcologicalSynthesis {
       );
     }
 
+    final temp = weather.temperature;
+
     // 2. Freezing ground conditions (temp <= 0°C)
-    if (weather.temperature <= 0.0) {
+    if (temp != null && temp <= 0.0) {
       alerts.add(
         EcologicalAlert(
           type: EcologicalAlertType.freezing,
           severity: EcologicalAlertSeverity.critical,
           title: 'Freezing Conditions (<= 0°C)',
           description:
-              'Air temperature is ${weather.temperature.toStringAsFixed(1)}°C (at or below freezing).',
+              'Air temperature is ${temp.toStringAsFixed(1)}°C (at or below freezing).',
           practicalAdvice: 'Postpone outdoor direct sowing. Start seedlings indoors in greenhouse trays or cold frames until ground thaws.',
           indoorSowingAdvised: true,
         ),
@@ -183,7 +185,7 @@ abstract final class EcologicalSynthesis {
     }
 
     // 4. Spring frost risk (< 2°C)
-    if (weather.temperature < 2.0) {
+    if (temp != null && temp < 2.0) {
       final isNorthern = latitude >= 0;
       final month = time.month;
       final isSpring = isNorthern
@@ -194,8 +196,8 @@ abstract final class EcologicalSynthesis {
           ? 'Spring Frost Risk (< 2°C)'
           : 'Frost Hazard (< 2°C)';
       final desc = isSpring
-          ? 'Temperature dropped to ${weather.temperature.toStringAsFixed(1)}°C during active spring blossom and shoot development.'
-          : 'Low temperature (${weather.temperature.toStringAsFixed(1)}°C) creates frost risk for tender plant organs.';
+          ? 'Temperature dropped to ${temp.toStringAsFixed(1)}°C during active spring blossom and shoot development.'
+          : 'Low temperature (${temp.toStringAsFixed(1)}°C) creates frost risk for tender plant organs.';
 
       alerts.add(
         EcologicalAlert(

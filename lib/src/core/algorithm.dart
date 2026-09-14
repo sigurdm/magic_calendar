@@ -149,38 +149,6 @@ CalendarInfo getCalendarInfo(
     activeAspects = ephemeris.getAspects(time);
   } catch (_) {}
 
-  if (isGrayDay) {
-    final moonPhase = ephemeris.getMoonPhase(time);
-    return CalendarInfo(
-      quality: PlantQuality.none,
-      isGrayDay: true,
-      isSpecial: false,
-      isApogee: isNearApogee,
-      isMoonSaturnOpposition: isMoonSaturnOpp,
-      isEclipse: isEclipse,
-      activeAspects: activeAspects,
-      message: message,
-      sapFlow: '',
-      vitality: '',
-      moonPhase: moonPhase,
-      planets: includePlanets ? planets : [],
-      diurnalRhythm: diurnalRhythm,
-      transitionEnvelope: transitionEnvelope,
-    );
-  }
-
-  final trineResult = calculateTrineQuality(planets, boundaries);
-  final PlantQuality trineQuality = trineResult.quality;
-  PlantQuality quality = PlantQuality.none;
-  if (trineQuality == PlantQuality.none) {
-    quality = getQualityFromLongitude(moonLongitude, boundaries);
-  } else {
-    quality = trineQuality;
-    if (message.isEmpty) {
-      message = trineResult.message;
-    }
-  }
-
   final dec1 = ephemeris.getMoonDeclination(time);
   final dec2 = ephemeris.getMoonDeclination(time.add(const Duration(hours: 1)));
   final isAscending = dec2 > dec1;
@@ -214,6 +182,38 @@ CalendarInfo getCalendarInfo(
     vitality += ' (Decreasing moisture; good for storage)';
   }
 
+  if (isGrayDay) {
+    return CalendarInfo(
+      quality: PlantQuality.none,
+      isGrayDay: true,
+      isSpecial: false,
+      isApogee: isNearApogee,
+      isMoonSaturnOpposition: isMoonSaturnOpp,
+      isEclipse: isEclipse,
+      activeAspects: activeAspects,
+      message: message,
+      sapFlow: sapFlow,
+      isMoonAscending: isAscending,
+      vitality: vitality,
+      moonPhase: moonPhase,
+      planets: includePlanets ? planets : [],
+      diurnalRhythm: diurnalRhythm,
+      transitionEnvelope: transitionEnvelope,
+    );
+  }
+
+  final trineResult = calculateTrineQuality(planets, boundaries);
+  final PlantQuality trineQuality = trineResult.quality;
+  PlantQuality quality = PlantQuality.none;
+  if (trineQuality == PlantQuality.none) {
+    quality = getQualityFromLongitude(moonLongitude, boundaries);
+  } else {
+    quality = trineQuality;
+    if (message.isEmpty) {
+      message = trineResult.message;
+    }
+  }
+
   return CalendarInfo(
     quality: quality,
     isGrayDay: false,
@@ -225,6 +225,7 @@ CalendarInfo getCalendarInfo(
     activeAspects: activeAspects,
     message: message,
     sapFlow: sapFlow,
+    isMoonAscending: isAscending,
     vitality: vitality,
     moonPhase: moonPhase,
     planets: includePlanets ? planets : <PlanetInfo>[],

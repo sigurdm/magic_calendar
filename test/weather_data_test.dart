@@ -63,6 +63,20 @@ void main() {
       expect(str, contains('1.50mm'));
     });
 
+    test('toString formatting handles null temperature gracefully', () {
+      final point = WeatherDataPoint(
+        time: DateTime.utc(2026, 6, 1, 12, 0),
+        temperature: null,
+        windSpeed: 4.2,
+        windDirection: 120.0,
+        cloudCover: 30.0,
+        precipitation: 1.5,
+      );
+
+      final str = point.toString();
+      expect(str, contains('temp: null'));
+    });
+
     test('fromJson parses next_1_hours precipitation when available', () {
       final json = {
         'time': '2026-06-01T12:00:00Z',
@@ -144,7 +158,7 @@ void main() {
       };
 
       final point = WeatherDataPoint.fromJson(json);
-      expect(point.temperature, equals(0.0));
+      expect(point.temperature, isNull);
       expect(point.windSpeed, equals(0.0));
       expect(point.windDirection, equals(0.0));
       expect(point.cloudCover, equals(0.0));
@@ -200,8 +214,8 @@ void main() {
         expect(results[0].cloudCover, equals(0.0));
         expect(results[0].precipitation, equals(0.5));
 
-        // Row 1: temperature=0.0 (null), wind_speed=3.2, wind_dir=0.0 (null), clouds=0.0 (null), precip=0.0 (null)
-        expect(results[1].temperature, equals(0.0));
+        // Row 1: temperature=null, wind_speed=3.2, wind_dir=0.0 (null), clouds=0.0 (null), precip=0.0 (null)
+        expect(results[1].temperature, isNull);
         expect(results[1].windSpeed, equals(3.2));
         expect(results[1].windDirection, equals(0.0));
         expect(results[1].cloudCover, equals(0.0));

@@ -3,8 +3,8 @@ final class WeatherDataPoint {
   /// Timestamp of the observation.
   final DateTime time;
 
-  /// Air temperature in degrees Celsius.
-  final double temperature;
+  /// Air temperature in degrees Celsius (null if unavailable).
+  final double? temperature;
 
   /// Wind speed in meters per second.
   final double windSpeed;
@@ -21,7 +21,7 @@ final class WeatherDataPoint {
   /// Creates a [WeatherDataPoint].
   const WeatherDataPoint({
     required this.time,
-    required this.temperature,
+    this.temperature,
     required this.windSpeed,
     required this.windDirection,
     required this.cloudCover,
@@ -60,8 +60,7 @@ final class WeatherDataPoint {
 
     return WeatherDataPoint(
       time: DateTime.parse(timeRaw as String),
-      temperature:
-          (instantDetails?['air_temperature'] as num?)?.toDouble() ?? 0.0,
+      temperature: (instantDetails?['air_temperature'] as num?)?.toDouble(),
       windSpeed: (instantDetails?['wind_speed'] as num?)?.toDouble() ?? 0.0,
       windDirection:
           (instantDetails?['wind_from_direction'] as num?)?.toDouble() ?? 0.0,
@@ -95,7 +94,7 @@ final class WeatherDataPoint {
 
   @override
   String toString() =>
-      'WeatherDataPoint(time: $time, temp: ${temperature.toStringAsFixed(1)}°C, '
+      'WeatherDataPoint(time: $time, temp: ${temperature != null ? "${temperature!.toStringAsFixed(1)}°C" : "null"}, '
       'wind: ${windSpeed.toStringAsFixed(1)}m/s @ ${windDirection.toStringAsFixed(0)}°, '
       'cloud: ${cloudCover.toStringAsFixed(0)}%, precip: ${precipitation.toStringAsFixed(2)}mm)';
 }

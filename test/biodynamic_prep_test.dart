@@ -226,6 +226,58 @@ void main() async {
         isTrue,
       );
     });
+
+    test('BD 500 is disqualified on Gray Day', () {
+      final grayInfo = CalendarInfo(
+        quality: PlantQuality.none,
+        isGrayDay: true,
+        message: 'Gray Day: Near Lunar Node.',
+        sapFlow: 'Descending: Sap recedes',
+        vitality: '',
+        moonPhase: const MoonPhaseInfo(
+          illuminatedFraction: 0.5,
+          isWaxing: false,
+          phaseAngle: 270.0,
+        ),
+        planets: const [],
+      );
+
+      final eval = BiodynamicPrepEvaluator.evaluateSpray(
+        prep: BiodynamicPrepType.bd500,
+        time: DateTime(2026, 5, 10, 17, 0),
+        calendarInfo: grayInfo,
+        windSpeed: 2.0,
+      );
+
+      expect(eval.isFavorable, isFalse);
+      expect(eval.negativeFactors.any((f) => f.contains('Gray Day')), isTrue);
+    });
+
+    test('BD 501 is disqualified on Gray Day', () {
+      final grayInfo = CalendarInfo(
+        quality: PlantQuality.none,
+        isGrayDay: true,
+        message: 'Gray Day: Near Lunar Node.',
+        sapFlow: 'Ascending: Sap rises',
+        vitality: '',
+        moonPhase: const MoonPhaseInfo(
+          illuminatedFraction: 0.5,
+          isWaxing: true,
+          phaseAngle: 90.0,
+        ),
+        planets: const [],
+      );
+
+      final eval = BiodynamicPrepEvaluator.evaluateSpray(
+        prep: BiodynamicPrepType.bd501,
+        time: DateTime(2026, 5, 10, 6, 30),
+        calendarInfo: grayInfo,
+        windSpeed: 1.5,
+      );
+
+      expect(eval.isFavorable, isFalse);
+      expect(eval.negativeFactors.any((f) => f.contains('Gray Day')), isTrue);
+    });
   });
 
   group(

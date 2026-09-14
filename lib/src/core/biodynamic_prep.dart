@@ -234,12 +234,17 @@ abstract final class BiodynamicPrepEvaluator {
     bool astroOk = true;
     bool weatherOk = true;
 
-    final isDescending = calendarInfo.sapFlow.contains('Descending');
-    final isAscending = calendarInfo.sapFlow.contains('Ascending');
+    final isDescending = calendarInfo.isMoonDescending;
+    final isAscending = calendarInfo.isMoonAscending;
     final hour = time.hour;
 
     switch (prep) {
       case BiodynamicPrepType.bd500:
+        if (calendarInfo.isGrayDay) {
+          negative.add('Gray Day: Avoid spraying during cosmic blackout.');
+          astroOk = false;
+        }
+
         if (isDescending) {
           positive.add(
             'Descending Moon (Earth Inhalation draws vitality into soil)',
@@ -285,6 +290,11 @@ abstract final class BiodynamicPrepEvaluator {
         break;
 
       case BiodynamicPrepType.bd501:
+        if (calendarInfo.isGrayDay) {
+          negative.add('Gray Day: Avoid spraying during cosmic blackout.');
+          astroOk = false;
+        }
+
         if (isAscending) {
           positive.add(
             'Ascending Moon (Earth Exhalation pushes forces to foliage)',

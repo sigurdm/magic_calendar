@@ -35,6 +35,12 @@ final class CalendarInfo {
   /// Sap flow vector text.
   final String sapFlow;
 
+  /// True if the Moon is ascending (rising in declination / sap rising).
+  final bool isMoonAscending;
+
+  /// True if the Moon is descending (falling in declination / sap receding).
+  bool get isMoonDescending => !isMoonAscending;
+
   /// Vitality description text.
   final String vitality;
 
@@ -61,12 +67,15 @@ final class CalendarInfo {
     this.activeAspects = const [],
     required this.message,
     required this.sapFlow,
+    bool? isMoonAscending,
     required this.vitality,
     required this.moonPhase,
     required this.planets,
     this.diurnalRhythm,
     this.transitionEnvelope,
-  });
+  }) : isMoonAscending =
+           isMoonAscending ??
+           (sapFlow.contains('Ascending') || !sapFlow.contains('Descending'));
 }
 
 /// Time interval quality entry.

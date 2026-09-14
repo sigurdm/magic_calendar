@@ -187,5 +187,30 @@ void main() {
         contains('Awaiting terrestrial weather data'),
       );
     });
+
+    test(
+      'Does not report false freezing or frost risk when temperature is null',
+      () {
+        final nullTempWeather = WeatherDataPoint(
+          time: DateTime.utc(2026, 4, 15, 11, 0),
+          temperature: null,
+          windSpeed: 2.0,
+          windDirection: 180,
+          cloudCover: 20,
+          precipitation: 0.0,
+        );
+
+        final result = EcologicalSynthesis.synthesize(
+          calendarInfo: sampleCalendarInfo,
+          time: DateTime.utc(2026, 4, 15, 11, 0),
+          weather: nullTempWeather,
+          latitude: 55.6761,
+        );
+
+        expect(result.isFreezing, isFalse);
+        expect(result.hasFrostRisk, isFalse);
+        expect(result.alerts, isEmpty);
+      },
+    );
   });
 }

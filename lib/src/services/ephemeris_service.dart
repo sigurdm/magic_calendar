@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:sweph/sweph.dart';
 
+import '../core/algorithm.dart';
 import '../core/dornach_boundaries.dart';
 import '../core/models/models.dart';
 
@@ -649,23 +650,24 @@ final class AstronomiaEphemerisService implements EphemerisService {
 
   @override
   bool isMoonSaturnOpposition(DateTime time) {
+    Sweph.swe_set_topo(_observerLon, _observerLat, _observerAlt);
     final jd = _toJD(time);
     final moon = Sweph.swe_calc_ut(
       jd,
       HeavenlyBody.SE_MOON,
-      SwephFlag(_geoFlags),
+      SwephFlag(_topoFlags),
     );
     final saturn = Sweph.swe_calc_ut(
       jd,
       HeavenlyBody.SE_SATURN,
-      SwephFlag(_geoFlags),
+      SwephFlag(_topoFlags),
     );
 
-    double diff = (moon.longitude - saturn.longitude).abs();
+    double diff = (moon.longitude - saturn.longitude).abs() % 360.0;
     if (diff > 180.0) {
       diff = 360.0 - diff;
     }
-    return (diff - 180.0).abs() <= 6.0;
+    return (diff - 180.0).abs() <= 4.0;
   }
 
   @override
@@ -777,22 +779,40 @@ final class AstronomiaEphemerisService implements EphemerisService {
 
       String message = '';
       if (isNearNode) {
-        message = 'Gray Day: Moon Node (N). Plant rest recommended.';
+        message = 'Gray Day: Near Lunar Node.';
       } else if (isNearPerigee) {
         message = 'Gray Day: Near Lunar Perigee (Pg).';
       }
 
       PlantQuality quality = PlantQuality.none;
+      bool isSpecial = false;
       if (!isGrayDay) {
         final moonLon = getMoonLongitude(current);
         quality = getQualityFromLongitude(moonLon, dornachBoundaries);
+
+        final isNearApogeeVal = isNearApogee(current);
+        final isMoonSaturnOpp = isMoonSaturnOpposition(current);
+        final planets = getPlanets(current);
+        final trineResult = calculateTrineQuality(planets, dornachBoundaries);
+
+        if (trineResult.quality != PlantQuality.none) {
+          quality = trineResult.quality;
+          message = trineResult.message;
+          isSpecial = true;
+        } else if (isNearApogeeVal) {
+          message = 'Apogee Window (Ag): High Light & Warmth Impulse.';
+          isSpecial = true;
+        } else if (isMoonSaturnOpp) {
+          message = 'Moon-Saturn Opposition (180°): Fungal Resistance & Strong Root Vigor.';
+          isSpecial = true;
+        }
       }
 
       if (intervals.isNotEmpty) {
         final last = intervals.last;
         if (last.quality == quality &&
             last.isGrayDay == isGrayDay &&
-            !last.isSpecial &&
+            last.isSpecial == isSpecial &&
             last.message == message) {
           intervals[intervals.length - 1] = CalendarInterval(
             start: last.start,
@@ -813,7 +833,7 @@ final class AstronomiaEphemerisService implements EphemerisService {
           end: intervalEnd,
           quality: quality,
           isGrayDay: isGrayDay,
-          isSpecial: false,
+          isSpecial: isSpecial,
           message: message,
         ),
       );

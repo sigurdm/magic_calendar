@@ -56,9 +56,7 @@ final class OpenMeteoClient {
         if (timeStr == null) {
           continue;
         }
-        final temp = i < temps.length
-            ? (temps[i] as num?)?.toDouble() ?? 0.0
-            : 0.0;
+        final temp = i < temps.length ? (temps[i] as num?)?.toDouble() : null;
         final wind = i < winds.length
             ? (winds[i] as num?)?.toDouble() ?? 0.0
             : 0.0;

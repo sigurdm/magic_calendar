@@ -345,7 +345,9 @@ final class CelestialDetailsCard extends StatelessWidget {
                               icon: Icons.thermostat,
                               iconColor: const Color(0xFFF97316),
                               label: 'Temperature',
-                              value: '${selectedWeather.temperature.round()}°C',
+                              value: selectedWeather.temperature != null
+                                  ? '${selectedWeather.temperature!.round()}°C'
+                                  : '--',
                               width: isCompact
                                   ? ((constraints.maxWidth - 8) / 2).clamp(
                                       100.0,

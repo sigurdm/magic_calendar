@@ -32,8 +32,8 @@ final class BiodynamicCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDescending = info.sapFlow.startsWith('Descending');
-    final isAscending = info.sapFlow.startsWith('Ascending');
+    final isDescending = info.isMoonDescending;
+    final isAscending = info.isMoonAscending;
     final hour = selectedDate.hour;
 
     // Evaluate CPP suitability
