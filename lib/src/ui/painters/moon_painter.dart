@@ -10,7 +10,7 @@ final class MoonPainter extends CustomPainter {
   final MoonPhaseInfo info;
 
   /// Creates a [MoonPainter].
-  MoonPainter({required this.info});
+  const MoonPainter({required this.info});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -22,71 +22,32 @@ final class MoonPainter extends CustomPainter {
 
     canvas.drawCircle(center, radius, bgPaint);
 
-    double k = info.illuminatedFraction;
+    final k = info.illuminatedFraction;
 
-    if (info.isWaxing) {
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        -math.pi / 2,
-        math.pi,
-        true,
-        lightPaint,
-      );
-      if (k < 0.5) {
-        double ellipseWidth = (1 - 2 * k) * radius;
-        canvas.drawOval(
-          Rect.fromLTRB(
-            center.dx - ellipseWidth,
-            center.dy - radius,
-            center.dx + ellipseWidth,
-            center.dy + radius,
-          ),
-          bgPaint,
-        );
-      } else {
-        double ellipseWidth = (2 * k - 1) * radius;
-        canvas.drawOval(
-          Rect.fromLTRB(
-            center.dx - ellipseWidth,
-            center.dy - radius,
-            center.dx + ellipseWidth,
-            center.dy + radius,
-          ),
-          lightPaint,
-        );
-      }
-    } else {
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        math.pi / 2,
-        math.pi,
-        true,
-        lightPaint,
-      );
-      if (k < 0.5) {
-        double ellipseWidth = (1 - 2 * k) * radius;
-        canvas.drawOval(
-          Rect.fromLTRB(
-            center.dx - ellipseWidth,
-            center.dy - radius,
-            center.dx + ellipseWidth,
-            center.dy + radius,
-          ),
-          bgPaint,
-        );
-      } else {
-        double ellipseWidth = (2 * k - 1) * radius;
-        canvas.drawOval(
-          Rect.fromLTRB(
-            center.dx - ellipseWidth,
-            center.dy - radius,
-            center.dx + ellipseWidth,
-            center.dy + radius,
-          ),
-          lightPaint,
-        );
-      }
-    }
+    // Light the half that faces the sun: the right-hand half while waxing,
+    // the left-hand half while waning.
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      info.isWaxing ? -math.pi / 2 : math.pi / 2,
+      math.pi,
+      true,
+      lightPaint,
+    );
+
+    // The terminator is an ellipse whose half-width collapses to zero at
+    // quarter phase. Below half illumination it carves shadow out of the lit
+    // half; above it, it adds light to the dark half.
+    final isCrescent = k < 0.5;
+    final ellipseWidth = (isCrescent ? 1 - 2 * k : 2 * k - 1) * radius;
+    canvas.drawOval(
+      Rect.fromLTRB(
+        center.dx - ellipseWidth,
+        center.dy - radius,
+        center.dx + ellipseWidth,
+        center.dy + radius,
+      ),
+      isCrescent ? bgPaint : lightPaint,
+    );
 
     final borderPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.1)

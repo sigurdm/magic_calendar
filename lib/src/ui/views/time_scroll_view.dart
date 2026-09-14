@@ -220,9 +220,13 @@ class _TimeScrollViewState extends State<TimeScrollView>
     final start = _centerTime.subtract(range);
     final end = _centerTime.add(range);
 
+    // These are signed margins: how many days of cached data remain on
+    // either side of the centre. A negative value means the centre has moved
+    // outside the cached range entirely, so it must also trigger a refetch --
+    // taking .abs() here made a far-away centre look well-covered.
     if (_cachedStart == null ||
-        _centerTime.difference(_cachedStart!).inDays.abs() < 30 ||
-        _cachedEnd!.difference(_centerTime).inDays.abs() < 30) {
+        _centerTime.difference(_cachedStart!).inDays < 30 ||
+        _cachedEnd!.difference(_centerTime).inDays < 30) {
       if (_visibleIntervals.isEmpty) {
         setState(() => _isLoading = true);
       }

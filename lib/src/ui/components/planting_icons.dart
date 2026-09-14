@@ -10,9 +10,6 @@ final class PlantingQualityIcon extends StatelessWidget {
   /// Size of icon.
   final double size;
 
-  /// Optional color tint.
-  final Color? color;
-
   /// Flag indicating if day is a Gray Day.
   final bool isGrayDay;
 
@@ -30,7 +27,6 @@ final class PlantingQualityIcon extends StatelessWidget {
     super.key,
     required this.quality,
     this.size = 24,
-    this.color,
     this.isGrayDay = false,
     this.isSpecial = false,
     this.showBorder = true,

@@ -7,7 +7,7 @@ import '../../services/ephemeris_service.dart';
 import '../../core/dornach_boundaries.dart';
 
 /// Widget displaying planetary positions across the zodiac ribbon.
-final class PlanetaryRibbon extends StatefulWidget {
+final class PlanetaryRibbon extends StatelessWidget {
   /// Notifier for currently selected date/time.
   final ValueListenable<DateTime> timeNotifier;
 
@@ -26,24 +26,19 @@ final class PlanetaryRibbon extends StatefulWidget {
   });
 
   @override
-  State<PlanetaryRibbon> createState() => _PlanetaryRibbonState();
-}
-
-class _PlanetaryRibbonState extends State<PlanetaryRibbon> {
-  @override
   Widget build(BuildContext context) {
     return RepaintBoundary(
       child: ValueListenableBuilder<DateTime>(
-        valueListenable: widget.timeNotifier,
+        valueListenable: timeNotifier,
         builder: (context, time, _) {
-          final planets = widget.ephemeris.getPlanets(time);
+          final planets = ephemeris.getPlanets(time);
           final moon = planets.firstWhere(
             (p) => p.name == 'Moon',
             orElse: () => PlanetInfo(name: 'Moon', longitude: 0),
           );
 
           return Container(
-            height: widget.height,
+            height: height,
             width: double.infinity,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.05),
@@ -75,7 +70,7 @@ final class RibbonPainter extends CustomPainter {
   final double centerLongitude;
 
   /// Creates a [RibbonPainter].
-  RibbonPainter({required this.planets, required this.centerLongitude});
+  const RibbonPainter({required this.planets, required this.centerLongitude});
 
   @override
   void paint(Canvas canvas, Size size) {

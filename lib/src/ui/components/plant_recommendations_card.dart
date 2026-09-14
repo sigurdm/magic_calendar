@@ -58,15 +58,6 @@ final class _PlantRecommendationsCardState
   _RecommendationsSection _selectedSection =
       _RecommendationsSection.vegetableSowing;
 
-  @override
-  void didUpdateWidget(covariant PlantRecommendationsCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.info.quality != widget.info.quality &&
-        _filterQuality == null) {
-      setState(() {});
-    }
-  }
-
   Color _getQualityColor(PlantQuality quality) {
     return GoetheanPalette.getColor(quality);
   }
@@ -1008,6 +999,19 @@ final class _PlantRecommendationsCardState
 
   @override
   Widget build(BuildContext context) {
+    final notifier = widget.weatherNotifier;
+    if (notifier == null) return _buildCard(context);
+    // The notifier is filled in asynchronously once the forecast request
+    // completes, so the card has to rebuild when it changes; reading
+    // `notifier.value` from `build` alone would pin the card to whatever
+    // weather happened to be available at first layout.
+    return ValueListenableBuilder<List<WeatherDataPoint>?>(
+      valueListenable: notifier,
+      builder: (context, _, _) => _buildCard(context),
+    );
+  }
+
+  Widget _buildCard(BuildContext context) {
     final activeQuality = _filterQuality ?? widget.info.quality;
     final currentMonth = widget.selectedDate.month;
     final activeColor = _getQualityColor(activeQuality);

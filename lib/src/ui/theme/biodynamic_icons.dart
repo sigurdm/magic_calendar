@@ -123,6 +123,10 @@ final class _BiodynamicIconPainter extends CustomPainter {
     canvas.save();
     canvas.scale(scale, scale);
 
+    // One Paint is shared by every draw call in the selected icon and mutated
+    // in place via `stroke..strokeWidth = n`. Each call site must therefore set
+    // its own strokeWidth: omitting it silently inherits whatever the previous
+    // call left behind, which makes the drawing order load-bearing.
     final strokePaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
@@ -182,7 +186,11 @@ final class _BiodynamicIconPainter extends CustomPainter {
       const Offset(7, 13),
       stroke..strokeWidth = 1.7,
     );
-    canvas.drawLine(const Offset(17, 3), const Offset(17, 13), stroke);
+    canvas.drawLine(
+      const Offset(17, 3),
+      const Offset(17, 13),
+      stroke..strokeWidth = 1.7,
+    );
 
     // Heavy forged steel lower cross-beam
     canvas.drawLine(
@@ -260,7 +268,11 @@ final class _BiodynamicIconPainter extends CustomPainter {
       const Offset(21, 13),
       stroke..strokeWidth = 1.2,
     );
-    canvas.drawLine(const Offset(3, 17), const Offset(21, 17), stroke);
+    canvas.drawLine(
+      const Offset(3, 17),
+      const Offset(21, 17),
+      stroke..strokeWidth = 1.2,
+    );
 
     // Wooden vertical corner braces
     canvas.drawLine(
@@ -268,7 +280,11 @@ final class _BiodynamicIconPainter extends CustomPainter {
       const Offset(6.5, 21),
       stroke..strokeWidth = 1.3,
     );
-    canvas.drawLine(const Offset(17.5, 9), const Offset(17.5, 21), stroke);
+    canvas.drawLine(
+      const Offset(17.5, 9),
+      const Offset(17.5, 21),
+      stroke..strokeWidth = 1.3,
+    );
 
     // Root crops peeking out (carrot tops with feathery greens)
     final rootLeft = Path()
@@ -287,7 +303,7 @@ final class _BiodynamicIconPainter extends CustomPainter {
       ..quadraticBezierTo(16, 4, 16, 2)
       ..moveTo(15, 9)
       ..quadraticBezierTo(17, 5, 19, 3);
-    canvas.drawPath(rootRight, stroke);
+    canvas.drawPath(rootRight, stroke..strokeWidth = 1.2);
 
     // Root crowns nestled in crate
     canvas.drawCircle(const Offset(8, 11), 1.6, fill);
@@ -492,8 +508,16 @@ final class _BiodynamicIconPainter extends CustomPainter {
       const Offset(4.5, 22),
       stroke..strokeWidth = 2.0,
     );
-    canvas.drawLine(const Offset(12, 19), const Offset(12, 22), stroke);
-    canvas.drawLine(const Offset(18, 18), const Offset(19.5, 22), stroke);
+    canvas.drawLine(
+      const Offset(12, 19),
+      const Offset(12, 22),
+      stroke..strokeWidth = 2.0,
+    );
+    canvas.drawLine(
+      const Offset(18, 18),
+      const Offset(19.5, 22),
+      stroke..strokeWidth = 2.0,
+    );
 
     // Wisps of medicinal steam
     final steam1 = Path()

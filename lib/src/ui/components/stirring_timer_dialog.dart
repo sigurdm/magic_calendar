@@ -58,6 +58,7 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
   late int _totalDurationSeconds;
   int _remainingSeconds = 3600;
   bool _isRunning = false;
+  bool _isComplete = false;
   Timer? _timer;
 
   // Vortex cycle length is 75 seconds (vortex buildup -> crater chaos -> direction reversal).
@@ -86,6 +87,7 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
         break;
     }
     _remainingSeconds = _totalDurationSeconds;
+    _isComplete = false;
   }
 
   void _toggleTimer() {
@@ -94,30 +96,42 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
       setState(() {
         _isRunning = false;
       });
-    } else {
-      setState(() {
-        _isRunning = true;
-      });
-      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (_remainingSeconds > 0) {
-          setState(() {
-            _remainingSeconds--;
-          });
-          // Play audible click on 75s reversal rhythm and warning cues
-          if (_secondsUntilReversal == _cycleLengthSeconds ||
-              _secondsUntilReversal <= 3) {
-            SystemSound.play(SystemSoundType.click);
-          }
-        } else {
-          _timer?.cancel();
-          setState(() {
-            _isRunning = false;
-          });
-          SystemSound.play(SystemSoundType.click);
-          _showCompletionAlert();
-        }
-      });
+      return;
     }
+
+    setState(() {
+      // Starting again after the countdown finished rewinds it; without this
+      // the tick below would drive _remainingSeconds negative.
+      if (_remainingSeconds <= 0) {
+        _remainingSeconds = _totalDurationSeconds;
+      }
+      _isComplete = false;
+      _isRunning = true;
+    });
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        _remainingSeconds--;
+      });
+
+      if (_remainingSeconds <= 0) {
+        // Finish on the tick that reaches zero. Waiting for the *next* tick to
+        // notice, as this used to, made the timer run a second long.
+        timer.cancel();
+        setState(() {
+          _isRunning = false;
+          _isComplete = true;
+        });
+        SystemSound.play(SystemSoundType.click);
+        return;
+      }
+
+      // Play audible click on 75s reversal rhythm and warning cues
+      if (_secondsUntilReversal == _cycleLengthSeconds ||
+          _secondsUntilReversal <= 3) {
+        SystemSound.play(SystemSoundType.click);
+      }
+    });
   }
 
   void _skipSeconds(int deltaSeconds) {
@@ -133,24 +147,9 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
     _timer?.cancel();
     setState(() {
       _isRunning = false;
+      _isComplete = false;
       _remainingSeconds = _totalDurationSeconds;
     });
-  }
-
-  void _showCompletionAlert() {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: const Color(0xFF10B981),
-        content: Text(
-          'Stirring Complete! Apply dynamized preparation immediately within 1-2 hours.',
-          style: GoogleFonts.outfit(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
   }
 
   @override
@@ -160,14 +159,48 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
   }
 
   int get _elapsedSeconds => _totalDurationSeconds - _remainingSeconds;
-  int get _currentCycleIndex =>
-      (_elapsedSeconds / _cycleLengthSeconds).floor() + 1;
   int get _totalCycles => (_totalDurationSeconds / _cycleLengthSeconds).ceil();
+
+  /// 1-based index of the cycle currently being stirred.
+  ///
+  /// Clamped to [_totalCycles]: when the final second elapses the raw
+  /// expression lands one past the end, which read as "Cycle 49/48".
+  int get _currentCycleIndex => ((_elapsedSeconds ~/ _cycleLengthSeconds) + 1)
+      .clamp(1, _totalCycles);
   int get _cycleSecondsElapsed => _elapsedSeconds % _cycleLengthSeconds;
   int get _secondsUntilReversal => _cycleLengthSeconds - _cycleSecondsElapsed;
 
   bool get _isReversalWarning => _isRunning && _secondsUntilReversal <= 5;
   bool get _isClockwise => (_currentCycleIndex % 2) != 0;
+
+  /// Banner shown in place of the old SnackBar once the countdown finishes.
+  Widget _buildCompletionBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF10B981).withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF10B981)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Stirring complete. Apply the dynamized preparation within 1-2 hours.',
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   String _formatTime(int totalSecs) {
     final minutes = totalSecs ~/ 60;
@@ -216,6 +249,10 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (_isComplete) ...[
+                    _buildCompletionBanner(),
+                    const SizedBox(height: 16),
+                  ],
                   // Header
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

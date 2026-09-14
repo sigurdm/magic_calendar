@@ -79,9 +79,20 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
     }
   }
 
+  /// Handles a selection that originated *from* the timeline.
+  ///
+  /// Deliberately does not call back into the timeline: it is already showing
+  /// the chosen instant, and scrolling it again would fight the user's drag.
   void _onTimeSelected(DateTime time) {
     _selectedDateNotifier.value = time;
     _updateInfo(time);
+  }
+
+  /// Handles a selection made outside the timeline, e.g. the header's date
+  /// picker, which must also bring the timeline to the chosen instant.
+  void _onDateJump(DateTime time) {
+    _onTimeSelected(time);
+    _timeScrollController.scrollToTime(time);
   }
 
   @override
@@ -132,7 +143,7 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                             onNowPressed: () {
                               _timeScrollController.scrollToNow();
                             },
-                            onDateSelected: _onTimeSelected,
+                            onDateSelected: _onDateJump,
                           ),
                           SizedBox(height: sectionSpacing),
                           ValueListenableBuilder<CalendarInfo?>(
@@ -234,7 +245,7 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                                           BiodynamicCard(
                                             info: info,
                                             selectedDate: date,
-                                            onTimeJump: _onTimeSelected,
+                                            onTimeJump: _onDateJump,
                                           ),
                                         ],
                                       );

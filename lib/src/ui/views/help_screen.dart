@@ -63,28 +63,28 @@ final class HelpScreen extends StatelessWidget {
               children: [
                 _buildQualityItem(
                   'Root (Earth)',
-                  const Color(0xFF8D6E63),
+                  GoetheanPalette.rootEarth,
                   'Triggered by Taurus, Virgo, and Capricorn. Focuses energy into roots and tubers.',
                   practical:
                       'Sow, plant, and cultivate carrots, potatoes, radishes, beets, onions, and celeriac. Deep hoeing and soil aeration on Root days encourages downward root penetration. Harvest root crops on Root days for long winter storage without rotting.',
                 ),
                 _buildQualityItem(
                   'Leaf (Water)',
-                  const Color(0xFF66BB6A),
+                  GoetheanPalette.leafWater,
                   'Triggered by Cancer, Scorpio, and Pisces. Stimulates leafy biomass and sap flow.',
                   practical:
                       'Sow and transplant lettuce, spinach, cabbage, kale, swiss chard, and celery. Water lawns, crops, and houseplants on Leaf days as plants absorb water most efficiently. Avoid harvesting crops for long cellar storage on Leaf days, as high moisture content invites mold.',
                 ),
                 _buildQualityItem(
                   'Flower (Air / Light)',
-                  const Color(0xFFAB47BC),
+                  GoetheanPalette.flowerAir,
                   'Triggered by Gemini, Libra, and Aquarius. Enhances fragrance and inflorescence.',
                   practical:
                       'Sow and cultivate annual/perennial flowers, broccoli, cauliflower, and artichokes. Cut fresh flowers on Flower days for vibrant colors and longer vase life. Harvest medicinal herbs (chamomile, lavender) mid-morning on Flower days for peak essential oil potency.',
                 ),
                 _buildQualityItem(
                   'Fruit / Seed (Fire / Warmth)',
-                  const Color(0xFFFFA726),
+                  GoetheanPalette.fruitWarmth,
                   'Triggered by Aries, Leo, and Sagittarius. Concentrates natural sugars and seed vitality.',
                   practical:
                       'Sow and prick out tomatoes, peppers, squash, cucumbers, beans, peas, corn, and fruit trees. Prune fruit trees and vines to stimulate fruit buds. Harvest grains, berries, fruits, and seeds on Fruit days for maximum sweetness, aroma, and seed germination viability.',
