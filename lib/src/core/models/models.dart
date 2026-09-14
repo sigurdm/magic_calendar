@@ -1,6 +1,7 @@
 export 'agricultural_tasks.dart';
 export 'calendar_info.dart';
 export 'celestial_aspect.dart';
+export 'concoction_recipe.dart';
 export 'default_locations.dart';
 export 'diurnal_rhythm.dart';
 export 'ephemeris_service.dart';

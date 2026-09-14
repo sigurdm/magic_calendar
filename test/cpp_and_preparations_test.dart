@@ -326,4 +326,42 @@ void main() {
       },
     );
   });
+
+  group('ConcoctionCatalog & Dosage Calculation', () {
+    test('contains expected standard recipes and findById works', () {
+      expect(ConcoctionCatalog.recipes, isNotEmpty);
+      final cpp = ConcoctionCatalog.findById('cpp_barrel_compost');
+      expect(cpp, isNotNull);
+      expect(cpp!.titleEn, contains('Cow Pat Pit'));
+      expect(cpp.dilutionRatio, equals(1));
+      expect(cpp.displayName, equals('${cpp.titleDa} (${cpp.titleEn})'));
+
+      expect(ConcoctionCatalog.findById('non_existent'), isNull);
+    });
+
+    test('calculates metric dosage accurately', () {
+      final horsetail = ConcoctionCatalog.findById('bd508_horsetail')!;
+      // 20g herb, 2L water per 100 sqm, dilution 5:1
+      final dosage = horsetail.calculateDosage(500.0, UnitSystem.metric);
+      expect(dosage.herbGrams, closeTo(100.0, 0.001));
+      expect(dosage.waterLiters, closeTo(10.0, 0.001));
+      expect(dosage.totalDilutedLiters, closeTo(50.0, 0.001));
+      expect(dosage.herbDisplay, equals('100.0 g'));
+      expect(dosage.waterDisplay, equals('10.0 L'));
+      expect(dosage.totalDilutedDisplay, equals('50.0 L'));
+
+      // Large plot >= 1000g shows kg
+      final largeDosage = horsetail.calculateDosage(10000.0, UnitSystem.metric);
+      expect(largeDosage.herbDisplay, equals('2.00 kg'));
+    });
+
+    test('calculates imperial dosage accurately', () {
+      final manure = ConcoctionCatalog.findById('bd500_horn_manure')!;
+      // 1000 sq ft => ~92.9 m2
+      final dosage = manure.calculateDosage(1000.0, UnitSystem.imperial);
+      expect(dosage.unitSystem, equals(UnitSystem.imperial));
+      expect(dosage.waterDisplay, contains('gal'));
+      expect(dosage.herbDisplay, contains('oz'));
+    });
+  });
 }
