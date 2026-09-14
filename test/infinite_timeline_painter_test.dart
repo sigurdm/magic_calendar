@@ -67,8 +67,7 @@ void main() {
         const size = Size(800, 200);
 
         expect(() => painter.paint(canvas, size), returnsNormally);
-        final picture = recorder.endRecording();
-        expect(picture, isNotNull);
+        recorder.endRecording().dispose();
       });
 
       test('paints isolated Gray Day with feathered entry and exit', () {
@@ -105,8 +104,7 @@ void main() {
         const size = Size(600, 200);
 
         expect(() => painter.paint(canvas, size), returnsNormally);
-        final picture = recorder.endRecording();
-        expect(picture, isNotNull);
+        recorder.endRecording().dispose();
       });
 
       test(
@@ -142,8 +140,7 @@ void main() {
               returnsNormally,
               reason: 'Failed at hourWidth: $hw',
             );
-            final picture = recorder.endRecording();
-            expect(picture, isNotNull);
+            recorder.endRecording().dispose();
           }
         },
       );

@@ -27,8 +27,6 @@ void main() {
       service.setObserverLocation(47.4814, 7.6178, 350.0);
 
       // Topocentric declination should reflect the observer's geographic position
-      expect(dec1, isNotNull);
-      expect(dec2, isNotNull);
       expect(
         (dec1 - dec2).abs(),
         greaterThan(0.01),
@@ -56,7 +54,15 @@ void main() {
         includePlanets: true,
       );
 
-      expect(info.activeAspects, isNotNull);
+      // activeAspects is non-nullable, so its mere presence says nothing;
+      // what matters is that includePlanets actually populated it with
+      // well-formed aspects rather than leaving it at the empty default.
+      expect(info.activeAspects, isNotEmpty);
+      for (final aspect in info.activeAspects) {
+        expect(aspect.body1, isNotEmpty);
+        expect(aspect.body2, isNotEmpty);
+        expect(aspect.separationDegrees, inInclusiveRange(0.0, 180.0));
+      }
       expect(info.isEclipse, isFalse);
     });
 

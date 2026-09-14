@@ -13,7 +13,6 @@ void main() async {
 
   test('getCalendarInfo returns a valid CalendarInfo', () {
     final info = getCalendarInfo(DateTime.now(), FakeEphemerisService());
-    expect(info, isNotNull);
     expect(info.quality, isA<PlantQuality>());
   });
 
@@ -22,7 +21,6 @@ void main() async {
       error: Exception('Simulated Ephemeris Error'),
     );
     final info = getCalendarInfo(DateTime.now(), throwingService);
-    expect(info, isNotNull);
     expect(info.quality, PlantQuality.none);
     expect(info.isGrayDay, isFalse);
     expect(info.message, contains('Error calculating planetary positions:'));
