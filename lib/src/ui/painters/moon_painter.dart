@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-
 import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
 
 import '../../services/ephemeris_service.dart';
 

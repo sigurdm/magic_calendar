@@ -1,7 +1,7 @@
-import "package:flutter_test/flutter_test.dart";
-import "package:magic_calendar/src/core/algorithm.dart";
-import "package:magic_calendar/src/core/dornach_boundaries.dart";
-import "package:magic_calendar/src/services/ephemeris_service.dart";
+import 'package:flutter_test/flutter_test.dart';
+import 'package:magic_calendar/src/core/algorithm.dart';
+import 'package:magic_calendar/src/core/dornach_boundaries.dart';
+import 'package:magic_calendar/src/services/ephemeris_service.dart';
 
 final class _StubEphemerisService with EphemerisService {
   final double moonLongitude;
@@ -40,32 +40,29 @@ final class _StubEphemerisService with EphemerisService {
 }
 
 void main() {
-  group("TransitionEnvelope & Cusp Blending", () {
-    test("Identifies stable quality far from boundary", () {
+  group('TransitionEnvelope & Cusp Blending', () {
+    test('Identifies stable quality far from boundary', () {
       // 70.0 is deep inside Taurus (Earth / Root: 55.0 to 90.0)
       final envelope = TransitionEnvelope.fromLongitude(70.0);
 
       expect(envelope.isTransition, isFalse);
       expect(envelope.fromQuality, PlantQuality.root);
       expect(envelope.toQuality, PlantQuality.root);
-      expect(envelope.description, contains("Stable Root impulse"));
+      expect(envelope.description, contains('Stable Root impulse'));
     });
 
-    test(
-      "Detects cusp entry ~0.75° before boundary (Aries Fruit -> Taurus Root at 55°)",
-      () {
-        // Boundary is at 55.0. 55.0 - 0.75 = 54.25
-        final envelope = TransitionEnvelope.fromLongitude(54.25);
+    test('Detects cusp entry ~0.75° before boundary (Aries Fruit -> Taurus Root at 55°)', () {
+      // Boundary is at 55.0. 55.0 - 0.75 = 54.25
+      final envelope = TransitionEnvelope.fromLongitude(54.25);
 
-        expect(envelope.isTransition, isTrue);
-        expect(envelope.fromQuality, PlantQuality.fruit);
-        expect(envelope.toQuality, PlantQuality.root);
-        expect(envelope.progress, closeTo(0.0, 0.01));
-        expect(envelope.description, contains("Fruit to Root"));
-      },
-    );
+      expect(envelope.isTransition, isTrue);
+      expect(envelope.fromQuality, PlantQuality.fruit);
+      expect(envelope.toQuality, PlantQuality.root);
+      expect(envelope.progress, closeTo(0.0, 0.01));
+      expect(envelope.description, contains('Fruit to Root'));
+    });
 
-    test("Detects exact cusp boundary crossing (50% progress)", () {
+    test('Detects exact cusp boundary crossing (50% progress)', () {
       // Exactly at 55.0
       final envelope = TransitionEnvelope.fromLongitude(55.0);
 
@@ -73,10 +70,10 @@ void main() {
       expect(envelope.fromQuality, PlantQuality.fruit);
       expect(envelope.toQuality, PlantQuality.root);
       expect(envelope.progress, closeTo(0.5, 0.01));
-      expect(envelope.description, contains("50%"));
+      expect(envelope.description, contains('50%'));
     });
 
-    test("Detects cusp exit ~0.75° after boundary", () {
+    test('Detects cusp exit ~0.75° after boundary', () {
       // 55.0 + 0.75 = 55.75
       final envelope = TransitionEnvelope.fromLongitude(55.75);
 
@@ -84,10 +81,10 @@ void main() {
       expect(envelope.fromQuality, PlantQuality.fruit);
       expect(envelope.toQuality, PlantQuality.root);
       expect(envelope.progress, closeTo(1.0, 0.01));
-      expect(envelope.description, contains("100%"));
+      expect(envelope.description, contains('100%'));
     });
 
-    test("Just beyond threshold is not in transition", () {
+    test('Just beyond threshold is not in transition', () {
       // 55.0 + 0.76 is outside the 0.75° threshold
       final envelope = TransitionEnvelope.fromLongitude(55.76);
 
@@ -97,7 +94,7 @@ void main() {
     });
 
     test(
-      "Handles 360° / 0° wrap-around boundary (Aquarius Air -> Pisces Water)",
+      'Handles 360° / 0° wrap-around boundary (Aquarius Air -> Pisces Water)',
       () {
         // Aquarius ends at 360/0, Pisces starts at 0
         // 359.5° is 0.5° before 360°
@@ -118,7 +115,7 @@ void main() {
       },
     );
 
-    test("Custom threshold parameter works", () {
+    test('Custom threshold parameter works', () {
       // With threshold of 1.0 degree: 53.8 is outside, 54.1 is inside
       final outEnv = TransitionEnvelope.fromLongitude(
         53.8,
@@ -137,7 +134,7 @@ void main() {
       expect(inEnv.toQuality, PlantQuality.root);
     });
 
-    test("getCalendarInfo populates transitionEnvelope correctly", () {
+    test('getCalendarInfo populates transitionEnvelope correctly', () {
       final boundaryTime = DateTime.utc(2026, 6, 21, 12, 0);
       // Moon at 54.8° (in cusp transition to Taurus Root)
       final service = _StubEphemerisService(54.8);

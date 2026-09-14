@@ -62,52 +62,46 @@ void main() {
       expect(eval.positiveFactors.any((f) => f.contains('<= 5 m/s')), isTrue);
     });
 
-    test(
-      'CPP spray evaluation enforces weather thresholds (wind <= 5 m/s, temp >= 8°C)',
-      () {
-        final descInfo = CalendarInfo(
-          quality: PlantQuality.leaf,
-          isGrayDay: false,
-          message: '',
-          sapFlow: 'Descending',
-          vitality: '',
-          moonPhase: const MoonPhaseInfo(
-            illuminatedFraction: 0.5,
-            isWaxing: false,
-            phaseAngle: 200.0,
-          ),
-          planets: const [],
-        );
+    test('CPP spray evaluation enforces weather thresholds (wind <= 5 m/s, temp >= 8°C)', () {
+      final descInfo = CalendarInfo(
+        quality: PlantQuality.leaf,
+        isGrayDay: false,
+        message: '',
+        sapFlow: 'Descending',
+        vitality: '',
+        moonPhase: const MoonPhaseInfo(
+          illuminatedFraction: 0.5,
+          isWaxing: false,
+          phaseAngle: 200.0,
+        ),
+        planets: const [],
+      );
 
-        // Low temp
-        final coldEval = BiodynamicPrepEvaluator.evaluateSpray(
-          prep: BiodynamicPrepType.cpp,
-          time: DateTime(2026, 5, 20, 17, 0),
-          calendarInfo: descInfo,
-          temperature: 5.0,
-          windSpeed: 2.0,
-        );
-        expect(coldEval.weatherSuitable, isFalse);
-        expect(
-          coldEval.negativeFactors.any((f) => f.contains('< 8°C')),
-          isTrue,
-        );
+      // Low temp
+      final coldEval = BiodynamicPrepEvaluator.evaluateSpray(
+        prep: BiodynamicPrepType.cpp,
+        time: DateTime(2026, 5, 20, 17, 0),
+        calendarInfo: descInfo,
+        temperature: 5.0,
+        windSpeed: 2.0,
+      );
+      expect(coldEval.weatherSuitable, isFalse);
+      expect(coldEval.negativeFactors.any((f) => f.contains('< 8°C')), isTrue);
 
-        // High wind
-        final windyEval = BiodynamicPrepEvaluator.evaluateSpray(
-          prep: BiodynamicPrepType.cpp,
-          time: DateTime(2026, 5, 20, 17, 0),
-          calendarInfo: descInfo,
-          temperature: 15.0,
-          windSpeed: 6.0,
-        );
-        expect(windyEval.weatherSuitable, isFalse);
-        expect(
-          windyEval.negativeFactors.any((f) => f.contains('> 5 m/s')),
-          isTrue,
-        );
-      },
-    );
+      // High wind
+      final windyEval = BiodynamicPrepEvaluator.evaluateSpray(
+        prep: BiodynamicPrepType.cpp,
+        time: DateTime(2026, 5, 20, 17, 0),
+        calendarInfo: descInfo,
+        temperature: 15.0,
+        windSpeed: 6.0,
+      );
+      expect(windyEval.weatherSuitable, isFalse);
+      expect(
+        windyEval.negativeFactors.any((f) => f.contains('> 5 m/s')),
+        isTrue,
+      );
+    });
   });
 
   group(
@@ -191,19 +185,16 @@ void main() {
   );
 
   group('Module 3 - Concoction Catalog & Assistant Dialog', () {
-    test(
-      'ConcoctionCatalog contains cpp_barrel_compost recipe with Maria Thun rates',
-      () {
-        final cppRecipe = ConcoctionCatalog.recipes.firstWhere(
-          (r) => r.id == 'cpp_barrel_compost',
-        );
-        expect(cppRecipe.titleEn, contains('Cow Pat Pit'));
-        expect(cppRecipe.herbGramsPer100Sqm, equals(35.0));
-        expect(cppRecipe.waterLitersPer100Sqm, equals(5.0));
-        expect(cppRecipe.dilutionRatio, equals(1));
-        expect(cppRecipe.steps.any((s) => s.contains('20 minutes')), isTrue);
-      },
-    );
+    test('ConcoctionCatalog contains cpp_barrel_compost recipe with Maria Thun rates', () {
+      final cppRecipe = ConcoctionCatalog.recipes.firstWhere(
+        (r) => r.id == 'cpp_barrel_compost',
+      );
+      expect(cppRecipe.titleEn, contains('Cow Pat Pit'));
+      expect(cppRecipe.herbGramsPer100Sqm, equals(35.0));
+      expect(cppRecipe.waterLitersPer100Sqm, equals(5.0));
+      expect(cppRecipe.dilutionRatio, equals(1));
+      expect(cppRecipe.steps.any((s) => s.contains('20 minutes')), isTrue);
+    });
 
     testWidgets(
       'ConcoctionAssistantDialog displays CPP recipe and calculates dosages',

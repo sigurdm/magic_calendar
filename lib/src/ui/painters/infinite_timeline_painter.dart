@@ -1,8 +1,8 @@
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import 'dart:ui' as ui;
-import 'dart:math' as math;
 
 import '../../services/ephemeris_service.dart';
 
@@ -576,9 +576,8 @@ final class InfiniteTimelinePainter extends CustomPainter {
       if (interval.isGrayDay) {
         colors[i] = Colors.grey[400]!.withValues(alpha: 0.8);
       } else if (interval.quality != PlantQuality.none) {
-        colors[i] = _getColorForQuality(
-          interval.quality,
-        ).withValues(alpha: 0.8);
+        colors[i] = _getColorForQuality(interval.quality)
+            .withValues(alpha: 0.8);
       } else {
         colors[i] = Colors.transparent;
       }
@@ -590,7 +589,7 @@ final class InfiniteTimelinePainter extends CustomPainter {
     for (int i = 0; i < count - 1; i++) {
       final curr = visibleIntervals[i];
       final next = visibleIntervals[i + 1];
-      final touches = (next.start.difference(curr.end).inSeconds).abs() <= 120;
+      final touches = next.start.difference(curr.end).inSeconds.abs() <= 120;
       if (touches) {
         final hasTransition = colors[i] != colors[i + 1];
         if (hasTransition) {
@@ -634,16 +633,16 @@ final class InfiniteTimelinePainter extends CustomPainter {
 
         final hasLeftNeighbor =
             i > 0 &&
-            (visibleIntervals[i].start
-                        .difference(visibleIntervals[i - 1].end)
-                        .inSeconds)
+            visibleIntervals[i].start
+                    .difference(visibleIntervals[i - 1].end)
+                    .inSeconds
                     .abs() <=
                 120;
         final hasRightNeighbor =
             i < count - 1 &&
-            (visibleIntervals[i + 1].start
-                        .difference(visibleIntervals[i].end)
-                        .inSeconds)
+            visibleIntervals[i + 1].start
+                    .difference(visibleIntervals[i].end)
+                    .inSeconds
                     .abs() <=
                 120;
 
@@ -703,9 +702,9 @@ final class InfiniteTimelinePainter extends CustomPainter {
       if (interval.isGrayDay) {
         final hasLeftTransitionNeighbor =
             i > 0 &&
-            (visibleIntervals[i].start
-                        .difference(visibleIntervals[i - 1].end)
-                        .inSeconds)
+            visibleIntervals[i].start
+                    .difference(visibleIntervals[i - 1].end)
+                    .inSeconds
                     .abs() <=
                 120 &&
             rightOffsets[i - 1] > 0.0;
@@ -723,9 +722,9 @@ final class InfiniteTimelinePainter extends CustomPainter {
 
         final hasRightTransitionNeighbor =
             i < count - 1 &&
-            (visibleIntervals[i + 1].start
-                        .difference(visibleIntervals[i].end)
-                        .inSeconds)
+            visibleIntervals[i + 1].start
+                    .difference(visibleIntervals[i].end)
+                    .inSeconds
                     .abs() <=
                 120 &&
             leftOffsets[i + 1] > 0.0;
@@ -750,7 +749,7 @@ final class InfiniteTimelinePainter extends CustomPainter {
       final xStart = xStarts[i];
       final width = xEnds[i] - xStart;
       final label = interval.isGrayDay
-          ? "gray"
+          ? 'gray'
           : _getLabelForQuality(interval.quality);
 
       _drawBlockDecorations(
@@ -791,9 +790,9 @@ final class InfiniteTimelinePainter extends CustomPainter {
       final prepStripRect = Rect.fromLTWH(x, 2, width, 3);
       final prepPaint = Paint();
       final isEvening =
-          label != "gray" && (quality == PlantQuality.root || label == "root");
+          label != 'gray' && (quality == PlantQuality.root || label == 'root');
       final isMorning =
-          label != "gray" &&
+          label != 'gray' &&
           (quality == PlantQuality.flower || quality == PlantQuality.fruit);
 
       if (isEvening) {

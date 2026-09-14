@@ -96,7 +96,7 @@ final class _PlantRecommendationsCardState
 
   void _showCropDetails(BuildContext context, VegetableEntry crop) {
     final themeColor = _getQualityColor(crop.quality);
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -784,7 +784,7 @@ final class _PlantRecommendationsCardState
           ),
         ),
         const SizedBox(height: 14),
-        ...tasks.map((advice) => _buildTaskCard(advice)),
+        ...tasks.map(_buildTaskCard),
       ],
     );
   }
@@ -887,9 +887,8 @@ final class _PlantRecommendationsCardState
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(
-                                0xFFEF4444,
-                              ).withValues(alpha: 0.2),
+                              color: const Color(0xFFEF4444)
+                                  .withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(

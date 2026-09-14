@@ -242,45 +242,42 @@ void main() async {
       );
     });
 
-    test(
-      'BD 501 prefers early morning sunrise and Ascending Moon on Flower/Fruit day',
-      () {
-        final ascInfo = CalendarInfo(
-          quality: PlantQuality.flower,
-          isGrayDay: false,
-          message: '',
-          sapFlow: 'Ascending: Sap rises',
-          vitality: '',
-          moonPhase: const MoonPhaseInfo(
-            illuminatedFraction: 0.6,
-            isWaxing: true,
-            phaseAngle: 60.0,
-          ),
-          planets: const [],
-        );
+    test('BD 501 prefers early morning sunrise and Ascending Moon on Flower/Fruit day', () {
+      final ascInfo = CalendarInfo(
+        quality: PlantQuality.flower,
+        isGrayDay: false,
+        message: '',
+        sapFlow: 'Ascending: Sap rises',
+        vitality: '',
+        moonPhase: const MoonPhaseInfo(
+          illuminatedFraction: 0.6,
+          isWaxing: true,
+          phaseAngle: 60.0,
+        ),
+        planets: const [],
+      );
 
-        final morningEval = BiodynamicPrepEvaluator.evaluateSpray(
-          prep: BiodynamicPrepType.bd501,
-          time: DateTime(2026, 5, 10, 6, 30),
-          calendarInfo: ascInfo,
-          windSpeed: 1.5,
-        );
+      final morningEval = BiodynamicPrepEvaluator.evaluateSpray(
+        prep: BiodynamicPrepType.bd501,
+        time: DateTime(2026, 5, 10, 6, 30),
+        calendarInfo: ascInfo,
+        windSpeed: 1.5,
+      );
 
-        expect(morningEval.isFavorable, isTrue);
-        expect(
-          morningEval.positiveFactors.any((f) => f.contains('05:00–09:00')),
-          isTrue,
-        );
-        expect(
-          morningEval.positiveFactors.any((f) => f.contains('Ascending Moon')),
-          isTrue,
-        );
-        expect(
-          morningEval.positiveFactors.any((f) => f.contains('Flower')),
-          isTrue,
-        );
-      },
-    );
+      expect(morningEval.isFavorable, isTrue);
+      expect(
+        morningEval.positiveFactors.any((f) => f.contains('05:00–09:00')),
+        isTrue,
+      );
+      expect(
+        morningEval.positiveFactors.any((f) => f.contains('Ascending Moon')),
+        isTrue,
+      );
+      expect(
+        morningEval.positiveFactors.any((f) => f.contains('Flower')),
+        isTrue,
+      );
+    });
   });
 
   group(
@@ -300,37 +297,31 @@ void main() async {
         planets: const [],
       );
 
-      test(
-        'evaluates CPP as optimal during Descending Moon, evening (15-20), temp >= 8°C, wind <= 5 m/s',
-        () {
-          final eval = BiodynamicPrepEvaluator.evaluateSpray(
-            prep: BiodynamicPrepType.cpp,
-            time: DateTime(2026, 5, 12, 17, 30),
-            calendarInfo: descRootInfo,
-            temperature: 15.0,
-            windSpeed: 3.0,
-            precipitation: 0.0,
-          );
+      test('evaluates CPP as optimal during Descending Moon, evening (15-20), temp >= 8°C, wind <= 5 m/s', () {
+        final eval = BiodynamicPrepEvaluator.evaluateSpray(
+          prep: BiodynamicPrepType.cpp,
+          time: DateTime(2026, 5, 12, 17, 30),
+          calendarInfo: descRootInfo,
+          temperature: 15.0,
+          windSpeed: 3.0,
+          precipitation: 0.0,
+        );
 
-          expect(eval.level, equals(PrepSuitabilityLevel.optimal));
-          expect(eval.isFavorable, isTrue);
-          expect(eval.score, equals(1.0));
-          expect(
-            eval.positiveFactors.any((f) => f.contains('Descending Moon')),
-            isTrue,
-          );
-          expect(
-            eval.positiveFactors.any((f) => f.contains('15:00–20:00')),
-            isTrue,
-          );
-          expect(eval.positiveFactors.any((f) => f.contains('>= 8°C')), isTrue);
-          expect(
-            eval.positiveFactors.any((f) => f.contains('<= 5 m/s')),
-            isTrue,
-          );
-          expect(eval.negativeFactors, isEmpty);
-        },
-      );
+        expect(eval.level, equals(PrepSuitabilityLevel.optimal));
+        expect(eval.isFavorable, isTrue);
+        expect(eval.score, equals(1.0));
+        expect(
+          eval.positiveFactors.any((f) => f.contains('Descending Moon')),
+          isTrue,
+        );
+        expect(
+          eval.positiveFactors.any((f) => f.contains('15:00–20:00')),
+          isTrue,
+        );
+        expect(eval.positiveFactors.any((f) => f.contains('>= 8°C')), isTrue);
+        expect(eval.positiveFactors.any((f) => f.contains('<= 5 m/s')), isTrue);
+        expect(eval.negativeFactors, isEmpty);
+      });
 
       test('penalizes CPP when temperature is below 8°C', () {
         final eval = BiodynamicPrepEvaluator.evaluateSpray(
@@ -424,38 +415,35 @@ void main() async {
       );
     });
 
-    test(
-      'BD 502 Yarrow shows Michaelmas burial window in October and Easter retrieval in April',
-      () {
-        final autumnDate = DateTime(2026, 10, 5);
-        final autumnStatus = BiodynamicPrepEvaluator.getBurialStatus(
-          prep: BiodynamicPrepType.bd502,
-          date: autumnDate,
-          latitude: 55.6,
-        );
-        expect(autumnStatus.isActiveWindow, isTrue);
-        expect(autumnStatus.stage, contains('Michaelmas'));
-        expect(autumnStatus.sheathOrgan?.toLowerCase(), contains('stag'));
+    test('BD 502 Yarrow shows Michaelmas burial window in October and Easter retrieval in April', () {
+      final autumnDate = DateTime(2026, 10, 5);
+      final autumnStatus = BiodynamicPrepEvaluator.getBurialStatus(
+        prep: BiodynamicPrepType.bd502,
+        date: autumnDate,
+        latitude: 55.6,
+      );
+      expect(autumnStatus.isActiveWindow, isTrue);
+      expect(autumnStatus.stage, contains('Michaelmas'));
+      expect(autumnStatus.sheathOrgan?.toLowerCase(), contains('stag'));
 
-        final winterDate = DateTime(2026, 1, 15);
-        final winterStatus = BiodynamicPrepEvaluator.getBurialStatus(
-          prep: BiodynamicPrepType.bd502,
-          date: winterDate,
-          latitude: 55.6,
-        );
-        expect(winterStatus.isActiveWindow, isFalse);
-        expect(winterStatus.stage, contains('Subterranean Winter'));
+      final winterDate = DateTime(2026, 1, 15);
+      final winterStatus = BiodynamicPrepEvaluator.getBurialStatus(
+        prep: BiodynamicPrepType.bd502,
+        date: winterDate,
+        latitude: 55.6,
+      );
+      expect(winterStatus.isActiveWindow, isFalse);
+      expect(winterStatus.stage, contains('Subterranean Winter'));
 
-        final springDate = DateTime(2026, 4, 10);
-        final springStatus = BiodynamicPrepEvaluator.getBurialStatus(
-          prep: BiodynamicPrepType.bd502,
-          date: springDate,
-          latitude: 55.6,
-        );
-        expect(springStatus.isActiveWindow, isTrue);
-        expect(springStatus.stage, contains('Easter'));
-      },
-    );
+      final springDate = DateTime(2026, 4, 10);
+      final springStatus = BiodynamicPrepEvaluator.getBurialStatus(
+        prep: BiodynamicPrepType.bd502,
+        date: springDate,
+        latitude: 55.6,
+      );
+      expect(springStatus.isActiveWindow, isTrue);
+      expect(springStatus.stage, contains('Easter'));
+    });
 
     test(
       'getSeasonalBurialProgress accurately calculates burial rhythm progress',

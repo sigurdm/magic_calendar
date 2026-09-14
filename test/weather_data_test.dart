@@ -159,30 +159,27 @@ void main() {
       expect(point.precipitation, equals(2.4));
     });
 
-    test(
-      'fromJson falls back to next_6_hours (divided by 6) when next_1_hours is absent',
-      () {
-        final json = {
-          'time': '2026-06-05T12:00:00Z',
-          'data': {
-            'instant': {
-              'details': {
-                'air_temperature': 21.0,
-                'wind_speed': 5.0,
-                'wind_from_direction': 90.0,
-                'cloud_area_fraction': 10.0,
-              },
-            },
-            'next_6_hours': {
-              'details': {'precipitation_amount': 9.0},
+    test('fromJson falls back to next_6_hours (divided by 6) when next_1_hours is absent', () {
+      final json = {
+        'time': '2026-06-05T12:00:00Z',
+        'data': {
+          'instant': {
+            'details': {
+              'air_temperature': 21.0,
+              'wind_speed': 5.0,
+              'wind_from_direction': 90.0,
+              'cloud_area_fraction': 10.0,
             },
           },
-        };
+          'next_6_hours': {
+            'details': {'precipitation_amount': 9.0},
+          },
+        },
+      };
 
-        final point = WeatherDataPoint.fromJson(json);
-        expect(point.precipitation, closeTo(1.5, 0.001)); // 9.0 / 6 = 1.5
-      },
-    );
+      final point = WeatherDataPoint.fromJson(json);
+      expect(point.precipitation, closeTo(1.5, 0.001)); // 9.0 / 6 = 1.5
+    });
 
     test(
       'fromJson defaults to 0.0 when next_1_hours and next_6_hours are absent',
@@ -222,61 +219,68 @@ void main() {
 
     test('fromJson throws ArgumentError if time is null', () {
       expect(
-        () => WeatherDataPoint.fromJson({'data': {}}),
+        () => WeatherDataPoint.fromJson({'data': <String, Object?>{}}),
         throwsArgumentError,
       );
     });
   });
 
   group('OpenMeteoClient', () {
-    test('safely parses historical data with partial null sensor values', () async {
-      final mockResponse = {
-        'hourly': {
-          'time': ['2026-05-01T00:00', '2026-05-01T01:00', '2026-05-01T02:00'],
-          'temperature_2m': [12.5, null, 14],
-          'wind_speed_10m': [null, 3.2, 5],
-          'wind_direction_10m': [180, null, 210.5],
-          'cloudcover': [null, null, 80],
-          'precipitation': [0.5, null, 2],
-        },
-      };
+    test(
+      'safely parses historical data with partial null sensor values',
+      () async {
+        final mockResponse = {
+          'hourly': {
+            'time': [
+              '2026-05-01T00:00',
+              '2026-05-01T01:00',
+              '2026-05-01T02:00',
+            ],
+            'temperature_2m': [12.5, null, 14],
+            'wind_speed_10m': [null, 3.2, 5],
+            'wind_direction_10m': [180, null, 210.5],
+            'cloudcover': [null, null, 80],
+            'precipitation': [0.5, null, 2],
+          },
+        };
 
-      final client = MockClient((request) async {
-        expect(request.url.host, equals('archive-api.open-meteo.com'));
-        return http.Response(jsonEncode(mockResponse), 200);
-      });
+        final client = MockClient((request) async {
+          expect(request.url.host, equals('archive-api.open-meteo.com'));
+          return http.Response(jsonEncode(mockResponse), 200);
+        });
 
-      final openMeteo = OpenMeteoClient(client: client);
-      final results = await openMeteo.getHistoricalData(
-        55.0,
-        10.0,
-        DateTime.utc(2026, 5, 1),
-        DateTime.utc(2026, 5, 1),
-      );
+        final openMeteo = OpenMeteoClient(client: client);
+        final results = await openMeteo.getHistoricalData(
+          55.0,
+          10.0,
+          DateTime.utc(2026, 5, 1),
+          DateTime.utc(2026, 5, 1),
+        );
 
-      expect(results.length, equals(3));
+        expect(results.length, equals(3));
 
-      // Row 0: temperature=12.5, wind_speed=0.0 (null), wind_dir=180.0, clouds=0.0 (null), precip=0.5
-      expect(results[0].temperature, equals(12.5));
-      expect(results[0].windSpeed, equals(0.0));
-      expect(results[0].windDirection, equals(180.0));
-      expect(results[0].cloudCover, equals(0.0));
-      expect(results[0].precipitation, equals(0.5));
+        // Row 0: temperature=12.5, wind_speed=0.0 (null), wind_dir=180.0, clouds=0.0 (null), precip=0.5
+        expect(results[0].temperature, equals(12.5));
+        expect(results[0].windSpeed, equals(0.0));
+        expect(results[0].windDirection, equals(180.0));
+        expect(results[0].cloudCover, equals(0.0));
+        expect(results[0].precipitation, equals(0.5));
 
-      // Row 1: temperature=0.0 (null), wind_speed=3.2, wind_dir=0.0 (null), clouds=0.0 (null), precip=0.0 (null)
-      expect(results[1].temperature, equals(0.0));
-      expect(results[1].windSpeed, equals(3.2));
-      expect(results[1].windDirection, equals(0.0));
-      expect(results[1].cloudCover, equals(0.0));
-      expect(results[1].precipitation, equals(0.0));
+        // Row 1: temperature=0.0 (null), wind_speed=3.2, wind_dir=0.0 (null), clouds=0.0 (null), precip=0.0 (null)
+        expect(results[1].temperature, equals(0.0));
+        expect(results[1].windSpeed, equals(3.2));
+        expect(results[1].windDirection, equals(0.0));
+        expect(results[1].cloudCover, equals(0.0));
+        expect(results[1].precipitation, equals(0.0));
 
-      // Row 2: temperature=14.0 (int), wind_speed=5.0 (int), wind_dir=210.5, clouds=80.0 (int), precip=2.0 (int)
-      expect(results[2].temperature, equals(14.0));
-      expect(results[2].windSpeed, equals(5.0));
-      expect(results[2].windDirection, equals(210.5));
-      expect(results[2].cloudCover, equals(80.0));
-      expect(results[2].precipitation, equals(2.0));
-    });
+        // Row 2: temperature=14.0 (int), wind_speed=5.0 (int), wind_dir=210.5, clouds=80.0 (int), precip=2.0 (int)
+        expect(results[2].temperature, equals(14.0));
+        expect(results[2].windSpeed, equals(5.0));
+        expect(results[2].windDirection, equals(210.5));
+        expect(results[2].cloudCover, equals(80.0));
+        expect(results[2].precipitation, equals(2.0));
+      },
+    );
 
     test('throws Exception on non-200 HTTP response', () async {
       final client = MockClient((request) async {

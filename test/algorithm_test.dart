@@ -94,24 +94,21 @@ void main() async {
     expect(info.quality, isA<PlantQuality>());
   });
 
-  test(
-    'getCalendarInfo catches exceptions and returns error CalendarInfo gracefully',
-    () {
-      final throwingService = MockEphemerisService(
-        0.0,
-        false,
-        false,
-        false,
-        false,
-        true,
-      );
-      final info = getCalendarInfo(DateTime.now(), throwingService);
-      expect(info, isNotNull);
-      expect(info.quality, PlantQuality.none);
-      expect(info.isGrayDay, isFalse);
-      expect(info.message, contains('Error calculating planetary positions:'));
-    },
-  );
+  test('getCalendarInfo catches exceptions and returns error CalendarInfo gracefully', () {
+    final throwingService = MockEphemerisService(
+      0.0,
+      false,
+      false,
+      false,
+      false,
+      true,
+    );
+    final info = getCalendarInfo(DateTime.now(), throwingService);
+    expect(info, isNotNull);
+    expect(info.quality, PlantQuality.none);
+    expect(info.isGrayDay, isFalse);
+    expect(info.message, contains('Error calculating planetary positions:'));
+  });
 
   test('getCalendarInfo returns gray day when near node', () {
     final info = getCalendarInfo(
@@ -147,36 +144,30 @@ void main() async {
     expect(intervals[0].end, endTime);
   });
 
-  test(
-    'getQualityFromLongitude handles degree normalization correctly at 360 boundaries',
-    () {
-      expect(getQualityFromLongitude(0.0), isA<PlantQuality>());
-      expect(getQualityFromLongitude(360.0), getQualityFromLongitude(0.0));
-      expect(getQualityFromLongitude(-10.0), getQualityFromLongitude(350.0));
-      expect(getQualityFromLongitude(720.0), getQualityFromLongitude(0.0));
-    },
-  );
+  test('getQualityFromLongitude handles degree normalization correctly at 360 boundaries', () {
+    expect(getQualityFromLongitude(0.0), isA<PlantQuality>());
+    expect(getQualityFromLongitude(360.0), getQualityFromLongitude(0.0));
+    expect(getQualityFromLongitude(-10.0), getQualityFromLongitude(350.0));
+    expect(getQualityFromLongitude(720.0), getQualityFromLongitude(0.0));
+  });
 
-  test(
-    'calculateTrineQuality detects Special Flower Day from Air constellation planetary trine',
-    () {
-      final planets = [
-        const PlanetInfo(
-          name: 'Moon',
-          longitude: 108.0,
-        ), // Gemini (Air -> Flower)
-        const PlanetInfo(
-          name: 'Jupiter',
-          longitude: 228.0,
-        ), // Libra (Air -> Flower), exact 120 degrees apart
-      ];
+  test('calculateTrineQuality detects Special Flower Day from Air constellation planetary trine', () {
+    final planets = [
+      const PlanetInfo(
+        name: 'Moon',
+        longitude: 108.0,
+      ), // Gemini (Air -> Flower)
+      const PlanetInfo(
+        name: 'Jupiter',
+        longitude: 228.0,
+      ), // Libra (Air -> Flower), exact 120 degrees apart
+    ];
 
-      final result = calculateTrineQuality(planets, dornachBoundaries);
+    final result = calculateTrineQuality(planets, dornachBoundaries);
 
-      expect(result.quality, PlantQuality.flower);
-      expect(result.message, contains('Special Flower Day'));
-    },
-  );
+    expect(result.quality, PlantQuality.flower);
+    expect(result.message, contains('Special Flower Day'));
+  });
 
   test(
     'validates Ag-Flower and Especially Favorable reference scan periods',
@@ -221,43 +212,43 @@ void main() async {
     },
   );
 
+  test('getSunriseSunset accurately calculates sunrise and sunset with Equation of Time', () {
+    final service = AstronomiaEphemerisService();
+    // Copenhagen: 55.6761 N, 12.5683 E on summer solstice 2026-06-21
+    final solsticeDate = DateTime.utc(2026, 6, 21);
+    final sunInfo = service.getSunriseSunset(solsticeDate, 55.6761, 12.5683);
+
+    expect(sunInfo.sunrise, isNotNull);
+    expect(sunInfo.sunset, isNotNull);
+    expect(sunInfo.sunrise!.isBefore(sunInfo.noon), isTrue);
+    expect(sunInfo.noon.isBefore(sunInfo.sunset!), isTrue);
+
+    // Daylight duration on solstice in Copenhagen is ~17.5 hours
+    final daylightHours =
+        sunInfo.sunset!.difference(sunInfo.sunrise!).inMinutes / 60.0;
+    expect(daylightHours, greaterThan(17.0));
+    expect(daylightHours, lessThan(18.0));
+  });
+
   test(
-    'getSunriseSunset accurately calculates sunrise and sunset with Equation of Time',
+    'isMoonSquareNode correctly identifies high ecliptic latitude windows',
     () {
       final service = AstronomiaEphemerisService();
-      // Copenhagen: 55.6761 N, 12.5683 E on summer solstice 2026-06-21
-      final solsticeDate = DateTime.utc(2026, 6, 21);
-      final sunInfo = service.getSunriseSunset(solsticeDate, 55.6761, 12.5683);
+      // Test across a lunar month to find square node points (approx 2 occurrences per month)
+      var testTime = DateTime.utc(2026, 1, 1);
+      final endTime = DateTime.utc(2026, 2, 1);
+      int squareNodeCount = 0;
 
-      expect(sunInfo.sunrise, isNotNull);
-      expect(sunInfo.sunset, isNotNull);
-      expect(sunInfo.sunrise!.isBefore(sunInfo.noon), isTrue);
-      expect(sunInfo.noon.isBefore(sunInfo.sunset!), isTrue);
+      while (testTime.isBefore(endTime)) {
+        if (service.isMoonSquareNode(testTime)) {
+          squareNodeCount++;
+        }
+        testTime = testTime.add(const Duration(hours: 1));
+      }
 
-      // Daylight duration on solstice in Copenhagen is ~17.5 hours
-      final daylightHours =
-          sunInfo.sunset!.difference(sunInfo.sunrise!).inMinutes / 60.0;
-      expect(daylightHours, greaterThan(17.0));
-      expect(daylightHours, lessThan(18.0));
+      // There should be a reasonable number of square node hours detected (~12-30 hours per month)
+      expect(squareNodeCount, greaterThan(10));
+      expect(squareNodeCount, lessThan(50));
     },
   );
-
-  test('isMoonSquareNode correctly identifies high ecliptic latitude windows', () {
-    final service = AstronomiaEphemerisService();
-    // Test across a lunar month to find square node points (approx 2 occurrences per month)
-    var testTime = DateTime.utc(2026, 1, 1);
-    final endTime = DateTime.utc(2026, 2, 1);
-    int squareNodeCount = 0;
-
-    while (testTime.isBefore(endTime)) {
-      if (service.isMoonSquareNode(testTime)) {
-        squareNodeCount++;
-      }
-      testTime = testTime.add(const Duration(hours: 1));
-    }
-
-    // There should be a reasonable number of square node hours detected (~12-30 hours per month)
-    expect(squareNodeCount, greaterThan(10));
-    expect(squareNodeCount, lessThan(50));
-  });
 }

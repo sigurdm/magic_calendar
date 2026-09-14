@@ -91,14 +91,13 @@ final class PlantRecommendations {
         sowOutdoorPlants: const [],
         transplantActions: const [],
         harvestActions: const [],
-        generalAdvice:
-            'Gray Day (Lunar Node or Perigee): Avoid sowing, planting out, pruning, or harvesting today. Sprouting will be erratic and crops decay quickly.',
+        generalAdvice: 'Gray Day (Lunar Node or Perigee): Avoid sowing, planting out, pruning, or harvesting today. Sprouting will be erratic and crops decay quickly.',
       );
     }
 
-    List<String> sowIndoor = [];
+    final List<String> sowIndoor = [];
     List<String> sowOutdoor = [];
-    List<String> transplant = [];
+    final List<String> transplant = [];
     List<String> harvest = [];
 
     final matchingVegs = VegetableDatabase.queryByQuality(
@@ -116,7 +115,7 @@ final class PlantRecommendations {
         .map((v) => v.localizedDisplayName)
         .toList();
 
-    String advice =
+    final String advice =
         '$seasonName ($hemisphereText, Week $week): ${quality.name[0].toUpperCase() + quality.name.substring(1)} Day evaluation derived from Havenyt.dk & Maria Thun database.';
 
     return PlantRecommendations(

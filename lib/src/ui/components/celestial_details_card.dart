@@ -136,9 +136,8 @@ final class CelestialDetailsCard extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF6366F1,
-                                ).withValues(alpha: 0.2),
+                                color: const Color(0xFF6366F1)
+                                    .withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(
@@ -209,9 +208,8 @@ final class CelestialDetailsCard extends StatelessWidget {
                                       Container(
                                         padding: const EdgeInsets.all(6),
                                         decoration: BoxDecoration(
-                                          color: const Color(
-                                            0xFF6366F1,
-                                          ).withValues(alpha: 0.2),
+                                          color: const Color(0xFF6366F1)
+                                              .withValues(alpha: 0.2),
                                           borderRadius: BorderRadius.circular(
                                             8,
                                           ),
@@ -317,9 +315,8 @@ final class CelestialDetailsCard extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF0284C7,
-                                ).withValues(alpha: 0.2),
+                                color: const Color(0xFF0284C7)
+                                    .withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(

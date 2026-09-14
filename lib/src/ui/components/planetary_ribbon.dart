@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-
 import 'dart:ui' as ui;
 
-import '../../services/ephemeris_service.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
 import '../../core/dornach_boundaries.dart';
+import '../../services/ephemeris_service.dart';
 
 /// Widget displaying planetary positions across the zodiac ribbon.
 final class PlanetaryRibbon extends StatelessWidget {
@@ -80,7 +80,7 @@ final class RibbonPainter extends CustomPainter {
 
     const double visibleRange = 360.0;
     final double degreeWidth = size.width / visibleRange;
-    final double startLon = (centerLongitude - 180.0);
+    final double startLon = centerLongitude - 180.0;
 
     double getX(double lon) {
       double relativeLon = (lon - startLon) % 360.0;
@@ -95,8 +95,8 @@ final class RibbonPainter extends CustomPainter {
         ..color = _getColorForElement(boundary.element).withValues(alpha: 0.1)
         ..style = PaintingStyle.fill;
 
-      double x1 = getX(boundary.startDegree);
-      double x2 = getX(boundary.endDegree);
+      final double x1 = getX(boundary.startDegree);
+      final double x2 = getX(boundary.endDegree);
 
       if (x2 < x1) {
         canvas.drawRect(

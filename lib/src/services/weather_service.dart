@@ -3,13 +3,12 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../core/models/weather_data_point.dart';
 import '../repository/open_meteo_client.dart';
 
-import '../core/models/weather_data_point.dart';
-
-export 'dmi_weather_service.dart';
-export 'combined_weather_service.dart';
 export '../core/models/weather_data_point.dart';
+export 'combined_weather_service.dart';
+export 'dmi_weather_service.dart';
 
 /// Cached forecast item with associated retrieval timestamp.
 final class _CachedForecast {

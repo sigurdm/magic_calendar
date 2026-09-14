@@ -60,7 +60,6 @@ abstract final class AgriculturalTaskEvaluator {
     final quality = calendarInfo.quality;
     final isGrayDay = calendarInfo.isGrayDay;
 
-
     switch (task) {
       case AgriculturalTaskType.soilCultivation:
         return _evaluateSoilCultivation(
@@ -159,10 +158,8 @@ abstract final class AgriculturalTaskEvaluator {
     if (isGrayDay) {
       suitability = TaskSuitability.restricted;
       title = 'Soil Rest (Cosmic Rest Window)';
-      cosmic =
-          'Cosmic Rest Window: Moon node / perigee interference disrupts soil microorganism vitality.';
-      terrestrial =
-          'Disturbing soil structure now shocks microbial fungi and beneficial worms.';
+      cosmic = 'Cosmic Rest Window: Moon node / perigee interference disrupts soil microorganism vitality.';
+      terrestrial = 'Disturbing soil structure now shocks microbial fungi and beneficial worms.';
       action = 'Rest beds. Postpone cultivation until cosmic forces stabilize.';
     } else if (isAfternoon) {
       suitability = isDescending
@@ -172,19 +169,14 @@ abstract final class AgriculturalTaskEvaluator {
       cosmic = isDescending
           ? 'Descending Moon + Afternoon Earth Inhalation: Vitality is pulled down into the subsoil and root sphere.'
           : 'Afternoon Inhalation: Earth breathes inward, welcoming atmospheric warmth and nitrogen.';
-      terrestrial =
-          'Deep soil loosening and root aeration stimulates downward mycorrhizal root expansion.';
-      action =
-          'Deep root aeration and subsoil cultivation with broadfork or deep hoe to oxygenate rhizosphere.';
+      terrestrial = 'Deep soil loosening and root aeration stimulates downward mycorrhizal root expansion.';
+      action = 'Deep root aeration and subsoil cultivation with broadfork or deep hoe to oxygenate rhizosphere.';
     } else if (isMorning) {
       suitability = TaskSuitability.optimal;
       title = 'Morning Shallow Hoeing (Weed Scalping)';
-      cosmic =
-          'Morning Exhalation: Vital forces stream upward. Weeds severed at this hour dehydrate quickly under rising sun.';
-      terrestrial =
-          'Shallow scalping creates a dry dust mulch that breaks capillary water loss without disturbing root biology.';
-      action =
-          'Shallow surface hoeing (top 1–2 cm) to scalp weed seedlings and preserve bed moisture.';
+      cosmic = 'Morning Exhalation: Vital forces stream upward. Weeds severed at this hour dehydrate quickly under rising sun.';
+      terrestrial = 'Shallow scalping creates a dry dust mulch that breaks capillary water loss without disturbing root biology.';
+      action = 'Shallow surface hoeing (top 1–2 cm) to scalp weed seedlings and preserve bed moisture.';
     } else {
       suitability = TaskSuitability.neutral;
       title = 'Night Rest (Soil Consolidation)';
@@ -200,8 +192,7 @@ abstract final class AgriculturalTaskEvaluator {
       suitability = TaskSuitability.restricted;
       terrestrial =
           'CRITICAL: Soil is waterlogged (${weather.precipitation.toStringAsFixed(1)} mm rain). Tillage will smear soil aggregates, cause compaction, and create anaerobic hardpan.';
-      action =
-          'Cease all tillage and heavy bed traffic immediately. Wait for topsoil to dry to crumbly tilth.';
+      action = 'Cease all tillage and heavy bed traffic immediately. Wait for topsoil to dry to crumbly tilth.';
     } else if (weather != null && weather.temperature <= 0.0) {
       weatherConflict = true;
       suitability = TaskSuitability.restricted;
@@ -237,36 +228,27 @@ abstract final class AgriculturalTaskEvaluator {
 
     if (isGrayDay) {
       suitability = TaskSuitability.restricted;
-      cosmic =
-          'Cosmic Rest Window: Gravitational disruption at lunar node causes ragged wound healing and tissue dieback.';
+      cosmic = 'Cosmic Rest Window: Gravitational disruption at lunar node causes ragged wound healing and tissue dieback.';
       terrestrial = 'Wounds fail to compartmentalize naturally.';
       action = 'Avoid all pruning, cutting, or pinching back today.';
     } else if (isAscending) {
       suitability = TaskSuitability.restricted;
-      cosmic =
-          'PROHIBITED: Ascending Moon pumps sap upward under high pressure. Pruning now causes severe sap bleeding and weakens tree vitality.';
-      terrestrial =
-          'Open cuts bleed carbohydrates and essential minerals, inviting insect pests.';
+      cosmic = 'PROHIBITED: Ascending Moon pumps sap upward under high pressure. Pruning now causes severe sap bleeding and weakens tree vitality.';
+      terrestrial = 'Open cuts bleed carbohydrates and essential minerals, inviting insect pests.';
       action = 'Postpone pruning until the Moon enters its Descending arc.';
     } else if (quality == PlantQuality.leaf) {
       suitability = TaskSuitability.restricted;
-      cosmic =
-          'PROHIBITED: Leaf/Water Day fosters fungal spore activation and excessive watery vegetation rather than fruit spurs.';
-      terrestrial =
-          'High tissue moisture at cut surfaces invites bacterial canker and silver leaf fungal rot.';
+      cosmic = 'PROHIBITED: Leaf/Water Day fosters fungal spore activation and excessive watery vegetation rather than fruit spurs.';
+      terrestrial = 'High tissue moisture at cut surfaces invites bacterial canker and silver leaf fungal rot.';
       action = 'Avoid pruning on Leaf/Water days. Wait for Fruit/Warmth days.';
     } else if (isDescending && quality == PlantQuality.fruit) {
       suitability = TaskSuitability.optimal;
-      cosmic =
-          'OPTIMAL: Descending Moon draws sap safely down into root system, while Fruit/Warmth day concentrates fruit bud impulses.';
-      terrestrial =
-          'Cuts seal cleanly without bleeding. Cellular differentiation strongly favors productive fruit spurs.';
-      action =
-          'Prune fruit trees, berry canes, and vines for fruit spur renewal and open canopy light penetration.';
+      cosmic = 'OPTIMAL: Descending Moon draws sap safely down into root system, while Fruit/Warmth day concentrates fruit bud impulses.';
+      terrestrial = 'Cuts seal cleanly without bleeding. Cellular differentiation strongly favors productive fruit spurs.';
+      action = 'Prune fruit trees, berry canes, and vines for fruit spur renewal and open canopy light penetration.';
     } else if (isDescending) {
       suitability = TaskSuitability.favorable;
-      cosmic =
-          'Descending Moon: Sap is drawn downward, minimizing bleed risk at cuts.';
+      cosmic = 'Descending Moon: Sap is drawn downward, minimizing bleed risk at cuts.';
       terrestrial = 'Acceptable healing conditions for maintenance cutting.';
       action = 'General tree maintenance and thinning of deadwood.';
     } else {
@@ -287,8 +269,7 @@ abstract final class AgriculturalTaskEvaluator {
       if (suitability != TaskSuitability.restricted) {
         suitability = TaskSuitability.unfavorable;
       }
-      terrestrial =
-          'Wet rain promotes fungal spore dispersal directly into open xylem vessels.';
+      terrestrial = 'Wet rain promotes fungal spore dispersal directly into open xylem vessels.';
       action = 'Wait for dry, sunny weather before pruning.';
     }
 
@@ -318,21 +299,17 @@ abstract final class AgriculturalTaskEvaluator {
 
     if (isGrayDay) {
       suitability = TaskSuitability.restricted;
-      cosmic =
-          'Cosmic Rest Window: Harvested crops decay prematurely in cellar storage.';
+      cosmic = 'Cosmic Rest Window: Harvested crops decay prematurely in cellar storage.';
       terrestrial = 'Cellular integrity is fragile.';
       action = 'Do not harvest crops intended for long winter storage.';
     } else if (quality == PlantQuality.leaf) {
       suitability = TaskSuitability.unfavorable;
-      cosmic =
-          'Leaf/Water Day: Moisture forces dominate, leading to high rot susceptibility in storage.';
-      terrestrial =
-          'High water content invites fungal botrytis and mold in storage crates.';
+      cosmic = 'Leaf/Water Day: Moisture forces dominate, leading to high rot susceptibility in storage.';
+      terrestrial = 'High water content invites fungal botrytis and mold in storage crates.';
       action = 'Harvest only for immediate eating; not for cellar storage.';
     } else if (!isWaning) {
       suitability = TaskSuitability.unfavorable;
-      cosmic =
-          'Waxing Moon: Water and sap flow are rising. Crops contain excess water that causes early storage spoilage.';
+      cosmic = 'Waxing Moon: Water and sap flow are rising. Crops contain excess water that causes early storage spoilage.';
       terrestrial = 'Elevated moisture content reduces cellar shelf life.';
       action = 'Wait for the Waning Moon cycle to harvest for winter storage.';
     } else if (isWaning &&
@@ -340,10 +317,8 @@ abstract final class AgriculturalTaskEvaluator {
       suitability = TaskSuitability.optimal;
       cosmic =
           'OPTIMAL: Waning Moon recedes moisture, while ${quality.name.toUpperCase()} element concentrates dry matter and sugars.';
-      terrestrial =
-          'Crops have minimal tissue water and maximum shelf longevity with excellent rot resistance.';
-      action =
-          'Harvest root crops (carrots, beets, potatoes) or fruits (apples, winter squash) for cellar curing.';
+      terrestrial = 'Crops have minimal tissue water and maximum shelf longevity with excellent rot resistance.';
+      action = 'Harvest root crops (carrots, beets, potatoes) or fruits (apples, winter squash) for cellar curing.';
     } else {
       suitability = TaskSuitability.favorable;
       cosmic =
@@ -387,18 +362,14 @@ abstract final class AgriculturalTaskEvaluator {
 
     if (isGrayDay) {
       suitability = TaskSuitability.unfavorable;
-      cosmic =
-          'Cosmic Rest Window: Vitality is diminished; flavor lacks aromatic radiance.';
+      cosmic = 'Cosmic Rest Window: Vitality is diminished; flavor lacks aromatic radiance.';
       terrestrial = 'Leaves may taste dull or wilt rapidly after harvest.';
       action = 'Harvest lightly if needed for fresh consumption.';
     } else if (isWaxing && isMorning) {
       suitability = TaskSuitability.optimal;
-      cosmic =
-          'OPTIMAL: Waxing Moon + Morning Exhalation: Life forces, sugars, and aromatic oils stream upward into foliage and fruit.';
-      terrestrial =
-          'High turgor pressure ensures peak succulence, crunch, and nutritional vitality.';
-      action =
-          'Harvest salad greens, sweet corn, fresh berries, and culinary herbs for immediate kitchen eating.';
+      cosmic = 'OPTIMAL: Waxing Moon + Morning Exhalation: Life forces, sugars, and aromatic oils stream upward into foliage and fruit.';
+      terrestrial = 'High turgor pressure ensures peak succulence, crunch, and nutritional vitality.';
+      action = 'Harvest salad greens, sweet corn, fresh berries, and culinary herbs for immediate kitchen eating.';
     } else if (isWaxing || isMorning) {
       suitability = TaskSuitability.favorable;
       cosmic = isWaxing
@@ -443,18 +414,14 @@ abstract final class AgriculturalTaskEvaluator {
 
     if (isGrayDay) {
       suitability = TaskSuitability.restricted;
-      cosmic =
-          'Cosmic Rest Window: Gravitational instability affects cellular drying.';
+      cosmic = 'Cosmic Rest Window: Gravitational instability affects cellular drying.';
       terrestrial = 'Timber felled today tends to crack irregularly.';
       action = 'Halt all forestry and timber felling operations.';
     } else if (isWaning && isCapricorn) {
       suitability = TaskSuitability.optimal;
-      cosmic =
-          'OPTIMAL (Mondholz): Waning Moon in Capricorn (Earth/Root). Ancient European standard for moon wood.';
-      terrestrial =
-          'Sap is at its absolute minimum. Wood contracts with maximum fiber density, resisting warp, crack, rot, and wood-boring beetles.';
-      action =
-          'Fell premium construction timber, musical instrument tonewood, and rot-resistant fence posts.';
+      cosmic = 'OPTIMAL (Mondholz): Waning Moon in Capricorn (Earth/Root). Ancient European standard for moon wood.';
+      terrestrial = 'Sap is at its absolute minimum. Wood contracts with maximum fiber density, resisting warp, crack, rot, and wood-boring beetles.';
+      action = 'Fell premium construction timber, musical instrument tonewood, and rot-resistant fence posts.';
     } else if (isWaning && quality == PlantQuality.root) {
       suitability = TaskSuitability.favorable;
       cosmic =
@@ -463,8 +430,7 @@ abstract final class AgriculturalTaskEvaluator {
       action = 'Good window for firewood and secondary construction lumber.';
     } else if (!isWaning) {
       suitability = TaskSuitability.unfavorable;
-      cosmic =
-          'Waxing Moon: Wood is charged with water and sap, inviting woodworm and rapid warping.';
+      cosmic = 'Waxing Moon: Wood is charged with water and sap, inviting woodworm and rapid warping.';
       terrestrial = 'High sap moisture leads to mold, cracking, and decay.';
       action = 'Do not fell structural timber during Waxing Moon.';
     } else {
@@ -512,28 +478,21 @@ abstract final class AgriculturalTaskEvaluator {
 
     if (isGrayDay) {
       suitability = TaskSuitability.restricted;
-      cosmic =
-          'Cosmic Rest Window: Distorts homeopathic potentization and ash forces.';
+      cosmic = 'Cosmic Rest Window: Distorts homeopathic potentization and ash forces.';
       terrestrial = 'Avoid burning preparations on Gray Days.';
       action = 'Do not prepare or spread weed/pest ash today.';
     } else if (isLeo) {
       suitability = TaskSuitability.optimal;
       title = 'Weed Peppering (Ashing in Leo)';
-      cosmic =
-          'OPTIMAL FOR WEED SEEDS: Moon in Leo (Fire/Warmth). The solar warmth impulse extinguishes seed reproductive vitality.';
-      terrestrial =
-          'Burning weed seeds in Leo destroys their generative germ force permanently.';
-      action =
-          'Burn collected noxious weed seeds to fine white ash. Potentize to D8 or broadcast thinly over infested beds.';
+      cosmic = 'OPTIMAL FOR WEED SEEDS: Moon in Leo (Fire/Warmth). The solar warmth impulse extinguishes seed reproductive vitality.';
+      terrestrial = 'Burning weed seeds in Leo destroys their generative germ force permanently.';
+      action = 'Burn collected noxious weed seeds to fine white ash. Potentize to D8 or broadcast thinly over infested beds.';
     } else if (isScorpio) {
       suitability = TaskSuitability.optimal;
       title = 'Pest Peppering (Ashing in Scorpio)';
-      cosmic =
-          'OPTIMAL FOR INSECT PESTS: Moon in Scorpio (Water element governing invertebrate reproductive cycles).';
-      terrestrial =
-          'Ashing insect pests (e.g. flea beetles, aphids) under Scorpio dissolves their reproductive impulse.';
-      action =
-          'Incinerate collected pests on a wood fire. Dynamize ash and spray or dust over crops to deter infestation.';
+      cosmic = 'OPTIMAL FOR INSECT PESTS: Moon in Scorpio (Water element governing invertebrate reproductive cycles).';
+      terrestrial = 'Ashing insect pests (e.g. flea beetles, aphids) under Scorpio dissolves their reproductive impulse.';
+      action = 'Incinerate collected pests on a wood fire. Dynamize ash and spray or dust over crops to deter infestation.';
     } else if (quality == PlantQuality.fruit) {
       suitability = TaskSuitability.favorable;
       title = 'Weed Peppering (Fire Quality)';

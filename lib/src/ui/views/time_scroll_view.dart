@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/physics.dart';
-
-import 'dart:ui' as ui;
 import 'dart:async';
+import 'dart:ui' as ui;
 
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 
 import '../../services/ephemeris_service.dart';
@@ -246,7 +245,7 @@ class _TimeScrollViewState extends State<TimeScrollView>
       });
 
       final now = DateTime.now();
-      List<WeatherDataPoint> combinedWeather = [];
+      final List<WeatherDataPoint> combinedWeather = [];
 
       if (start.isBefore(now)) {
         final histEnd = end.isBefore(now) ? end : now;
@@ -460,9 +459,8 @@ class _TimeScrollViewState extends State<TimeScrollView>
                                 color: const Color(0xFFEF4444),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(
-                                      0xFFEF4444,
-                                    ).withValues(alpha: 0.5),
+                                    color: const Color(0xFFEF4444)
+                                        .withValues(alpha: 0.5),
                                     blurRadius: 6,
                                     spreadRadius: 1,
                                   ),

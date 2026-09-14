@@ -229,7 +229,7 @@ void main() {
         expect(find.text('Biodynamic Stirrer'), findsOneWidget);
         final ex = tester.takeException();
         if (ex != null) {
-          debugPrint("CAUGHT EXCEPTION: $ex");
+          debugPrint('CAUGHT EXCEPTION: $ex');
         }
         expect(ex, isNull);
       },

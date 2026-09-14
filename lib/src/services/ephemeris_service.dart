@@ -1,5 +1,5 @@
-import 'dart:isolate';
 import 'dart:async';
+import 'dart:isolate';
 import 'dart:math' as math;
 
 import 'package:sweph/sweph.dart';
@@ -153,7 +153,9 @@ final class EphemerisWorker {
         continue;
       }
       try {
-        message.replyPort.send(service.getIntervals(message.start, message.end));
+        message.replyPort.send(
+          service.getIntervals(message.start, message.end),
+        );
       } catch (e, st) {
         message.replyPort.send(_WorkerError(e.toString(), st.toString()));
       }
@@ -286,7 +288,7 @@ final class AstronomiaEphemerisService implements EphemerisService {
 
   @override
   double getMoonLongitude(DateTime time) {
-    double jd = _toJD(time);
+    final double jd = _toJD(time);
     _ensureMoon(jd);
     return _lastGeoLon;
   }
@@ -294,7 +296,7 @@ final class AstronomiaEphemerisService implements EphemerisService {
   @override
   double getMoonDeclination(DateTime time) {
     Sweph.swe_set_topo(_observerLon, _observerLat, _observerAlt);
-    double jd = _toJD(time);
+    final double jd = _toJD(time);
     final pos = Sweph.swe_calc_ut(
       jd,
       HeavenlyBody.SE_MOON,
@@ -312,7 +314,7 @@ final class AstronomiaEphemerisService implements EphemerisService {
     }
 
     Sweph.swe_set_topo(_observerLon, _observerLat, _observerAlt);
-    double jd = _toJD(time);
+    final double jd = _toJD(time);
     final sun = Sweph.swe_calc_ut(
       jd,
       HeavenlyBody.SE_SUN,
@@ -329,9 +331,9 @@ final class AstronomiaEphemerisService implements EphemerisService {
       diff += 360.0;
     }
 
-    double rad = diff * math.pi / 180.0;
-    double illuminatedFraction = (1 - math.cos(rad)) / 2.0;
-    bool isWaxing = diff < 180.0;
+    final double rad = diff * math.pi / 180.0;
+    final double illuminatedFraction = (1 - math.cos(rad)) / 2.0;
+    final bool isWaxing = diff < 180.0;
 
     final info = MoonPhaseInfo(
       illuminatedFraction: illuminatedFraction,
@@ -349,7 +351,7 @@ final class AstronomiaEphemerisService implements EphemerisService {
   List<PlanetInfo> getPlanets(DateTime time) {
     Sweph.swe_set_topo(_observerLon, _observerLat, _observerAlt);
 
-    double jd = _toJD(time);
+    final double jd = _toJD(time);
     final flags = SwephFlag(_topoFlags);
 
     PlanetInfo getPl(HeavenlyBody body, String name) {
@@ -539,9 +541,9 @@ final class AstronomiaEphemerisService implements EphemerisService {
 
       if (pos1.latitude * pos2.latitude <= 0 &&
           pos1.latitude != pos2.latitude) {
-        double exactJD =
+        final double exactJD =
             t + step * (0 - pos1.latitude) / (pos2.latitude - pos1.latitude);
-        double diffHours = (exactJD - jd) * 24.0;
+        final double diffHours = (exactJD - jd) * 24.0;
         return diffHours.abs() <= 6.0;
       }
     }
@@ -601,7 +603,7 @@ final class AstronomiaEphemerisService implements EphemerisService {
     }
     final deltaT = -step * (y3 - y1) / denom;
     final exactT = minT + deltaT;
-    double diffHours = (exactT - jd) * 24.0;
+    final double diffHours = (exactT - jd) * 24.0;
     return diffHours.abs() <= 12.0;
   }
 
@@ -638,7 +640,7 @@ final class AstronomiaEphemerisService implements EphemerisService {
         final denom = 2 * (y1 + y3 - 2 * y2);
         final deltaT = denom != 0 ? -step * (y3 - y1) / denom : 0.0;
         final exactT = t + deltaT;
-        double diffHours = (exactT - jd) * 24.0;
+        final double diffHours = (exactT - jd) * 24.0;
         return diffHours.abs() <= 12.0;
       }
     }

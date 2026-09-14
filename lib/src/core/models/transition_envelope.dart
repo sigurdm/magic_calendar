@@ -1,5 +1,5 @@
-import "../dornach_boundaries.dart";
-import "plant_quality.dart";
+import '../dornach_boundaries.dart';
+import 'plant_quality.dart';
 
 /// Model representing a cusp transition envelope between two constellation qualities.
 final class TransitionEnvelope {
@@ -37,7 +37,7 @@ final class TransitionEnvelope {
     fromQuality: PlantQuality.none,
     toQuality: PlantQuality.none,
     progress: 0.0,
-    description: "Stable quality impulse",
+    description: 'Stable quality impulse',
     distanceToBoundary: 0.0,
   );
 
@@ -69,7 +69,7 @@ final class TransitionEnvelope {
             .clamp(0.0, 1.0);
         final percent = (progress * 100).round();
         final description =
-            "Cusp transition from ${qualityLabel(fromQuality)} to ${qualityLabel(toQuality)} ($percent% complete)";
+            'Cusp transition from ${qualityLabel(fromQuality)} to ${qualityLabel(toQuality)} ($percent% complete)';
 
         return TransitionEnvelope(
           isTransition: true,
@@ -92,26 +92,26 @@ final class TransitionEnvelope {
       fromQuality: currentQuality,
       toQuality: currentQuality,
       progress: 0.0,
-      description: "Stable ${qualityLabel(currentQuality)} impulse",
+      description: 'Stable ${qualityLabel(currentQuality)} impulse',
       distanceToBoundary: 0.0,
     );
   }
 
   @override
   String toString() =>
-      "TransitionEnvelope(isTransition: $isTransition, from: $fromQuality, to: $toQuality, progress: ${(progress * 100).toStringAsFixed(1)}%)";
+      'TransitionEnvelope(isTransition: $isTransition, from: $fromQuality, to: $toQuality, progress: ${(progress * 100).toStringAsFixed(1)}%)';
 }
 
 /// Converts a constellation element string to [PlantQuality].
 PlantQuality elementToQuality(String element) {
   switch (element) {
-    case "Earth":
+    case 'Earth':
       return PlantQuality.root;
-    case "Water":
+    case 'Water':
       return PlantQuality.leaf;
-    case "Air":
+    case 'Air':
       return PlantQuality.flower;
-    case "Fire":
+    case 'Fire':
       return PlantQuality.fruit;
     default:
       return PlantQuality.none;
@@ -122,15 +122,15 @@ PlantQuality elementToQuality(String element) {
 String qualityLabel(PlantQuality quality) {
   switch (quality) {
     case PlantQuality.root:
-      return "Root";
+      return 'Root';
     case PlantQuality.leaf:
-      return "Leaf";
+      return 'Leaf';
     case PlantQuality.flower:
-      return "Flower";
+      return 'Flower';
     case PlantQuality.fruit:
-      return "Fruit";
+      return 'Fruit';
     case PlantQuality.none:
-      return "None";
+      return 'None';
   }
 }
 

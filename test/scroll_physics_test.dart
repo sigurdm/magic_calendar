@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:magic_calendar/src/ui/views/time_scroll_view.dart';
 import 'package:magic_calendar/src/services/ephemeris_service.dart';
 import 'package:magic_calendar/src/services/weather_service.dart';
+import 'package:magic_calendar/src/ui/views/time_scroll_view.dart';
 
 final class MockEphemerisService with EphemerisService {
   @override

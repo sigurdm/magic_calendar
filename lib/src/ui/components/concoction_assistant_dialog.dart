@@ -1,9 +1,9 @@
-import "dart:ui";
+import 'dart:ui';
 
-import "package:flutter/material.dart";
-import "package:google_fonts/google_fonts.dart";
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import "../theme/biodynamic_icons.dart";
+import '../theme/biodynamic_icons.dart';
 
 /// Unit system for dosage calculations.
 enum UnitSystem {
@@ -57,7 +57,7 @@ final class ConcoctionRecipe {
   });
 
   /// Localized display title.
-  String get displayName => "$titleDa ($titleEn)";
+  String get displayName => '$titleDa ($titleEn)';
 }
 
 /// Catalog of classic biodynamic concoctions and spray preparations.
@@ -67,108 +67,101 @@ final class ConcoctionCatalog {
   /// Curated preparation recipes.
   static const List<ConcoctionRecipe> recipes = [
     ConcoctionRecipe(
-      id: "bd508_horsetail",
-      titleDa: "BD 508 Agerpadderok (Equisetum)",
-      titleEn: "BD 508 Horsetail Decoction",
-      purpose:
-          "Natural organic fungicide against mildew, potato blight, rust, and damping-off.",
+      id: 'bd508_horsetail',
+      titleDa: 'BD 508 Agerpadderok (Equisetum)',
+      titleEn: 'BD 508 Horsetail Decoction',
+      purpose: 'Natural organic fungicide against mildew, potato blight, rust, and damping-off.',
       cosmicTiming:
-          "Apply on sunny mornings during Full Moon or Moon opposite Saturn.",
+          'Apply on sunny mornings during Full Moon or Moon opposite Saturn.',
       herbGramsPer100Sqm: 20.0, // 20g dried per 100 sqm (or 100g per 500 sqm)
       waterLitersPer100Sqm: 2.0, // 2 L base decoction
       dilutionRatio: 5, // Dilute 1:5 with rainwater before spraying
       steps: [
-        "1. Harvesting / Weighing: Use dried Equisetum arvense harvested in summer when silica content peaks.",
-        "2. Simmering Decoction: Bring water to a boil and simmer gently covered for 20-30 minutes to release soluble silicic acid.",
-        "3. Steeping Extraction: Remove from heat and allow to steep for 24 hours.",
-        "4. Dynamization & Dilution: Strain liquid, dilute 1:5 with fresh rainwater, and stir vigorously for 15-20 minutes.",
-        "5. Field Application: Spray as a fine mist over crop foliage and moist soil on a clear morning.",
+        '1. Harvesting / Weighing: Use dried Equisetum arvense harvested in summer when silica content peaks.',
+        '2. Simmering Decoction: Bring water to a boil and simmer gently covered for 20-30 minutes to release soluble silicic acid.',
+        '3. Steeping Extraction: Remove from heat and allow to steep for 24 hours.',
+        '4. Dynamization & Dilution: Strain liquid, dilute 1:5 with fresh rainwater, and stir vigorously for 15-20 minutes.',
+        '5. Field Application: Spray as a fine mist over crop foliage and moist soil on a clear morning.',
       ],
     ),
     ConcoctionRecipe(
-      id: "bd500_horn_manure",
-      titleDa: "BD 500 Hornkogle / Hornjord",
-      titleEn: "BD 500 Horn Manure",
+      id: 'bd500_horn_manure',
+      titleDa: 'BD 500 Hornkogle / Hornjord',
+      titleEn: 'BD 500 Horn Manure',
       purpose:
-          "Root depth stimulation, soil humus buildup, and microbial vitality.",
-      cosmicTiming:
-          "Apply late afternoon / sunset during Descending Moon (Earth Inhalation).",
+          'Root depth stimulation, soil humus buildup, and microbial vitality.',
+      cosmicTiming: 'Apply late afternoon / sunset during Descending Moon (Earth Inhalation).',
       herbGramsPer100Sqm: 5.0, // ~50-60g per hectare, ~5g per 100 sqm garden
       waterLitersPer100Sqm: 3.5,
       dilutionRatio: 1, // Ready to spray directly after 1 hour stirring
       steps: [
-        "1. Water Preparation: Warm clean rainwater to lukewarm (approx 35-37°C).",
-        "2. 1-Hour Dynamization: Stir continuously for 60 minutes, alternating directions each minute to create deep vortex and chaotic crater collapse.",
-        "3. Droplet Spraying: Apply within 1-2 hours of stirring using a coarse droplet spray onto bare or mulched soil.",
+        '1. Water Preparation: Warm clean rainwater to lukewarm (approx 35-37°C).',
+        '2. 1-Hour Dynamization: Stir continuously for 60 minutes, alternating directions each minute to create deep vortex and chaotic crater collapse.',
+        '3. Droplet Spraying: Apply within 1-2 hours of stirring using a coarse droplet spray onto bare or mulched soil.',
       ],
     ),
     ConcoctionRecipe(
-      id: "cpp_barrel_compost",
-      titleDa: "Maria Thun Tøndekompost (CPP)",
-      titleEn: "Cow Pat Pit (Maria Thun Barrel Compost)",
-      purpose:
-          "Universal soil inoculant, humus builder, and microbial booster enriched with preparations BD 502–507, basalt, and eggshells.",
-      cosmicTiming:
-          "Apply late afternoon / sunset during Descending Moon (Earth Inhalation) on Root or Fruit days.",
+      id: 'cpp_barrel_compost',
+      titleDa: 'Maria Thun Tøndekompost (CPP)',
+      titleEn: 'Cow Pat Pit (Maria Thun Barrel Compost)',
+      purpose: 'Universal soil inoculant, humus builder, and microbial booster enriched with preparations BD 502–507, basalt, and eggshells.',
+      cosmicTiming: 'Apply late afternoon / sunset during Descending Moon (Earth Inhalation) on Root or Fruit days.',
       herbGramsPer100Sqm: 35.0, // 35g per 100 sqm
       waterLitersPer100Sqm: 5.0, // 5L lukewarm rainwater per 100 sqm
       dilutionRatio: 1, // Ready to spray directly after 20-min stirring
       steps: [
-        "1. Weigh Barrel Compost: Dissolve 35g of mature Cow Pat Pit barrel compost per 100 m² of garden or field.",
-        "2. Water Preparation: Warm clean rainwater to lukewarm (approx. 35°C) in a wooden or stoneware vessel.",
-        "3. 20-Minute Dynamization: Stir vigorously for 20 minutes (16 cycles of 75 seconds), creating deep vortex funnels and breaking them into dynamic chaos.",
-        "4. Coarse Droplet Spraying: Apply immediately within 1-2 hours using a hearth broom or coarse droplet sprayer onto bare soil, mulch, or fresh compost.",
+        '1. Weigh Barrel Compost: Dissolve 35g of mature Cow Pat Pit barrel compost per 100 m² of garden or field.',
+        '2. Water Preparation: Warm clean rainwater to lukewarm (approx. 35°C) in a wooden or stoneware vessel.',
+        '3. 20-Minute Dynamization: Stir vigorously for 20 minutes (16 cycles of 75 seconds), creating deep vortex funnels and breaking them into dynamic chaos.',
+        '4. Coarse Droplet Spraying: Apply immediately within 1-2 hours using a hearth broom or coarse droplet sprayer onto bare soil, mulch, or fresh compost.',
       ],
     ),
     ConcoctionRecipe(
-      id: "bd501_horn_silica",
-      titleDa: "BD 501 Hornkisel (Kvartsmel)",
-      titleEn: "BD 501 Horn Silica",
-      purpose:
-          "Enhances photosynthesis, fruit aroma, sugar content, and fungal resistance.",
+      id: 'bd501_horn_silica',
+      titleDa: 'BD 501 Hornkisel (Kvartsmel)',
+      titleEn: 'BD 501 Horn Silica',
+      purpose: 'Enhances photosynthesis, fruit aroma, sugar content, and fungal resistance.',
       cosmicTiming:
-          "Apply at sunrise on Ascending Moon during Flower or Fruit days.",
+          'Apply at sunrise on Ascending Moon during Flower or Fruit days.',
       herbGramsPer100Sqm: 0.1, // ~1-2g per hectare, tiny pinch per 100 sqm
       waterLitersPer100Sqm: 3.0,
       dilutionRatio: 1,
       steps: [
-        "1. Precision Measurement: Add a small pinch of horn silica powder to lukewarm rainwater.",
-        "2. 1-Hour Dynamization: Stir vigorously for 60 minutes at daybreak, creating alternating deep vortexes.",
-        "3. Atomized Mist Spray: Spray as an ultrafine floating mist into the air directly above crop foliage.",
+        '1. Precision Measurement: Add a small pinch of horn silica powder to lukewarm rainwater.',
+        '2. 1-Hour Dynamization: Stir vigorously for 60 minutes at daybreak, creating alternating deep vortexes.',
+        '3. Atomized Mist Spray: Spray as an ultrafine floating mist into the air directly above crop foliage.',
       ],
     ),
     ConcoctionRecipe(
-      id: "nettle_ferment",
-      titleDa: "Brændenælegødning (Urtica)",
-      titleEn: "Fermented Stinging Nettle Tea",
-      purpose:
-          "Rich nitrogen & iron liquid fertilizer; activates leaf chlorophyll and strengthens immunity.",
+      id: 'nettle_ferment',
+      titleDa: 'Brændenælegødning (Urtica)',
+      titleEn: 'Fermented Stinging Nettle Tea',
+      purpose: 'Rich nitrogen & iron liquid fertilizer; activates leaf chlorophyll and strengthens immunity.',
       cosmicTiming:
-          "Water on Leaf days (Water element) in the morning or early evening.",
+          'Water on Leaf days (Water element) in the morning or early evening.',
       herbGramsPer100Sqm: 100.0, // Fresh nettles
       waterLitersPer100Sqm: 1.0,
       dilutionRatio: 10, // Dilute 1:10 for watering, 1:20 for foliar spray
       steps: [
-        "1. Chop Fresh Nettles: Collect young nettle stems before flowering, pack in non-metallic bucket.",
-        "2. Fermentation: Cover with rainwater, stir daily. Ferment outdoors for 10-14 days until bubbling ceases.",
-        "3. Filtration: Strain out fermented sludge (add to compost pile).",
-        "4. Dilution: Dilute 1:10 with water for soil watering, or 1:20 for leaf spray.",
+        '1. Chop Fresh Nettles: Collect young nettle stems before flowering, pack in non-metallic bucket.',
+        '2. Fermentation: Cover with rainwater, stir daily. Ferment outdoors for 10-14 days until bubbling ceases.',
+        '3. Filtration: Strain out fermented sludge (add to compost pile).',
+        '4. Dilution: Dilute 1:10 with water for soil watering, or 1:20 for leaf spray.',
       ],
     ),
     ConcoctionRecipe(
-      id: "bd507_valerian",
-      titleDa: "BD 507 Baldrian Varme-spray",
-      titleEn: "BD 507 Valerian Warmth Spray",
-      purpose: "Frost protection envelope and blossom setting impulse.",
-      cosmicTiming:
-          "Apply in the evening before forecasted late spring frost or cold snaps.",
+      id: 'bd507_valerian',
+      titleDa: 'BD 507 Baldrian Varme-spray',
+      titleEn: 'BD 507 Valerian Warmth Spray',
+      purpose: 'Frost protection envelope and blossom setting impulse.',
+      cosmicTiming: 'Apply in the evening before forecasted late spring frost or cold snaps.',
       herbGramsPer100Sqm: 0.05, // 5-10 drops
       waterLitersPer100Sqm: 2.5,
       dilutionRatio: 1,
       steps: [
-        "1. Extract Addition: Add 5-10 drops of fermented valerian extract into warm rainwater.",
-        "2. Stirring: Stir gently for 10-15 minutes.",
-        "3. Protective Mist: Spray delicate blossoms and orchard trees in late afternoon before frost.",
+        '1. Extract Addition: Add 5-10 drops of fermented valerian extract into warm rainwater.',
+        '2. Stirring: Stir gently for 10-15 minutes.',
+        '3. Protective Mist: Spray delicate blossoms and orchard trees in late afternoon before frost.',
       ],
     ),
   ];
@@ -204,7 +197,7 @@ final class _ConcoctionAssistantDialogState
   double _areaValue = 100.0; // 100 sqm or 1000 sq ft
 
   final TextEditingController _areaController = TextEditingController(
-    text: "100",
+    text: '100',
   );
 
   @override
@@ -248,19 +241,19 @@ final class _ConcoctionAssistantDialogState
     // Imperial conversions: 1 g = 0.035274 oz, 1 L = 0.264172 gal
     final herbDisplay = _unitSystem == UnitSystem.metric
         ? (baseHerbGrams >= 1000
-              ? "${(baseHerbGrams / 1000).toStringAsFixed(2)} kg"
-              : "${baseHerbGrams.toStringAsFixed(1)} g")
+              ? '${(baseHerbGrams / 1000).toStringAsFixed(2)} kg'
+              : '${baseHerbGrams.toStringAsFixed(1)} g')
         : (baseHerbGrams * 0.035274 >= 16
-              ? "${((baseHerbGrams * 0.035274) / 16).toStringAsFixed(2)} lbs"
-              : "${(baseHerbGrams * 0.035274).toStringAsFixed(1)} oz");
+              ? '${((baseHerbGrams * 0.035274) / 16).toStringAsFixed(2)} lbs'
+              : '${(baseHerbGrams * 0.035274).toStringAsFixed(1)} oz');
 
     final waterDisplay = _unitSystem == UnitSystem.metric
-        ? "${baseWaterLiters.toStringAsFixed(1)} L"
-        : "${(baseWaterLiters * 0.264172).toStringAsFixed(1)} gal";
+        ? '${baseWaterLiters.toStringAsFixed(1)} L'
+        : '${(baseWaterLiters * 0.264172).toStringAsFixed(1)} gal';
 
     final totalDisplay = _unitSystem == UnitSystem.metric
-        ? "${totalDilutedLiters.toStringAsFixed(1)} L"
-        : "${(totalDilutedLiters * 0.264172).toStringAsFixed(1)} gal";
+        ? '${totalDilutedLiters.toStringAsFixed(1)} L'
+        : '${(totalDilutedLiters * 0.264172).toStringAsFixed(1)} gal';
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -291,9 +284,8 @@ final class _ConcoctionAssistantDialogState
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(
-                                0xFF10B981,
-                              ).withValues(alpha: 0.2),
+                              color: const Color(0xFF10B981)
+                                  .withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const BiodynamicIcon(
@@ -307,7 +299,7 @@ final class _ConcoctionAssistantDialogState
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Concoction Assistant",
+                                'Concoction Assistant',
                                 style: GoogleFonts.outfit(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -315,7 +307,7 @@ final class _ConcoctionAssistantDialogState
                                 ),
                               ),
                               Text(
-                                "Biodynamic Brews & Field Sprays",
+                                'Biodynamic Brews & Field Sprays',
                                 style: GoogleFonts.outfit(
                                   fontSize: 12,
                                   color: Colors.white70,
@@ -369,9 +361,8 @@ final class _ConcoctionAssistantDialogState
                                     alignment: Alignment.center,
                                     decoration: BoxDecoration(
                                       color: isSelected
-                                          ? const Color(
-                                              0xFF10B981,
-                                            ).withValues(alpha: 0.3)
+                                          ? const Color(0xFF10B981)
+                                                .withValues(alpha: 0.3)
                                           : Colors.white.withValues(
                                               alpha: 0.05,
                                             ),
@@ -474,7 +465,7 @@ final class _ConcoctionAssistantDialogState
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "Dosage Calculator",
+                        'Dosage Calculator',
                         style: GoogleFonts.outfit(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
@@ -489,8 +480,8 @@ final class _ConcoctionAssistantDialogState
                         ),
                         child: Row(
                           children: [
-                            _buildUnitButton("Metric", UnitSystem.metric),
-                            _buildUnitButton("Imperial", UnitSystem.imperial),
+                            _buildUnitButton('Metric', UnitSystem.metric),
+                            _buildUnitButton('Imperial', UnitSystem.imperial),
                           ],
                         ),
                       ),
@@ -512,8 +503,8 @@ final class _ConcoctionAssistantDialogState
                           ),
                           decoration: InputDecoration(
                             labelText: _unitSystem == UnitSystem.metric
-                                ? "Garden Area (m²)"
-                                : "Garden Area (sq ft)",
+                                ? 'Garden Area (m²)'
+                                : 'Garden Area (sq ft)',
                             labelStyle: GoogleFonts.outfit(
                               color: Colors.white70,
                               fontSize: 13,
@@ -535,11 +526,11 @@ final class _ConcoctionAssistantDialogState
                       ),
                       const SizedBox(width: 8),
                       // Preset Quick Buttons
-                      _buildPresetAreaButton("100"),
+                      _buildPresetAreaButton('100'),
                       const SizedBox(width: 6),
-                      _buildPresetAreaButton("500"),
+                      _buildPresetAreaButton('500'),
                       const SizedBox(width: 6),
-                      _buildPresetAreaButton("1000"),
+                      _buildPresetAreaButton('1000'),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -550,7 +541,7 @@ final class _ConcoctionAssistantDialogState
                       Expanded(
                         child: _buildDosageCard(
                           icon: Icons.grass,
-                          label: "Herb / Prep",
+                          label: 'Herb / Prep',
                           value: herbDisplay,
                           color: const Color(0xFF10B981),
                         ),
@@ -559,7 +550,7 @@ final class _ConcoctionAssistantDialogState
                       Expanded(
                         child: _buildDosageCard(
                           icon: Icons.water_drop,
-                          label: "Brew Water",
+                          label: 'Brew Water',
                           value: waterDisplay,
                           color: const Color(0xFF60A5FA),
                         ),
@@ -568,7 +559,7 @@ final class _ConcoctionAssistantDialogState
                       Expanded(
                         child: _buildDosageCard(
                           icon: Icons.shower,
-                          label: "Spray Volume",
+                          label: 'Spray Volume',
                           value: totalDisplay,
                           color: const Color(0xFF8B5CF6),
                         ),
@@ -579,7 +570,7 @@ final class _ConcoctionAssistantDialogState
 
                   // Step-by-Step Instructions
                   Text(
-                    "Step-by-Step Brewing & Application",
+                    'Step-by-Step Brewing & Application',
                     style: GoogleFonts.outfit(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
@@ -625,9 +616,8 @@ final class _ConcoctionAssistantDialogState
                     height: 48,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(
-                          0xFF10B981,
-                        ).withValues(alpha: 0.3),
+                        backgroundColor: const Color(0xFF10B981)
+                            .withValues(alpha: 0.3),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -636,7 +626,7 @@ final class _ConcoctionAssistantDialogState
                       ),
                       onPressed: () => Navigator.of(context).pop(),
                       child: Text(
-                        "Done",
+                        'Done',
                         style: GoogleFonts.outfit(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
@@ -682,7 +672,7 @@ final class _ConcoctionAssistantDialogState
         onTap: () {
           setState(() {
             _unitSystem = system;
-            _areaController.text = system == UnitSystem.metric ? "100" : "1000";
+            _areaController.text = system == UnitSystem.metric ? '100' : '1000';
             _onAreaChanged(_areaController.text);
           });
         },

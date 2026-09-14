@@ -6,9 +6,9 @@ import '../../services/weather_service.dart';
 import '../components/biodynamic_card.dart';
 import '../components/celestial_details_card.dart';
 import '../components/home_header.dart';
+import '../components/planetary_ribbon.dart';
 import '../components/plant_quality_card.dart';
 import '../components/plant_recommendations_card.dart';
-import '../components/planetary_ribbon.dart';
 import 'time_scroll_view.dart';
 
 /// Main calendar screen coordinating timeline scrolling, celestial rhythms, and agricultural advice.
@@ -140,9 +140,7 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                             latNotifier: _latNotifier,
                             lonNotifier: _lonNotifier,
                             selectedDateNotifier: _selectedDateNotifier,
-                            onNowPressed: () {
-                              _timeScrollController.scrollToNow();
-                            },
+                            onNowPressed: _timeScrollController.scrollToNow,
                             onDateSelected: _onDateJump,
                           ),
                           SizedBox(height: sectionSpacing),

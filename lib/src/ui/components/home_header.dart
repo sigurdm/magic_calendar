@@ -33,7 +33,7 @@ final class HomeHeader extends StatelessWidget {
   });
 
   void _showLocationPicker(BuildContext context) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => LocationPickerDialog(
         initialLatitude: latNotifier.value,
@@ -156,7 +156,7 @@ final class HomeHeader extends StatelessWidget {
                 icon: const Icon(Icons.palette_outlined, color: Colors.white),
                 onPressed: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) => ElementCardsGalleryPage(
                         onBackToApp: () => Navigator.of(context).pop(),
                       ),
@@ -173,7 +173,9 @@ final class HomeHeader extends StatelessWidget {
                 icon: const Icon(Icons.help_outline, color: Colors.white),
                 onPressed: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => const HelpScreen()),
+                    MaterialPageRoute<void>(
+                      builder: (context) => const HelpScreen(),
+                    ),
                   );
                 },
               ),
@@ -234,7 +236,7 @@ final class HomeHeader extends StatelessWidget {
                           ),
                           onPressed: () {
                             Navigator.of(context).push(
-                              MaterialPageRoute(
+                              MaterialPageRoute<void>(
                                 builder: (context) => const HelpScreen(),
                               ),
                             );

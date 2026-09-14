@@ -3,9 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/biodynamic_prep.dart';
 import '../../services/ephemeris_service.dart';
+import '../theme/biodynamic_icons.dart';
 import 'concoction_assistant_dialog.dart';
 import 'stirring_timer_dialog.dart';
-import '../theme/biodynamic_icons.dart';
 
 /// Interactive card widget summarizing biodynamic field preparation windows (BD 500, BD 501, CPP, BD 508),
 /// seasonal compost preparation burial cycles (BD 502–507),
@@ -54,16 +54,14 @@ final class BiodynamicCard extends StatelessWidget {
       statusIcon = Icons.do_not_disturb_on_outlined;
     } else if (cppSuitability.isFavorable ||
         (isDescending && hour >= 15 && hour <= 20)) {
-      currentPrepStatus =
-          'Optimal Window: BD 500 Horn Manure & CPP Cow Pat Pit (Earth Inhalation / Soil Vitality)';
+      currentPrepStatus = 'Optimal Window: BD 500 Horn Manure & CPP Cow Pat Pit (Earth Inhalation / Soil Vitality)';
       statusColor = const Color(0xFF8D6E63);
       statusIcon = Icons.terrain;
     } else if (isAscending &&
         (hour >= 5 && hour <= 9) &&
         (info.quality == PlantQuality.flower ||
             info.quality == PlantQuality.fruit)) {
-      currentPrepStatus =
-          'Optimal Window: BD 501 Horn Silica (Light Exhalation / Photosynthesis)';
+      currentPrepStatus = 'Optimal Window: BD 501 Horn Silica (Light Exhalation / Photosynthesis)';
       statusColor = const Color(0xFFF59E0B);
       statusIcon = Icons.wb_sunny_outlined;
     } else if (hour >= 6 &&
@@ -251,9 +249,8 @@ final class BiodynamicCard extends StatelessWidget {
                 constraints: const BoxConstraints(minHeight: 48),
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(
-                      0xFF646CFF,
-                    ).withValues(alpha: 0.3),
+                    backgroundColor: const Color(0xFF646CFF)
+                        .withValues(alpha: 0.3),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -283,9 +280,8 @@ final class BiodynamicCard extends StatelessWidget {
                 constraints: const BoxConstraints(minHeight: 48),
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(
-                      0xFF8D6E63,
-                    ).withValues(alpha: 0.3),
+                    backgroundColor: const Color(0xFF8D6E63)
+                        .withValues(alpha: 0.3),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -318,9 +314,8 @@ final class BiodynamicCard extends StatelessWidget {
                 constraints: const BoxConstraints(minHeight: 48),
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(
-                      0xFF10B981,
-                    ).withValues(alpha: 0.25),
+                    backgroundColor: const Color(0xFF10B981)
+                        .withValues(alpha: 0.25),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,

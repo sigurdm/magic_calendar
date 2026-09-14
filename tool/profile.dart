@@ -1,6 +1,6 @@
 // ignore_for_file: avoid_print
-import 'package:sweph/sweph.dart';
 import 'package:magic_calendar/src/services/ephemeris_service.dart';
+import 'package:sweph/sweph.dart';
 
 void main() async {
   print('Initializing Swiss Ephemeris...');

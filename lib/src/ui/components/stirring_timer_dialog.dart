@@ -165,8 +165,8 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
   ///
   /// Clamped to [_totalCycles]: when the final second elapses the raw
   /// expression lands one past the end, which read as "Cycle 49/48".
-  int get _currentCycleIndex => ((_elapsedSeconds ~/ _cycleLengthSeconds) + 1)
-      .clamp(1, _totalCycles);
+  int get _currentCycleIndex =>
+      ((_elapsedSeconds ~/ _cycleLengthSeconds) + 1).clamp(1, _totalCycles);
   int get _cycleSecondsElapsed => _elapsedSeconds % _cycleLengthSeconds;
   int get _secondsUntilReversal => _cycleLengthSeconds - _cycleSecondsElapsed;
 
@@ -262,9 +262,8 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(
-                                0xFF646CFF,
-                              ).withValues(alpha: 0.2),
+                              color: const Color(0xFF646CFF)
+                                  .withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const BiodynamicIcon(
@@ -361,18 +360,16 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                       color: _isReversalWarning
                           ? const Color(0xFFEF4444).withValues(alpha: 0.25)
                           : (_isRunning
-                                ? const Color(
-                                    0xFF10B981,
-                                  ).withValues(alpha: 0.15)
+                                ? const Color(0xFF10B981)
+                                      .withValues(alpha: 0.15)
                                 : Colors.white.withValues(alpha: 0.05)),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: _isReversalWarning
                             ? const Color(0xFFEF4444)
                             : (_isRunning
-                                  ? const Color(
-                                      0xFF10B981,
-                                    ).withValues(alpha: 0.4)
+                                  ? const Color(0xFF10B981)
+                                        .withValues(alpha: 0.4)
                                   : Colors.white.withValues(alpha: 0.1)),
                         width: _isReversalWarning ? 2.0 : 1.0,
                       ),
@@ -574,9 +571,8 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _isRunning
-                                  ? const Color(
-                                      0xFFEF4444,
-                                    ).withValues(alpha: 0.8)
+                                  ? const Color(0xFFEF4444)
+                                        .withValues(alpha: 0.8)
                                   : const Color(0xFF646CFF),
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
@@ -659,16 +655,14 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                           icon: Icons.water_drop_outlined,
                           iconColor: const Color(0xFF60A5FA),
                           title: 'Water Source & Warmth',
-                          description:
-                              'Clean rainwater recommended (or living spring water). Warm to approx. 35°C (blood warmth) before dynamizing. Avoid treated, chlorinated tap water.',
+                          description: 'Clean rainwater recommended (or living spring water). Warm to approx. 35°C (blood warmth) before dynamizing. Avoid treated, chlorinated tap water.',
                         ),
                         const SizedBox(height: 10),
                         _buildGuidanceRow(
                           icon: Icons.nature_outlined,
                           iconColor: const Color(0xFFF59E0B),
                           title: 'Vessel Materiality',
-                          description:
-                              'Natural materials: Oak or larch wooden barrel, glazed earthenware crock, or hammered copper vat. Avoid synthetic plastic containers which dampen energetic resonance.',
+                          description: 'Natural materials: Oak or larch wooden barrel, glazed earthenware crock, or hammered copper vat. Avoid synthetic plastic containers which dampen energetic resonance.',
                         ),
                         const SizedBox(height: 10),
                         _buildGuidanceRow(
@@ -679,8 +673,7 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                           ),
                           iconColor: const Color(0xFF818CF8),
                           title: 'Vortex & Dynamic Chaos',
-                          description:
-                              'Stir along perimeter to form a deep funnel reaching the bottom of the barrel, then reverse sharply to shatter into dynamic foaming chaos.',
+                          description: 'Stir along perimeter to form a deep funnel reaching the bottom of the barrel, then reverse sharply to shatter into dynamic foaming chaos.',
                         ),
                         const SizedBox(height: 10),
                         _buildGuidanceRow(

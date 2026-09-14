@@ -118,16 +118,16 @@ CalendarInfo getCalendarInfo(
     boundaries,
   );
 
-  bool isNearNode = ephemeris.isNearNode(time);
-  bool isNearPerigee = ephemeris.isNearPerigee(time);
-  bool isNearApogee = ephemeris.isNearApogee(time);
-  bool isMoonSaturnOpp = ephemeris.isMoonSaturnOpposition(time);
+  final bool isNearNode = ephemeris.isNearNode(time);
+  final bool isNearPerigee = ephemeris.isNearPerigee(time);
+  final bool isNearApogee = ephemeris.isNearApogee(time);
+  final bool isMoonSaturnOpp = ephemeris.isMoonSaturnOpposition(time);
   bool isEclipse = false;
   try {
     isEclipse = ephemeris.isNearEclipse(time);
   } catch (_) {}
 
-  bool isGrayDay = isNearNode || isNearPerigee;
+  final bool isGrayDay = isNearNode || isNearPerigee;
   String message = '';
 
   if (isNearNode) {
@@ -170,7 +170,7 @@ CalendarInfo getCalendarInfo(
   }
 
   final trineResult = calculateTrineQuality(planets, boundaries);
-  PlantQuality trineQuality = trineResult.quality;
+  final PlantQuality trineQuality = trineResult.quality;
   PlantQuality quality = PlantQuality.none;
   if (trineQuality == PlantQuality.none) {
     quality = getQualityFromLongitude(moonLongitude, boundaries);
@@ -191,16 +191,14 @@ CalendarInfo getCalendarInfo(
   final String diurnalPart;
   switch (diurnalRhythm.phase) {
     case DiurnalPhase.morningExhalation:
-      diurnalPart =
-          'Morning Exhalation: Earth breathes out, optimal for foliar misting & above-ground harvest.';
+      diurnalPart = 'Morning Exhalation: Earth breathes out, optimal for foliar misting & above-ground harvest.';
       break;
     case DiurnalPhase.solarNoonStillness:
       diurnalPart =
           'Solar Noon Stillness: Transpiration pause, avoid disturbance.';
       break;
     case DiurnalPhase.eveningInhalation:
-      diurnalPart =
-          'Evening Inhalation: Earth breathes in, optimal for seed sowing & soil spray.';
+      diurnalPart = 'Evening Inhalation: Earth breathes in, optimal for seed sowing & soil spray.';
       break;
     case DiurnalPhase.nightRest:
       diurnalPart = 'Night Rest: Subterranean consolidation and plant rest.';

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic_calendar/src/core/algorithm.dart';
-import 'package:magic_calendar/src/services/ephemeris_service.dart';
 import 'package:magic_calendar/src/core/dornach_boundaries.dart';
+import 'package:magic_calendar/src/services/ephemeris_service.dart';
 import 'package:sweph/sweph.dart';
 
 import 'support/sweph_test_loader.dart';

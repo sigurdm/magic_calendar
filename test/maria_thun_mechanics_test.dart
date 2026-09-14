@@ -36,21 +36,18 @@ void main() {
       );
     });
 
-    test(
-      'getAspects identifies planetary aspects including squares, trines, and oppositions',
-      () {
-        // Sample test date in 2026
-        final aspects = service.getAspects(DateTime.utc(2026, 1, 1, 12, 0));
-        expect(aspects, isA<List<PlanetaryAspect>>());
+    test('getAspects identifies planetary aspects including squares, trines, and oppositions', () {
+      // Sample test date in 2026
+      final aspects = service.getAspects(DateTime.utc(2026, 1, 1, 12, 0));
+      expect(aspects, isA<List<PlanetaryAspect>>());
 
-        for (final aspect in aspects) {
-          expect(aspect.body1, isNotEmpty);
-          expect(aspect.body2, isNotEmpty);
-          expect(aspect.agriculturalEffect, isNotEmpty);
-          expect(aspect.separationDegrees, inInclusiveRange(0.0, 180.0));
-        }
-      },
-    );
+      for (final aspect in aspects) {
+        expect(aspect.body1, isNotEmpty);
+        expect(aspect.body2, isNotEmpty);
+        expect(aspect.agriculturalEffect, isNotEmpty);
+        expect(aspect.separationDegrees, inInclusiveRange(0.0, 180.0));
+      }
+    });
 
     test('getCalendarInfo populates activeAspects and isEclipse fields', () {
       final info = getCalendarInfo(

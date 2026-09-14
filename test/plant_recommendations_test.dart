@@ -79,42 +79,39 @@ void main() {
       expect(southEval.season, GardenSeason.spring);
     });
 
-    test(
-      'recommends spring vegetables for Southern Hemisphere spring with mock DB',
-      () {
-        final mockVegs = [
-          const VegetableEntry(
-            id: 'carrot',
-            nameDa: 'Gulerod',
-            nameEn: 'Carrot',
-            scientificName: 'Daucus carota',
-            quality: PlantQuality.root,
-            sowingMonths: [3, 4, 5, 6], // Spring (March-June in North)
-            harvestMonths: [8, 9, 10, 11], // Autumn
-            descriptionDa: 'Gulerod beskrivelse',
-            descriptionEn: 'Carrot description',
-            companionPlants: ['Løg'],
-          ),
-        ];
-
-        // October (Month 10 in North -> Month 4 in South, which is April/Spring in South)
-        final octoberDate = DateTime.utc(2026, 10, 5);
-
-        final southEval = PlantRecommendations.evaluate(
+    test('recommends spring vegetables for Southern Hemisphere spring with mock DB', () {
+      final mockVegs = [
+        const VegetableEntry(
+          id: 'carrot',
+          nameDa: 'Gulerod',
+          nameEn: 'Carrot',
+          scientificName: 'Daucus carota',
           quality: PlantQuality.root,
-          isDescending: true,
-          isWaxing: false,
-          isGrayDay: false,
-          selectedTime: octoberDate,
-          latitude: -33.8688, // Sydney, Australia
-          dbEntries: mockVegs,
-        );
+          sowingMonths: [3, 4, 5, 6], // Spring (March-June in North)
+          harvestMonths: [8, 9, 10, 11], // Autumn
+          descriptionDa: 'Gulerod beskrivelse',
+          descriptionEn: 'Carrot description',
+          companionPlants: ['Løg'],
+        ),
+      ];
 
-        expect(southEval.season, GardenSeason.spring);
-        expect(southEval.sowOutdoorPlants, contains('Gulerod (Carrot)'));
-        expect(southEval.harvestActions, isEmpty);
-      },
-    );
+      // October (Month 10 in North -> Month 4 in South, which is April/Spring in South)
+      final octoberDate = DateTime.utc(2026, 10, 5);
+
+      final southEval = PlantRecommendations.evaluate(
+        quality: PlantQuality.root,
+        isDescending: true,
+        isWaxing: false,
+        isGrayDay: false,
+        selectedTime: octoberDate,
+        latitude: -33.8688, // Sydney, Australia
+        dbEntries: mockVegs,
+      );
+
+      expect(southEval.season, GardenSeason.spring);
+      expect(southEval.sowOutdoorPlants, contains('Gulerod (Carrot)'));
+      expect(southEval.harvestActions, isEmpty);
+    });
 
     test('suppresses recommendations on Gray Days', () {
       final grayEval = PlantRecommendations.evaluate(

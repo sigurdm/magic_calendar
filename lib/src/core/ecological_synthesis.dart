@@ -130,8 +130,7 @@ abstract final class EcologicalSynthesis {
       return const EcologicalSynthesisResult(
         alerts: [],
         bannerTitle: bannerMotto,
-        bannerSubtitle:
-            'Awaiting terrestrial weather data. Observe physical soil moisture and local conditions.',
+        bannerSubtitle: 'Awaiting terrestrial weather data. Observe physical soil moisture and local conditions.',
         hasConflicts: false,
       );
     }
@@ -147,8 +146,7 @@ abstract final class EcologicalSynthesis {
           title: 'Soil Saturated: Waterlogging Warning',
           description:
               'Precipitation (${weather.precipitation.toStringAsFixed(1)} mm) has saturated soil pores.',
-          practicalAdvice:
-              'Cease tillage, hoeing, and machinery traffic immediately. Cultivating wet soil destroys crumb structure and causes severe compaction.',
+          practicalAdvice: 'Cease tillage, hoeing, and machinery traffic immediately. Cultivating wet soil destroys crumb structure and causes severe compaction.',
           preventsTillage: true,
         ),
       );
@@ -163,8 +161,7 @@ abstract final class EcologicalSynthesis {
           title: 'Freezing Conditions (<= 0°C)',
           description:
               'Air temperature is ${weather.temperature.toStringAsFixed(1)}°C (at or below freezing).',
-          practicalAdvice:
-              'Postpone outdoor direct sowing. Start seedlings indoors in greenhouse trays or cold frames until ground thaws.',
+          practicalAdvice: 'Postpone outdoor direct sowing. Start seedlings indoors in greenhouse trays or cold frames until ground thaws.',
           indoorSowingAdvised: true,
         ),
       );
@@ -179,8 +176,7 @@ abstract final class EcologicalSynthesis {
           title: 'High Wind: Spray Drift Warning',
           description:
               'Wind speed (${weather.windSpeed.toStringAsFixed(1)} m/s) exceeds the 5.5 m/s threshold for biodynamic field preparations.',
-          practicalAdvice:
-              'Suspend foliar spraying of BD 501 Horn Silica and herbal teas to avoid spray drift and excessive droplet evaporation.',
+          practicalAdvice: 'Suspend foliar spraying of BD 501 Horn Silica and herbal teas to avoid spray drift and excessive droplet evaporation.',
           preventsSpray: true,
         ),
       );
@@ -207,8 +203,7 @@ abstract final class EcologicalSynthesis {
           severity: EcologicalAlertSeverity.warning,
           title: title,
           description: desc,
-          practicalAdvice:
-              'Spray BD 507 Valerian preparation in late evening. Valerian stimulates phosphorus and warmth forces, creating a protective thermal envelope around blossoms.',
+          practicalAdvice: 'Spray BD 507 Valerian preparation in late evening. Valerian stimulates phosphorus and warmth forces, creating a protective thermal envelope around blossoms.',
           valerianSprayAdvised: true,
         ),
       );
@@ -223,14 +218,11 @@ abstract final class EcologicalSynthesis {
 
     String subtitle;
     if (alerts.isEmpty) {
-      subtitle =
-          'Cosmic rhythms and terrestrial weather are harmoniously aligned for field work.';
+      subtitle = 'Cosmic rhythms and terrestrial weather are harmoniously aligned for field work.';
     } else if (hasConflicts) {
-      subtitle =
-          'Cosmic rhythms are active, but physical weather overrides field operations. Respect soil and temperature limits.';
+      subtitle = 'Cosmic rhythms are active, but physical weather overrides field operations. Respect soil and temperature limits.';
     } else {
-      subtitle =
-          'Minor microclimate adjustments recommended. Adapt preparations and sowings accordingly.';
+      subtitle = 'Minor microclimate adjustments recommended. Adapt preparations and sowings accordingly.';
     }
 
     return EcologicalSynthesisResult(

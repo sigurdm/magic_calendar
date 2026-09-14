@@ -82,17 +82,16 @@ final class DiurnalRhythmInfo {
       case DiurnalPhase.morningExhalation:
         return DiurnalRhythmInfo(
           phase: phase,
-          title: "Morning Exhalation",
-          description:
-              "Vital forces stream upwards into foliage, flowers, and fruits. Earth breathes out.",
+          title: 'Morning Exhalation',
+          description: 'Vital forces stream upwards into foliage, flowers, and fruits. Earth breathes out.',
           optimalTasks: const [
-            "Foliar spraying (BD 501 Horn Silica)",
-            "Harvesting above-ground crops, flowers, and fruits for immediate vitality",
-            "Shallow weed scalping and morning hoeing",
+            'Foliar spraying (BD 501 Horn Silica)',
+            'Harvesting above-ground crops, flowers, and fruits for immediate vitality',
+            'Shallow weed scalping and morning hoeing',
           ],
           cautionedTasks: const [
-            "Root disturbance and deep soil cultivation",
-            "Applying soil preparations (BD 500 / CPP)",
+            'Root disturbance and deep soil cultivation',
+            'Applying soil preparations (BD 500 / CPP)',
           ],
           sunrise: sunrise,
           sunset: sunset,
@@ -102,18 +101,17 @@ final class DiurnalRhythmInfo {
       case DiurnalPhase.solarNoonStillness:
         return DiurnalRhythmInfo(
           phase: phase,
-          title: "Solar Noon Stillness",
-          description:
-              "Solar zenith pause. Transpiration slows down; plant sap flow pauses at the still point.",
+          title: 'Solar Noon Stillness',
+          description: 'Solar zenith pause. Transpiration slows down; plant sap flow pauses at the still point.',
           optimalTasks: const [
-            "Planning, observation, and tool maintenance",
-            "Quiet farm walk and plant inspection",
-            "Rest and record keeping",
+            'Planning, observation, and tool maintenance',
+            'Quiet farm walk and plant inspection',
+            'Rest and record keeping',
           ],
           cautionedTasks: const [
-            "Soil cultivation and mechanical tillage",
-            "Foliar spraying in direct midday sun",
-            "Transplanting delicate seedlings",
+            'Soil cultivation and mechanical tillage',
+            'Foliar spraying in direct midday sun',
+            'Transplanting delicate seedlings',
           ],
           sunrise: sunrise,
           sunset: sunset,
@@ -123,18 +121,17 @@ final class DiurnalRhythmInfo {
       case DiurnalPhase.eveningInhalation:
         return DiurnalRhythmInfo(
           phase: phase,
-          title: "Evening Inhalation",
-          description:
-              "Vitality contracts downward into the root zone and rhizosphere. Earth breathes in.",
+          title: 'Evening Inhalation',
+          description: 'Vitality contracts downward into the root zone and rhizosphere. Earth breathes in.',
           optimalTasks: const [
-            "Seed sowing and seedling transplanting",
-            "Soil cultivation and root aeration",
-            "Soil spraying (BD 500 Horn Manure & Cow Pat Pit)",
-            "Watering and root drenching",
+            'Seed sowing and seedling transplanting',
+            'Soil cultivation and root aeration',
+            'Soil spraying (BD 500 Horn Manure & Cow Pat Pit)',
+            'Watering and root drenching',
           ],
           cautionedTasks: const [
-            "Foliar spraying with light-stimulating preparations (BD 501)",
-            "Harvesting crops intended for long-term storage or fresh crispness",
+            'Foliar spraying with light-stimulating preparations (BD 501)',
+            'Harvesting crops intended for long-term storage or fresh crispness',
           ],
           sunrise: sunrise,
           sunset: sunset,
@@ -144,16 +141,15 @@ final class DiurnalRhythmInfo {
       case DiurnalPhase.nightRest:
         return DiurnalRhythmInfo(
           phase: phase,
-          title: "Night Rest",
-          description:
-              "Subterranean consolidation and quiet plant regeneration under stellar rhythms.",
+          title: 'Night Rest',
+          description: 'Subterranean consolidation and quiet plant regeneration under stellar rhythms.',
           optimalTasks: const [
-            "Compost maturation and microbial rhizosphere activity",
-            "Uninterrupted cosmic and lunar absorption",
+            'Compost maturation and microbial rhizosphere activity',
+            'Uninterrupted cosmic and lunar absorption',
           ],
           cautionedTasks: const [
-            "Field disturbance and mechanical tillage",
-            "Foliar application of field preparations",
+            'Field disturbance and mechanical tillage',
+            'Foliar application of field preparations',
           ],
           sunrise: sunrise,
           sunset: sunset,
@@ -164,5 +160,5 @@ final class DiurnalRhythmInfo {
 
   @override
   String toString() =>
-      "DiurnalRhythmInfo(phase: $phase, title: $title, solarNoon: $solarNoon)";
+      'DiurnalRhythmInfo(phase: $phase, title: $title, solarNoon: $solarNoon)';
 }

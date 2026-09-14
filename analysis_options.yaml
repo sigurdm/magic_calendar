@@ -8,6 +8,13 @@
 # The following line activates a set of recommended lints for Flutter apps,
 # packages, and plugins designed to encourage good coding practices.
 analyzer:
+  language:
+    # The codebase is clean under all three, and they are what stops an
+    # untyped value (say, something pulled out of an isolate message) from
+    # silently becoming a typed one at runtime.
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
   exclude:
     - build/**
     - android/**
@@ -34,9 +41,25 @@ linter:
   # or a specific dart file by using the `// ignore: name_of_lint` and
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
+  #
+  # Deliberately *not* enabled:
+  #   avoid_redundant_argument_values -- 1922 hits, nearly all of them in the
+  #     painters where spelling the default out is the clearer choice.
+  #   public_member_api_docs -- 103 hits; worth doing, but as its own pass.
+  #   cascade_invocations -- no automated fix, and every remaining hit is a run
+  #     of canvas.drawX() calls in a painter, which a cascade chain makes
+  #     harder to read, not easier.
   rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    - always_declare_return_types
+    - avoid_dynamic_calls
+    - directives_ordering
+    - prefer_final_locals
+    - prefer_single_quotes
+    - require_trailing_commas
+    - unawaited_futures
+    - unnecessary_lambdas
+    - unnecessary_parenthesis
+    - use_string_buffers
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

@@ -186,35 +186,32 @@ void main() {
       },
     );
 
-    test(
-      'Waterlogging (> 2.0 mm rain) restricts tillage to protect soil structure',
-      () {
-        final info = createTestCalendarInfo(
-          quality: PlantQuality.root,
-          isDescending: true,
-        );
-        final wetWeather = WeatherDataPoint(
-          time: DateTime.utc(2026, 5, 10, 15, 0),
-          temperature: 15.0,
-          windSpeed: 2.0,
-          windDirection: 90,
-          cloudCover: 100,
-          precipitation: 4.5, // > 2.0 mm!
-        );
+    test('Waterlogging (> 2.0 mm rain) restricts tillage to protect soil structure', () {
+      final info = createTestCalendarInfo(
+        quality: PlantQuality.root,
+        isDescending: true,
+      );
+      final wetWeather = WeatherDataPoint(
+        time: DateTime.utc(2026, 5, 10, 15, 0),
+        temperature: 15.0,
+        windSpeed: 2.0,
+        windDirection: 90,
+        cloudCover: 100,
+        precipitation: 4.5, // > 2.0 mm!
+      );
 
-        final advice = AgriculturalTaskEvaluator.evaluateTask(
-          task: AgriculturalTaskType.soilCultivation,
-          calendarInfo: info,
-          time: DateTime.utc(2026, 5, 10, 15, 0),
-          weather: wetWeather,
-        );
+      final advice = AgriculturalTaskEvaluator.evaluateTask(
+        task: AgriculturalTaskType.soilCultivation,
+        calendarInfo: info,
+        time: DateTime.utc(2026, 5, 10, 15, 0),
+        weather: wetWeather,
+      );
 
-        expect(advice.hasWeatherConflict, isTrue);
-        expect(advice.suitability, TaskSuitability.restricted);
-        expect(advice.terrestrialReasoning, contains('waterlogged'));
-        expect(advice.practicalAction, contains('Cease all tillage'));
-      },
-    );
+      expect(advice.hasWeatherConflict, isTrue);
+      expect(advice.suitability, TaskSuitability.restricted);
+      expect(advice.terrestrialReasoning, contains('waterlogged'));
+      expect(advice.practicalAction, contains('Cease all tillage'));
+    });
   });
 
   group('AgriculturalTaskEvaluator - Storage vs Fresh Harvest', () {
