@@ -5,58 +5,6 @@ import 'package:sweph/sweph.dart';
 
 import 'support/sweph_test_loader.dart';
 
-final class MockPrepEphemerisService with EphemerisService {
-  final PlantQuality mockQuality;
-  final bool mockIsGrayDay;
-  final String mockSapFlow;
-  final double mockMoonIllumination;
-
-  MockPrepEphemerisService({
-    this.mockQuality = PlantQuality.leaf,
-    this.mockIsGrayDay = false,
-    this.mockSapFlow = 'Descending: Sap recedes',
-    this.mockMoonIllumination = 0.90,
-  });
-
-  @override
-  List<CalendarInterval> getIntervals(DateTime start, DateTime end) => [];
-
-  @override
-  double getMoonLongitude(DateTime time) => 90.0;
-
-  @override
-  bool isNearNode(DateTime time) => mockIsGrayDay;
-
-  @override
-  bool isNearPerigee(DateTime time) => false;
-
-  @override
-  bool isNearApogee(DateTime time) => false;
-
-  @override
-  bool isMoonSaturnOpposition(DateTime time) => false;
-
-  @override
-  bool isMoonSquareNode(DateTime time) => false;
-
-  @override
-  double getMoonDeclination(DateTime time) => 15.0;
-
-  @override
-  MoonPhaseInfo getMoonPhase(DateTime time) => MoonPhaseInfo(
-    illuminatedFraction: mockMoonIllumination,
-    isWaxing: true,
-    phaseAngle: 180.0 * mockMoonIllumination,
-  );
-
-  @override
-  List<PlanetInfo> getPlanets(DateTime time) => [];
-
-  @override
-  SunriseSunsetInfo getSunriseSunset(DateTime date, double lat, double lon) =>
-      SunriseSunsetInfo(noon: date);
-}
-
 void main() async {
   await ensureSwephLoaded();
   await Sweph.init();

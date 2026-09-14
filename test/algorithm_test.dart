@@ -4,104 +4,22 @@ import 'package:magic_calendar/src/core/dornach_boundaries.dart';
 import 'package:magic_calendar/src/services/ephemeris_service.dart';
 import 'package:sweph/sweph.dart';
 
+import 'support/fakes.dart';
 import 'support/sweph_test_loader.dart';
-
-final class MockEphemerisService with EphemerisService {
-  final double _mockLongitude;
-  final bool _mockIsNearNode;
-  final bool _mockIsNearPerigee;
-  final bool _mockIsNearApogee;
-  final bool _mockIsMoonSquareNode;
-  final bool _shouldThrow;
-
-  MockEphemerisService(
-    this._mockLongitude, [
-    this._mockIsNearNode = false,
-    this._mockIsNearPerigee = false,
-    this._mockIsNearApogee = false,
-    this._mockIsMoonSquareNode = false,
-    this._shouldThrow = false,
-  ]);
-
-  @override
-  List<CalendarInterval> getIntervals(DateTime start, DateTime end) {
-    if (_shouldThrow) throw Exception('Simulated Ephemeris Error');
-    return [];
-  }
-
-  @override
-  double getMoonLongitude(DateTime time) {
-    if (_shouldThrow) throw Exception('Simulated Ephemeris Error');
-    return _mockLongitude;
-  }
-
-  @override
-  bool isNearNode(DateTime time) {
-    if (_shouldThrow) throw Exception('Simulated Ephemeris Error');
-    return _mockIsNearNode;
-  }
-
-  @override
-  bool isNearPerigee(DateTime time) {
-    if (_shouldThrow) throw Exception('Simulated Ephemeris Error');
-    return _mockIsNearPerigee;
-  }
-
-  @override
-  bool isNearApogee(DateTime time) {
-    if (_shouldThrow) throw Exception('Simulated Ephemeris Error');
-    return _mockIsNearApogee;
-  }
-
-  @override
-  bool isMoonSquareNode(DateTime time) {
-    if (_shouldThrow) throw Exception('Simulated Ephemeris Error');
-    return _mockIsMoonSquareNode;
-  }
-
-  @override
-  bool isMoonSaturnOpposition(DateTime time) {
-    if (_shouldThrow) throw Exception('Simulated Ephemeris Error');
-    return false;
-  }
-
-  @override
-  double getMoonDeclination(DateTime time) => 0.0;
-
-  @override
-  MoonPhaseInfo getMoonPhase(DateTime time) => const MoonPhaseInfo(
-    illuminatedFraction: 0.5,
-    isWaxing: true,
-    phaseAngle: 0.0,
-  );
-
-  @override
-  List<PlanetInfo> getPlanets(DateTime time) => [];
-
-  @override
-  SunriseSunsetInfo getSunriseSunset(DateTime date, double lat, double lon) {
-    return SunriseSunsetInfo(noon: DateTime.now());
-  }
-}
 
 void main() async {
   await ensureSwephLoaded();
   await Sweph.init();
 
   test('getCalendarInfo returns a valid CalendarInfo', () {
-    final info = getCalendarInfo(DateTime.now(), MockEphemerisService(0.0));
+    final info = getCalendarInfo(DateTime.now(), FakeEphemerisService());
     expect(info, isNotNull);
     expect(info.quality, isA<PlantQuality>());
   });
 
   test('getCalendarInfo catches exceptions and returns error CalendarInfo gracefully', () {
-    final throwingService = MockEphemerisService(
-      0.0,
-      false,
-      false,
-      false,
-      false,
-      true,
+    final throwingService = FakeEphemerisService(
+      error: Exception('Simulated Ephemeris Error'),
     );
     final info = getCalendarInfo(DateTime.now(), throwingService);
     expect(info, isNotNull);
@@ -113,7 +31,7 @@ void main() async {
   test('getCalendarInfo returns gray day when near node', () {
     final info = getCalendarInfo(
       DateTime.now(),
-      MockEphemerisService(0.0, true, false),
+      FakeEphemerisService(nearNode: true),
     );
     expect(info.isGrayDay, isTrue);
     expect(info.quality, PlantQuality.none);
@@ -123,7 +41,7 @@ void main() async {
   test('getCalendarInfo returns gray day when near perigee', () {
     final info = getCalendarInfo(
       DateTime.now(),
-      MockEphemerisService(0.0, false, true),
+      FakeEphemerisService(nearPerigee: true),
     );
     expect(info.isGrayDay, isTrue);
     expect(info.quality, PlantQuality.none);

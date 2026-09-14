@@ -5,40 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magic_calendar/src/services/ephemeris_service.dart';
 import 'package:magic_calendar/src/ui/painters/infinite_timeline_painter.dart';
 
-final class _StubEphemerisService with EphemerisService {
-  @override
-  SunriseSunsetInfo getSunriseSunset(DateTime date, double lat, double lon) =>
-      SunriseSunsetInfo(
-        sunrise: DateTime(date.year, date.month, date.day, 6),
-        sunset: DateTime(date.year, date.month, date.day, 18),
-        noon: DateTime(date.year, date.month, date.day, 12),
-      );
-
-  @override
-  double getMoonLongitude(DateTime time) => 0.0;
-  @override
-  double getMoonDeclination(DateTime time) => 0.0;
-  @override
-  bool isNearNode(DateTime time) => false;
-  @override
-  bool isNearPerigee(DateTime time) => false;
-  @override
-  bool isNearApogee(DateTime time) => false;
-  @override
-  bool isMoonSaturnOpposition(DateTime time) => false;
-  @override
-  bool isMoonSquareNode(DateTime time) => false;
-  @override
-  MoonPhaseInfo getMoonPhase(DateTime time) => const MoonPhaseInfo(
-    illuminatedFraction: 0.5,
-    isWaxing: false,
-    phaseAngle: 90.0,
-  );
-  @override
-  List<PlanetInfo> getPlanets(DateTime time) => [];
-  @override
-  List<CalendarInterval> getIntervals(DateTime start, DateTime end) => [];
-}
+import 'support/fakes.dart';
 
 void main() {
   group(
@@ -82,7 +49,14 @@ void main() {
           hourWidth: 20.0,
           intervals: intervals,
           weatherData: [],
-          ephemeris: _StubEphemerisService(),
+          ephemeris: FakeEphemerisService(
+            sunTimesAt: plainDaylight,
+            moonPhase: const MoonPhaseInfo(
+              illuminatedFraction: 0.5,
+              isWaxing: false,
+              phaseAngle: 90.0,
+            ),
+          ),
           latitude: 47.4814,
           longitude: 7.6178,
           showBiodynamicOverlay: true,
@@ -114,7 +88,14 @@ void main() {
           hourWidth: 15.0,
           intervals: intervals,
           weatherData: [],
-          ephemeris: _StubEphemerisService(),
+          ephemeris: FakeEphemerisService(
+            sunTimesAt: plainDaylight,
+            moonPhase: const MoonPhaseInfo(
+              illuminatedFraction: 0.5,
+              isWaxing: false,
+              phaseAngle: 90.0,
+            ),
+          ),
           latitude: 47.4814,
           longitude: 7.6178,
         );
@@ -140,7 +121,14 @@ void main() {
               hourWidth: hw,
               intervals: [],
               weatherData: [],
-              ephemeris: _StubEphemerisService(),
+              ephemeris: FakeEphemerisService(
+                sunTimesAt: plainDaylight,
+                moonPhase: const MoonPhaseInfo(
+                  illuminatedFraction: 0.5,
+                  isWaxing: false,
+                  phaseAngle: 90.0,
+                ),
+              ),
               latitude: 54.9037,
               longitude: 10.6074,
             );
@@ -167,7 +155,14 @@ void main() {
           hourWidth: 10.0,
           intervals: [],
           weatherData: [],
-          ephemeris: _StubEphemerisService(),
+          ephemeris: FakeEphemerisService(
+            sunTimesAt: plainDaylight,
+            moonPhase: const MoonPhaseInfo(
+              illuminatedFraction: 0.5,
+              isWaxing: false,
+              phaseAngle: 90.0,
+            ),
+          ),
           latitude: 54.9037,
           longitude: 10.6074,
         );

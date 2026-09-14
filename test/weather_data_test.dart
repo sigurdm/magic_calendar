@@ -5,77 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:magic_calendar/src/repository/open_meteo_client.dart';
-import 'package:magic_calendar/src/services/ephemeris_service.dart';
 import 'package:magic_calendar/src/services/weather_service.dart';
 import 'package:magic_calendar/src/ui/painters/infinite_timeline_painter.dart';
 import 'package:magic_calendar/src/ui/views/time_scroll_view.dart';
 
-final class MockEphemerisService with EphemerisService {
-  @override
-  List<CalendarInterval> getIntervals(DateTime start, DateTime end) => [];
-  @override
-  double getMoonLongitude(DateTime time) => 0.0;
-  @override
-  bool isNearNode(DateTime time) => false;
-  @override
-  bool isNearPerigee(DateTime time) => false;
-  @override
-  bool isMoonSquareNode(DateTime time) => false;
-  @override
-  double getMoonDeclination(DateTime time) => 0.0;
-  @override
-  MoonPhaseInfo getMoonPhase(DateTime time) =>
-      MoonPhaseInfo(illuminatedFraction: 0.5, isWaxing: true, phaseAngle: 0.0);
-  @override
-  List<PlanetInfo> getPlanets(DateTime time) => [];
-  @override
-  bool isNearApogee(DateTime time) => false;
-  @override
-  bool isMoonSaturnOpposition(DateTime time) => false;
-  @override
-  SunriseSunsetInfo getSunriseSunset(DateTime date, double lat, double lon) {
-    return SunriseSunsetInfo(noon: DateTime.now());
-  }
-}
-
-final class MockWeatherService implements WeatherService {
-  final List<WeatherDataPoint> forecastData;
-  final List<WeatherDataPoint> historicalData;
-
-  MockWeatherService({
-    this.forecastData = const [],
-    this.historicalData = const [],
-  });
-
-  @override
-  Future<List<WeatherDataPoint>> getForecast(double lat, double lon) async =>
-      forecastData;
-
-  @override
-  Future<List<WeatherDataPoint>> getHistoricalData(
-    double lat,
-    double lon,
-    DateTime start,
-    DateTime end,
-  ) async => historicalData;
-}
-
-final class _ThrowingMockWeatherService implements WeatherService {
-  @override
-  Future<List<WeatherDataPoint>> getForecast(double lat, double lon) async {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<List<WeatherDataPoint>> getHistoricalData(
-    double lat,
-    double lon,
-    DateTime start,
-    DateTime end,
-  ) async {
-    throw Exception('DMI service error');
-  }
-}
+import 'support/fakes.dart';
 
 void main() {
   group('WeatherDataPoint Model', () {
@@ -366,8 +300,8 @@ void main() {
           precipitation: 0.0,
         ),
       ];
-      final yrNoMock = MockWeatherService(forecastData: expectedForecast);
-      final dmiMock = MockWeatherService();
+      final yrNoMock = FakeWeatherService(forecast: expectedForecast);
+      final dmiMock = FakeWeatherService();
       final combined = CombinedWeatherService(
         yrNoService: yrNoMock,
         dmiService: dmiMock,
@@ -388,8 +322,8 @@ void main() {
           precipitation: 0.0,
         ),
       ];
-      final yrNoMock = MockWeatherService();
-      final dmiMock = MockWeatherService(historicalData: expectedHistorical);
+      final yrNoMock = FakeWeatherService();
+      final dmiMock = FakeWeatherService(historical: expectedHistorical);
       final combined = CombinedWeatherService(
         yrNoService: yrNoMock,
         dmiService: dmiMock,
@@ -417,8 +351,8 @@ void main() {
             precipitation: 0.0,
           ),
         ];
-        final yrNoMock = MockWeatherService();
-        final dmiMock = MockWeatherService(historicalData: expectedHistorical);
+        final yrNoMock = FakeWeatherService();
+        final dmiMock = FakeWeatherService(historical: expectedHistorical);
         final combined = CombinedWeatherService(
           yrNoService: yrNoMock,
           dmiService: dmiMock,
@@ -456,8 +390,11 @@ void main() {
             precipitation: 0.0,
           ),
         ];
-        final yrNoMock = MockWeatherService(historicalData: expectedHistorical);
-        final throwingDmiMock = _ThrowingMockWeatherService();
+        final yrNoMock = FakeWeatherService(historical: expectedHistorical);
+        final throwingDmiMock = FakeWeatherService(
+          forecastError: UnimplementedError(),
+          historicalError: Exception('DMI service error'),
+        );
         final combined = CombinedWeatherService(
           yrNoService: yrNoMock,
           dmiService: throwingDmiMock,
@@ -484,8 +421,8 @@ void main() {
           precipitation: 0.0,
         ),
       ];
-      final yrNoMock = MockWeatherService(historicalData: expectedHistorical);
-      final dmiMock = MockWeatherService();
+      final yrNoMock = FakeWeatherService(historical: expectedHistorical);
+      final dmiMock = FakeWeatherService();
       final combined = CombinedWeatherService(
         yrNoService: yrNoMock,
         dmiService: dmiMock,
@@ -534,12 +471,12 @@ void main() {
           precipitation: 0.0,
         );
 
-        final mockWeather = MockWeatherService(
-          forecastData: [forecastPoint],
-          historicalData: [historicalPointValid, historicalPointOverlapping],
+        final mockWeather = FakeWeatherService(
+          forecast: [forecastPoint],
+          historical: [historicalPointValid, historicalPointOverlapping],
         );
 
-        final mockEphemeris = MockEphemerisService();
+        final mockEphemeris = FakeEphemerisService();
         List<WeatherDataPoint>? reportedWeather;
 
         await tester.pumpWidget(

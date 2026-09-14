@@ -3,41 +3,7 @@ import 'package:magic_calendar/src/core/algorithm.dart';
 import 'package:magic_calendar/src/core/dornach_boundaries.dart';
 import 'package:magic_calendar/src/services/ephemeris_service.dart';
 
-final class _StubEphemerisService with EphemerisService {
-  final double moonLongitude;
-
-  _StubEphemerisService(this.moonLongitude);
-
-  @override
-  double getMoonLongitude(DateTime time) => moonLongitude;
-
-  @override
-  double getMoonDeclination(DateTime time) => 0.0;
-
-  @override
-  bool isNearNode(DateTime time) => false;
-  @override
-  bool isNearPerigee(DateTime time) => false;
-  @override
-  bool isNearApogee(DateTime time) => false;
-  @override
-  bool isMoonSaturnOpposition(DateTime time) => false;
-  @override
-  bool isMoonSquareNode(DateTime time) => false;
-  @override
-  MoonPhaseInfo getMoonPhase(DateTime time) => const MoonPhaseInfo(
-    illuminatedFraction: 0.5,
-    isWaxing: false,
-    phaseAngle: 90.0,
-  );
-  @override
-  List<PlanetInfo> getPlanets(DateTime time) => [];
-  @override
-  List<CalendarInterval> getIntervals(DateTime start, DateTime end) => [];
-  @override
-  SunriseSunsetInfo getSunriseSunset(DateTime date, double lat, double lon) =>
-      SunriseSunsetInfo(noon: DateTime.now());
-}
+import 'support/fakes.dart';
 
 void main() {
   group('TransitionEnvelope & Cusp Blending', () {
@@ -137,7 +103,14 @@ void main() {
     test('getCalendarInfo populates transitionEnvelope correctly', () {
       final boundaryTime = DateTime.utc(2026, 6, 21, 12, 0);
       // Moon at 54.8° (in cusp transition to Taurus Root)
-      final service = _StubEphemerisService(54.8);
+      final service = FakeEphemerisService(
+        moonLongitude: 54.8,
+        moonPhase: const MoonPhaseInfo(
+          illuminatedFraction: 0.5,
+          isWaxing: false,
+          phaseAngle: 90.0,
+        ),
+      );
 
       final info = getCalendarInfo(boundaryTime, service);
 

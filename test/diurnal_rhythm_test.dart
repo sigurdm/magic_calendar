@@ -2,51 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magic_calendar/src/core/algorithm.dart';
 import 'package:magic_calendar/src/services/ephemeris_service.dart';
 
-final class _StubEphemerisService with EphemerisService {
-  final double moonLongitude;
-  final double Function(DateTime time)? declinationFn;
-  final SunriseSunsetInfo sunTimes;
-
-  _StubEphemerisService({
-    this.moonLongitude = 60.0,
-    this.declinationFn,
-    required this.sunTimes,
-  });
-
-  @override
-  SunriseSunsetInfo getSunriseSunset(DateTime date, double lat, double lon) =>
-      sunTimes;
-
-  @override
-  double getMoonLongitude(DateTime time) => moonLongitude;
-
-  @override
-  double getMoonDeclination(DateTime time) {
-    if (declinationFn != null) return declinationFn!(time);
-    return 0.0;
-  }
-
-  @override
-  bool isNearNode(DateTime time) => false;
-  @override
-  bool isNearPerigee(DateTime time) => false;
-  @override
-  bool isNearApogee(DateTime time) => false;
-  @override
-  bool isMoonSaturnOpposition(DateTime time) => false;
-  @override
-  bool isMoonSquareNode(DateTime time) => false;
-  @override
-  MoonPhaseInfo getMoonPhase(DateTime time) => const MoonPhaseInfo(
-    illuminatedFraction: 0.5,
-    isWaxing: false,
-    phaseAngle: 90.0,
-  );
-  @override
-  List<PlanetInfo> getPlanets(DateTime time) => [];
-  @override
-  List<CalendarInterval> getIntervals(DateTime start, DateTime end) => [];
-}
+import 'support/fakes.dart';
 
 void main() {
   group("Diurnal Earth Rhythms (Earth's Daily Breath)", () {
@@ -167,11 +123,16 @@ void main() {
         noon: DateTime.utc(2026, 6, 21, 12, 0),
       );
 
-      final service = _StubEphemerisService(
+      final service = FakeEphemerisService(
         moonLongitude: 60.0,
-        declinationFn: (t) =>
+        declinationAt: (t) =>
             t.hour == 16 ? 15.0 : 14.0, // Descending (15.0 -> 14.0)
-        sunTimes: sunTimes,
+        sunTimesAt: (_) => sunTimes,
+        moonPhase: const MoonPhaseInfo(
+          illuminatedFraction: 0.5,
+          isWaxing: false,
+          phaseAngle: 90.0,
+        ),
       );
 
       final info = getCalendarInfo(eveningTime, service);
@@ -197,11 +158,16 @@ void main() {
           noon: DateTime.utc(2026, 6, 21, 12, 0),
         );
 
-        final service = _StubEphemerisService(
+        final service = FakeEphemerisService(
           moonLongitude: 60.0,
-          declinationFn: (t) =>
+          declinationAt: (t) =>
               t.hour == 8 ? 14.0 : 15.0, // Ascending (14.0 -> 15.0)
-          sunTimes: sunTimes,
+          sunTimesAt: (_) => sunTimes,
+          moonPhase: const MoonPhaseInfo(
+            illuminatedFraction: 0.5,
+            isWaxing: false,
+            phaseAngle: 90.0,
+          ),
         );
 
         final info = getCalendarInfo(morningTime, service);

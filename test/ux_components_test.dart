@@ -2,64 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic_calendar/main.dart';
 import 'package:magic_calendar/src/services/ephemeris_service.dart';
-import 'package:magic_calendar/src/services/weather_service.dart';
 import 'package:magic_calendar/src/ui/components/biodynamic_card.dart';
 import 'package:magic_calendar/src/ui/components/concoction_assistant_dialog.dart';
 import 'package:magic_calendar/src/ui/components/plant_recommendations_card.dart';
 import 'package:magic_calendar/src/ui/components/stirring_timer_dialog.dart';
 import 'package:magic_calendar/src/ui/views/help_screen.dart';
 
-final class _MockEphemerisService with EphemerisService {
-  @override
-  List<CalendarInterval> getIntervals(DateTime start, DateTime end) => [];
-
-  @override
-  double getMoonLongitude(DateTime time) => 0.0;
-
-  @override
-  bool isNearNode(DateTime time) => false;
-
-  @override
-  bool isNearPerigee(DateTime time) => false;
-
-  @override
-  bool isMoonSquareNode(DateTime time) => false;
-
-  @override
-  double getMoonDeclination(DateTime time) => 0.0;
-
-  @override
-  MoonPhaseInfo getMoonPhase(DateTime time) =>
-      MoonPhaseInfo(illuminatedFraction: 0.5, isWaxing: true, phaseAngle: 0.0);
-
-  @override
-  List<PlanetInfo> getPlanets(DateTime time) => [];
-
-  @override
-  bool isNearApogee(DateTime time) => false;
-
-  @override
-  bool isMoonSaturnOpposition(DateTime time) => false;
-
-  @override
-  SunriseSunsetInfo getSunriseSunset(DateTime date, double lat, double lon) {
-    return SunriseSunsetInfo(noon: DateTime.now());
-  }
-}
-
-final class _MockWeatherService implements WeatherService {
-  @override
-  Future<List<WeatherDataPoint>> getForecast(double lat, double lon) async =>
-      [];
-
-  @override
-  Future<List<WeatherDataPoint>> getHistoricalData(
-    double lat,
-    double lon,
-    DateTime start,
-    DateTime end,
-  ) async => [];
-}
+import 'support/fakes.dart';
 
 Widget _buildTestApp(Widget child) {
   return MaterialApp(
@@ -93,8 +42,8 @@ void main() {
 
         await tester.pumpWidget(
           MyApp(
-            ephemeris: _MockEphemerisService(),
-            weather: _MockWeatherService(),
+            ephemeris: FakeEphemerisService(),
+            weather: FakeWeatherService(),
           ),
         );
         await tester.pumpAndSettle();
