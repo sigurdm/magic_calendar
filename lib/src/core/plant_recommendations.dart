@@ -1,4 +1,5 @@
 import '../services/ephemeris_service.dart';
+import 'seasonal_calendar.dart';
 import 'vegetable_database.dart';
 
 /// Season of the year relative to local geographical hemisphere.
@@ -36,6 +37,22 @@ final class PlantRecommendations {
   }
 
   /// Evaluates plant recommendations for the given agricultural and celestial state.
+  ///
+  /// **Incomplete:** [isDescending] and [isWaxing] are accepted but not yet
+  /// used, and the returned [PlantRecommendations.sowIndoorPlants] and
+  /// [PlantRecommendations.transplantActions] are consequently always empty.
+  ///
+  /// The intent is evidently to filter crops by lunar state:
+  /// [VegetableEntry.prefersAscendingMoon] and
+  /// [VegetableEntry.prefersWaxingMoon] are populated on every database entry
+  /// but read nowhere. Finishing this needs two product decisions that cannot
+  /// be inferred from the code:
+  ///
+  ///  * which crops count as "sow indoors" — [VegetableEntry.sowingMonths] is
+  ///    documented as covering direct sowing *and* indoor starting, so the data
+  ///    does not currently distinguish them; and
+  ///  * what a transplant recommendation should list, since there is no
+  ///    transplant-window data on [VegetableEntry].
   static PlantRecommendations evaluate({
     required PlantQuality quality,
     required bool isDescending,
@@ -48,7 +65,7 @@ final class PlantRecommendations {
     final isNorthern = latitude >= 0;
     int month = selectedTime.month;
     if (!isNorthern) {
-      month = ((month + 5) % 12) + 1;
+      month = southernHemisphereMonth(month);
     }
 
     GardenSeason season;

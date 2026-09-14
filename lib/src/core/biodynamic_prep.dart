@@ -1,5 +1,6 @@
 import '../services/ephemeris_service.dart';
 import 'algorithm.dart' as algo;
+import 'seasonal_calendar.dart';
 
 /// Categories of biodynamic preparations.
 enum PrepCategory { fieldSpray, compostPrep }
@@ -485,7 +486,7 @@ abstract final class BiodynamicPrepEvaluator {
     // Normalize month index for Southern Hemisphere if applicable (shift by 6 months)
     int month = date.month;
     if (!isNorthern) {
-      month = ((month + 5) % 12) + 1;
+      month = southernHemisphereMonth(month);
     }
 
     final hemisphereText = isNorthern
@@ -901,20 +902,15 @@ abstract final class BiodynamicPrepEvaluator {
     double latitude = 50.0,
   }) {
     final isNorthern = latitude >= 0;
-    // Normalize date for southern hemisphere (shift 6 months) if needed
-    final effectiveDate = isNorthern
-        ? date
-        : DateTime(
-            date.year,
-            ((date.month + 5) % 12) + 1,
-            date.day,
-            date.hour,
-            date.minute,
-          );
+    // Normalize date for southern hemisphere (shift 6 months) if needed.
+    final effectiveDate = toNorthernSeasonEquivalent(
+      date,
+      isNorthern: isNorthern,
+    );
 
     final year = effectiveDate.year;
     final thisYearMichaelmas = DateTime(year, 9, 29);
-    final thisYearEaster = DateTime(year, 4, 5);
+    final thisYearEaster = gregorianEaster(year);
 
     bool isUnderground;
     double progress;
@@ -945,7 +941,7 @@ abstract final class BiodynamicPrepEvaluator {
           'Preparations unburied at Easter and active in compost & summer sun (${(progress * 100).round()}% to next Michaelmas).';
     } else {
       michaelmas = thisYearMichaelmas;
-      easter = DateTime(year + 1, 4, 5);
+      easter = gregorianEaster(year + 1);
       isUnderground = true;
       final totalDays = easter.difference(michaelmas).inDays;
       final elapsed = effectiveDate.difference(michaelmas).inDays;

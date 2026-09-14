@@ -45,6 +45,22 @@ final class PlanetaryAspect {
     required this.agriculturalEffect,
   });
 
+  /// Compares all fields exactly.
+  ///
+  /// [separationDegrees] and [orbDegrees] are compared exactly rather than
+  /// within a tolerance. An earlier version used `< 1e-6` tolerance here, which
+  /// broke two requirements of [Object.==]:
+  ///
+  ///  * **Consistency with [hashCode].** Two values within the tolerance
+  ///    compared equal but hashed differently, so equal aspects could both be
+  ///    retained in a `Set` or `Map`.
+  ///  * **Transitivity.** Tolerant comparison is not transitive: `a ≈ b` and
+  ///    `b ≈ c` does not imply `a ≈ c`.
+  ///
+  /// Both values are derived deterministically from the same ephemeris
+  /// computation, so instances describing the same aspect are bitwise equal.
+  /// Callers wanting a "near enough" check should compare
+  /// [separationDegrees]/[orbDegrees] explicitly with their own tolerance.
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -53,8 +69,8 @@ final class PlanetaryAspect {
           body1 == other.body1 &&
           body2 == other.body2 &&
           type == other.type &&
-          (separationDegrees - other.separationDegrees).abs() < 1e-6 &&
-          (orbDegrees - other.orbDegrees).abs() < 1e-6 &&
+          separationDegrees == other.separationDegrees &&
+          orbDegrees == other.orbDegrees &&
           isFavorable == other.isFavorable &&
           agriculturalEffect == other.agriculturalEffect;
 

@@ -114,6 +114,6 @@ final class AgriculturalTaskAdvice {
 
   @override
   String toString() =>
-      'AgriculturalTaskAdvice(task: , title: , suitability: , '
-      'weatherConflict: )';
+      'AgriculturalTaskAdvice(task: $task, title: $title, '
+      'suitability: $suitability, weatherConflict: $hasWeatherConflict)';
 }

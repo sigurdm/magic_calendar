@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../services/ephemeris_service.dart';
 import 'dornach_boundaries.dart';
-import 'ecological_synthesis.dart';
 
 /// Evaluates agricultural farm organism tasks beyond seed sowing.
 ///
@@ -61,32 +60,19 @@ abstract final class AgriculturalTaskEvaluator {
     final quality = calendarInfo.quality;
     final isGrayDay = calendarInfo.isGrayDay;
 
-    // Run ecological synthesis if weather is available
-    final ecoResult = EcologicalSynthesis.synthesize(
-      calendarInfo: calendarInfo,
-      time: time,
-      weather: weather,
-      latitude: latitude,
-    );
 
     switch (task) {
       case AgriculturalTaskType.soilCultivation:
         return _evaluateSoilCultivation(
-          calendarInfo: calendarInfo,
           time: time,
           weather: weather,
-          ecoResult: ecoResult,
           isDescending: isDescending,
-          isAscending: isAscending,
-          quality: quality,
           isGrayDay: isGrayDay,
         );
 
       case AgriculturalTaskType.pruning:
         return _evaluatePruning(
-          calendarInfo: calendarInfo,
           weather: weather,
-          ecoResult: ecoResult,
           isDescending: isDescending,
           isAscending: isAscending,
           quality: quality,
@@ -95,9 +81,7 @@ abstract final class AgriculturalTaskEvaluator {
 
       case AgriculturalTaskType.harvestStorage:
         return _evaluateHarvestStorage(
-          calendarInfo: calendarInfo,
           weather: weather,
-          ecoResult: ecoResult,
           isWaning: isWaning,
           quality: quality,
           isGrayDay: isGrayDay,
@@ -105,16 +89,13 @@ abstract final class AgriculturalTaskEvaluator {
 
       case AgriculturalTaskType.harvestFresh:
         return _evaluateHarvestFresh(
-          calendarInfo: calendarInfo,
           time: time,
-          weather: weather,
           isWaxing: isWaxing,
           isGrayDay: isGrayDay,
         );
 
       case AgriculturalTaskType.timberFelling:
         return _evaluateTimberFelling(
-          calendarInfo: calendarInfo,
           weather: weather,
           isWaning: isWaning,
           quality: quality,
@@ -124,7 +105,6 @@ abstract final class AgriculturalTaskEvaluator {
 
       case AgriculturalTaskType.peppering:
         return _evaluatePeppering(
-          calendarInfo: calendarInfo,
           weather: weather,
           quality: quality,
           constLower: constLower,
@@ -160,13 +140,9 @@ abstract final class AgriculturalTaskEvaluator {
   }
 
   static AgriculturalTaskAdvice _evaluateSoilCultivation({
-    required CalendarInfo calendarInfo,
     required DateTime time,
     required WeatherDataPoint? weather,
-    required EcologicalSynthesisResult ecoResult,
     required bool isDescending,
-    required bool isAscending,
-    required PlantQuality quality,
     required bool isGrayDay,
   }) {
     final hour = time.hour;
@@ -175,12 +151,14 @@ abstract final class AgriculturalTaskEvaluator {
 
     bool weatherConflict = false;
     TaskSuitability suitability;
+    String title;
     String cosmic;
     String terrestrial;
     String action;
 
     if (isGrayDay) {
       suitability = TaskSuitability.restricted;
+      title = 'Soil Rest (Cosmic Rest Window)';
       cosmic =
           'Cosmic Rest Window: Moon node / perigee interference disrupts soil microorganism vitality.';
       terrestrial =
@@ -190,6 +168,7 @@ abstract final class AgriculturalTaskEvaluator {
       suitability = isDescending
           ? TaskSuitability.optimal
           : TaskSuitability.favorable;
+      title = 'Afternoon Deep Cultivation (Root Aeration)';
       cosmic = isDescending
           ? 'Descending Moon + Afternoon Earth Inhalation: Vitality is pulled down into the subsoil and root sphere.'
           : 'Afternoon Inhalation: Earth breathes inward, welcoming atmospheric warmth and nitrogen.';
@@ -199,6 +178,7 @@ abstract final class AgriculturalTaskEvaluator {
           'Deep root aeration and subsoil cultivation with broadfork or deep hoe to oxygenate rhizosphere.';
     } else if (isMorning) {
       suitability = TaskSuitability.optimal;
+      title = 'Morning Shallow Hoeing (Weed Scalping)';
       cosmic =
           'Morning Exhalation: Vital forces stream upward. Weeds severed at this hour dehydrate quickly under rising sun.';
       terrestrial =
@@ -207,6 +187,7 @@ abstract final class AgriculturalTaskEvaluator {
           'Shallow surface hoeing (top 1–2 cm) to scalp weed seedlings and preserve bed moisture.';
     } else {
       suitability = TaskSuitability.neutral;
+      title = 'Night Rest (Soil Consolidation)';
       cosmic = 'Night Rest: Earth in subterranean consolidation.';
       terrestrial = 'Avoid nocturnal soil disturbance.';
       action =
@@ -231,9 +212,7 @@ abstract final class AgriculturalTaskEvaluator {
 
     return AgriculturalTaskAdvice(
       task: AgriculturalTaskType.soilCultivation,
-      title: isMorning
-          ? 'Morning Shallow Hoeing (Weed Scalping)'
-          : 'Afternoon Deep Cultivation (Root Aeration)',
+      title: title,
       suitability: suitability,
       cosmicReasoning: cosmic,
       terrestrialReasoning: terrestrial,
@@ -244,9 +223,7 @@ abstract final class AgriculturalTaskEvaluator {
   }
 
   static AgriculturalTaskAdvice _evaluatePruning({
-    required CalendarInfo calendarInfo,
     required WeatherDataPoint? weather,
-    required EcologicalSynthesisResult ecoResult,
     required bool isDescending,
     required bool isAscending,
     required PlantQuality quality,
@@ -328,9 +305,7 @@ abstract final class AgriculturalTaskEvaluator {
   }
 
   static AgriculturalTaskAdvice _evaluateHarvestStorage({
-    required CalendarInfo calendarInfo,
     required WeatherDataPoint? weather,
-    required EcologicalSynthesisResult ecoResult,
     required bool isWaning,
     required PlantQuality quality,
     required bool isGrayDay,
@@ -398,9 +373,7 @@ abstract final class AgriculturalTaskEvaluator {
   }
 
   static AgriculturalTaskAdvice _evaluateHarvestFresh({
-    required CalendarInfo calendarInfo,
     required DateTime time,
-    required WeatherDataPoint? weather,
     required bool isWaxing,
     required bool isGrayDay,
   }) {
@@ -452,7 +425,6 @@ abstract final class AgriculturalTaskEvaluator {
   }
 
   static AgriculturalTaskAdvice _evaluateTimberFelling({
-    required CalendarInfo calendarInfo,
     required WeatherDataPoint? weather,
     required bool isWaning,
     required PlantQuality quality,
@@ -523,7 +495,6 @@ abstract final class AgriculturalTaskEvaluator {
   }
 
   static AgriculturalTaskAdvice _evaluatePeppering({
-    required CalendarInfo calendarInfo,
     required WeatherDataPoint? weather,
     required PlantQuality quality,
     required String constLower,
@@ -585,6 +556,10 @@ abstract final class AgriculturalTaskEvaluator {
 
     if (weather != null && weather.windSpeed > 5.5) {
       weatherConflict = true;
+      // Consistent with the other evaluators: a weather conflict that makes the
+      // action unsafe also downgrades suitability, so the headline cannot read
+      // "optimal" while the action says to postpone.
+      suitability = TaskSuitability.restricted;
       terrestrial =
           'High wind (${weather.windSpeed.toStringAsFixed(1)} m/s) prevents controlled combustion and causes ash drift.';
       action =
