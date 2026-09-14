@@ -124,7 +124,7 @@ abstract final class EcologicalSynthesis {
     required CalendarInfo calendarInfo,
     required DateTime time,
     WeatherDataPoint? weather,
-    double latitude = 55.6761,
+    double latitude = DefaultLocations.copenhagenLatitude,
   }) {
     if (weather == null) {
       return const EcologicalSynthesisResult(

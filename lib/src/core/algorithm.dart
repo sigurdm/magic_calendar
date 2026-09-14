@@ -1,5 +1,5 @@
-import '../services/ephemeris_service.dart';
 import 'dornach_boundaries.dart';
+import 'models/models.dart';
 
 /// Checks for planetary Trine aspects (120 degrees apart) and returns special plant quality if present.
 ({PlantQuality quality, String message}) calculateTrineQuality(
@@ -48,9 +48,7 @@ import 'dornach_boundaries.dart';
         }
 
         if (aspectQuality != PlantQuality.none) {
-          final qualityName =
-              aspectQuality.name[0].toUpperCase() +
-              aspectQuality.name.substring(1);
+          final qualityName = aspectQuality.displayName;
           return (
             quality: aspectQuality,
             message:
@@ -70,8 +68,8 @@ CalendarInfo getCalendarInfo(
   EphemerisService ephemeris, {
   bool includePlanets = false,
   List<ConstellationBoundary> boundaries = dornachBoundaries,
-  double latitude = 47.4814,
-  double longitude = 7.6178,
+  double latitude = DefaultLocations.dornachLatitude,
+  double longitude = DefaultLocations.dornachLongitude,
 }) {
   DiurnalRhythmInfo? diurnalRhythm;
   try {

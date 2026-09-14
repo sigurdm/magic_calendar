@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/agricultural_task_evaluator.dart';
 import '../../core/ecological_synthesis.dart';
+import '../../core/models/models.dart';
 import '../../core/vegetable_database.dart';
 import '../../services/ephemeris_service.dart';
 import '../theme/biodynamic_icons.dart';
@@ -769,7 +770,7 @@ final class _PlantRecommendationsCardState
       time: widget.selectedDate,
       weather: effectiveWeather,
       ephemeris: widget.ephemeris,
-      latitude: widget.latitude ?? 55.6761,
+      latitude: widget.latitude ?? DefaultLocations.copenhagenLatitude,
     );
 
     return Column(
@@ -1020,7 +1021,7 @@ final class _PlantRecommendationsCardState
       calendarInfo: widget.info,
       time: widget.selectedDate,
       weather: effectiveWeather,
-      latitude: widget.latitude ?? 55.6761,
+      latitude: widget.latitude ?? DefaultLocations.copenhagenLatitude,
     );
 
     return Container(

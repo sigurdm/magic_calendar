@@ -118,38 +118,6 @@ PlantQuality getQualityFromLongitude(
   double longitude, [
   List<ConstellationBoundary> boundaries = dornachBoundaries,
 ]) {
-  double normLon = longitude % 360.0;
-  if (normLon < 0) {
-    normLon += 360.0;
-  }
-  for (var boundary in boundaries) {
-    if (boundary.startDegree <= boundary.endDegree) {
-      if (normLon >= boundary.startDegree && normLon < boundary.endDegree) {
-        switch (boundary.element) {
-          case 'Earth':
-            return PlantQuality.root;
-          case 'Water':
-            return PlantQuality.leaf;
-          case 'Air':
-            return PlantQuality.flower;
-          case 'Fire':
-            return PlantQuality.fruit;
-        }
-      }
-    } else {
-      if (normLon >= boundary.startDegree || normLon < boundary.endDegree) {
-        switch (boundary.element) {
-          case 'Earth':
-            return PlantQuality.root;
-          case 'Water':
-            return PlantQuality.leaf;
-          case 'Air':
-            return PlantQuality.flower;
-          case 'Fire':
-            return PlantQuality.fruit;
-        }
-      }
-    }
-  }
-  return PlantQuality.none;
+  return findBoundaryForLongitude(longitude, boundaries)?.quality ??
+      PlantQuality.none;
 }

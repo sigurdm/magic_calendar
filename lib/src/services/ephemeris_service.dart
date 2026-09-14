@@ -10,55 +10,6 @@ import '../core/models/models.dart';
 
 export '../core/models/models.dart';
 
-/// Abstract contract for ephemeris services computing astronomical data.
-abstract mixin class EphemerisService {
-  /// Obtains moon ecliptic longitude at [time].
-  double getMoonLongitude(DateTime time);
-
-  /// True if Moon is near ascending or descending node at [time].
-  bool isNearNode(DateTime time);
-
-  /// True if Moon is near perigee at [time].
-  bool isNearPerigee(DateTime time);
-
-  /// True if Moon is near apogee at [time].
-  bool isNearApogee(DateTime time);
-
-  /// True if Moon is in opposition (180 deg) with Saturn at [time].
-  bool isMoonSaturnOpposition(DateTime time);
-
-  /// True if Moon is square node at [time].
-  bool isMoonSquareNode(DateTime time);
-
-  /// Calculates declination of Moon at [time].
-  double getMoonDeclination(DateTime time);
-
-  /// Calculates moon phase for [time].
-  MoonPhaseInfo getMoonPhase(DateTime time);
-
-  /// Calculates positions of planets at [time].
-  List<PlanetInfo> getPlanets(DateTime time);
-
-  /// Returns calendar intervals between [start] and [end].
-  FutureOr<List<CalendarInterval>> getIntervals(DateTime start, DateTime end);
-
-  /// Calculates sunrise and sunset for [date] at [lat], [lon].
-  SunriseSunsetInfo getSunriseSunset(DateTime date, double lat, double lon);
-
-  /// Sets topocentric observer coordinates.
-  void setObserverLocation(
-    double latitude,
-    double longitude, [
-    double altitude = 0.0,
-  ]) {}
-
-  /// Returns active planetary aspects at [time].
-  List<PlanetaryAspect> getAspects(DateTime time) => const [];
-
-  /// True if Moon or Sun is within an eclipse blackout window (±12 hours).
-  bool isNearEclipse(DateTime time) => false;
-}
-
 /// Request for a range of calendar intervals, sent to the worker isolate.
 ///
 /// A typed message rather than a `Map<String, dynamic>`: the previous payload
@@ -97,6 +48,7 @@ final class _WorkerError {
 
 /// Background isolate worker managing Swiss Ephemeris FFI computations.
 final class EphemerisWorker {
+  static Isolate? _isolate;
   static SendPort? _sendPort;
   static Future<void>? _initFuture;
 
@@ -107,11 +59,58 @@ final class EphemerisWorker {
 
   static Future<void> _doInit(String? epheFilesPath) async {
     final receivePort = ReceivePort();
-    await Isolate.spawn(_isolateEntry, {
-      'sendPort': receivePort.sendPort,
-      'epheFilesPath': epheFilesPath,
-    });
-    _sendPort = await receivePort.first as SendPort;
+    final errorPort = ReceivePort();
+    try {
+      final isolate = await Isolate.spawn(_isolateEntry, {
+        'sendPort': receivePort.sendPort,
+        'epheFilesPath': epheFilesPath,
+      }, onError: errorPort.sendPort);
+      _isolate = isolate;
+
+      final completer = Completer<SendPort>();
+      final sub = receivePort.listen((msg) {
+        if (!completer.isCompleted) {
+          completer.complete(msg as SendPort);
+        }
+      });
+      final errSub = errorPort.listen((err) {
+        if (!completer.isCompleted) {
+          final errList = err as List;
+          completer.completeError(
+            Exception('EphemerisWorker startup failed: ${errList[0]}'),
+            StackTrace.fromString(errList[1] as String),
+          );
+        }
+      });
+
+      _sendPort = await completer.future.timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException(
+            'EphemerisWorker isolate initialization timed out',
+          );
+        },
+      );
+      await sub.cancel();
+      await errSub.cancel();
+    } catch (_) {
+      _initFuture = null;
+      _isolate?.kill(priority: Isolate.immediate);
+      _isolate = null;
+      _sendPort = null;
+      rethrow;
+    } finally {
+      receivePort.close();
+      errorPort.close();
+    }
+  }
+
+  /// Disposes persistent background isolate worker and resets state.
+  static void dispose() {
+    _isolate?.kill(priority: Isolate.immediate);
+    _isolate = null;
+    _sendPort = null;
+    _initFuture = null;
   }
 
   /// Generates interval sequence across [start] and [end].
@@ -222,6 +221,11 @@ final class IsolateEphemerisService implements EphemerisService {
 
   @override
   bool isNearEclipse(DateTime time) => _syncService.isNearEclipse(time);
+
+  @override
+  void dispose() {
+    EphemerisWorker.dispose();
+  }
 }
 
 /// Swiss Ephemeris service implementing [EphemerisService].
@@ -232,9 +236,9 @@ final class AstronomiaEphemerisService implements EphemerisService {
   static const int _topoFlags = 2 | 256 | 32768;
   static const int _geoFlags = 2 | 256;
 
-  double _observerLat = 47.4814;
-  double _observerLon = 7.6178;
-  double _observerAlt = 350.0;
+  double _observerLat = DefaultLocations.dornachLatitude;
+  double _observerLon = DefaultLocations.dornachLongitude;
+  double _observerAlt = DefaultLocations.dornachAltitude;
 
   @override
   void setObserverLocation(
@@ -843,4 +847,7 @@ final class AstronomiaEphemerisService implements EphemerisService {
 
     return intervals;
   }
+
+  @override
+  void dispose() {}
 }

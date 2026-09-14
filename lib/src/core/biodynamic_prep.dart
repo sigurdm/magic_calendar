@@ -1,5 +1,5 @@
-import '../services/ephemeris_service.dart';
 import 'algorithm.dart' as algo;
+import 'models/models.dart';
 import 'seasonal_calendar.dart';
 
 /// Categories of biodynamic preparations.
@@ -307,7 +307,7 @@ abstract final class BiodynamicPrepEvaluator {
         if (calendarInfo.quality == PlantQuality.flower ||
             calendarInfo.quality == PlantQuality.fruit) {
           positive.add(
-            '${calendarInfo.quality.name[0].toUpperCase()}${calendarInfo.quality.name.substring(1)} Day boosts photosynthesis and ripening',
+            '${calendarInfo.quality.displayName} Day boosts photosynthesis and ripening',
           );
         }
 

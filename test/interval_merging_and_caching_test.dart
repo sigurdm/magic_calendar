@@ -138,4 +138,12 @@ void main() async {
       },
     );
   });
+
+  group('EphemerisWorker lifecycle', () {
+    test('dispose resets worker state safely', () {
+      final service = IsolateEphemerisService();
+      expect(service.dispose, returnsNormally);
+      expect(EphemerisWorker.dispose, returnsNormally);
+    });
+  });
 }

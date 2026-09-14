@@ -119,35 +119,12 @@ PlantQuality elementToQuality(String element) {
 }
 
 /// Formats a [PlantQuality] into a capitalized human-readable name.
-String qualityLabel(PlantQuality quality) {
-  switch (quality) {
-    case PlantQuality.root:
-      return 'Root';
-    case PlantQuality.leaf:
-      return 'Leaf';
-    case PlantQuality.flower:
-      return 'Flower';
-    case PlantQuality.fruit:
-      return 'Fruit';
-    case PlantQuality.none:
-      return 'None';
-  }
-}
+String qualityLabel(PlantQuality quality) => quality.displayName;
 
 PlantQuality _getQualityFromLongitudeInternal(
   double normLon,
   List<ConstellationBoundary> boundaries,
 ) {
-  for (final boundary in boundaries) {
-    if (boundary.startDegree <= boundary.endDegree) {
-      if (normLon >= boundary.startDegree && normLon < boundary.endDegree) {
-        return elementToQuality(boundary.element);
-      }
-    } else {
-      if (normLon >= boundary.startDegree || normLon < boundary.endDegree) {
-        return elementToQuality(boundary.element);
-      }
-    }
-  }
-  return PlantQuality.none;
+  return findBoundaryForLongitude(normLon, boundaries)?.quality ??
+      PlantQuality.none;
 }

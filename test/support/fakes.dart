@@ -214,4 +214,12 @@ final class FakeWeatherService implements WeatherService {
     if (e != null) throw e;
     return historical;
   }
+
+  /// Whether [close] has been called.
+  bool isClosed = false;
+
+  @override
+  void close() {
+    isClosed = true;
+  }
 }

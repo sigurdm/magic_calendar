@@ -45,6 +45,9 @@ abstract class WeatherService {
     DateTime start,
     DateTime end,
   );
+
+  /// Closes any underlying network clients and resources.
+  void close() {}
 }
 
 /// Weather service implementation connecting to Yr.no (MET Norway).
@@ -59,17 +62,33 @@ final class YrNoWeatherService implements WeatherService {
   final OpenMeteoClient _openMeteoClient;
   final Map<String, _CachedForecast> _cache = {};
 
+  YrNoWeatherService._({
+    required this.userAgent,
+    required this._client,
+    required this._openMeteoClient,
+    required this.cacheTtl,
+  });
+
   /// Creates a [YrNoWeatherService] with the required [userAgent].
   ///
   /// Optionally accepts [client], [openMeteoClient], and [cacheTtl]
-  /// (defaults to 1 hour).
-  YrNoWeatherService({
-    required this.userAgent,
+  /// (defaults to 1 hour). If [client] is omitted, a single shared [http.Client]
+  /// is created for both MET Norway and Open-Meteo requests.
+  factory YrNoWeatherService({
+    required String userAgent,
     http.Client? client,
     OpenMeteoClient? openMeteoClient,
-    this.cacheTtl = const Duration(hours: 1),
-  }) : _client = client ?? http.Client(),
-       _openMeteoClient = openMeteoClient ?? OpenMeteoClient(client: client);
+    Duration cacheTtl = const Duration(hours: 1),
+  }) {
+    final effectiveClient = client ?? http.Client();
+    return YrNoWeatherService._(
+      userAgent: userAgent,
+      client: effectiveClient,
+      openMeteoClient:
+          openMeteoClient ?? OpenMeteoClient(client: effectiveClient),
+      cacheTtl: cacheTtl,
+    );
+  }
 
   @override
   Future<List<WeatherDataPoint>> getForecast(double lat, double lon) async {
@@ -118,5 +137,11 @@ final class YrNoWeatherService implements WeatherService {
     DateTime end,
   ) {
     return _openMeteoClient.getHistoricalData(lat, lon, start, end);
+  }
+
+  @override
+  void close() {
+    _client.close();
+    _openMeteoClient.close();
   }
 }

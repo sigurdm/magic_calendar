@@ -116,7 +116,7 @@ final class PlantRecommendations {
         .toList();
 
     final String advice =
-        '$seasonName ($hemisphereText, Week $week): ${quality.name[0].toUpperCase() + quality.name.substring(1)} Day evaluation derived from Havenyt.dk & Maria Thun database.';
+        '$seasonName ($hemisphereText, Week $week): ${quality.displayName} Day evaluation derived from Havenyt.dk & Maria Thun database.';
 
     return PlantRecommendations(
       season: season,

@@ -1,7 +1,9 @@
 export 'agricultural_tasks.dart';
 export 'calendar_info.dart';
 export 'celestial_aspect.dart';
+export 'default_locations.dart';
 export 'diurnal_rhythm.dart';
+export 'ephemeris_service.dart';
 export 'moon_phase_info.dart';
 export 'planet_info.dart';
 export 'plant_quality.dart';

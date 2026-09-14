@@ -14,6 +14,11 @@ final class OpenMeteoClient {
   /// Optionally accepts a custom [client] for testing.
   OpenMeteoClient({http.Client? client}) : _client = client ?? http.Client();
 
+  /// Closes the underlying HTTP client.
+  void close() {
+    _client.close();
+  }
+
   /// Fetches historical weather data between [start] and [end] for coordinates [lat], [lon].
   ///
   /// Preconditions:

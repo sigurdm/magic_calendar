@@ -246,6 +246,14 @@ void main() {
         throwsA(isA<Exception>()),
       );
     });
+
+    test('close closes underlying client', () {
+      final client = _ClosableMockClient((_) async => http.Response('', 200));
+      final openMeteo = OpenMeteoClient(client: client);
+      expect(client.isClosed, isFalse);
+      openMeteo.close();
+      expect(client.isClosed, isTrue);
+    });
   });
 
   group('YrNoWeatherService', () {
@@ -300,6 +308,17 @@ void main() {
         expect(forecastSecond, equals(forecastFirst));
       },
     );
+
+    test('close closes underlying client', () {
+      final client = _ClosableMockClient((_) async => http.Response('', 200));
+      final yrNo = YrNoWeatherService(
+        userAgent: 'MagicCalendarTest/1.0',
+        client: client,
+      );
+      expect(client.isClosed, isFalse);
+      yrNo.close();
+      expect(client.isClosed, isTrue);
+    });
   });
 
   group('CombinedWeatherService', () {
@@ -450,6 +469,20 @@ void main() {
       );
       expect(result, equals(expectedHistorical));
     });
+
+    test('close propagates to both services', () {
+      final yrNoMock = FakeWeatherService();
+      final dmiMock = FakeWeatherService();
+      final combined = CombinedWeatherService(
+        yrNoService: yrNoMock,
+        dmiService: dmiMock,
+      );
+      expect(yrNoMock.isClosed, isFalse);
+      expect(dmiMock.isClosed, isFalse);
+      combined.close();
+      expect(yrNoMock.isClosed, isTrue);
+      expect(dmiMock.isClosed, isTrue);
+    });
   });
 
   group('TimeScrollView Weather Integration', () {
@@ -540,4 +573,16 @@ void main() {
       },
     );
   });
+}
+
+final class _ClosableMockClient extends MockClient {
+  bool isClosed = false;
+
+  _ClosableMockClient(super.handler);
+
+  @override
+  void close() {
+    isClosed = true;
+    super.close();
+  }
 }

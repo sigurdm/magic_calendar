@@ -35,4 +35,10 @@ final class CombinedWeatherService implements WeatherService {
       return await yrNoService.getHistoricalData(lat, lon, start, end);
     }
   }
+
+  @override
+  void close() {
+    yrNoService.close();
+    dmiService.close();
+  }
 }

@@ -1,3 +1,5 @@
+import 'models/plant_quality.dart';
+
 /// Representation of constellation boundaries for biodynamic calendar calculations.
 final class ConstellationBoundary {
   /// Name of constellation.
@@ -19,6 +21,48 @@ final class ConstellationBoundary {
     required this.endDegree,
     required this.element,
   });
+
+  /// Associated plant quality corresponding to [element].
+  PlantQuality get quality {
+    switch (element) {
+      case 'Earth':
+        return PlantQuality.root;
+      case 'Water':
+        return PlantQuality.leaf;
+      case 'Air':
+        return PlantQuality.flower;
+      case 'Fire':
+        return PlantQuality.fruit;
+      default:
+        return PlantQuality.none;
+    }
+  }
+
+  /// Returns true if [longitude] falls within this constellation boundary.
+  bool containsLongitude(double longitude) {
+    double norm = longitude % 360.0;
+    if (norm < 0) norm += 360.0;
+    if (startDegree <= endDegree) {
+      return norm >= startDegree && norm < endDegree;
+    } else {
+      return norm >= startDegree || norm < endDegree;
+    }
+  }
+}
+
+/// Finds the [ConstellationBoundary] containing [longitude].
+ConstellationBoundary? findBoundaryForLongitude(
+  double longitude, [
+  List<ConstellationBoundary> boundaries = dornachBoundaries,
+]) {
+  double norm = longitude % 360.0;
+  if (norm < 0) norm += 360.0;
+  for (final b in boundaries) {
+    if (b.containsLongitude(norm)) {
+      return b;
+    }
+  }
+  return null;
 }
 
 /// Dornach constellation boundaries.

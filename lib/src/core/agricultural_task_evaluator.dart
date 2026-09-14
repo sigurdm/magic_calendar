@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../services/ephemeris_service.dart';
 import 'dornach_boundaries.dart';
+import 'models/models.dart';
 
 /// Evaluates agricultural farm organism tasks beyond seed sowing.
 ///
@@ -17,16 +17,7 @@ abstract final class AgriculturalTaskEvaluator {
     double longitude, [
     List<ConstellationBoundary> boundaries = dornachBoundaries,
   ]) {
-    double normLon = longitude % 360.0;
-    if (normLon < 0) normLon += 360.0;
-    for (final b in boundaries) {
-      if (b.startDegree <= b.endDegree) {
-        if (normLon >= b.startDegree && normLon < b.endDegree) return b.name;
-      } else {
-        if (normLon >= b.startDegree || normLon < b.endDegree) return b.name;
-      }
-    }
-    return '';
+    return findBoundaryForLongitude(longitude, boundaries)?.name ?? '';
   }
 
   /// Evaluates the suitability of a specific [task] at [time] under [calendarInfo].
@@ -38,7 +29,7 @@ abstract final class AgriculturalTaskEvaluator {
     String? constellation,
     EphemerisService? ephemeris,
     double? moonLongitude,
-    double latitude = 55.6761,
+    double latitude = DefaultLocations.copenhagenLatitude,
   }) {
     if (constellation == null || constellation.isEmpty) {
       if (moonLongitude == null && ephemeris != null) {
@@ -120,7 +111,7 @@ abstract final class AgriculturalTaskEvaluator {
     String? constellation,
     EphemerisService? ephemeris,
     double? moonLongitude,
-    double latitude = 55.6761,
+    double latitude = DefaultLocations.copenhagenLatitude,
   }) {
     return AgriculturalTaskType.values
         .map(

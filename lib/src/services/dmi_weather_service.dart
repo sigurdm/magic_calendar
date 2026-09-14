@@ -27,4 +27,9 @@ final class DmiWeatherService implements WeatherService {
   ) {
     return _openMeteoClient.getHistoricalData(lat, lon, start, end);
   }
+
+  @override
+  void close() {
+    _openMeteoClient.close();
+  }
 }
