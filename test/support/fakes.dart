@@ -1,3 +1,4 @@
+import 'package:magic_calendar/src/services/climate_service.dart';
 import 'package:magic_calendar/src/services/ephemeris_service.dart';
 import 'package:magic_calendar/src/services/weather_service.dart';
 
@@ -20,6 +21,7 @@ final class FakeEphemerisService with EphemerisService {
     this.moonSquareNode = false,
     MoonPhaseInfo? moonPhase,
     this.planets = const [],
+    this.longitudeAt,
     this.declinationAt,
     this.sunTimesAt,
     this.intervalsAt,
@@ -32,7 +34,7 @@ final class FakeEphemerisService with EphemerisService {
              phaseAngle: 0.0,
            );
 
-  /// Value returned by [getMoonLongitude].
+  /// Value returned by [getMoonLongitude] when [longitudeAt] is null.
   final double moonLongitude;
 
   /// Value returned by [getMoonDeclination] when [declinationAt] is null.
@@ -58,6 +60,10 @@ final class FakeEphemerisService with EphemerisService {
 
   /// Value returned by [getPlanets].
   final List<PlanetInfo> planets;
+
+  /// Time-dependent ecliptic longitude, for tests that need the Moon to traverse
+  /// zodiac constellations across sampled instants.
+  final double Function(DateTime time)? longitudeAt;
 
   /// Time-dependent declination, for tests that need the moon to be ascending
   /// or descending across two sampled instants.
@@ -88,7 +94,7 @@ final class FakeEphemerisService with EphemerisService {
   @override
   double getMoonLongitude(DateTime time) {
     _maybeThrow();
-    return moonLongitude;
+    return longitudeAt?.call(time) ?? moonLongitude;
   }
 
   @override
@@ -217,6 +223,38 @@ final class FakeWeatherService implements WeatherService {
 
   /// Whether [close] has been called.
   bool isClosed = false;
+
+  @override
+  void close() {
+    isClosed = true;
+  }
+}
+
+/// Configurable stand-in for [ClimateService].
+final class FakeClimateService implements ClimateService {
+  /// Creates a fake serving [profile] (defaults to [DanishReferenceClimate.profile]).
+  FakeClimateService({ClimateProfile? profile, this.error})
+    : profile = profile ?? DanishReferenceClimate.profile;
+
+  /// Value returned by [profileFor].
+  final ClimateProfile profile;
+
+  /// When non-null, [profileFor] throws it instead of returning.
+  final Object? error;
+
+  /// Every `(latitude, longitude)` pair passed to [profileFor], in call order.
+  final List<({double latitude, double longitude})> profileForCalls = [];
+
+  /// Whether [close] has been called.
+  bool isClosed = false;
+
+  @override
+  Future<ClimateProfile> profileFor(double latitude, double longitude) async {
+    profileForCalls.add((latitude: latitude, longitude: longitude));
+    final e = error;
+    if (e != null) throw e;
+    return profile;
+  }
 
   @override
   void close() {

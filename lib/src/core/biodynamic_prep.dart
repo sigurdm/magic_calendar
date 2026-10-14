@@ -1,4 +1,5 @@
 import 'algorithm.dart' as algo;
+import 'climate/season_alignment.dart';
 import 'models/models.dart';
 import 'seasonal_calendar.dart';
 
@@ -491,17 +492,14 @@ abstract final class BiodynamicPrepEvaluator {
     required BiodynamicPrepType prep,
     required DateTime date,
     required double latitude,
+    SeasonAlignment? seasons,
   }) {
-    final isNorthern = latitude >= 0;
-    // Normalize month index for Southern Hemisphere if applicable (shift by 6 months)
-    int month = date.month;
-    if (!isNorthern) {
-      month = southernHemisphereMonth(month);
-    }
-
-    final hemisphereText = isNorthern
-        ? 'Northern Hemisphere'
-        : 'Southern Hemisphere';
+    final alignment = seasons ?? HemisphereSeasonAlignment(latitude: latitude);
+    final month = alignment.referenceMonth(
+      date,
+      anchor: SeasonalAnchor.dormancy,
+    );
+    final hemisphereText = alignment.label;
 
     switch (prep) {
       case BiodynamicPrepType.bd500:
@@ -885,12 +883,12 @@ abstract final class BiodynamicPrepEvaluator {
   static BurialCycleProgress getSeasonalBurialProgress(
     DateTime date, {
     double latitude = 50.0,
+    SeasonAlignment? seasons,
   }) {
-    final isNorthern = latitude >= 0;
-    // Normalize date for southern hemisphere (shift 6 months) if needed.
-    final effectiveDate = toNorthernSeasonEquivalent(
+    final alignment = seasons ?? HemisphereSeasonAlignment(latitude: latitude);
+    final effectiveDate = alignment.referenceDate(
       date,
-      isNorthern: isNorthern,
+      anchor: SeasonalAnchor.dormancy,
     );
 
     final year = effectiveDate.year;

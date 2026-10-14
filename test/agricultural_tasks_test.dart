@@ -215,42 +215,72 @@ void main() {
   });
 
   group('AgriculturalTaskEvaluator - Storage vs Fresh Harvest', () {
-    test('Waning Moon + Root Day is optimal for cellar storage harvest', () {
+    test('Root Day + Descending Moon is optimal for root cellar storage regardless of Waxing/Waning', () {
       final info = createTestCalendarInfo(
         quality: PlantQuality.root,
         isDescending: true,
-        isWaxing: false, // Waning!
+        isWaxing: true, // Even under Waxing Moon, Root + Descending is optimal
       );
 
       final advice = AgriculturalTaskEvaluator.evaluateTask(
         task: AgriculturalTaskType.harvestStorage,
         calendarInfo: info,
-        time: DateTime.utc(2026, 9, 20, 11, 0),
+        time: DateTime.utc(2026, 9, 20, 15, 0),
       );
 
       expect(advice.suitability, TaskSuitability.optimal);
-      expect(advice.cosmicReasoning, contains('OPTIMAL'));
-      expect(advice.cosmicReasoning, contains('Waning Moon'));
+      expect(
+        advice.cosmicReasoning,
+        contains('OPTIMAL: Root Day + Descending Moon'),
+      );
       expect(advice.practicalAction, contains('cellar'));
     });
 
-    test('Waxing Moon or Leaf Day is unfavorable for cellar storage', () {
-      final infoWaxing = createTestCalendarInfo(
+    test(
+      'Fruit Day + Ascending Moon is optimal for above-ground storage harvest',
+      () {
+        final info = createTestCalendarInfo(
+          quality: PlantQuality.fruit,
+          isDescending: false, // Ascending Moon!
+          isWaxing: false,
+        );
+
+        final advice = AgriculturalTaskEvaluator.evaluateTask(
+          task: AgriculturalTaskType.harvestStorage,
+          calendarInfo: info,
+          time: DateTime.utc(2026, 9, 20, 10, 0),
+        );
+
+        expect(advice.suitability, TaskSuitability.optimal);
+        expect(
+          advice.cosmicReasoning,
+          contains('OPTIMAL: Fruit Day + Ascending Moon'),
+        );
+      },
+    );
+
+    test('Leaf Day is unfavorable and Root Day with Ascending Moon is favorable (downgraded from optimal) for cellar storage', () {
+      final infoRootAscending = createTestCalendarInfo(
         quality: PlantQuality.root,
-        isWaxing: true, // Waxing!
+        isDescending: false, // Ascending on a Root Day -> favorable
+        isWaxing: false,
       );
 
-      final adviceWaxing = AgriculturalTaskEvaluator.evaluateTask(
+      final adviceRootAscending = AgriculturalTaskEvaluator.evaluateTask(
         task: AgriculturalTaskType.harvestStorage,
-        calendarInfo: infoWaxing,
+        calendarInfo: infoRootAscending,
         time: DateTime.utc(2026, 9, 20, 11, 0),
       );
 
-      expect(adviceWaxing.suitability, TaskSuitability.unfavorable);
-      expect(adviceWaxing.cosmicReasoning, contains('Waxing Moon'));
+      expect(adviceRootAscending.suitability, TaskSuitability.favorable);
+      expect(
+        adviceRootAscending.cosmicReasoning,
+        contains('FAVORABLE: Root Day'),
+      );
 
       final infoLeaf = createTestCalendarInfo(
         quality: PlantQuality.leaf, // Leaf day!
+        isDescending: true,
         isWaxing: false,
       );
 
@@ -264,26 +294,24 @@ void main() {
       expect(adviceLeaf.cosmicReasoning, contains('Leaf/Water Day'));
     });
 
-    test(
-      'Waxing Moon during morning exhalation is optimal for fresh harvest',
-      () {
-        final info = createTestCalendarInfo(
-          quality: PlantQuality.leaf,
-          isWaxing: true, // Waxing!
-        );
+    test('Matching Plant-Part Day during morning exhalation with aligned declination is optimal for fresh harvest', () {
+      final info = createTestCalendarInfo(
+        quality: PlantQuality.leaf,
+        isDescending: false, // Ascending Moon lifts sap into leaves
+        isWaxing: false,
+      );
 
-        final advice = AgriculturalTaskEvaluator.evaluateTask(
-          task: AgriculturalTaskType.harvestFresh,
-          calendarInfo: info,
-          time: DateTime.utc(2026, 6, 12, 9, 0), // 09:00 Morning!
-        );
+      final advice = AgriculturalTaskEvaluator.evaluateTask(
+        task: AgriculturalTaskType.harvestFresh,
+        calendarInfo: info,
+        time: DateTime.utc(2026, 6, 12, 9, 0), // 09:00 Morning!
+      );
 
-        expect(advice.suitability, TaskSuitability.optimal);
-        expect(advice.cosmicReasoning, contains('Waxing Moon'));
-        expect(advice.cosmicReasoning, contains('Morning Exhalation'));
-        expect(advice.terrestrialReasoning, contains('turgor'));
-      },
-    );
+      expect(advice.suitability, TaskSuitability.optimal);
+      expect(advice.cosmicReasoning, contains('Morning Exhalation'));
+      expect(advice.cosmicReasoning, contains('Ascending Moon'));
+      expect(advice.terrestrialReasoning, contains('turgor'));
+    });
   });
 
   group('AgriculturalTaskEvaluator - Timber Felling & Peppering', () {

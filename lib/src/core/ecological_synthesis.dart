@@ -1,3 +1,4 @@
+import 'climate/season_alignment.dart';
 import 'models/models.dart';
 
 /// Categories of weather alerts in ecological synthesis.
@@ -125,6 +126,7 @@ abstract final class EcologicalSynthesis {
     required DateTime time,
     WeatherDataPoint? weather,
     double latitude = DefaultLocations.copenhagenLatitude,
+    SeasonAlignment? seasons,
   }) {
     if (weather == null) {
       return const EcologicalSynthesisResult(
@@ -186,11 +188,14 @@ abstract final class EcologicalSynthesis {
 
     // 4. Spring frost risk (< 2°C)
     if (temp != null && temp < 2.0) {
-      final isNorthern = latitude >= 0;
-      final month = time.month;
-      final isSpring = isNorthern
-          ? (month >= 3 && month <= 5)
-          : (month >= 9 && month <= 11);
+      final alignment =
+          seasons ?? HemisphereSeasonAlignment(latitude: latitude);
+      final referenceMonth = alignment.referenceMonth(time);
+      final isSpring =
+          alignment.transferability !=
+              CalendarTransferability.doesNotTransfer &&
+          referenceMonth >= 3 &&
+          referenceMonth <= 5;
 
       final title = isSpring
           ? 'Spring Frost Risk (< 2°C)'

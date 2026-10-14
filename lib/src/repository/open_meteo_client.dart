@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../core/climate/climate_profile.dart';
 import '../core/models/weather_data_point.dart';
 
 /// Client repository module for fetching historical weather data from Open-Meteo.
@@ -96,5 +97,115 @@ final class OpenMeteoClient {
         'Failed to load historical weather data: ${response.statusCode}',
       );
     }
+  }
+
+  /// Fetches daily mean and minimum air temperature and precipitation for
+  /// every day from 1 January [firstYear] to 31 December [lastYear] at
+  /// [latitude], [longitude], from Open-Meteo's ERA5-based archive.
+  ///
+  /// Days are local calendar days of the location. The [firstYear] must not
+  /// be after [lastYear].
+  ///
+  /// A 30-year request returns about 300 KiB and counts as roughly 235 calls
+  /// against Open-Meteo's free-tier limit of 10,000 a day, so callers should
+  /// cache the result. The data is licensed CC BY 4.0 and must be attributed
+  /// to Open-Meteo.
+  ///
+  /// Throws a [TimeoutException] if there is no response within 30 seconds,
+  /// an [http.ClientException] if the server answers with an error status,
+  /// and a [FormatException] if the response cannot be parsed.
+  Future<DailyClimateSeries> getDailyClimateSeries(
+    double latitude,
+    double longitude, {
+    int firstYear = 1991,
+    int lastYear = 2020,
+  }) async {
+    if (firstYear > lastYear) {
+      throw ArgumentError.value(
+        firstYear,
+        'firstYear',
+        'Must not be after lastYear ($lastYear)',
+      );
+    }
+    final uri = Uri.https('archive-api.open-meteo.com', '/v1/archive', {
+      'latitude': '$latitude',
+      'longitude': '$longitude',
+      'start_date': '$firstYear-01-01',
+      'end_date': '$lastYear-12-31',
+      'daily': 'temperature_2m_mean,temperature_2m_min,precipitation_sum',
+      'timezone': 'auto',
+    });
+    final response = await _client
+        .get(uri)
+        .timeout(const Duration(seconds: 30));
+    if (response.statusCode != 200) {
+      final body = response.body;
+      throw http.ClientException(
+        'Open-Meteo climate request failed with status '
+        '${response.statusCode}: '
+        '${body.length > 200 ? '${body.substring(0, 200)}…' : body}',
+        uri,
+      );
+    }
+    return parseDailyClimateSeries(response.body);
+  }
+
+  /// Parses an Open-Meteo archive response holding the daily variables
+  /// `temperature_2m_mean`, `temperature_2m_min` and `precipitation_sum`.
+  ///
+  /// Missing values stay null; [ClimateProfile.fromDailySeries] rejects them.
+  ///
+  /// Throws a [FormatException] if [body] is not such a response.
+  static DailyClimateSeries parseDailyClimateSeries(String body) {
+    final decoded = jsonDecode(body);
+    if (decoded is! Map<String, Object?>) {
+      throw const FormatException('Expected a JSON object');
+    }
+    final daily = decoded['daily'];
+    if (daily is! Map<String, Object?>) {
+      throw const FormatException('Response has no "daily" object');
+    }
+
+    List<Object?> column(String key) {
+      final values = daily[key];
+      if (values is! List<Object?>) {
+        throw FormatException('Response has no daily "$key" values');
+      }
+      return values;
+    }
+
+    List<double?> numbers(String key) => [
+      for (final value in column(key))
+        switch (value) {
+          null => null,
+          num() => value.toDouble(),
+          _ => throw FormatException('Non-numeric daily "$key" value', value),
+        },
+    ];
+
+    final dates = <DateTime>[];
+    for (final value in column('time')) {
+      final date = value is String
+          ? DateTime.tryParse('${value}T00:00:00Z')
+          : null;
+      if (date == null) throw FormatException('Invalid daily date', value);
+      dates.add(date);
+    }
+    final meanTemperature = numbers('temperature_2m_mean');
+    final minimumTemperature = numbers('temperature_2m_min');
+    final precipitation = numbers('precipitation_sum');
+    if (meanTemperature.length != dates.length ||
+        minimumTemperature.length != dates.length ||
+        precipitation.length != dates.length) {
+      throw const FormatException('Daily columns have different lengths');
+    }
+    final elevation = decoded['elevation'];
+    return DailyClimateSeries(
+      dates: dates,
+      meanTemperature: meanTemperature,
+      minimumTemperature: minimumTemperature,
+      precipitation: precipitation,
+      elevation: elevation is num ? elevation.toDouble() : null,
+    );
   }
 }

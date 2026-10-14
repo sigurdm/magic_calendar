@@ -125,7 +125,70 @@ void main() {
 
       expect(grayEval.sowIndoorPlants, isEmpty);
       expect(grayEval.sowOutdoorPlants, isEmpty);
+      expect(grayEval.transplantActions, isEmpty);
       expect(grayEval.generalAdvice, contains('Gray Day'));
+    });
+  });
+
+  group('Maria Thun Factor Hierarchy in PlantRecommendations', () {
+    test('seed sowing is governed by sidereal Plant-Part Day and season regardless of Waxing/Waning or Ascending/Descending', () {
+      final aprilDate = DateTime.utc(2026, 4, 15);
+      final waxingAscending = PlantRecommendations.evaluate(
+        quality: PlantQuality.fruit,
+        isDescending: false,
+        isWaxing: true,
+        isGrayDay: false,
+        selectedTime: aprilDate,
+        latitude: 55.6761,
+      );
+      final waningDescending = PlantRecommendations.evaluate(
+        quality: PlantQuality.fruit,
+        isDescending: true,
+        isWaxing: false,
+        isGrayDay: false,
+        selectedTime: aprilDate,
+        latitude: 55.6761,
+      );
+
+      // Both indoor (e.g. Tomato in April) and outdoor (e.g. Pea in April)
+      // fruit crops should be recommended identically on any non-Gray Fruit Day.
+      expect(waxingAscending.sowIndoorPlants, isNotEmpty);
+      expect(waxingAscending.sowOutdoorPlants, isNotEmpty);
+      expect(
+        waxingAscending.sowIndoorPlants,
+        equals(waningDescending.sowIndoorPlants),
+      );
+      expect(
+        waxingAscending.sowOutdoorPlants,
+        equals(waningDescending.sowOutdoorPlants),
+      );
+    });
+
+    test('transplantActions are recommended during Descending Moon (Pflanzzeit) and omitted during Ascending Moon', () {
+      final mayDate = DateTime.utc(2026, 5, 20);
+      final descendingEval = PlantRecommendations.evaluate(
+        quality: PlantQuality.fruit,
+        isDescending: true,
+        isWaxing: true,
+        isGrayDay: false,
+        selectedTime: mayDate,
+        latitude: 55.6761,
+      );
+      final ascendingEval = PlantRecommendations.evaluate(
+        quality: PlantQuality.fruit,
+        isDescending: false,
+        isWaxing: true,
+        isGrayDay: false,
+        selectedTime: mayDate,
+        latitude: 55.6761,
+      );
+
+      expect(descendingEval.transplantActions, isNotEmpty);
+      expect(
+        descendingEval.transplantActions,
+        contains(contains('Tomat (Tomato)')),
+      );
+      expect(ascendingEval.transplantActions, isEmpty);
     });
   });
 }

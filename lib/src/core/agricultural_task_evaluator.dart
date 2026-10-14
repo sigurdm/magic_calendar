@@ -6,11 +6,12 @@ import 'models/models.dart';
 /// Evaluates agricultural farm organism tasks beyond seed sowing.
 ///
 /// Implements Maria Thun and Rudolf Steiner biodynamic guidelines for:
-/// 1. Soil cultivation & root aeration (morning shallow hoeing vs afternoon deep cultivation).
+/// 1. Soil cultivation & root aeration (sidereal Plant-Part Day crop impulse + morning shallow hoeing vs afternoon deep cultivation).
 /// 2. Fruit tree and vine pruning (descending moon + fruit day optimal; ascending or leaf day prohibited).
-/// 3. Harvest for cellar storage (waning moon + root/fruit day) vs fresh eating (waxing moon + morning exhalation).
-/// 4. Timber felling (Mondholz / Moon Wood: waning moon in Capricorn).
-/// 5. Weed & pest peppering (ashing in Leo / Scorpio).
+/// 3. Harvest for cellar storage (Root day + descending moon for root crops; Fruit/Flower day + ascending moon for above-ground storage crops; Leaf days avoided).
+/// 4. Harvest for fresh eating (matching Plant-Part Day + morning exhalation + ascending/descending organ alignment).
+/// 5. Timber felling (Mondholz / Moon Wood: waning/descending moon in Capricorn).
+/// 6. Weed & pest peppering (ashing in Leo / Scorpio).
 abstract final class AgriculturalTaskEvaluator {
   /// Returns the astronomical constellation name corresponding to [longitude].
   static String getConstellationName(
@@ -56,6 +57,7 @@ abstract final class AgriculturalTaskEvaluator {
         return _evaluateSoilCultivation(
           time: time,
           weather: weather,
+          quality: quality,
           isDescending: isDescending,
           isGrayDay: isGrayDay,
         );
@@ -72,6 +74,8 @@ abstract final class AgriculturalTaskEvaluator {
       case AgriculturalTaskType.harvestStorage:
         return _evaluateHarvestStorage(
           weather: weather,
+          isDescending: isDescending,
+          isAscending: isAscending,
           isWaning: isWaning,
           quality: quality,
           isGrayDay: isGrayDay,
@@ -80,6 +84,8 @@ abstract final class AgriculturalTaskEvaluator {
       case AgriculturalTaskType.harvestFresh:
         return _evaluateHarvestFresh(
           time: time,
+          quality: quality,
+          isAscending: isAscending,
           isWaxing: isWaxing,
           isGrayDay: isGrayDay,
         );
@@ -132,12 +138,16 @@ abstract final class AgriculturalTaskEvaluator {
   static AgriculturalTaskAdvice _evaluateSoilCultivation({
     required DateTime time,
     required WeatherDataPoint? weather,
+    required PlantQuality quality,
     required bool isDescending,
     required bool isGrayDay,
   }) {
     final hour = time.hour;
     final isMorning = hour >= 5 && hour < 12;
     final isAfternoon = hour >= 12 && hour <= 19;
+    final organTarget = quality != PlantQuality.none
+        ? '${quality.displayName}-crop beds'
+        : 'garden beds';
 
     bool weatherConflict = false;
     TaskSuitability suitability;
@@ -157,17 +167,27 @@ abstract final class AgriculturalTaskEvaluator {
           ? TaskSuitability.optimal
           : TaskSuitability.favorable;
       title = 'Afternoon Deep Cultivation (Root Aeration)';
+      final qualityImpulse = quality != PlantQuality.none
+          ? ' ${quality.displayName} Day channels ${quality.name} element into the soil.'
+          : '';
       cosmic = isDescending
-          ? 'Descending Moon + Afternoon Earth Inhalation: Vitality is pulled down into the subsoil and root sphere.'
-          : 'Afternoon Inhalation: Earth breathes inward, welcoming atmospheric warmth and nitrogen.';
-      terrestrial = 'Deep soil loosening and root aeration stimulates downward mycorrhizal root expansion.';
-      action = 'Deep root aeration and subsoil cultivation with broadfork or deep hoe to oxygenate rhizosphere.';
+          ? 'Descending Moon + Afternoon Earth Inhalation: Vitality is pulled down into the subsoil and root sphere.$qualityImpulse'
+          : 'Afternoon Inhalation: Earth breathes inward, welcoming atmospheric warmth and nitrogen.$qualityImpulse';
+      terrestrial =
+          'Deep soil loosening and root aeration stimulates downward mycorrhizal root expansion in $organTarget.';
+      action =
+          'Deep root aeration and subsoil cultivation of $organTarget with broadfork or deep hoe to oxygenate rhizosphere.';
     } else if (isMorning) {
       suitability = TaskSuitability.optimal;
       title = 'Morning Shallow Hoeing (Weed Scalping)';
-      cosmic = 'Morning Exhalation: Vital forces stream upward. Weeds severed at this hour dehydrate quickly under rising sun.';
+      final qualityImpulse = quality != PlantQuality.none
+          ? ' Cultivating on a ${quality.displayName} Day simultaneously vitalizes $organTarget.'
+          : '';
+      cosmic =
+          'Morning Exhalation: Vital forces stream upward. Weeds severed at this hour dehydrate quickly under rising sun.$qualityImpulse';
       terrestrial = 'Shallow scalping creates a dry dust mulch that breaks capillary water loss without disturbing root biology.';
-      action = 'Shallow surface hoeing (top 1–2 cm) to scalp weed seedlings and preserve bed moisture.';
+      action =
+          'Shallow surface hoeing (top 1–2 cm) around $organTarget to scalp weed seedlings and preserve bed moisture.';
     } else {
       suitability = TaskSuitability.neutral;
       title = 'Night Rest (Soil Consolidation)';
@@ -278,6 +298,8 @@ abstract final class AgriculturalTaskEvaluator {
 
   static AgriculturalTaskAdvice _evaluateHarvestStorage({
     required WeatherDataPoint? weather,
+    required bool isDescending,
+    required bool isAscending,
     required bool isWaning,
     required PlantQuality quality,
     required bool isGrayDay,
@@ -287,6 +309,10 @@ abstract final class AgriculturalTaskEvaluator {
     String cosmic;
     String terrestrial;
     String action;
+
+    final synodicNote = isWaning
+        ? ' Waning Moon secondarily reduces residual tissue moisture.'
+        : ' (Note: Waxing Moon plays only a minor secondary role compared to constellation and declination.)';
 
     if (isGrayDay) {
       suitability = TaskSuitability.restricted;
@@ -298,24 +324,44 @@ abstract final class AgriculturalTaskEvaluator {
       cosmic = 'Leaf/Water Day: Moisture forces dominate, leading to high rot susceptibility in storage.';
       terrestrial = 'High water content invites fungal botrytis and mold in storage crates.';
       action = 'Harvest only for immediate eating; not for cellar storage.';
-    } else if (!isWaning) {
-      suitability = TaskSuitability.unfavorable;
-      cosmic = 'Waxing Moon: Water and sap flow are rising. Crops contain excess water that causes early storage spoilage.';
-      terrestrial = 'Elevated moisture content reduces cellar shelf life.';
-      action = 'Wait for the Waning Moon cycle to harvest for winter storage.';
-    } else if (isWaning &&
-        (quality == PlantQuality.root || quality == PlantQuality.fruit)) {
-      suitability = TaskSuitability.optimal;
-      cosmic =
-          'OPTIMAL: Waning Moon recedes moisture, while ${quality.name.toUpperCase()} element concentrates dry matter and sugars.';
-      terrestrial = 'Crops have minimal tissue water and maximum shelf longevity with excellent rot resistance.';
-      action = 'Harvest root crops (carrots, beets, potatoes) or fruits (apples, winter squash) for cellar curing.';
+    } else if (quality == PlantQuality.root) {
+      if (isDescending) {
+        suitability = TaskSuitability.optimal;
+        cosmic =
+            'OPTIMAL: Root Day + Descending Moon concentrates dry matter and vitality into subterranean storage organs.$synodicNote';
+        terrestrial = 'Root crops have firm cellular structure and maximum winter cellar longevity with strong rot resistance.';
+        action = 'Harvest root crops (carrots, beets, potatoes, celeriac, onions) for winter cellar curing.';
+      } else {
+        suitability = TaskSuitability.favorable;
+        cosmic =
+            'FAVORABLE: Root Day provides the primary Earth keeping impulse, though Ascending Moon draws some sap upward.$synodicNote';
+        terrestrial = 'Good root storage quality; allow extra surface curing before cellar packing.';
+        action = 'Harvest root crops if weather requires; cure thoroughly in dry air before storage.';
+      }
+    } else if (quality == PlantQuality.fruit ||
+        quality == PlantQuality.flower) {
+      final dayName = quality.displayName;
+      if (isAscending) {
+        suitability = TaskSuitability.optimal;
+        cosmic =
+            'OPTIMAL: $dayName Day + Ascending Moon draws sugars, aromatic oils, and ripening forces into above-ground organs for peak storage keeping.$synodicNote';
+        terrestrial = 'Fruits, winter squash, seeds, and drying herbs reach maximum dry-matter maturity and shelf longevity.';
+        action = quality == PlantQuality.fruit
+            ? 'Harvest orchard fruits (apples, pears), winter squash, and seed crops for long storage.'
+            : 'Harvest flowers, medicinal herbs, and broccoli/cauliflower for drying or cool storage.';
+      } else {
+        suitability = TaskSuitability.favorable;
+        cosmic =
+            'FAVORABLE: $dayName Day supports keeping quality, while Descending Moon draws sap downward.$synodicNote';
+        terrestrial =
+            'Low tissue moisture and solid skin firmness for cellar curing.';
+        action = 'Harvest storage fruits, winter squash, or cabbage heads; cure in a dry, ventilated space.';
+      }
     } else {
-      suitability = TaskSuitability.favorable;
-      cosmic =
-          'Waning Moon: Lower moisture content supports decent storage life.';
+      suitability = TaskSuitability.neutral;
+      cosmic = 'Neutral cosmic impulse for storage harvest.$synodicNote';
       terrestrial = 'Ensure crops are thoroughly cured before packing.';
-      action = 'Cure and store in dark, cool root cellar.';
+      action = 'Cure and store in a dark, cool root cellar.';
     }
 
     if (weather != null && weather.precipitation > 0.5) {
@@ -340,11 +386,17 @@ abstract final class AgriculturalTaskEvaluator {
 
   static AgriculturalTaskAdvice _evaluateHarvestFresh({
     required DateTime time,
+    required PlantQuality quality,
+    required bool isAscending,
     required bool isWaxing,
     required bool isGrayDay,
   }) {
     final hour = time.hour;
     final isMorning = hour >= 6 && hour <= 12;
+    final hasOrganQuality = quality != PlantQuality.none;
+    final organMatchesDeclination = quality == PlantQuality.root
+        ? !isAscending
+        : isAscending;
 
     TaskSuitability suitability;
     String cosmic;
@@ -356,23 +408,38 @@ abstract final class AgriculturalTaskEvaluator {
       cosmic = 'Cosmic Rest Window: Vitality is diminished; flavor lacks aromatic radiance.';
       terrestrial = 'Leaves may taste dull or wilt rapidly after harvest.';
       action = 'Harvest lightly if needed for fresh consumption.';
-    } else if (isWaxing && isMorning) {
+    } else if (isMorning && hasOrganQuality && organMatchesDeclination) {
       suitability = TaskSuitability.optimal;
-      cosmic = 'OPTIMAL: Waxing Moon + Morning Exhalation: Life forces, sugars, and aromatic oils stream upward into foliage and fruit.';
-      terrestrial = 'High turgor pressure ensures peak succulence, crunch, and nutritional vitality.';
-      action = 'Harvest salad greens, sweet corn, fresh berries, and culinary herbs for immediate kitchen eating.';
-    } else if (isWaxing || isMorning) {
+      final arcText = isAscending ? 'Ascending Moon' : 'Descending Moon';
+      cosmic =
+          'OPTIMAL: ${quality.displayName} Day + Morning Exhalation + $arcText concentrates flavor, sugars, and aromatic oils in ${quality.name} crops.';
+      terrestrial = 'Peak morning turgor pressure ensures crisp succulence and nutritional vitality.';
+      action =
+          'Harvest fresh ${quality.name} crops (salad greens, herbs, berries, or tender roots) for immediate kitchen table use.';
+    } else if (isMorning && hasOrganQuality) {
+      suitability = TaskSuitability.optimal;
+      cosmic =
+          'OPTIMAL: ${quality.displayName} Day + Morning Exhalation lifts vital forces and turgor into ${quality.name} organs.';
+      terrestrial = 'High morning turgor pressure and crisp flavor retention.';
+      action =
+          'Harvest fresh ${quality.name} crops in the morning cool for same-day eating.';
+    } else if (isMorning || hasOrganQuality || isAscending) {
       suitability = TaskSuitability.favorable;
-      cosmic = isWaxing
-          ? 'Waxing Moon supports high sap vitality and flavor.'
-          : 'Morning harvest captures morning coolness and turgor.';
+      cosmic = isMorning
+          ? 'Morning Exhalation captures morning coolness and turgor.'
+          : hasOrganQuality
+          ? '${quality.displayName} Day supports organ-specific flavor and aroma.'
+          : 'Ascending Moon supports sap vitality in above-ground crops.';
+      if (isWaxing) {
+        cosmic += ' Waxing Moon adds a minor secondary moisture boost.';
+      }
       terrestrial = 'Good freshness and flavor retention.';
-      action = 'Harvest for same-day consumption.';
+      action = 'Harvest for same-day kitchen consumption.';
     } else {
       suitability = TaskSuitability.neutral;
       cosmic = 'Neutral cosmic impulse for fresh harvest.';
       terrestrial = 'Afternoon heat may cause slight wilting.';
-      action = 'Harvest as needed; consume promptly.';
+      action = 'Harvest as needed; chill or consume promptly.';
     }
 
     return AgriculturalTaskAdvice(

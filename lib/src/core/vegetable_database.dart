@@ -1,4 +1,199 @@
+import 'climate/hardiness_zone.dart';
 import 'models/models.dart';
+import 'plants/flowers_and_green_manures_catalog.dart';
+import 'plants/grains_and_arable_catalog.dart';
+import 'plants/herbs_catalog.dart';
+import 'plants/orchard_and_berries_catalog.dart';
+import 'plants/vegetables_catalog.dart';
+
+export 'climate/hardiness_zone.dart' show HardinessSubzone, HardinessZone;
+
+/// Functional and botanical category of a plant in the biodynamic catalog.
+enum PlantCategory {
+  /// Annual, biennial, or perennial kitchen garden vegetables.
+  vegetable(
+    displayName: 'Vegetable',
+    pluralNameEn: 'Vegetables',
+    danishName: 'Grøntsag',
+    pluralNameDa: 'Grøntsager',
+  ),
+
+  /// Aromatic kitchen and culinary herbs.
+  culinaryHerb(
+    displayName: 'Culinary Herb',
+    pluralNameEn: 'Culinary Herbs',
+    danishName: 'Køkkenurt',
+    pluralNameDa: 'Køkkenurter',
+  ),
+
+  /// Apothecary, tea, and biodynamic preparation herbs.
+  medicinalHerb(
+    displayName: 'Medicinal Herb',
+    pluralNameEn: 'Medicinal Herbs',
+    danishName: 'Lægeplante',
+    pluralNameDa: 'Lægeplanter',
+  ),
+
+  /// Temperate orchard pome, stone, and nut trees.
+  fruitTree(
+    displayName: 'Fruit & Nut Tree',
+    pluralNameEn: 'Fruit & Nut Trees',
+    danishName: 'Frugt- & Nøddetræ',
+    pluralNameDa: 'Frugt- & Nøddetræer',
+  ),
+
+  /// Woody berry bushes and brambles.
+  berryShrub(
+    displayName: 'Berry Shrub',
+    pluralNameEn: 'Berry Shrubs',
+    danishName: 'Bærbusk',
+    pluralNameDa: 'Bærbuske',
+  ),
+
+  /// Climbing fruiting vines and long-lived perennial crowns.
+  vine(
+    displayName: 'Perennial Vine & Crown',
+    pluralNameEn: 'Vines & Perennial Crowns',
+    danishName: 'Klatreplante & Flerårig Krone',
+    pluralNameDa: 'Klatreplanter & Flerårige Kroner',
+  ),
+
+  /// Companion, insectary, bulb, and cut flowers.
+  flower(
+    displayName: 'Companion & Cut Flower',
+    pluralNameEn: 'Flowers',
+    danishName: 'Blomst & Insektplante',
+    pluralNameDa: 'Blomster & Insektplanter',
+  ),
+
+  /// Nitrogen-fixing and soil-building cover crops and green manures.
+  greenManure(
+    displayName: 'Green Manure & Cover Crop',
+    pluralNameEn: 'Green Manures',
+    danishName: 'Grøngødning & Efterafgrøde',
+    pluralNameDa: 'Grøngødning & Efterafgrøder',
+  ),
+
+  /// Traditional cereals, pseudocereals, and arable field crops.
+  grain(
+    displayName: 'Grain & Arable Crop',
+    pluralNameEn: 'Grains & Field Crops',
+    danishName: 'Korn & Markafgrøde',
+    pluralNameDa: 'Korn & Markafgrøder',
+  );
+
+  /// English singular display label.
+  final String displayName;
+
+  /// English plural display label.
+  final String pluralNameEn;
+
+  /// Danish singular display label.
+  final String danishName;
+
+  /// Danish plural display label.
+  final String pluralNameDa;
+
+  const PlantCategory({
+    required this.displayName,
+    required this.pluralNameEn,
+    required this.danishName,
+    required this.pluralNameDa,
+  });
+
+  /// English singular display label.
+  String get displayNameEn => displayName;
+
+  /// Danish singular display label.
+  String get displayNameDa => danishName;
+
+  /// Bilingual label combining Danish and English singular names.
+  String get bilingualName => '$danishName / $displayName';
+}
+
+/// Botanical life cycle of a plant entry.
+enum PlantLifeCycle {
+  /// Completes its life cycle within a single growing season.
+  annual(displayName: 'Annual', danishName: 'Enårig'),
+
+  /// Vegetative growth in the first year, flowering and seeding in the second.
+  biennial(displayName: 'Biennial', danishName: 'Toårig'),
+
+  /// Herbaceous perennial, woody shrub, vine, or tree living three or more years.
+  perennial(displayName: 'Perennial', danishName: 'Flerårig / Staude');
+
+  /// English display label.
+  final String displayName;
+
+  /// Danish display label.
+  final String danishName;
+
+  const PlantLifeCycle({required this.displayName, required this.danishName});
+
+  /// English display label.
+  String get displayNameEn => displayName;
+
+  /// Danish display label.
+  String get displayNameDa => danishName;
+
+  /// Bilingual label combining Danish and English names.
+  String get bilingualName => '$danishName / $displayName';
+}
+
+/// Secondary or organ-specific task schedule for multi-purpose plants
+/// cultivated or harvested for more than one plant organ.
+final class CropTaskSchedule {
+  /// Unique snake_case identifier for this organ schedule.
+  final String id;
+
+  /// English label describing the organ and use.
+  final String labelEn;
+
+  /// Danish label describing the organ and use.
+  final String labelDa;
+
+  /// Sidereal [PlantQuality] governing this organ task.
+  final PlantQuality quality;
+
+  /// Optimal calendar months (1–12) for performing tasks on this organ.
+  final List<int> months;
+
+  /// Danish biodynamic guidance for this specific organ.
+  final String noteDa;
+
+  /// English biodynamic guidance for this specific organ.
+  final String noteEn;
+
+  /// Whether harvesting this organ for storage favors an Ascending Moon.
+  final bool prefersAscendingMoon;
+
+  /// Creates an immutable [CropTaskSchedule].
+  ///
+  /// It is an error if [id], [labelEn], or [labelDa] are empty.
+  const CropTaskSchedule({
+    required this.id,
+    required this.labelEn,
+    required this.labelDa,
+    required this.quality,
+    required this.months,
+    this.noteDa = '',
+    this.noteEn = '',
+    bool? prefersAscendingMoon,
+  }) : assert(id != ''),
+       assert(labelEn != ''),
+       assert(labelDa != ''),
+       prefersAscendingMoon =
+           prefersAscendingMoon ?? (quality != PlantQuality.root);
+
+  /// Localized display title combining Danish and English labels.
+  String get localizedLabel => '$labelDa ($labelEn)';
+
+  /// Returns the localized note for [languageCode] ('da' or 'en').
+  String note([String? languageCode]) {
+    if (languageCode == 'da') return noteDa;
+    return noteEn;
+  }
+}
 
 /// Represents a vegetable or crop entry with astronomical and seasonal planting attributes.
 final class VegetableEntry {
@@ -17,8 +212,38 @@ final class VegetableEntry {
   /// Biodynamic organ quality (root, leaf, flower, fruit).
   final PlantQuality quality;
 
-  /// Optimal calendar months for direct sowing or indoor starting (1-12).
+  /// Functional and botanical plant category.
+  final PlantCategory category;
+
+  /// Botanical life cycle (annual, biennial, perennial).
+  final PlantLifeCycle lifeCycle;
+
+  /// Danish regional, apothecary, or culinary synonyms for search.
+  final List<String> aliasesDa;
+
+  /// English regional, apothecary, or culinary synonyms for search.
+  final List<String> aliasesEn;
+
+  /// Optimal calendar months for indoor starting / pre-cultivation (1-12).
+  final List<int> indoorSowingMonths;
+
+  /// Optimal calendar months for direct outdoor sowing or planting (1-12).
   final List<int> sowingMonths;
+
+  /// Optimal calendar months for transplanting outdoors during a Descending Moon (1-12).
+  final List<int> transplantMonths;
+
+  /// Optimal calendar months for taking cuttings or layering during a Descending Moon (1-12).
+  final List<int> cuttingMonths;
+
+  /// Optimal calendar months for structural or summer pruning during a Descending Moon (1-12).
+  final List<int> pruningMonths;
+
+  /// Optimal calendar months for scion grafting or budding during an Ascending Moon (1-12).
+  final List<int> graftingMonths;
+
+  /// Optimal calendar months for dividing perennial crowns, rhizomes, or tubers during a Descending Moon (1-12).
+  final List<int> divisionMonths;
 
   /// Primary harvest months (1-12).
   final List<int> harvestMonths;
@@ -29,36 +254,137 @@ final class VegetableEntry {
   /// English localized practical cultivation notes.
   final String descriptionEn;
 
+  /// Danish Maria Thun (*Aussaattage*) specific research findings and cosmic guidance.
+  final String thunNotesDa;
+
+  /// English Maria Thun (*Aussaattage*) specific research findings and cosmic guidance.
+  final String thunNotesEn;
+
   /// Companion plants that enhance growth or deter pests.
   final List<String> companionPlants;
 
-  /// Whether this crop thrives when sown during an Ascending Moon (sap rising).
+  /// Antagonist plants that inhibit growth or share pests/diseases.
+  final List<String> antagonistPlants;
+
+  /// Secondary or organ-specific task schedules for multi-purpose plants.
+  final List<CropTaskSchedule> secondaryOrganRules;
+
+  /// Whether this crop's harvested organ is above ground and benefits from an Ascending Moon when harvesting for storage.
+  ///
+  /// In Maria Thun's framework, seed sowing is governed by the sidereal [quality] day
+  /// rather than ascending/descending declination, while transplanting always favors
+  /// a Descending Moon (*Pflanzzeit*).
   final bool prefersAscendingMoon;
 
-  /// Whether this crop thrives when sown during a Waxing Moon (increasing lunar vitality).
+  /// Whether this crop has a secondary affinity for a Waxing Moon in traditional synodic lore.
+  ///
+  /// Within Maria Thun's framework, the synodic phase (waxing/waning) is subordinate
+  /// to the sidereal [quality] day and tropical ascending/descending rhythm.
   final bool prefersWaxingMoon;
+
+  /// Whether this crop is killed or severely checked by air frost and must wait
+  /// for frost-free conditions outdoors.
+  final bool isFrostTender;
+
+  /// Minimum frost-free season length in days needed for outdoor cultivation,
+  /// or `null` when short cool-season windows suffice.
+  final int? minFrostFreeDays;
+
+  /// Minimum USDA [HardinessZone] for outdoor winter survival of perennials
+  /// and overwintering biennials, or `null` for annuals.
+  final HardinessZone? minHardinessZone;
+
+  /// Whether this crop requires high summer warmth (and benefits from a
+  /// greenhouse, cold frame, or warm south wall in cool-summer climates).
+  final bool requiresWarmSummer;
+
+  /// Whether this cool-season crop bolts rapidly or turns bitter when monthly
+  /// mean temperatures reach or exceed 20 °C.
+  final bool isBoltProneInHeat;
 
   /// Creates an immutable [VegetableEntry].
   ///
   /// It is an error if [id], [nameDa], or [nameEn] are empty.
-  /// It is an error if any month in [sowingMonths] or [harvestMonths] is outside the range 1..12.
+  /// It is an error if any month in [indoorSowingMonths], [sowingMonths],
+  /// [transplantMonths], [cuttingMonths], [pruningMonths], [graftingMonths],
+  /// [divisionMonths], or [harvestMonths] is outside the range 1..12.
   const VegetableEntry({
     required this.id,
     required this.nameDa,
     required this.nameEn,
     required this.scientificName,
     required this.quality,
+    this.category = PlantCategory.vegetable,
+    this.lifeCycle = PlantLifeCycle.annual,
+    this.aliasesDa = const [],
+    this.aliasesEn = const [],
+    this.indoorSowingMonths = const [],
     required this.sowingMonths,
+    this.transplantMonths = const [],
+    this.cuttingMonths = const [],
+    this.pruningMonths = const [],
+    this.graftingMonths = const [],
+    this.divisionMonths = const [],
     required this.harvestMonths,
     required this.descriptionDa,
     required this.descriptionEn,
+    this.thunNotesDa = '',
+    this.thunNotesEn = '',
     required this.companionPlants,
+    this.antagonistPlants = const [],
+    this.secondaryOrganRules = const [],
     this.prefersAscendingMoon = false,
     this.prefersWaxingMoon = true,
+    this.isFrostTender = false,
+    this.minFrostFreeDays,
+    this.minHardinessZone,
+    this.requiresWarmSummer = false,
+    this.isBoltProneInHeat = false,
   });
 
   /// Formatted localized title string showing Danish and English names.
   String get localizedDisplayName => '$nameDa ($nameEn)';
+
+  /// Alias getter for [secondaryOrganRules].
+  List<CropTaskSchedule> get taskSchedules => secondaryOrganRules;
+
+  /// Alias getter for [secondaryOrganRules].
+  List<CropTaskSchedule> get organRules => secondaryOrganRules;
+
+  /// All distinct [PlantQuality] values applicable to this plant
+  /// (primary [quality] first, followed by any secondary organ qualities).
+  List<PlantQuality> get allQualities {
+    if (secondaryOrganRules.isEmpty) return [quality];
+    final result = <PlantQuality>[quality];
+    for (final rule in secondaryOrganRules) {
+      if (!result.contains(rule.quality)) {
+        result.add(rule.quality);
+      }
+    }
+    return result;
+  }
+
+  /// Whether this plant can be cultivated or harvested for more than one plant organ.
+  bool get hasMultipleOrgans => allQualities.length > 1;
+
+  /// Whether this plant supports [targetQuality] either as its primary [quality]
+  /// or via one of its [secondaryOrganRules].
+  bool supportsQuality(PlantQuality targetQuality) {
+    if (quality == targetQuality) return true;
+    for (final rule in secondaryOrganRules) {
+      if (rule.quality == targetQuality) return true;
+    }
+    return false;
+  }
+
+  /// Finds the first [CropTaskSchedule] matching [targetQuality], or `null`
+  /// if [targetQuality] is not present in [secondaryOrganRules].
+  CropTaskSchedule? findOrganRule(PlantQuality targetQuality) {
+    for (final rule in secondaryOrganRules) {
+      if (rule.quality == targetQuality) return rule;
+    }
+    return null;
+  }
 
   /// Returns the localized name based on [languageCode] ('da' or 'en').
   ///
@@ -77,6 +403,12 @@ final class VegetableEntry {
     return descriptionEn;
   }
 
+  /// Returns the localized Maria Thun note based on [languageCode] ('da' or 'en').
+  String thunNotes([String? languageCode]) {
+    if (languageCode == 'da') return thunNotesDa;
+    return thunNotesEn;
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -89,7 +421,7 @@ final class VegetableEntry {
 
   @override
   String toString() =>
-      'VegetableEntry($id, $localizedDisplayName, quality: ${quality.name})';
+      'VegetableEntry($id, $localizedDisplayName, quality: ${quality.name}, category: ${category.name})';
 }
 
 /// In-memory catalog of biodynamic crops categorized by plant organ quality.
@@ -98,343 +430,128 @@ final class VegetableDatabase {
 
   /// Comprehensive list of curated biodynamic vegetable and crop entries.
   static const List<VegetableEntry> allEntries = [
-    // ------------------- ROOT CROPS (EARTH) -------------------
-    VegetableEntry(
-      id: 'carrot',
-      nameDa: 'Gulerod',
-      nameEn: 'Carrot',
-      scientificName: 'Daucus carota',
-      quality: PlantQuality.root,
-      sowingMonths: [3, 4, 5, 6],
-      harvestMonths: [6, 7, 8, 9, 10, 11],
-      descriptionDa: 'Sås på Rod-dage i let, dybdemuldet jord. Dybdegående hakning under aftagende måne fremmer lige rodudvikling.',
-      descriptionEn: 'Sow on Root days in loose, stone-free soil. Deep aeration during descending moon encourages downward taproot growth.',
-      companionPlants: ['Løg', 'Porre', 'Rosmarin', 'Salvie'],
-      prefersAscendingMoon: false,
-      prefersWaxingMoon: false,
-    ),
-    VegetableEntry(
-      id: 'beetroot',
-      nameDa: 'Rødbede',
-      nameEn: 'Beetroot',
-      scientificName: 'Beta vulgaris subsp. vulgaris',
-      quality: PlantQuality.root,
-      sowingMonths: [4, 5, 6],
-      harvestMonths: [7, 8, 9, 10, 11],
-      descriptionDa: 'Trives bedst ved såning på Rod-dage under nedstigende måne. Høst på Rod-dage for maksimal lagringsevne.',
-      descriptionEn: 'Thrives when sown on Root days during descending moon. Harvest on Root days for prolonged winter cellar storage.',
-      companionPlants: ['Løg', 'Kålrabi', 'Dild', 'Salat'],
-      prefersAscendingMoon: false,
-      prefersWaxingMoon: false,
-    ),
-    VegetableEntry(
-      id: 'potato',
-      nameDa: 'Kartoffel',
-      nameEn: 'Potato',
-      scientificName: 'Solanum tuberosum',
-      quality: PlantQuality.root,
-      sowingMonths: [3, 4, 5],
-      harvestMonths: [6, 7, 8, 9, 10],
-      descriptionDa: 'Lægges på Rod-dage i aftagende/nedstigende måne efter jordtemperatur når 8°C. Hypning på Rod-dage styrker knolddannelse.',
-      descriptionEn: 'Plant seed tubers on Root days during descending moon. Hilling up on Root days stimulates uniform tuber initiation.',
-      companionPlants: ['Hestebønne', 'Tagetes', 'Kommen', 'Majs'],
-      prefersAscendingMoon: false,
-      prefersWaxingMoon: false,
-    ),
-    VegetableEntry(
-      id: 'onion',
-      nameDa: 'Zittauerløg',
-      nameEn: 'Yellow Onion',
-      scientificName: 'Allium cepa',
-      quality: PlantQuality.root,
-      sowingMonths: [3, 4, 5],
-      harvestMonths: [8, 9, 10],
-      descriptionDa: 'Sætteløg stikkes på Rod-dage. Undgå kvælstofholdig gødning sent på sæsonen for at forhindre råd under lagring.',
-      descriptionEn: 'Set out onion sets on Root days. Avoid late nitrogen fertilization to maintain solid bulb storage firmness.',
-      companionPlants: ['Gulerod', 'Rødbede', 'Jordbær', 'Kamille'],
-      prefersAscendingMoon: false,
-      prefersWaxingMoon: false,
-    ),
-    VegetableEntry(
-      id: 'radish',
-      nameDa: 'Radise',
-      nameEn: 'Radish',
-      scientificName: 'Raphanus sativus',
-      quality: PlantQuality.root,
-      sowingMonths: [3, 4, 5, 6, 7, 8, 9],
-      harvestMonths: [4, 5, 6, 7, 8, 9, 10],
-      descriptionDa: 'Hurtigvoksende mellemafgrøde. Sås hver anden uge på Rod-dage for sprøde, ikke-træede radiser.',
-      descriptionEn: 'Fast-growing succession crop. Sow bi-weekly on Root days for crisp, tender roots without pithiness.',
-      companionPlants: ['Salat', 'Spinat', 'Gulerod', 'Karse'],
-      prefersAscendingMoon: false,
-      prefersWaxingMoon: false,
-    ),
-    VegetableEntry(
-      id: 'celeriac',
-      nameDa: 'Knoldselleri',
-      nameEn: 'Celeriac',
-      scientificName: 'Apium graveolens var. rapaceum',
-      quality: PlantQuality.root,
-      sowingMonths: [2, 3, 4],
-      harvestMonths: [9, 10, 11],
-      descriptionDa: 'Kræver lang udviklingstid. Forkultiveres indendørs og udplantes i maj på en Rod-dag med rigelig kompost.',
-      descriptionEn: 'Long-season root crop. Start indoors and transplant in May on a Root day with abundant compost.',
-      companionPlants: ['Porre', 'Buskbønne', 'Kål', 'Tomat'],
-      prefersAscendingMoon: false,
-      prefersWaxingMoon: false,
-    ),
-
-    // ------------------- LEAF CROPS (WATER) -------------------
-    VegetableEntry(
-      id: 'lettuce',
-      nameDa: 'Hovedsalat',
-      nameEn: 'Butterhead Lettuce',
-      scientificName: 'Lactuca sativa',
-      quality: PlantQuality.leaf,
-      sowingMonths: [3, 4, 5, 6, 7, 8],
-      harvestMonths: [5, 6, 7, 8, 9, 10],
-      descriptionDa: 'Sås og udplantes på Blad-dage under voksende måne for saftige blade. Vanding på Blad-dage udnyttes bedst.',
-      descriptionEn: 'Sow and transplant on Leaf days during waxing moon for succulent foliage. Irrigation on Leaf days is absorbed most efficiently.',
-      companionPlants: ['Gulerod', 'Radise', 'Løg', 'Jordbær'],
-      prefersAscendingMoon: true,
-      prefersWaxingMoon: true,
-    ),
-    VegetableEntry(
-      id: 'spinach',
-      nameDa: 'Spinat',
-      nameEn: 'Spinach',
-      scientificName: 'Spinacia oleracea',
-      quality: PlantQuality.leaf,
-      sowingMonths: [3, 4, 5, 8, 9],
-      harvestMonths: [4, 5, 6, 9, 10, 11],
-      descriptionDa: 'Trives i køligt vejr. Sås tidligt forår og sensommer på Blad-dage for at undgå for tidlig stokløb.',
-      descriptionEn: 'Cool-weather crop. Sow in early spring and late summer on Leaf days to minimize premature bolting.',
-      companionPlants: ['Jordbær', 'Kål', 'Bønne', 'Radise'],
-      prefersAscendingMoon: true,
-      prefersWaxingMoon: true,
-    ),
-    VegetableEntry(
-      id: 'kale',
-      nameDa: 'Grønkål',
-      nameEn: 'Curly Kale',
-      scientificName: 'Brassica oleracea var. sabellica',
-      quality: PlantQuality.leaf,
-      sowingMonths: [4, 5, 6],
-      harvestMonths: [9, 10, 11, 12, 1, 2],
-      descriptionDa: 'Robust vintergrøntsag. Udplantes på Blad-dage under nedstigende måne for stærkt rodnet.',
-      descriptionEn: 'Hardy winter staple. Transplant on Leaf days during descending moon to establish vigorous root support.',
-      companionPlants: ['Tomat', 'Salvie', 'Mynte', 'Timian'],
-      prefersAscendingMoon: true,
-      prefersWaxingMoon: true,
-    ),
-    VegetableEntry(
-      id: 'swiss_chard',
-      nameDa: 'Sølvbede / Bladbede',
-      nameEn: 'Swiss Chard',
-      scientificName: 'Beta vulgaris subsp. vulgaris',
-      quality: PlantQuality.leaf,
-      sowingMonths: [4, 5, 6, 7],
-      harvestMonths: [6, 7, 8, 9, 10, 11],
-      descriptionDa: 'Høst de yderste stilke løbende på Blad-dage for kontinuerlig genvækst igennem hele sommeren.',
-      descriptionEn: 'Harvest outer stalks on Leaf days to stimulate continuous flush of new tender stems throughout summer.',
-      companionPlants: ['Løg', 'Kålrabi', 'Bønner'],
-      prefersAscendingMoon: true,
-      prefersWaxingMoon: true,
-    ),
-    VegetableEntry(
-      id: 'leek',
-      nameDa: 'Vinterporre',
-      nameEn: 'Winter Leek',
-      scientificName: 'Allium ampeloprasum var. porrum',
-      quality: PlantQuality.leaf,
-      sowingMonths: [3, 4, 5],
-      harvestMonths: [9, 10, 11, 12, 1, 2, 3],
-      descriptionDa: 'Udplantes dybt på Blad-dage i juni. Hypning giver lange, møre hvide skafter.',
-      descriptionEn: 'Deep-transplant on Leaf days in June. Trenching and hilling creates long, tender blanched shafts.',
-      companionPlants: ['Gulerod', 'Knoldselleri', 'Jordbær'],
-      prefersAscendingMoon: true,
-      prefersWaxingMoon: true,
-    ),
-
-    // ------------------- FLOWER CROPS (AIR / LIGHT) -------------------
-    VegetableEntry(
-      id: 'broccoli',
-      nameDa: 'Broccoli',
-      nameEn: 'Broccoli',
-      scientificName: 'Brassica oleracea var. italica',
-      quality: PlantQuality.flower,
-      sowingMonths: [3, 4, 5, 6],
-      harvestMonths: [6, 7, 8, 9, 10, 11],
-      descriptionDa: 'Sås og passes på Blomst-dage for tætte, velformede blomsterknopper uden for tidlig udspring.',
-      descriptionEn: 'Sow and cultivate on Flower days for tight, dense floral heads with prolonged holding quality.',
-      companionPlants: ['Dild', 'Kamille', 'Mynte', 'Rosmarin'],
-      prefersAscendingMoon: true,
-      prefersWaxingMoon: true,
-    ),
-    VegetableEntry(
-      id: 'cauliflower',
-      nameDa: 'Blomkål',
-      nameEn: 'Cauliflower',
-      scientificName: 'Brassica oleracea var. botrytis',
-      quality: PlantQuality.flower,
-      sowingMonths: [3, 4, 5],
-      harvestMonths: [6, 7, 8, 9, 10],
-      descriptionDa: 'Følsom over for udtørring. Plejes og gødes på Blomst-dage under opstigende måne.',
-      descriptionEn: 'Sensitive to moisture fluctuations. Cultivate on Flower days during ascending moon for pure white curds.',
-      companionPlants: ['Selleri', 'Bønner', 'Oregano'],
-      prefersAscendingMoon: true,
-      prefersWaxingMoon: true,
-    ),
-    VegetableEntry(
-      id: 'artichoke',
-      nameDa: 'Karyatide / Artiskok',
-      nameEn: 'Globe Artichoke',
-      scientificName: 'Cynara cardunculus var. scolymus',
-      quality: PlantQuality.flower,
-      sowingMonths: [2, 3, 4],
-      harvestMonths: [7, 8, 9, 10],
-      descriptionDa: 'Flerårig pragtplante. Høst de uåbnede blomsterknopper på Blomst-dage for den fineste nøddeagtige smag.',
-      descriptionEn: 'Perennial delicacy. Harvest immature flower buds on Flower days for peak tenderness and aromatic oils.',
-      companionPlants: ['Solsikke', 'Morgenfrue', 'Lavendel'],
-      prefersAscendingMoon: true,
-      prefersWaxingMoon: true,
-    ),
-    VegetableEntry(
-      id: 'chamomile',
-      nameDa: 'Lægekamille',
-      nameEn: 'German Chamomile',
-      scientificName: 'Matricaria chamomilla',
-      quality: PlantQuality.flower,
-      sowingMonths: [3, 4, 5, 8, 9],
-      harvestMonths: [6, 7, 8, 9],
-      descriptionDa: 'Vigtig biodynamisk præparatplante. Høst blomsterhoveder midt på formiddagen på en solrig Blomst-dag.',
-      descriptionEn: 'Crucial biodynamic compost preparation herb. Harvest flower heads mid-morning on sunny Flower days for maximum essential oils.',
-      companionPlants: ['Løg', 'Kål', 'Hvede'],
-      prefersAscendingMoon: true,
-      prefersWaxingMoon: true,
-    ),
-    VegetableEntry(
-      id: 'sunflower',
-      nameDa: 'Solsikke',
-      nameEn: 'Sunflower',
-      scientificName: 'Helianthus annuus',
-      quality: PlantQuality.flower,
-      sowingMonths: [4, 5, 6],
-      harvestMonths: [8, 9, 10],
-      descriptionDa: 'Kanaliserer lys- og varmeimpulser til jorden. Sås direkte på Blomst-dage.',
-      descriptionEn: 'Channels high light and warmth impulses into soil ecology. Direct-sow on Flower days.',
-      companionPlants: ['Agurk', 'Græskar', 'Majs'],
-      prefersAscendingMoon: true,
-      prefersWaxingMoon: true,
-    ),
-
-    // ------------------- FRUIT & SEED CROPS (FIRE / WARMTH) -------------------
-    VegetableEntry(
-      id: 'tomato',
-      nameDa: 'Tomat',
-      nameEn: 'Tomato',
-      scientificName: 'Solanum lycopersicum',
-      quality: PlantQuality.fruit,
-      sowingMonths: [2, 3, 4],
-      harvestMonths: [7, 8, 9, 10],
-      descriptionDa: 'Forkultiveres i varme. Sideskud fjernes og frugter høstes på Frugt-dage for sødme og aromastoffer.',
-      descriptionEn: 'Start indoors with gentle bottom heat. Prune suckers and harvest on Fruit days for maximum sugar and aromatics.',
-      companionPlants: ['Basilikum', 'Tagetes', 'Hvidløg', 'Gulerod'],
-      prefersAscendingMoon: true,
-      prefersWaxingMoon: true,
-    ),
-    VegetableEntry(
-      id: 'bell_pepper',
-      nameDa: 'Sød Peberfrugt',
-      nameEn: 'Bell Pepper',
-      scientificName: 'Capsicum annuum',
-      quality: PlantQuality.fruit,
-      sowingMonths: [2, 3, 4],
-      harvestMonths: [7, 8, 9, 10],
-      descriptionDa: 'Varmekrævende afgrøde. Sås tidligt på Frugt-dage i voksende måne for hurtig spiring.',
-      descriptionEn: 'Heat-loving crop. Sow early on Fruit days during waxing moon for vigorous germination and sturdy flowering.',
-      companionPlants: ['Basilikum', 'Løg', 'Gulerod', 'Oregano'],
-      prefersAscendingMoon: true,
-      prefersWaxingMoon: true,
-    ),
-    VegetableEntry(
-      id: 'cucumber',
-      nameDa: 'Frilandsagurk / Drivagurk',
-      nameEn: 'Cucumber',
-      scientificName: 'Cucumis sativus',
-      quality: PlantQuality.fruit,
-      sowingMonths: [4, 5, 6],
-      harvestMonths: [7, 8, 9, 10],
-      descriptionDa: 'Sås lunt i maj. Høst løbende på Frugt-dage under opstigende måne for sprøde, saftige frugter.',
-      descriptionEn: 'Sow in warm soil. Pick continuously on Fruit days during ascending moon for crisp, non-bitter yields.',
-      companionPlants: ['Bønner', 'Solsikke', 'Dild', 'Majs'],
-      prefersAscendingMoon: true,
-      prefersWaxingMoon: true,
-    ),
-    VegetableEntry(
-      id: 'bush_bean',
-      nameDa: 'Buskbønne',
-      nameEn: 'Bush Bean',
-      scientificName: 'Phaseolus vulgaris',
-      quality: PlantQuality.fruit,
-      sowingMonths: [5, 6, 7],
-      harvestMonths: [7, 8, 9, 10],
-      descriptionDa: 'Sås når jorden er mindst 12°C. Såning på Frugt-dage under voksende måne giver rigelig bælgdannelse og kvælstoffiksering.',
-      descriptionEn: 'Sow once soil reaches 12°C. Sowing on Fruit days during waxing moon boosts pod set and root nodule nitrogen fixation.',
-      companionPlants: ['Bønneurt', 'Majs', 'Græskar', 'Kartoffel'],
-      prefersAscendingMoon: true,
-      prefersWaxingMoon: true,
-    ),
-    VegetableEntry(
-      id: 'squash',
-      nameDa: 'Squash / Courgette',
-      nameEn: 'Zucchini / Summer Squash',
-      scientificName: 'Cucurbita pepo',
-      quality: PlantQuality.fruit,
-      sowingMonths: [4, 5, 6],
-      harvestMonths: [7, 8, 9, 10],
-      descriptionDa: 'Hurtigvoksende og yderig. Høst frugterne unge (15-20 cm) på Frugt-dage for fortsat blomstring.',
-      descriptionEn: 'Prolific producer. Harvest fruits young on Fruit days to stimulate relentless continuous flowering.',
-      companionPlants: ['Majs', 'Morgenfrue', 'Bønner', 'Radise'],
-      prefersAscendingMoon: true,
-      prefersWaxingMoon: true,
-    ),
+    ...vegetablesCatalog,
+    ...herbsCatalog,
+    ...orchardAndBerriesCatalog,
+    ...flowersAndGreenManuresCatalog,
+    ...grainsAndArableCatalog,
   ];
 
-  /// Returns all vegetables matching the given [quality].
+  /// Searches all entries matching [query] across ID, Danish name, English name,
+  /// scientific binomial name, Danish aliases, English aliases, and category names.
+  ///
+  /// Optionally filters by [quality] (including secondary organ rules when
+  /// [includeSecondaryOrgans] is true) and/or [category].
+  ///
+  /// Performance: $O(N)$ where $N$ is the number of entries in [sourceList] or [allEntries].
+  static List<VegetableEntry> search(
+    String query, {
+    PlantQuality? quality,
+    PlantCategory? category,
+    bool includeSecondaryOrgans = true,
+    List<VegetableEntry>? sourceList,
+  }) {
+    final list = sourceList ?? allEntries;
+    final normalized = query.trim().toLowerCase();
+
+    return list
+        .where((entry) {
+          if (category != null && entry.category != category) {
+            return false;
+          }
+          if (quality != null && quality != PlantQuality.none) {
+            final matchesPrimary = entry.quality == quality;
+            final matchesSecondary =
+                includeSecondaryOrgans &&
+                entry.secondaryOrganRules.any((r) => r.quality == quality);
+            if (!matchesPrimary && !matchesSecondary) {
+              return false;
+            }
+          }
+          if (normalized.isEmpty) return true;
+
+          if (entry.id.toLowerCase().contains(normalized) ||
+              entry.nameDa.toLowerCase().contains(normalized) ||
+              entry.nameEn.toLowerCase().contains(normalized) ||
+              entry.scientificName.toLowerCase().contains(normalized) ||
+              entry.category.displayName.toLowerCase().contains(normalized) ||
+              entry.category.pluralNameEn.toLowerCase().contains(normalized) ||
+              entry.category.danishName.toLowerCase().contains(normalized) ||
+              entry.category.pluralNameDa.toLowerCase().contains(normalized)) {
+            return true;
+          }
+          for (final alias in entry.aliasesDa) {
+            if (alias.toLowerCase().contains(normalized)) return true;
+          }
+          for (final alias in entry.aliasesEn) {
+            if (alias.toLowerCase().contains(normalized)) return true;
+          }
+          return false;
+        })
+        .toList(growable: false);
+  }
+
+  /// Returns all entries belonging to [category].
   ///
   /// Performance: $O(N)$ where $N$ is the total number of entries.
-  static List<VegetableEntry> getVegetablesForQuality(PlantQuality quality) {
+  static List<VegetableEntry> getVegetablesForCategory(PlantCategory category) {
+    return allEntries
+        .where((entry) => entry.category == category)
+        .toList(growable: false);
+  }
+
+  /// Returns all vegetables whose primary [VegetableEntry.quality] matches [quality]
+  /// (or also matching a secondary organ rule when [includeSecondaryOrgans] is `true`).
+  ///
+  /// Performance: $O(N)$ where $N$ is the total number of entries.
+  static List<VegetableEntry> getVegetablesForQuality(
+    PlantQuality quality, {
+    bool includeSecondaryOrgans = false,
+  }) {
     if (quality == PlantQuality.none) {
       return allEntries;
     }
     return allEntries
-        .where((entry) => entry.quality == quality)
+        .where(
+          (entry) =>
+              entry.quality == quality ||
+              (includeSecondaryOrgans &&
+                  entry.secondaryOrganRules.any((r) => r.quality == quality)),
+        )
         .toList(growable: false);
   }
 
-  /// Returns all vegetables suitable for sowing or planting in [month] (1-12).
+  /// Returns all vegetables suitable for indoor sowing, direct sowing, transplanting,
+  /// taking cuttings, grafting, or dividing in [month] (1-12).
   ///
-  /// It is an error if [month] is less than 1 or greater than 12.
+  /// The [month] must be between 1 and 12.
   /// Performance: $O(N)$ where $N$ is the total number of entries.
   static List<VegetableEntry> getVegetablesForMonth(
     int month, {
     PlantQuality? quality,
   }) {
     if (month < 1 || month > 12) {
-      throw ArgumentError.value(
-        month,
-        'month',
-        'Month must be between 1 and 12.',
-      );
+      throw ArgumentError.value(month, 'month', 'Must be between 1 and 12.');
     }
     return allEntries
         .where((entry) {
-          final matchesMonth = entry.sowingMonths.contains(month);
+          final matchesPrimaryMonth =
+              entry.sowingMonths.contains(month) ||
+              entry.indoorSowingMonths.contains(month) ||
+              entry.transplantMonths.contains(month) ||
+              entry.cuttingMonths.contains(month) ||
+              entry.graftingMonths.contains(month) ||
+              entry.divisionMonths.contains(month);
           if (quality == null || quality == PlantQuality.none) {
-            return matchesMonth;
+            return matchesPrimaryMonth ||
+                entry.secondaryOrganRules.any((r) => r.months.contains(month));
           }
-          return matchesMonth && entry.quality == quality;
+          if (entry.quality == quality && matchesPrimaryMonth) {
+            return true;
+          }
+          return entry.secondaryOrganRules.any(
+            (r) => r.quality == quality && r.months.contains(month),
+          );
         })
         .toList(growable: false);
   }

@@ -1,5 +1,7 @@
+import 'climate/climate_profile.dart';
+import 'climate/crop_climate_suitability.dart';
+import 'climate/season_alignment.dart';
 import 'models/models.dart';
-import 'seasonal_calendar.dart';
 import 'vegetable_database.dart';
 
 /// Season of the year relative to local geographical hemisphere.
@@ -15,6 +17,14 @@ final class PlantRecommendations {
   final List<String> harvestActions;
   final String generalAdvice;
 
+  /// Per-crop climate suitability evaluations keyed by [VegetableEntry.id]
+  /// when a local [ClimateProfile] is active.
+  final Map<String, CropClimateEvaluation> cropClimateEvaluations;
+
+  /// Summary of local climatological frost and thermal season dates when a
+  /// local [ClimateProfile] is active.
+  final String? localClimateNote;
+
   const PlantRecommendations({
     required this.season,
     required this.weekNumber,
@@ -23,6 +33,8 @@ final class PlantRecommendations {
     required this.transplantActions,
     required this.harvestActions,
     required this.generalAdvice,
+    this.cropClimateEvaluations = const <String, CropClimateEvaluation>{},
+    this.localClimateNote,
   });
 
   /// Computes the ISO 8601 week number (1 to 53) for [date].
@@ -36,23 +48,22 @@ final class PlantRecommendations {
     return week.clamp(1, 53);
   }
 
-  /// Evaluates plant recommendations for the given agricultural and celestial state.
+  /// Evaluates plant recommendations for the given agricultural and celestial state
+  /// following Maria Thun's factor hierarchy:
   ///
-  /// **Incomplete:** [isDescending] and [isWaxing] are accepted but not yet
-  /// used, and the returned [PlantRecommendations.sowIndoorPlants] and
-  /// [PlantRecommendations.transplantActions] are consequently always empty.
-  ///
-  /// The intent is evidently to filter crops by lunar state:
-  /// [VegetableEntry.prefersAscendingMoon] and
-  /// [VegetableEntry.prefersWaxingMoon] are populated on every database entry
-  /// but read nowhere. Finishing this needs two product decisions that cannot
-  /// be inferred from the code:
-  ///
-  ///  * which crops count as "sow indoors" — [VegetableEntry.sowingMonths] is
-  ///    documented as covering direct sowing *and* indoor starting, so the data
-  ///    does not currently distinguish them; and
-  ///  * what a transplant recommendation should list, since there is no
-  ///    transplant-window data on [VegetableEntry].
+  /// 1. **Gray Days (`isGrayDay`)**: Lunar nodes and perigee veto all sowing,
+  ///    transplanting, and storage harvest.
+  /// 2. **Sidereal Plant-Part Day ([quality])**: The primary determinant for
+  ///    both indoor pre-cultivation ([sowIndoorPlants]) and direct outdoor
+  ///    sowing ([sowOutdoorPlants]). Sowing is *not* restricted by [isDescending]
+  ///    or [isWaxing].
+  /// 3. **Tropical Declination ([isDescending] / *Pflanzzeit*)**: Secondary
+  ///    structural rhythm governing [transplantActions]. Transplanting is
+  ///    recommended on matching [quality] days when the Moon is descending so
+  ///    roots anchor rapidly in the soil.
+  /// 4. **Synodic Moon Phase ([isWaxing])**: Minor tertiary rhythm noted in
+  ///    [generalAdvice] for moisture and germination pull without suppressing
+  ///    sidereal sowing windows.
   static PlantRecommendations evaluate({
     required PlantQuality quality,
     required bool isDescending,
@@ -60,28 +71,24 @@ final class PlantRecommendations {
     required bool isGrayDay,
     required DateTime selectedTime,
     required double latitude,
+    SeasonAlignment? seasons,
     List<VegetableEntry>? dbEntries,
   }) {
-    final isNorthern = latitude >= 0;
-    int month = selectedTime.month;
-    if (!isNorthern) {
-      month = southernHemisphereMonth(month);
-    }
+    final alignment = seasons ?? HemisphereSeasonAlignment(latitude: latitude);
+    final month = alignment.referenceMonth(selectedTime);
+    final profile = alignment.localProfile;
+    final climateNote = profile == null ? null : _buildProfileNote(profile);
 
-    GardenSeason season;
-    if (month >= 3 && month <= 5) {
-      season = GardenSeason.spring;
-    } else if (month >= 6 && month <= 8) {
-      season = GardenSeason.summer;
-    } else if (month >= 9 && month <= 11) {
-      season = GardenSeason.autumn;
-    } else {
-      season = GardenSeason.winter;
-    }
+    final GardenSeason season = switch (month) {
+      >= 3 && <= 5 => GardenSeason.spring,
+      >= 6 && <= 8 => GardenSeason.summer,
+      >= 9 && <= 11 => GardenSeason.autumn,
+      _ => GardenSeason.winter,
+    };
 
     final week = computeWeekNumber(selectedTime);
     final seasonName = season.name[0].toUpperCase() + season.name.substring(1);
-    final hemisphereText = isNorthern ? 'Northern' : 'Southern';
+    final hemisphereText = alignment.shortLabel;
 
     if (isGrayDay) {
       return PlantRecommendations(
@@ -92,31 +99,91 @@ final class PlantRecommendations {
         transplantActions: const [],
         harvestActions: const [],
         generalAdvice: 'Gray Day (Lunar Node or Perigee): Avoid sowing, planting out, pruning, or harvesting today. Sprouting will be erratic and crops decay quickly.',
+        localClimateNote: climateNote,
       );
     }
 
-    final List<String> sowIndoor = [];
-    List<String> sowOutdoor = [];
-    final List<String> transplant = [];
-    List<String> harvest = [];
+    final declinationNote = isDescending
+        ? 'Descending Moon (Pflanzzeit): optimal for transplanting, soil cultivation, and root storage harvest.'
+        : 'Ascending Moon: optimal for above-ground storage harvest and foliar sprays (postpone transplanting).';
+    final synodicNote = isWaxing
+        ? 'Waxing Moon (secondary moisture/germination pull).'
+        : 'Waning Moon (secondary low-moisture curing phase).';
+    final caveatSuffix = alignment.caveats.isEmpty
+        ? ''
+        : ' ${alignment.caveats.join(' ')}';
+
+    if (alignment.transferability == CalendarTransferability.doesNotTransfer) {
+      return PlantRecommendations(
+        season: season,
+        weekNumber: week,
+        sowIndoorPlants: const [],
+        sowOutdoorPlants: const [],
+        transplantActions: const [],
+        harvestActions: const [],
+        generalAdvice:
+            '$seasonName ($hemisphereText, Week $week): ${quality.displayName} Day (primary sidereal impulse for sowing & hoeing). $declinationNote $synodicNote$caveatSuffix',
+        localClimateNote: climateNote,
+      );
+    }
 
     final matchingVegs = VegetableDatabase.queryByQuality(
       quality: quality,
       sourceList: dbEntries,
     );
 
-    sowOutdoor = matchingVegs
-        .where((v) => v.sowingMonths.contains(month))
-        .map((v) => v.localizedDisplayName)
-        .toList();
+    final evaluations = profile == null
+        ? const <String, CropClimateEvaluation>{}
+        : <String, CropClimateEvaluation>{
+            for (final v in matchingVegs)
+              v.id: CropClimateEvaluation.evaluate(v, profile),
+          };
 
-    harvest = matchingVegs
+    int sowMonthFor(VegetableEntry crop) => alignment.referenceMonth(
+      selectedTime,
+      anchor: crop.isFrostTender
+          ? SeasonalAnchor.frostTender
+          : SeasonalAnchor.thermal,
+    );
+
+    bool isOutdoorViable(VegetableEntry crop) {
+      final eval = evaluations[crop.id];
+      if (eval != null &&
+          eval.rating == CropClimateRating.seasonTooShortOutdoors) {
+        return false;
+      }
+      return true;
+    }
+
+    // 1. Sidereal Plant-Part Day + Season governs both indoor and outdoor sowing
+    // regardless of whether the Moon is ascending/descending or waxing/waning.
+    final sowIndoor = matchingVegs
+        .where((v) => v.indoorSowingMonths.contains(sowMonthFor(v)))
+        .map((v) => v.localizedDisplayName)
+        .toList(growable: false);
+
+    final sowOutdoor = matchingVegs
+        .where(
+          (v) => v.sowingMonths.contains(sowMonthFor(v)) && isOutdoorViable(v),
+        )
+        .map((v) => v.localizedDisplayName)
+        .toList(growable: false);
+
+    // 2. Descending Moon (Pflanzzeit) + Sidereal Plant-Part Day governs transplanting.
+    final transplant = isDescending
+        ? matchingVegs
+              .where((v) => v.transplantMonths.contains(sowMonthFor(v)))
+              .map((v) => v.localizedDisplayName)
+              .toList(growable: false)
+        : const <String>[];
+
+    final harvest = matchingVegs
         .where((v) => v.harvestMonths.contains(month))
         .map((v) => v.localizedDisplayName)
-        .toList();
+        .toList(growable: false);
 
     final String advice =
-        '$seasonName ($hemisphereText, Week $week): ${quality.displayName} Day evaluation derived from Havenyt.dk & Maria Thun database.';
+        '$seasonName ($hemisphereText, Week $week): ${quality.displayName} Day (primary sidereal impulse for sowing & hoeing). $declinationNote $synodicNote$caveatSuffix';
 
     return PlantRecommendations(
       season: season,
@@ -126,6 +193,25 @@ final class PlantRecommendations {
       transplantActions: transplant,
       harvestActions: harvest,
       generalAdvice: advice,
+      cropClimateEvaluations: Map.unmodifiable(evaluations),
+      localClimateNote: climateNote,
     );
+  }
+
+  static String _buildProfileNote(ClimateProfile p) {
+    final s5 = p.thermalSeason(5);
+    final spring90 = p.frost.lastSpringFrost90;
+    final autumn10 = p.frost.firstAutumnFrost10;
+    final frostClause = spring90 != null && autumn10 != null
+        ? 'safe frost-free window ~${formatClimateMonthDay(p.dateAtOffset(spring90))} – ${formatClimateMonthDay(p.dateAtOffset(autumn10))}'
+        : (p.frost.hasFrost
+              ? '${p.frost.medianFrostFreeDays} median frost-free days'
+              : 'frost-free year-round');
+    final thermalClause = s5.isBounded
+        ? 'thermal season ≥ 5 °C ~${formatClimateMonthDay(p.dateAtOffset(s5.start!))} – ${formatClimateMonthDay(p.dateAtOffset(s5.end!))} (${s5.lengthInDays} d)'
+        : (s5.isYearRound
+              ? 'thermal season ≥ 5 °C year-round'
+              : 'sub-5 °C climate');
+    return '${p.koppen.code} · USDA Zone ${p.hardinessZone.label}: $frostClause; $thermalClause.';
   }
 }
