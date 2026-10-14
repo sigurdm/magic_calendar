@@ -9,6 +9,7 @@ import '../../core/ecological_synthesis.dart';
 import '../../core/models/models.dart';
 import '../../core/vegetable_database.dart';
 import '../../services/ephemeris_service.dart';
+import '../../services/garden_service.dart';
 import '../theme/biodynamic_icons.dart';
 import '../theme/goethean_palette.dart';
 import 'organic_vessel_container.dart';
@@ -40,6 +41,9 @@ final class PlantRecommendationsCard extends StatefulWidget {
   /// Optional seasonal alignment mapping local climate onto the Danish reference calendar.
   final SeasonAlignment? seasons;
 
+  /// Optional reactive controller for the user's persisted garden profile.
+  final GardenProfileController? gardenController;
+
   /// Optional callback invoked when the user wants to plan upcoming windows for a specific crop.
   final ValueChanged<VegetableEntry>? onPlanCropRequested;
 
@@ -55,6 +59,7 @@ final class PlantRecommendationsCard extends StatefulWidget {
     this.ephemeris,
     this.latitude,
     this.seasons,
+    this.gardenController,
     this.onPlanCropRequested,
   });
 
@@ -67,6 +72,7 @@ final class _PlantRecommendationsCardState
     extends State<PlantRecommendationsCard> {
   PlantQuality? _filterQuality;
   PlantCategory? _filterCategory;
+  bool _onlyStarred = false;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   _RecommendationsSection _selectedSection =
@@ -625,6 +631,63 @@ final class _PlantRecommendationsCardState
                       ),
                     ],
                     const SizedBox(height: 24),
+                    if (widget.gardenController != null) ...[
+                      ValueListenableBuilder<GardenProfile>(
+                        valueListenable: widget.gardenController!,
+                        builder: (context, profile, _) {
+                          final isStarred = profile.isCropStarred(crop.id);
+                          return SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: OutlinedButton.icon(
+                              key: ValueKey('modal_star_crop_${crop.id}'),
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: isStarred
+                                    ? GoetheanPalette.aspectGold.withValues(
+                                        alpha: 0.2,
+                                      )
+                                    : Colors.white.withValues(alpha: 0.05),
+                                foregroundColor: isStarred
+                                    ? GoetheanPalette.aspectGold
+                                    : Colors.white70,
+                                side: BorderSide(
+                                  color: isStarred
+                                      ? GoetheanPalette.aspectGold
+                                      : Colors.white24,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              icon: Icon(
+                                isStarred
+                                    ? Icons.star_rounded
+                                    : Icons.star_border_rounded,
+                                size: 20,
+                                color: isStarred
+                                    ? GoetheanPalette.aspectGold
+                                    : Colors.white70,
+                              ),
+                              onPressed: () {
+                                widget.gardenController!.toggleStarredCrop(
+                                  crop.id,
+                                );
+                              },
+                              label: Text(
+                                isStarred
+                                    ? 'In My Garden Patch ★ (Tap to Remove)'
+                                    : 'Add ${crop.nameEn} to My Garden Patch',
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.outfit(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                    ],
                     if (widget.onPlanCropRequested != null) ...[
                       SizedBox(
                         width: double.infinity,
@@ -992,16 +1055,125 @@ final class _PlantRecommendationsCardState
     );
   }
 
+  Widget _buildMyGardenTodayBanner(
+    GardenProfile profile,
+    PlantQuality activeQuality,
+    SeasonAlignment alignment,
+  ) {
+    final starred = profile.starredCrops;
+    if (starred.isEmpty) return const SizedBox.shrink();
+
+    final transfersSeasonally =
+        alignment.transferability != CalendarTransferability.doesNotTransfer;
+
+    int refMonthFor(VegetableEntry crop) => alignment.referenceMonth(
+      widget.selectedDate,
+      anchor: crop.isFrostTender
+          ? SeasonalAnchor.frostTender
+          : SeasonalAnchor.thermal,
+    );
+
+    final matchingToday = starred
+        .where((crop) {
+          if (widget.info.isGrayDay) return false;
+          final matchesElement =
+              widget.info.quality == PlantQuality.none ||
+              crop.supportsQuality(widget.info.quality);
+          if (!matchesElement) return false;
+          if (!transfersSeasonally) return true;
+          final m = refMonthFor(crop);
+          return crop.sowingMonths.contains(m) ||
+              crop.indoorSowingMonths.contains(m) ||
+              crop.transplantMonths.contains(m) ||
+              crop.cuttingMonths.contains(m) ||
+              crop.divisionMonths.contains(m) ||
+              crop.graftingMonths.contains(m) ||
+              crop.harvestMonths.contains(m) ||
+              crop.secondaryOrganRules.any(
+                (r) =>
+                    (widget.info.quality == PlantQuality.none ||
+                        r.quality == widget.info.quality) &&
+                    r.months.contains(m),
+              );
+        })
+        .toList(growable: false);
+
+    final summaryText = widget.info.isGrayDay
+        ? 'Rest Day for your ${starred.length} starred garden crops.'
+        : matchingToday.isNotEmpty
+        ? '${matchingToday.length} of your ${starred.length} starred crops align with today\'s ${widget.info.quality.displayName} rhythm: ${matchingToday.map((c) => c.nameEn).join(', ')}.'
+        : 'None of your ${starred.length} starred crops are in an active ${widget.info.quality.displayName} window today.';
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Container(
+        key: const ValueKey('my_garden_today_banner'),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: GoetheanPalette.aspectGold.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: GoetheanPalette.aspectGold.withValues(alpha: 0.35),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.star_rounded,
+              size: 18,
+              color: GoetheanPalette.aspectGold,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'My Garden Today (${starred.length} Starred)',
+                    style: GoogleFonts.outfit(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: GoetheanPalette.aspectGold,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    summaryText,
+                    style: GoogleFonts.outfit(
+                      fontSize: 11.5,
+                      color: const Color(0xFFF3E5C8),
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildVegetableSowingView(
     BuildContext context,
     PlantQuality activeQuality,
     SeasonAlignment alignment,
   ) {
-    final cropsForQuality = VegetableDatabase.search(
+    final gardenProfile = widget.gardenController?.value;
+    final starredIds = gardenProfile?.starredCropIds ?? const <String>{};
+    final baseCropsForQuality = VegetableDatabase.search(
       _searchQuery,
-      quality: activeQuality == PlantQuality.none ? null : activeQuality,
+      quality: (_onlyStarred && _filterQuality == null)
+          ? null
+          : (activeQuality == PlantQuality.none ? null : activeQuality),
       category: _filterCategory,
     );
+    final cropsForQuality = _onlyStarred
+        ? baseCropsForQuality
+              .where((c) => starredIds.contains(c.id))
+              .toList(growable: false)
+        : baseCropsForQuality;
     final transfersSeasonally =
         alignment.transferability != CalendarTransferability.doesNotTransfer;
 
@@ -1032,10 +1204,18 @@ final class _PlantRecommendationsCardState
               .toList(growable: false)
         : const <VegetableEntry>[];
 
-    final displayCrops =
-        (_searchQuery.trim().isNotEmpty || currentMonthCrops.isEmpty)
+    final unsortedDisplayCrops =
+        (_onlyStarred ||
+            _searchQuery.trim().isNotEmpty ||
+            currentMonthCrops.isEmpty)
         ? cropsForQuality
         : currentMonthCrops;
+    final displayCrops = starredIds.isEmpty
+        ? unsortedDisplayCrops
+        : <VegetableEntry>[
+            ...unsortedDisplayCrops.where((c) => starredIds.contains(c.id)),
+            ...unsortedDisplayCrops.where((c) => !starredIds.contains(c.id)),
+          ];
 
     final isDescending = widget.info.isMoonDescending;
     final declinationNote = isDescending
@@ -1056,6 +1236,8 @@ final class _PlantRecommendationsCardState
             height: 1.35,
           ),
         ),
+        if (gardenProfile != null && gardenProfile.hasStarredCrops)
+          _buildMyGardenTodayBanner(gardenProfile, activeQuality, alignment),
         if (alignment.caveats.isNotEmpty) ...[
           const SizedBox(height: 10),
           Container(
@@ -1139,6 +1321,48 @@ final class _PlantRecommendationsCardState
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
+              if (widget.gardenController != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: ChoiceChip(
+                    key: const ValueKey('rec_filter_my_garden'),
+                    avatar: Icon(
+                      _onlyStarred
+                          ? Icons.star_rounded
+                          : Icons.star_border_rounded,
+                      size: 15,
+                      color: GoetheanPalette.aspectGold,
+                    ),
+                    label: Text(
+                      'My Garden (${starredIds.length})',
+                      style: GoogleFonts.outfit(
+                        fontSize: 11.5,
+                        fontWeight: _onlyStarred
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        color: _onlyStarred
+                            ? const Color(0xFFF6ECD8)
+                            : Colors.white70,
+                      ),
+                    ),
+                    selected: _onlyStarred,
+                    selectedColor: GoetheanPalette.aspectGold.withValues(
+                      alpha: 0.28,
+                    ),
+                    backgroundColor: Colors.white.withValues(alpha: 0.05),
+                    side: BorderSide(
+                      color: _onlyStarred
+                          ? GoetheanPalette.aspectGold
+                          : Colors.white.withValues(alpha: 0.14),
+                    ),
+                    showCheckmark: false,
+                    onSelected: (selected) {
+                      setState(() {
+                        _onlyStarred = selected;
+                      });
+                    },
+                  ),
+                ),
               Padding(
                 padding: const EdgeInsets.only(right: 6),
                 child: ChoiceChip(
@@ -1441,6 +1665,31 @@ final class _PlantRecommendationsCardState
                               ),
                             ),
                             const SizedBox(width: 4),
+                            if (widget.gardenController != null)
+                              GestureDetector(
+                                key: ValueKey('star_crop_${crop.id}'),
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  widget.gardenController!.toggleStarredCrop(
+                                    crop.id,
+                                  );
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 2,
+                                  ),
+                                  child: Icon(
+                                    starredIds.contains(crop.id)
+                                        ? Icons.star_rounded
+                                        : Icons.star_border_rounded,
+                                    size: 17,
+                                    color: starredIds.contains(crop.id)
+                                        ? GoetheanPalette.aspectGold
+                                        : Colors.white38,
+                                  ),
+                                ),
+                              ),
                             const Icon(
                               Icons.chevron_right,
                               size: 14,
@@ -1696,15 +1945,14 @@ final class _PlantRecommendationsCardState
 
   @override
   Widget build(BuildContext context) {
-    final notifier = widget.weatherNotifier;
-    if (notifier == null) return _buildCard(context);
-    // The notifier is filled in asynchronously once the forecast request
-    // completes, so the card has to rebuild when it changes; reading
-    // `notifier.value` from `build` alone would pin the card to whatever
-    // weather happened to be available at first layout.
-    return ValueListenableBuilder<List<WeatherDataPoint>?>(
-      valueListenable: notifier,
-      builder: (context, _, _) => _buildCard(context),
+    final listenables = <Listenable>[
+      if (widget.weatherNotifier != null) widget.weatherNotifier!,
+      if (widget.gardenController != null) widget.gardenController!,
+    ];
+    if (listenables.isEmpty) return _buildCard(context);
+    return ListenableBuilder(
+      listenable: Listenable.merge(listenables),
+      builder: (context, _) => _buildCard(context),
     );
   }
 

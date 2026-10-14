@@ -4,6 +4,7 @@ import 'package:sweph/sweph.dart';
 
 import 'src/services/climate_service.dart';
 import 'src/services/ephemeris_service.dart';
+import 'src/services/garden_service.dart';
 import 'src/services/weather_service.dart';
 import 'src/ui/theme/app_theme.dart';
 import 'src/ui/views/calendar_home_page.dart';
@@ -24,17 +25,24 @@ Future<void> main() async {
 
   String? epheFilesPath;
   ClimateProfileStore? climateStore;
+  GardenProfileStore? gardenStore;
   try {
     final appSupportDir = await getApplicationSupportDirectory();
     epheFilesPath = '${appSupportDir.path}/ephe_files';
     climateStore = createFileClimateProfileStore(
       '${appSupportDir.path}/climate_profiles',
     );
+    gardenStore = createFileGardenProfileStore(
+      '${appSupportDir.path}/garden_profile.json',
+    );
   } catch (_) {
     // Fallback if path_provider fails in non-app environments
   }
 
   final climateService = OpenMeteoClimateService(store: climateStore);
+  final gardenController = await GardenProfileController.load(
+    store: gardenStore,
+  );
 
   await Sweph.init(epheFilesPath: epheFilesPath);
   await EphemerisWorker.init(epheFilesPath: epheFilesPath);
@@ -44,6 +52,7 @@ Future<void> main() async {
       ephemeris: IsolateEphemerisService(),
       weather: weatherService,
       climate: climateService,
+      gardenController: gardenController,
     ),
   );
 }
@@ -59,12 +68,16 @@ final class MyApp extends StatelessWidget {
   /// Optional source of 30-year climate normals.
   final ClimateService? climate;
 
+  /// Optional reactive controller for the user's persisted garden profile.
+  final GardenProfileController? gardenController;
+
   /// Creates the application root.
   const MyApp({
     super.key,
     required this.ephemeris,
     required this.weather,
     this.climate,
+    this.gardenController,
   });
 
   @override
@@ -74,9 +87,12 @@ final class MyApp extends StatelessWidget {
       theme: buildAppTheme(),
       home: CalendarHomePage(
         ephemeris: ephemeris,
-        weather: weather,
+        weather: weatherService,
         climate: climate,
+        gardenController: gardenController,
       ),
     );
   }
+
+  WeatherService get weatherService => weather;
 }

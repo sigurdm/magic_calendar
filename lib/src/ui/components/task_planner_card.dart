@@ -6,6 +6,7 @@ import '../../core/climate/climate.dart';
 import '../../core/models/models.dart';
 import '../../core/task_window_planner.dart';
 import '../../core/vegetable_database.dart';
+import '../../services/garden_service.dart';
 import '../theme/goethean_palette.dart';
 import 'organic_vessel_container.dart';
 
@@ -22,7 +23,7 @@ final class TaskPlannerCard extends StatefulWidget {
   /// Optional notifier supplying weather forecast points.
   final ValueNotifier<List<WeatherDataPoint>?>? weatherNotifier;
 
-  ///Geographic latitude for seasonal and diurnal adaptation.
+  /// Geographic latitude for seasonal and diurnal adaptation.
   final double latitude;
 
   /// Geographic longitude for topocentric sun/moon calculations.
@@ -30,6 +31,9 @@ final class TaskPlannerCard extends StatefulWidget {
 
   /// Optional seasonal alignment mapping local climate onto the Danish reference calendar.
   final SeasonAlignment? seasons;
+
+  /// Optional reactive controller for the user's persisted garden profile.
+  final GardenProfileController? gardenController;
 
   /// Callback invoked when the user selects a found window or jumps to a prime season.
   final ValueChanged<DateTime> onTimeJump;
@@ -53,6 +57,7 @@ final class TaskPlannerCard extends StatefulWidget {
     this.latitude = DefaultLocations.copenhagenLatitude,
     this.longitude = DefaultLocations.copenhagenLongitude,
     this.seasons,
+    this.gardenController,
     this.initialAction,
     this.initialCrop,
     this.initialQuality,
@@ -67,6 +72,7 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
   VegetableEntry? _selectedCrop;
   late PlantQuality _selectedQuality;
   PlantCategory? _selectedCategory;
+  bool _onlyStarredCrops = false;
   bool _onlyOptimal = false;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
@@ -175,30 +181,190 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
 
   @override
   Widget build(BuildContext context) {
-    final notifier = widget.weatherNotifier;
-    if (notifier == null) {
+    final listenables = <Listenable>[
+      if (widget.weatherNotifier != null) widget.weatherNotifier!,
+      if (widget.gardenController != null) widget.gardenController!,
+    ];
+    if (listenables.isEmpty) {
       return _buildContent(context, null);
     }
-    return ValueListenableBuilder<List<WeatherDataPoint>?>(
-      valueListenable: notifier,
-      builder: (context, forecast, _) => _buildContent(context, forecast),
+    return ListenableBuilder(
+      listenable: Listenable.merge(listenables),
+      builder: (context, _) =>
+          _buildContent(context, widget.weatherNotifier?.value),
+    );
+  }
+
+  Widget _buildActiveTaskQueueSection(
+    GardenProfile profile,
+    List<WeatherDataPoint>? forecast,
+  ) {
+    if (!profile.hasQueuedTasks) return const SizedBox.shrink();
+    final dateFmt = DateFormat('EEE, MMM d • HH:mm');
+
+    return Column(
+      key: const ValueKey('active_task_queue_section'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'MY ACTIVE TASK QUEUE (${profile.taskQueue.length})',
+          style: GoogleFonts.outfit(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.0,
+            color: GoetheanPalette.aspectGold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Column(
+          children: profile.taskQueue
+              .map((task) {
+                final taskColor = GoetheanPalette.getColor(task.targetQuality);
+                final isSelected = task.matchesSelection(
+                  selectedAction: _selectedAction,
+                  selectedCropId: _selectedCrop?.id,
+                  selectedQuality: _selectedQuality,
+                );
+                final taskSearch = TaskWindowPlanner.findUpcomingWindows(
+                  action: task.action,
+                  targetQuality: task.targetQuality,
+                  crop: task.crop,
+                  startTime: widget.selectedDate,
+                  ephemeris: widget.ephemeris,
+                  weatherForecast: forecast,
+                  latitude: widget.latitude,
+                  longitude: widget.longitude,
+                  seasons: widget.seasons,
+                  searchDays: 14,
+                  maxWindows: 1,
+                );
+                final nextWindow = taskSearch.windows.firstOrNull;
+
+                return Container(
+                  key: ValueKey('queued_task_${task.id}'),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? taskColor.withValues(alpha: 0.20)
+                        : Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? taskColor
+                          : taskColor.withValues(alpha: 0.35),
+                      width: isSelected ? 1.5 : 1.0,
+                    ),
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      setState(() {
+                        _selectedAction = task.action;
+                        _selectedCrop = task.crop;
+                        _selectedQuality = task.targetQuality;
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(task.action.icon, size: 18, color: taskColor),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  task.summaryLabel,
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  nextWindow != null
+                                      ? 'Next window: ${dateFmt.format(nextWindow.peakTime)} (${nextWindow.suitability == TaskSuitability.optimal ? "Optimal" : "Favorable"})'
+                                      : 'No window in next 14 days — tap to inspect 30-day horizon',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 11,
+                                    color: nextWindow != null
+                                        ? const Color(0xFFF3E5C8)
+                                        : Colors.white60,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (nextWindow != null)
+                            IconButton(
+                              key: ValueKey('jump_queued_task_${task.id}'),
+                              tooltip: 'Jump to next window',
+                              icon: const Icon(
+                                Icons.ads_click_outlined,
+                                size: 18,
+                                color: GoetheanPalette.aspectGold,
+                              ),
+                              onPressed: () =>
+                                  widget.onTimeJump(nextWindow.peakTime),
+                            ),
+                          IconButton(
+                            key: ValueKey('remove_queued_task_${task.id}'),
+                            tooltip: 'Mark done / remove from queue',
+                            icon: const Icon(
+                              Icons.check_circle_outline,
+                              size: 18,
+                              color: Color(0xFF10B981),
+                            ),
+                            onPressed: () {
+                              widget.gardenController?.removeQueuedTask(
+                                task.id,
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              })
+              .toList(growable: false),
+        ),
+        const SizedBox(height: 12),
+      ],
     );
   }
 
   Widget _buildContent(BuildContext context, List<WeatherDataPoint>? forecast) {
     final result = _resolveSearchResult(forecast);
     final accentColor = GoetheanPalette.getColor(result.targetQuality);
+    final gardenProfile = widget.gardenController?.value;
+    final starredIds = gardenProfile?.starredCropIds ?? const <String>{};
     final filteredWindows = _onlyOptimal
         ? result.windows
               .where((w) => w.suitability == TaskSuitability.optimal)
               .toList(growable: false)
         : result.windows;
 
-    final searchedCrops = VegetableDatabase.search(
+    final baseSearchedCrops = VegetableDatabase.search(
       _searchQuery,
-      quality: _searchQuery.trim().isEmpty ? _selectedQuality : null,
+      quality: (_onlyStarredCrops || _searchQuery.trim().isNotEmpty)
+          ? null
+          : _selectedQuality,
       category: _selectedCategory,
     );
+    final searchedCrops = _onlyStarredCrops
+        ? baseSearchedCrops
+              .where((c) => starredIds.contains(c.id))
+              .toList(growable: false)
+        : <VegetableEntry>[
+            ...baseSearchedCrops.where((c) => starredIds.contains(c.id)),
+            ...baseSearchedCrops.where((c) => !starredIds.contains(c.id)),
+          ];
     final matchingCrops = <VegetableEntry>[
       if (_selectedCrop != null &&
           !searchedCrops.any((c) => c.id == _selectedCrop!.id))
@@ -254,6 +420,8 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
             ],
           ),
           const SizedBox(height: 16),
+          if (gardenProfile != null)
+            _buildActiveTaskQueueSection(gardenProfile, forecast),
 
           // Quick Presets Row
           Text(
@@ -436,6 +604,48 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
+                if (widget.gardenController != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(
+                      key: const ValueKey('planner_filter_my_garden'),
+                      avatar: Icon(
+                        _onlyStarredCrops
+                            ? Icons.star_rounded
+                            : Icons.star_border_rounded,
+                        size: 15,
+                        color: GoetheanPalette.aspectGold,
+                      ),
+                      label: Text(
+                        'My Garden (${starredIds.length})',
+                        style: GoogleFonts.outfit(
+                          fontSize: 11.5,
+                          fontWeight: _onlyStarredCrops
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: _onlyStarredCrops
+                              ? const Color(0xFFF6ECD8)
+                              : Colors.white70,
+                        ),
+                      ),
+                      selected: _onlyStarredCrops,
+                      selectedColor: GoetheanPalette.aspectGold.withValues(
+                        alpha: 0.28,
+                      ),
+                      backgroundColor: Colors.white.withValues(alpha: 0.05),
+                      side: BorderSide(
+                        color: _onlyStarredCrops
+                            ? GoetheanPalette.aspectGold
+                            : Colors.white.withValues(alpha: 0.14),
+                      ),
+                      showCheckmark: false,
+                      onSelected: (selected) {
+                        setState(() {
+                          _onlyStarredCrops = selected;
+                        });
+                      },
+                    ),
+                  ),
                 Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: ChoiceChip(
@@ -1089,6 +1299,74 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
               ],
             ),
           ),
+          if (widget.gardenController != null) ...[
+            const SizedBox(height: 12),
+            Builder(
+              builder: (context) {
+                final isQueued =
+                    gardenProfile?.isTaskQueued(
+                      action: _selectedAction,
+                      cropId: _selectedCrop?.id,
+                      targetQuality: _selectedQuality,
+                    ) ??
+                    false;
+                final targetLabel =
+                    _selectedCrop?.localizedDisplayName ??
+                    'Any ${_selectedQuality.displayName} Plant';
+                return SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    key: const ValueKey('toggle_queue_task_button'),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: isQueued
+                          ? const Color(0xFF10B981).withValues(alpha: 0.16)
+                          : GoetheanPalette.aspectGold.withValues(alpha: 0.12),
+                      foregroundColor: isQueued
+                          ? const Color(0xFF6EE7B7)
+                          : const Color(0xFFF6ECD8),
+                      side: BorderSide(
+                        color: isQueued
+                            ? const Color(0xFF10B981).withValues(alpha: 0.5)
+                            : GoetheanPalette.aspectGold.withValues(
+                                alpha: 0.45,
+                              ),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: Icon(
+                      isQueued
+                          ? Icons.playlist_add_check_rounded
+                          : Icons.playlist_add_rounded,
+                      size: 18,
+                    ),
+                    onPressed: () {
+                      widget.gardenController!.toggleQueuedTask(
+                        action: _selectedAction,
+                        cropId: _selectedCrop?.id,
+                        targetQuality: _selectedQuality,
+                      );
+                    },
+                    label: Text(
+                      isQueued
+                          ? 'In My Task Queue: ${_selectedAction.displayName} · $targetLabel (Tap to Remove)'
+                          : 'Add to My Task Queue: ${_selectedAction.displayName} · $targetLabel',
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.outfit(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
           const SizedBox(height: 18),
 
           // Upcoming Windows Header + Optimal Filter Toggle

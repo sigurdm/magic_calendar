@@ -6,6 +6,7 @@ import '../../core/task_window_planner.dart';
 import '../../core/vegetable_database.dart';
 import '../../services/climate_service.dart';
 import '../../services/ephemeris_service.dart';
+import '../../services/garden_service.dart';
 import '../../services/weather_service.dart';
 import '../components/biodynamic_card.dart';
 import '../components/celestial_details_card.dart';
@@ -38,12 +39,16 @@ final class CalendarHomePage extends StatefulWidget {
   /// Optional 30-year climate normal service.
   final ClimateService? climate;
 
+  /// Optional reactive controller for the user's persisted garden profile.
+  final GardenProfileController? gardenController;
+
   /// Creates a [CalendarHomePage].
   const CalendarHomePage({
     super.key,
     required this.ephemeris,
     required this.weather,
     this.climate,
+    this.gardenController,
   });
 
   @override
@@ -59,11 +64,14 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
     null,
   );
   final ValueNotifier<ClimateProfile?> _climateNotifier = ValueNotifier(null);
-  final ValueNotifier<double> _latNotifier = ValueNotifier(54.9037);
-  final ValueNotifier<double> _lonNotifier = ValueNotifier(10.6074);
+  late final GardenProfileController _gardenController;
+  late final bool _ownsGardenController;
+  late final ValueNotifier<double> _latNotifier;
+  late final ValueNotifier<double> _lonNotifier;
   final _timeScrollController = TimeScrollController();
   late final WeatherService _weatherService;
   int _climateRequestId = 0;
+  bool _syncingLocation = false;
 
   _CalendarWorkspaceMode _workspaceMode = _CalendarWorkspaceMode.inspectTime;
   TaskActionType? _plannerInitialAction;
@@ -73,14 +81,54 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
   void initState() {
     super.initState();
     _weatherService = widget.weather;
+    if (widget.gardenController != null) {
+      _gardenController = widget.gardenController!;
+      _ownsGardenController = false;
+    } else {
+      _gardenController = GardenProfileController();
+      _ownsGardenController = true;
+    }
+    final initialLoc = _gardenController.value.activeLocation;
+    _latNotifier = ValueNotifier(initialLoc.latitude);
+    _lonNotifier = ValueNotifier(initialLoc.longitude);
     _latNotifier.addListener(_onLocationChanged);
     _lonNotifier.addListener(_onLocationChanged);
+    _gardenController.addListener(_onGardenProfileChanged);
     _fetchWeather();
     _fetchClimate();
     _updateInfo(_selectedDateNotifier.value, immediate: true);
   }
 
+  void _onGardenProfileChanged() {
+    if (_syncingLocation) return;
+    final activeLoc = _gardenController.value.activeLocation;
+    if (!activeLoc.matchesCoordinates(_latNotifier.value, _lonNotifier.value)) {
+      _syncingLocation = true;
+      _latNotifier.value = activeLoc.latitude;
+      _lonNotifier.value = activeLoc.longitude;
+      _syncingLocation = false;
+    }
+  }
+
   void _onLocationChanged() {
+    if (!_syncingLocation) {
+      _syncingLocation = true;
+      final currentActive = _gardenController.value.activeLocation;
+      final preservedName =
+          currentActive.matchesCoordinates(
+            _latNotifier.value,
+            _lonNotifier.value,
+          )
+          ? currentActive.name
+          : null;
+      _gardenController.setCoordinates(
+        _latNotifier.value,
+        _lonNotifier.value,
+        name: preservedName,
+        saveIfNamed: false,
+      );
+      _syncingLocation = false;
+    }
     _climateNotifier.value = null;
     _fetchWeather();
     _fetchClimate();
@@ -270,6 +318,10 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
   void dispose() {
     _latNotifier.removeListener(_onLocationChanged);
     _lonNotifier.removeListener(_onLocationChanged);
+    _gardenController.removeListener(_onGardenProfileChanged);
+    if (_ownsGardenController) {
+      _gardenController.dispose();
+    }
     _selectedDateNotifier.dispose();
     _infoNotifier.dispose();
     _weatherNotifier.dispose();
@@ -377,6 +429,7 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                                         selectedDateNotifier:
                                             _selectedDateNotifier,
                                         climateNotifier: _climateNotifier,
+                                        gardenController: _gardenController,
                                         onNowPressed:
                                             _timeScrollController.scrollToNow,
                                         onDateSelected: _onDateJump,
@@ -464,6 +517,8 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                                               latitude: _latNotifier.value,
                                               longitude: _lonNotifier.value,
                                               seasons: seasons,
+                                              gardenController:
+                                                  _gardenController,
                                               onTimeJump: _onDateJump,
                                               initialAction:
                                                   _plannerInitialAction,
@@ -501,6 +556,8 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                                                     latitude:
                                                         _latNotifier.value,
                                                     seasons: seasons,
+                                                    gardenController:
+                                                        _gardenController,
                                                     onPlanCropRequested:
                                                         (crop) {
                                                           _openTaskPlannerFor(

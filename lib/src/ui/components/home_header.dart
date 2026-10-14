@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/climate/climate.dart';
+import '../../services/garden_service.dart';
 import '../theme/goethean_palette.dart';
 import '../views/element_cards_gallery_page.dart';
 import '../views/help_screen.dart';
@@ -30,6 +31,9 @@ final class HomeHeader extends StatelessWidget {
   /// Optional notifier supplying the 30-year [ClimateProfile] for the location.
   final ValueListenable<ClimateProfile?>? climateNotifier;
 
+  /// Optional reactive controller for the user's persisted garden profile.
+  final GardenProfileController? gardenController;
+
   /// Creates a [HomeHeader].
   const HomeHeader({
     super.key,
@@ -39,17 +43,29 @@ final class HomeHeader extends StatelessWidget {
     required this.onNowPressed,
     required this.onDateSelected,
     this.climateNotifier,
+    this.gardenController,
   });
 
   void _showLocationPicker(BuildContext context) {
+    final activeLoc = gardenController?.value.activeLocation;
+    final initialName =
+        (activeLoc != null &&
+            activeLoc.matchesCoordinates(latNotifier.value, lonNotifier.value))
+        ? activeLoc.name
+        : '';
     showDialog<void>(
       context: context,
       builder: (context) => LocationPickerDialog(
         initialLatitude: latNotifier.value,
         initialLongitude: lonNotifier.value,
+        initialName: initialName,
+        gardenController: gardenController,
         onLocationSaved: (lat, lon) {
           latNotifier.value = lat;
           lonNotifier.value = lon;
+        },
+        onNamedLocationSaved: (saved) {
+          gardenController?.setActiveLocation(saved);
         },
       ),
     );
@@ -118,29 +134,39 @@ final class HomeHeader extends StatelessWidget {
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 600;
 
+        final locationListenables = <Listenable>[
+          latNotifier,
+          lonNotifier,
+          ?gardenController,
+        ];
+
         final locationContent = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.location_on, size: 18, color: subIconColor),
             const SizedBox(width: 6),
             Flexible(
-              child: ValueListenableBuilder<double>(
-                valueListenable: latNotifier,
-                builder: (context, lat, _) {
-                  return ValueListenableBuilder<double>(
-                    valueListenable: lonNotifier,
-                    builder: (context, lon, _) {
-                      return Text(
-                        '${lat.toStringAsFixed(1)}°, ${lon.toStringAsFixed(1)}°',
-                        style: GoogleFonts.cormorantGaramond(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                          color: warmGold,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      );
-                    },
+              child: ListenableBuilder(
+                listenable: Listenable.merge(locationListenables),
+                builder: (context, _) {
+                  final lat = latNotifier.value;
+                  final lon = lonNotifier.value;
+                  final active = gardenController?.value.activeLocation;
+                  final label =
+                      (active != null &&
+                          active.matchesCoordinates(lat, lon) &&
+                          active.name.trim().isNotEmpty)
+                      ? active.displayLabel
+                      : '${lat.toStringAsFixed(1)}°, ${lon.toStringAsFixed(1)}°';
+                  return Text(
+                    label,
+                    style: GoogleFonts.cormorantGaramond(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                      color: warmGold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   );
                 },
               ),
@@ -149,6 +175,7 @@ final class HomeHeader extends StatelessWidget {
         );
 
         final locationWidget = GestureDetector(
+          key: const ValueKey('location_picker_button'),
           onTap: () => _showLocationPicker(context),
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 44),
