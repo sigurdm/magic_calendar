@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/algorithm.dart' as algo;
 import '../../core/climate/climate.dart';
 import '../../core/ics_calendar_exporter.dart';
 import '../../core/models/models.dart';
 import '../../core/week_ahead_planner.dart';
+import '../../services/garden_service.dart';
 import '../theme/goethean_palette.dart';
+import 'field_journal_sheet.dart';
 import 'ics_export_sheet.dart';
 import 'organic_vessel_container.dart';
 
@@ -58,6 +61,9 @@ final class WeekAheadCard extends StatefulWidget {
   /// calendar.
   final SeasonAlignment? seasons;
 
+  /// Optional reactive controller for the user's persisted garden profile and field journal.
+  final GardenProfileController? gardenController;
+
   /// Creates an immutable [WeekAheadCard].
   const WeekAheadCard({
     super.key,
@@ -68,6 +74,7 @@ final class WeekAheadCard extends StatefulWidget {
     this.latitude = DefaultLocations.copenhagenLatitude,
     this.longitude = DefaultLocations.copenhagenLongitude,
     this.seasons,
+    this.gardenController,
   });
 
   @override
@@ -617,44 +624,113 @@ final class _WeekAheadCardState extends State<WeekAheadCard> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    OutlinedButton.icon(
-                      key: ValueKey('week_ahead_export_ics_${window.id}'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: GoetheanPalette.aspectGold,
-                        side: BorderSide(
-                          color: GoetheanPalette.aspectGold.withValues(
-                            alpha: 0.5,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (widget.gardenController != null) ...[
+                          OutlinedButton.icon(
+                            key: ValueKey('week_ahead_log_action_${window.id}'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFFF6ECD8),
+                              backgroundColor: qualityColor.withValues(
+                                alpha: 0.16,
+                              ),
+                              side: BorderSide(
+                                color: qualityColor.withValues(alpha: 0.55),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 6,
+                              ),
+                              minimumSize: const Size(54, 34),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              final initialAction = window.preparation != null
+                                  ? FieldJournalAction.fromPrepType(
+                                      window.preparation!,
+                                    )
+                                  : window.primaryAction != null
+                                  ? FieldJournalAction.fromTaskAction(
+                                      window.primaryAction!,
+                                    )
+                                  : FieldJournalAction.sowSeeds;
+                              final peakInfo = algo.getCalendarInfo(
+                                window.peakTime,
+                                widget.ephemeris,
+                                includePlanets: true,
+                                latitude: widget.latitude,
+                                longitude: widget.longitude,
+                              );
+                              FieldJournalSheet.show(
+                                context,
+                                gardenController: widget.gardenController!,
+                                timestamp: window.peakTime,
+                                calendarInfo: peakInfo,
+                                weatherSeries: widget.weatherNotifier?.value,
+                                initialAction: initialAction,
+                                initialPrepCode: window.preparation?.code,
+                                initialQuality: window.quality,
+                                initialTitle: window.title,
+                              );
+                            },
+                            icon: Icon(
+                              Icons.menu_book_outlined,
+                              size: 13,
+                              color: qualityColor,
+                            ),
+                            label: Text(
+                              'Log',
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                        OutlinedButton.icon(
+                          key: ValueKey('week_ahead_export_ics_${window.id}'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: GoetheanPalette.aspectGold,
+                            side: BorderSide(
+                              color: GoetheanPalette.aspectGold.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            minimumSize: const Size(64, 34),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () {
+                            IcsExportSheet.show(
+                              context,
+                              events: <CalendarExportEvent>[window.exportEvent],
+                              title: 'Export Window (.ics)',
+                              subtitle: window.title,
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.event_available_outlined,
+                            size: 14,
+                            color: GoetheanPalette.aspectGold,
+                          ),
+                          label: Text(
+                            '.ics',
+                            style: GoogleFonts.outfit(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        minimumSize: const Size(64, 34),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onPressed: () {
-                        IcsExportSheet.show(
-                          context,
-                          events: <CalendarExportEvent>[window.exportEvent],
-                          title: 'Export Window (.ics)',
-                          subtitle: window.title,
-                        );
-                      },
-                      icon: const Icon(
-                        Icons.event_available_outlined,
-                        size: 14,
-                        color: GoetheanPalette.aspectGold,
-                      ),
-                      label: Text(
-                        '.ics',
-                        style: GoogleFonts.outfit(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                      ],
                     ),
                   ],
                 ),

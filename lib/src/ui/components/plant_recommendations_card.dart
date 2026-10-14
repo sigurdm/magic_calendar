@@ -12,6 +12,7 @@ import '../../services/ephemeris_service.dart';
 import '../../services/garden_service.dart';
 import '../theme/biodynamic_icons.dart';
 import '../theme/goethean_palette.dart';
+import 'field_journal_sheet.dart';
 import 'organic_vessel_container.dart';
 
 /// Navigation section within the plant recommendations card.
@@ -691,6 +692,52 @@ final class _PlantRecommendationsCardState
                             ),
                           );
                         },
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: OutlinedButton.icon(
+                          key: ValueKey('modal_log_action_${crop.id}'),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: themeColor.withValues(alpha: 0.16),
+                            foregroundColor: const Color(0xFFF6ECD8),
+                            side: BorderSide(
+                              color: themeColor.withValues(alpha: 0.55),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: Icon(
+                            Icons.menu_book_outlined,
+                            size: 18,
+                            color: themeColor,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            FieldJournalSheet.show(
+                              this.context,
+                              gardenController: widget.gardenController!,
+                              timestamp: widget.selectedDate,
+                              calendarInfo: widget.info,
+                              weather: _resolveWeather(),
+                              weatherSeries: widget.weatherNotifier?.value,
+                              initialAction: widget.info.isMoonDescending
+                                  ? FieldJournalAction.sowSeeds
+                                  : FieldJournalAction.sowSeeds,
+                              initialCrop: crop,
+                              initialQuality: crop.quality,
+                            );
+                          },
+                          label: Text(
+                            'Log Action for ${crop.nameEn} in Field Journal',
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 10),
                     ],
@@ -1960,6 +2007,55 @@ final class _PlantRecommendationsCardState
                   ],
                 ),
               ),
+              if (widget.gardenController != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: OutlinedButton.icon(
+                    key: ValueKey('log_farm_task_${advice.task.name}'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: GoetheanPalette.aspectGold,
+                      side: BorderSide(
+                        color: GoetheanPalette.aspectGold.withValues(
+                          alpha: 0.45,
+                        ),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      minimumSize: const Size(64, 30),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () {
+                      FieldJournalSheet.show(
+                        context,
+                        gardenController: widget.gardenController!,
+                        timestamp: widget.selectedDate,
+                        calendarInfo: widget.info,
+                        weather: _resolveWeather(),
+                        weatherSeries: widget.weatherNotifier?.value,
+                        initialAction: FieldJournalAction.fromAgriculturalTask(
+                          advice.task,
+                        ),
+                        initialTitle: advice.title,
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.menu_book_outlined,
+                      size: 13,
+                      color: GoetheanPalette.aspectGold,
+                    ),
+                    label: Text(
+                      'Log Action',
+                      style: GoogleFonts.outfit(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 10),

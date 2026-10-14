@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/garden/field_journal_entry.dart';
 import '../../services/ephemeris_service.dart';
 import '../theme/goethean_palette.dart';
 
@@ -13,6 +14,7 @@ final class InfiniteTimelinePainter extends CustomPainter {
   final double hourWidth;
   final List<CalendarInterval> intervals;
   final List<WeatherDataPoint> weatherData;
+  final List<FieldJournalEntry> journalEntries;
   final EphemerisService ephemeris;
   final double latitude;
   final double longitude;
@@ -35,6 +37,7 @@ final class InfiniteTimelinePainter extends CustomPainter {
     required this.ephemeris,
     required this.latitude,
     required this.longitude,
+    this.journalEntries = const [],
     this.showBiodynamicOverlay = false,
     this.organicFlow = true,
     this.warmPalette = true,
@@ -45,6 +48,29 @@ final class InfiniteTimelinePainter extends CustomPainter {
     this.noneImage,
     this.grayDayImage,
   });
+
+  /// Returns the horizontal canvas coordinate (`x`) for [timestamp] given [canvasWidth].
+  double xForTime(DateTime timestamp, double canvasWidth) {
+    final centerX = canvasWidth / 2.0;
+    final offsetInHours =
+        timestamp.difference(centerTime).inMicroseconds / 3600000000.0;
+    return centerX + (offsetInHours * hourWidth);
+  }
+
+  /// Returns the subset of [journalEntries] whose markers fall within the visible [canvasWidth].
+  List<FieldJournalEntry> visibleJournalEntries(double canvasWidth) {
+    if (canvasWidth <= 0 || hourWidth <= 0 || journalEntries.isEmpty) {
+      return const [];
+    }
+    final result = <FieldJournalEntry>[];
+    for (final entry in journalEntries) {
+      final x = xForTime(entry.timestamp, canvasWidth);
+      if (x >= -24.0 && x <= canvasWidth + 24.0) {
+        result.add(entry);
+      }
+    }
+    return result;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -545,6 +571,133 @@ final class InfiniteTimelinePainter extends CustomPainter {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0)
         ..style = PaintingStyle.stroke;
       canvas.drawLine(Offset(nowX, 0), Offset(nowX, size.height), glowPaint);
+    }
+
+    _paintJournalMarkers(canvas, size, startTime, endTime, centerX);
+  }
+
+  void _paintJournalMarkers(
+    Canvas canvas,
+    Size size,
+    DateTime startTime,
+    DateTime endTime,
+    double centerX,
+  ) {
+    if (journalEntries.isEmpty) return;
+
+    final showCompactLabel = hourWidth >= 5.0;
+
+    for (final entry in journalEntries) {
+      if (entry.timestamp.isBefore(startTime) ||
+          entry.timestamp.isAfter(endTime)) {
+        continue;
+      }
+      final offsetInHours =
+          entry.timestamp.difference(centerTime).inMicroseconds / 3600000000.0;
+      final x = centerX + (offsetInHours * hourWidth);
+      if (x < -28.0 || x > size.width + 28.0) continue;
+
+      final markerColor = entry.quality == PlantQuality.none
+          ? GoetheanPalette.aspectGold
+          : _getColorForQuality(entry.quality);
+
+      // 1. Soft vertical botanical stem connecting quality ribbon to journal marker row
+      final stemGlowPaint = Paint()
+        ..color = markerColor.withValues(alpha: 0.28)
+        ..strokeWidth = 4.0
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5);
+      canvas.drawLine(Offset(x, 22.0), Offset(x, 162.0), stemGlowPaint);
+
+      final stemPaint = Paint()
+        ..color = GoetheanPalette.aspectGold.withValues(alpha: 0.85)
+        ..strokeWidth = 1.4
+        ..style = PaintingStyle.stroke;
+      canvas.drawLine(Offset(x, 22.0), Offset(x, 162.0), stemPaint);
+
+      // 2. Crown node pin on the cosmic quality bar (y = 15)
+      canvas.drawCircle(
+        Offset(x, 15.0),
+        4.2,
+        Paint()
+          ..color = const Color(0xFF1A1612)
+          ..style = PaintingStyle.fill,
+      );
+      canvas.drawCircle(
+        Offset(x, 15.0),
+        3.2,
+        Paint()
+          ..color = markerColor
+          ..style = PaintingStyle.fill,
+      );
+      canvas.drawCircle(
+        Offset(x, 15.0),
+        4.2,
+        Paint()
+          ..color = GoetheanPalette.aspectGold
+          ..strokeWidth = 1.2
+          ..style = PaintingStyle.stroke,
+      );
+
+      // 3. Journal badge capsule at y = 154..172
+      final badgeText = showCompactLabel
+          ? '${entry.timelineMarkerGlyph} ${entry.timelineMarkerLabel}'
+          : entry.timelineMarkerGlyph;
+      final tp = TextPainter(
+        text: TextSpan(
+          text: badgeText,
+          style: const TextStyle(
+            fontFamily: 'Outfit',
+            fontSize: 10.0,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFFF6ECD8),
+            fontFamilyFallback: ['Symbola', 'DejaVu Sans', 'Noto Color Emoji'],
+          ),
+        ),
+        maxLines: 1,
+        textDirection: ui.TextDirection.ltr,
+      )..layout();
+
+      final padH = showCompactLabel ? 6.0 : 4.0;
+      final badgeWidth = math.max(18.0, tp.width + padH * 2);
+      const badgeHeight = 18.0;
+      const badgeY = 154.0;
+      final badgeRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(x - badgeWidth / 2, badgeY, badgeWidth, badgeHeight),
+        const Radius.circular(9.0),
+      );
+
+      canvas.drawRRect(
+        badgeRect,
+        Paint()
+          ..color = const Color(0xFF1E1A16).withValues(alpha: 0.94)
+          ..style = PaintingStyle.fill,
+      );
+      canvas.drawRRect(
+        badgeRect,
+        Paint()
+          ..color = markerColor.withValues(alpha: 0.28)
+          ..style = PaintingStyle.fill,
+      );
+      canvas.drawRRect(
+        badgeRect,
+        Paint()
+          ..color = GoetheanPalette.aspectGold.withValues(alpha: 0.9)
+          ..strokeWidth = 1.2
+          ..style = PaintingStyle.stroke,
+      );
+
+      tp.paint(
+        canvas,
+        Offset(x - tp.width / 2, badgeY + (badgeHeight - tp.height) / 2),
+      );
+
+      if (entry.hasOutcome) {
+        canvas.drawCircle(
+          Offset(x + badgeWidth / 2 - 2.0, badgeY + 2.0),
+          3.0,
+          Paint()..color = GoetheanPalette.aspectGold,
+        );
+      }
     }
   }
 

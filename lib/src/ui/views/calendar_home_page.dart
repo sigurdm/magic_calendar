@@ -10,6 +10,7 @@ import '../../services/garden_service.dart';
 import '../../services/weather_service.dart';
 import '../components/biodynamic_card.dart';
 import '../components/celestial_details_card.dart';
+import '../components/field_journal_card.dart';
 import '../components/home_header.dart';
 import '../components/organic_vessel_container.dart';
 import '../components/planetary_ribbon.dart';
@@ -470,6 +471,7 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                                     listenable: Listenable.merge([
                                       _latNotifier,
                                       _lonNotifier,
+                                      _gardenController,
                                     ]),
                                     builder: (context, _) {
                                       return TimeScrollView(
@@ -483,6 +485,9 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                                         onWeatherDataChanged: (weather) {
                                           _weatherNotifier.value = weather;
                                         },
+                                        journalEntries: _gardenController
+                                            .value
+                                            .journalEntries,
                                         latitude: _latNotifier.value,
                                         longitude: _lonNotifier.value,
                                       );
@@ -591,6 +596,8 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                                                       _weatherNotifier,
                                                   latitude: _latNotifier.value,
                                                   longitude: _lonNotifier.value,
+                                                  gardenController:
+                                                      _gardenController,
                                                 ),
                                                 const SizedBox(height: 20),
                                                 WeekAheadCard(
@@ -601,6 +608,18 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                                                   latitude: _latNotifier.value,
                                                   longitude: _lonNotifier.value,
                                                   seasons: seasons,
+                                                  gardenController:
+                                                      _gardenController,
+                                                  onTimeJump: _onDateJump,
+                                                ),
+                                                const SizedBox(height: 20),
+                                                FieldJournalCard(
+                                                  gardenController:
+                                                      _gardenController,
+                                                  selectedDate: selectedTime,
+                                                  info: info,
+                                                  weatherNotifier:
+                                                      _weatherNotifier,
                                                   onTimeJump: _onDateJump,
                                                 ),
                                                 const SizedBox(height: 24),

@@ -6,9 +6,11 @@ import '../../core/climate/climate.dart';
 import '../../core/ics_calendar_exporter.dart';
 import '../../core/models/models.dart';
 import '../../core/week_ahead_planner.dart';
+import '../../services/garden_service.dart';
 import '../theme/biodynamic_icons.dart';
 import '../theme/goethean_palette.dart';
 import 'concoction_assistant_dialog.dart';
+import 'field_journal_sheet.dart';
 import 'ics_export_sheet.dart';
 import 'organic_vessel_container.dart';
 import 'stirring_timer_dialog.dart';
@@ -41,6 +43,9 @@ final class BiodynamicCard extends StatelessWidget {
   /// Geographic longitude in decimal degrees.
   final double longitude;
 
+  /// Optional reactive controller for the user's persisted garden profile and field journal.
+  final GardenProfileController? gardenController;
+
   /// Creates an immutable [BiodynamicCard].
   const BiodynamicCard({
     super.key,
@@ -52,6 +57,7 @@ final class BiodynamicCard extends StatelessWidget {
     this.weatherNotifier,
     this.latitude = DefaultLocations.copenhagenLatitude,
     this.longitude = DefaultLocations.copenhagenLongitude,
+    this.gardenController,
   });
 
   @override
@@ -408,6 +414,50 @@ final class BiodynamicCard extends StatelessWidget {
                 ),
               ),
             ),
+            if (gardenController != null)
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: OutlinedButton.icon(
+                  key: const ValueKey('biodynamic_log_action_button'),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: statusColor.withValues(alpha: 0.16),
+                    foregroundColor: headerTextColor,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    side: BorderSide(color: statusColor.withValues(alpha: 0.6)),
+                  ),
+                  onPressed: () {
+                    final prepCode = isDescending ? 'BD 500' : 'BD 501';
+                    FieldJournalSheet.show(
+                      context,
+                      gardenController: gardenController!,
+                      timestamp: selectedDate,
+                      calendarInfo: info,
+                      weatherSeries: weatherNotifier?.value,
+                      initialAction: FieldJournalAction.sprayPreparation,
+                      initialPrepCode: prepCode,
+                      initialQuality: info.quality,
+                    );
+                  },
+                  icon: Icon(
+                    Icons.menu_book_outlined,
+                    size: 18,
+                    color: statusColor,
+                  ),
+                  label: Text(
+                    'Log Spray Action',
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
         const SizedBox(height: 16),

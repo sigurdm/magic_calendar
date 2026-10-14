@@ -154,4 +154,16 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
       ),
     );
   }
+
+  /// Adds or updates [entry] in the user's Biodynamic Field Journal.
+  Future<void> addJournalEntry(FieldJournalEntry entry) =>
+      _update(value.withJournalEntry(entry));
+
+  /// Updates an existing [entry] (such as comparative outcome notes/rating) in the journal.
+  Future<void> updateJournalEntry(FieldJournalEntry entry) =>
+      _update(value.withJournalEntry(entry));
+
+  /// Removes the journal entry with [entryId] from the Biodynamic Field Journal.
+  Future<void> removeJournalEntry(String entryId) =>
+      _update(value.withoutJournalEntry(entryId));
 }

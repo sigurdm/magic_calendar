@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/algorithm.dart' as algo;
 import '../../core/climate/climate.dart';
 import '../../core/ics_calendar_exporter.dart';
 import '../../core/models/models.dart';
@@ -9,6 +10,7 @@ import '../../core/task_window_planner.dart';
 import '../../core/vegetable_database.dart';
 import '../../services/garden_service.dart';
 import '../theme/goethean_palette.dart';
+import 'field_journal_sheet.dart';
 import 'ics_export_sheet.dart';
 import 'organic_vessel_container.dart';
 
@@ -1709,52 +1711,116 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
                         color: const Color(0xFFF6ECD8),
                       ),
                     ),
-                    OutlinedButton.icon(
-                      key: ValueKey('task_window_export_ics_$index'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: GoetheanPalette.aspectGold,
-                        side: BorderSide(
-                          color: GoetheanPalette.aspectGold.withValues(
-                            alpha: 0.5,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (widget.gardenController != null) ...[
+                          OutlinedButton.icon(
+                            key: ValueKey('task_window_log_action_$index'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFFF6ECD8),
+                              backgroundColor: accentColor.withValues(
+                                alpha: 0.16,
+                              ),
+                              side: BorderSide(
+                                color: accentColor.withValues(alpha: 0.55),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              minimumSize: const Size(64, 28),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              final peakInfo = algo.getCalendarInfo(
+                                window.peakTime,
+                                widget.ephemeris,
+                                includePlanets: true,
+                                latitude: widget.latitude,
+                                longitude: widget.longitude,
+                              );
+                              FieldJournalSheet.show(
+                                context,
+                                gardenController: widget.gardenController!,
+                                timestamp: window.peakTime,
+                                calendarInfo: peakInfo,
+                                horizon: window.weatherHorizon,
+                                weatherSeries: widget.weatherNotifier?.value,
+                                initialAction:
+                                    FieldJournalAction.fromTaskAction(
+                                      result.action,
+                                    ),
+                                initialCrop: result.crop,
+                                initialQuality: result.targetQuality,
+                                initialTitle: window.headline,
+                              );
+                            },
+                            icon: Icon(
+                              Icons.menu_book_outlined,
+                              size: 13,
+                              color: accentColor,
+                            ),
+                            label: Text(
+                              'Log Action',
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                        OutlinedButton.icon(
+                          key: ValueKey('task_window_export_ics_$index'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: GoetheanPalette.aspectGold,
+                            side: BorderSide(
+                              color: GoetheanPalette.aspectGold.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            minimumSize: const Size(56, 28),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () {
+                            final event = IcsCalendarExporter.fromTaskWindow(
+                              window: window,
+                              action: result.action,
+                              crop: result.crop,
+                              organRule: result.activeOrganRule,
+                              latitude: widget.latitude,
+                              longitude: widget.longitude,
+                            );
+                            IcsExportSheet.show(
+                              context,
+                              events: <CalendarExportEvent>[event],
+                              title: 'Export Task Window (.ics)',
+                              subtitle: event.summary,
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.event_available_outlined,
+                            size: 13,
+                            color: GoetheanPalette.aspectGold,
+                          ),
+                          label: Text(
+                            '.ics',
+                            style: GoogleFonts.outfit(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        minimumSize: const Size(56, 28),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onPressed: () {
-                        final event = IcsCalendarExporter.fromTaskWindow(
-                          window: window,
-                          action: result.action,
-                          crop: result.crop,
-                          organRule: result.activeOrganRule,
-                          latitude: widget.latitude,
-                          longitude: widget.longitude,
-                        );
-                        IcsExportSheet.show(
-                          context,
-                          events: <CalendarExportEvent>[event],
-                          title: 'Export Task Window (.ics)',
-                          subtitle: event.summary,
-                        );
-                      },
-                      icon: const Icon(
-                        Icons.event_available_outlined,
-                        size: 13,
-                        color: GoetheanPalette.aspectGold,
-                      ),
-                      label: Text(
-                        '.ics',
-                        style: GoogleFonts.outfit(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                      ],
                     ),
                   ],
                 ),

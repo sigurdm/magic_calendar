@@ -1,1 +1,2 @@
+export 'field_journal_entry.dart';
 export 'garden_profile.dart';

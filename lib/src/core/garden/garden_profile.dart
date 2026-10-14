@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 import '../task_window_planner.dart';
 import '../vegetable_database.dart';
+import 'field_journal_entry.dart';
 
 /// A named geographic coordinate saved in the user's garden profile.
 final class SavedLocation {
@@ -330,21 +331,39 @@ final class GardenProfile {
   /// Active queue of pending garden tasks to watch for upcoming windows.
   final List<QueuedGardenTask> taskQueue;
 
+  /// Comparative biodynamic field journal entries (sorted newest-first by timestamp).
+  final List<FieldJournalEntry> journalEntries;
+
   /// Creates a [GardenProfile] with defensive copies of all collections.
   GardenProfile({
     this.activeLocation = SavedLocation.defaultLocation,
     Iterable<SavedLocation> savedLocations = const [],
     Iterable<String> starredCropIds = const [],
     Iterable<QueuedGardenTask> taskQueue = const [],
+    Iterable<FieldJournalEntry> journalEntries = const [],
   }) : savedLocations = List<SavedLocation>.unmodifiable(savedLocations),
        starredCropIds = Set<String>.unmodifiable(starredCropIds),
-       taskQueue = List<QueuedGardenTask>.unmodifiable(taskQueue);
+       taskQueue = List<QueuedGardenTask>.unmodifiable(taskQueue),
+       journalEntries = List<FieldJournalEntry>.unmodifiable(
+         _sortEntriesNewestFirst(journalEntries),
+       );
+
+  static List<FieldJournalEntry> _sortEntriesNewestFirst(
+    Iterable<FieldJournalEntry> entries,
+  ) {
+    final copy = entries.toList(growable: false);
+    copy.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return copy;
+  }
 
   /// Whether the user has starred at least one crop in their garden.
   bool get hasStarredCrops => starredCropIds.isNotEmpty;
 
   /// Whether the user has at least one pending task in [taskQueue].
   bool get hasQueuedTasks => taskQueue.isNotEmpty;
+
+  /// Whether the user has recorded at least one entry in [journalEntries].
+  bool get hasJournalEntries => journalEntries.isNotEmpty;
 
   /// Resolved [VegetableEntry] records for all [starredCropIds] present in [VegetableDatabase].
   List<VegetableEntry> get starredCrops => [
@@ -394,6 +413,7 @@ final class GardenProfile {
       savedLocations: updatedSaved,
       starredCropIds: starredCropIds,
       taskQueue: taskQueue,
+      journalEntries: journalEntries,
     );
   }
 
@@ -408,6 +428,7 @@ final class GardenProfile {
       ),
       starredCropIds: starredCropIds,
       taskQueue: taskQueue,
+      journalEntries: journalEntries,
     );
   }
 
@@ -425,6 +446,7 @@ final class GardenProfile {
       savedLocations: savedLocations,
       starredCropIds: updated,
       taskQueue: taskQueue,
+      journalEntries: journalEntries,
     );
   }
 
@@ -440,6 +462,7 @@ final class GardenProfile {
       savedLocations: savedLocations,
       starredCropIds: starredCropIds,
       taskQueue: updated,
+      journalEntries: journalEntries,
     );
   }
 
@@ -450,6 +473,34 @@ final class GardenProfile {
       savedLocations: savedLocations,
       starredCropIds: starredCropIds,
       taskQueue: taskQueue.where((t) => t.id != taskId),
+      journalEntries: journalEntries,
+    );
+  }
+
+  /// Returns a copy with [entry] added to [journalEntries] (or replacing an existing entry with the same ID).
+  GardenProfile withJournalEntry(FieldJournalEntry entry) {
+    final updated = <FieldJournalEntry>[
+      for (final existing in journalEntries)
+        if (existing.id != entry.id) existing,
+      entry,
+    ];
+    return GardenProfile(
+      activeLocation: activeLocation,
+      savedLocations: savedLocations,
+      starredCropIds: starredCropIds,
+      taskQueue: taskQueue,
+      journalEntries: updated,
+    );
+  }
+
+  /// Returns a copy with the journal entry matching [entryId] removed from [journalEntries].
+  GardenProfile withoutJournalEntry(String entryId) {
+    return GardenProfile(
+      activeLocation: activeLocation,
+      savedLocations: savedLocations,
+      starredCropIds: starredCropIds,
+      taskQueue: taskQueue,
+      journalEntries: journalEntries.where((e) => e.id != entryId),
     );
   }
 
@@ -460,6 +511,7 @@ final class GardenProfile {
     'savedLocations': [for (final loc in savedLocations) loc.toJson()],
     'starredCropIds': starredCropIds.toList(growable: false),
     'taskQueue': [for (final task in taskQueue) task.toJson()],
+    'journalEntries': [for (final entry in journalEntries) entry.toJson()],
   };
 
   /// Deserializes a [GardenProfile] from [json].
@@ -510,11 +562,25 @@ final class GardenProfile {
       }
     }
 
+    final journalEntries = <FieldJournalEntry>[];
+    if (json['journalEntries'] case final List<Object?> rawEntries) {
+      for (final item in rawEntries) {
+        if (item is Map<String, Object?>) {
+          try {
+            journalEntries.add(FieldJournalEntry.fromJson(item));
+          } on FormatException {
+            // Skip individual malformed journal entries rather than losing the whole profile.
+          }
+        }
+      }
+    }
+
     return GardenProfile(
       activeLocation: activeLocation,
       savedLocations: savedLocations,
       starredCropIds: starredCropIds,
       taskQueue: taskQueue,
+      journalEntries: journalEntries,
     );
   }
 
@@ -525,7 +591,8 @@ final class GardenProfile {
           activeLocation == other.activeLocation &&
           listEquals(savedLocations, other.savedLocations) &&
           setEquals(starredCropIds, other.starredCropIds) &&
-          listEquals(taskQueue, other.taskQueue);
+          listEquals(taskQueue, other.taskQueue) &&
+          listEquals(journalEntries, other.journalEntries);
 
   @override
   int get hashCode => Object.hash(
@@ -533,5 +600,6 @@ final class GardenProfile {
     Object.hashAll(savedLocations),
     Object.hashAll(starredCropIds),
     Object.hashAll(taskQueue),
+    Object.hashAll(journalEntries),
   );
 }

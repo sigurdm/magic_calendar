@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/garden/field_journal_entry.dart';
 import '../../services/ephemeris_service.dart';
 import '../../services/weather_service.dart';
 import '../painters/infinite_timeline_painter.dart';
@@ -48,6 +49,9 @@ final class TimeScrollView extends StatefulWidget {
   /// Optional callback dispatched whenever visible weather observations or forecasts change.
   final ValueChanged<List<WeatherDataPoint>>? onWeatherDataChanged;
 
+  /// Logged biodynamic field journal entries rendered as markers on the timeline.
+  final List<FieldJournalEntry> journalEntries;
+
   /// Creates a [TimeScrollView].
   const TimeScrollView({
     super.key,
@@ -55,6 +59,7 @@ final class TimeScrollView extends StatefulWidget {
     required this.weatherService,
     required this.onTimeSelected,
     this.onWeatherDataChanged,
+    this.journalEntries = const [],
     this.controller,
     this.latitude = 54.9037,
     this.longitude = 10.6074,
@@ -429,6 +434,7 @@ class _TimeScrollViewState extends State<TimeScrollView>
                                   hourWidth: _hourWidth,
                                   intervals: _visibleIntervals,
                                   weatherData: _weatherData,
+                                  journalEntries: widget.journalEntries,
                                   ephemeris: widget.ephemeris,
                                   latitude: widget.latitude,
                                   longitude: widget.longitude,
