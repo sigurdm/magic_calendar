@@ -16,6 +16,7 @@ import '../components/planetary_ribbon.dart';
 import '../components/plant_quality_card.dart';
 import '../components/plant_recommendations_card.dart';
 import '../components/task_planner_card.dart';
+import '../components/week_ahead_card.dart';
 import '../theme/goethean_palette.dart';
 import 'time_scroll_view.dart';
 
@@ -583,6 +584,22 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                                                 BiodynamicCard(
                                                   info: info,
                                                   selectedDate: selectedTime,
+                                                  seasons: seasons,
+                                                  onTimeJump: _onDateJump,
+                                                  ephemeris: widget.ephemeris,
+                                                  weatherNotifier:
+                                                      _weatherNotifier,
+                                                  latitude: _latNotifier.value,
+                                                  longitude: _lonNotifier.value,
+                                                ),
+                                                const SizedBox(height: 20),
+                                                WeekAheadCard(
+                                                  selectedDate: selectedTime,
+                                                  ephemeris: widget.ephemeris,
+                                                  weatherNotifier:
+                                                      _weatherNotifier,
+                                                  latitude: _latNotifier.value,
+                                                  longitude: _lonNotifier.value,
                                                   seasons: seasons,
                                                   onTimeJump: _onDateJump,
                                                 ),

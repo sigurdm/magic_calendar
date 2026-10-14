@@ -3,11 +3,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/climate/climate.dart';
+import '../../core/ics_calendar_exporter.dart';
 import '../../core/models/models.dart';
 import '../../core/task_window_planner.dart';
 import '../../core/vegetable_database.dart';
 import '../../services/garden_service.dart';
 import '../theme/goethean_palette.dart';
+import 'ics_export_sheet.dart';
 import 'organic_vessel_container.dart';
 
 /// Interactive task-focused planner card answering "When is a good time to...?"
@@ -1369,21 +1371,74 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
           ],
           const SizedBox(height: 18),
 
-          // Upcoming Windows Header + Optimal Filter Toggle
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Upcoming Windows Header + Optimal Filter Toggle + .ics Export
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Expanded(
-                child: Text(
-                  'UPCOMING WINDOWS (NEXT 30 DAYS FROM ${DateFormat('MMM d').format(widget.selectedDate).toUpperCase()})',
-                  style: GoogleFonts.outfit(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.8,
-                    color: Colors.white70,
-                  ),
+              Text(
+                'UPCOMING WINDOWS (NEXT 30 DAYS FROM ${DateFormat('MMM d').format(widget.selectedDate).toUpperCase()})',
+                style: GoogleFonts.outfit(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                  color: Colors.white70,
                 ),
               ),
+              if (filteredWindows.isNotEmpty)
+                OutlinedButton.icon(
+                  key: const ValueKey('task_planner_export_all_ics'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: GoetheanPalette.aspectGold,
+                    side: BorderSide(
+                      color: GoetheanPalette.aspectGold.withValues(alpha: 0.55),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    minimumSize: const Size(64, 34),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () {
+                    final events = filteredWindows
+                        .map(
+                          (window) => IcsCalendarExporter.fromTaskWindow(
+                            window: window,
+                            action: result.action,
+                            crop: result.crop,
+                            organRule: result.activeOrganRule,
+                            latitude: widget.latitude,
+                            longitude: widget.longitude,
+                          ),
+                        )
+                        .toList(growable: false);
+                    IcsExportSheet.show(
+                      context,
+                      events: events,
+                      title:
+                          'Export ${result.action.displayName} Windows (.ics)',
+                      subtitle:
+                          '${events.length} upcoming windows for ${result.crop?.localizedDisplayName ?? "${result.targetQuality.displayName} plants"}',
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.calendar_month_outlined,
+                    size: 14,
+                    color: GoetheanPalette.aspectGold,
+                  ),
+                  label: Text(
+                    'Export All (.ics)',
+                    style: GoogleFonts.outfit(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               FilterChip(
                 label: Text(
                   'Optimal Only',
@@ -1415,15 +1470,17 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
             )
           else
             Column(
-              children: filteredWindows
-                  .map(
-                    (window) => _buildWindowTile(
-                      window,
-                      accentColor,
-                      showSeasonBadge: result.seasonalMonths.isNotEmpty,
-                    ),
-                  )
-                  .toList(growable: false),
+              children: [
+                for (int index = 0; index < filteredWindows.length; index++)
+                  _buildWindowTile(
+                    context,
+                    filteredWindows[index],
+                    accentColor,
+                    result: result,
+                    index: index,
+                    showSeasonBadge: result.seasonalMonths.isNotEmpty,
+                  ),
+              ],
             ),
         ],
       ),
@@ -1515,8 +1572,11 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
   }
 
   Widget _buildWindowTile(
+    BuildContext context,
     TaskWindow window,
     Color accentColor, {
+    required TaskWindowSearchResult result,
+    required int index,
     bool showSeasonBadge = false,
   }) {
     final isOptimal = window.suitability == TaskSuitability.optimal;
@@ -1635,13 +1695,68 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  '${dateFmt.format(window.start)} → ${dateFmt.format(window.end)} (${hours}h)',
-                  style: GoogleFonts.outfit(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFFF6ECD8),
-                  ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      '${dateFmt.format(window.start)} → ${dateFmt.format(window.end)} (${hours}h)',
+                      style: GoogleFonts.outfit(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFF6ECD8),
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      key: ValueKey('task_window_export_ics_$index'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: GoetheanPalette.aspectGold,
+                        side: BorderSide(
+                          color: GoetheanPalette.aspectGold.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        minimumSize: const Size(56, 28),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () {
+                        final event = IcsCalendarExporter.fromTaskWindow(
+                          window: window,
+                          action: result.action,
+                          crop: result.crop,
+                          organRule: result.activeOrganRule,
+                          latitude: widget.latitude,
+                          longitude: widget.longitude,
+                        );
+                        IcsExportSheet.show(
+                          context,
+                          events: <CalendarExportEvent>[event],
+                          title: 'Export Task Window (.ics)',
+                          subtitle: event.summary,
+                        );
+                      },
+                      icon: const Icon(
+                        Icons.event_available_outlined,
+                        size: 13,
+                        color: GoetheanPalette.aspectGold,
+                      ),
+                      label: Text(
+                        '.ics',
+                        style: GoogleFonts.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(

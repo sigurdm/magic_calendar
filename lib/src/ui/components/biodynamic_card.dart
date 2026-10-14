@@ -3,16 +3,19 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/biodynamic_prep.dart';
 import '../../core/climate/climate.dart';
-import '../../services/ephemeris_service.dart';
+import '../../core/ics_calendar_exporter.dart';
+import '../../core/models/models.dart';
+import '../../core/week_ahead_planner.dart';
 import '../theme/biodynamic_icons.dart';
 import '../theme/goethean_palette.dart';
 import 'concoction_assistant_dialog.dart';
+import 'ics_export_sheet.dart';
 import 'organic_vessel_container.dart';
 import 'stirring_timer_dialog.dart';
 
 /// Interactive card widget summarizing biodynamic field preparation windows (BD 500, BD 501, CPP, BD 508),
 /// seasonal compost preparation burial cycles (BD 502–507),
-/// and providing direct access to the stirring timer and concoction assistant.
+/// and providing direct access to the stirring timer, concoction assistant, and `.ics` calendar export.
 final class BiodynamicCard extends StatelessWidget {
   /// Current calendar context information.
   final CalendarInfo info;
@@ -26,15 +29,29 @@ final class BiodynamicCard extends StatelessWidget {
   /// Optional callback to jump timeline to previous/next optimal preparation windows.
   final ValueChanged<DateTime>? onTimeJump;
 
+  /// Optional ephemeris service used to locate the next upcoming preparation window.
+  final EphemerisService? ephemeris;
+
+  /// Optional notifier supplying hourly weather forecast points.
+  final ValueNotifier<List<WeatherDataPoint>?>? weatherNotifier;
+
+  /// Geographic latitude in decimal degrees.
+  final double latitude;
+
+  /// Geographic longitude in decimal degrees.
+  final double longitude;
+
   /// Creates an immutable [BiodynamicCard].
-  ///
-  /// It is an error if [info] or [selectedDate] are null.
   const BiodynamicCard({
     super.key,
     required this.info,
     required this.selectedDate,
     this.seasons,
     this.onTimeJump,
+    this.ephemeris,
+    this.weatherNotifier,
+    this.latitude = DefaultLocations.copenhagenLatitude,
+    this.longitude = DefaultLocations.copenhagenLongitude,
   });
 
   @override
@@ -335,6 +352,55 @@ final class BiodynamicCard extends StatelessWidget {
                 ),
                 label: Text(
                   'Concoction Assistant',
+                  style: GoogleFonts.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: OutlinedButton.icon(
+                key: const ValueKey('biodynamic_export_ics_button'),
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: primaryAccent.withValues(alpha: 0.14),
+                  foregroundColor: headerTextColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  side: BorderSide(
+                    color: primaryAccent.withValues(alpha: 0.65),
+                  ),
+                ),
+                onPressed: () {
+                  final prepExport =
+                      WeekAheadPlanner.buildCurrentOrNextPrepExport(
+                        info: info,
+                        selectedDate: selectedDate,
+                        ephemeris: ephemeris,
+                        weatherForecast: weatherNotifier?.value,
+                        latitude: latitude,
+                        longitude: longitude,
+                      );
+                  IcsExportSheet.show(
+                    context,
+                    events: <CalendarExportEvent>[prepExport],
+                    title: 'Export Spray & 1h Stirring Reminder (.ics)',
+                    subtitle: prepExport.summary,
+                  );
+                },
+                icon: const Icon(
+                  Icons.event_available_outlined,
+                  size: 18,
+                  color: primaryIconColor,
+                ),
+                label: Text(
+                  'Export Spray + 1h Stir (.ics)',
                   style: GoogleFonts.outfit(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
