@@ -216,6 +216,7 @@ abstract final class BiodynamicPrepEvaluator {
     double? cloudCover,
     double? temperature,
     double? humidity,
+    MultiHorizonWeatherAnalysis? horizon,
   }) {
     if (prep.category != PrepCategory.fieldSpray) {
       return const PrepSuitability(
@@ -287,6 +288,28 @@ abstract final class BiodynamicPrepEvaluator {
             'Rain likely (${precipitation.toStringAsFixed(1)} mm) - spray may wash away',
           );
           weatherOk = false;
+        } else if (horizon != null &&
+            horizon.hasForecastLookahead &&
+            (horizon.precipitationNext6h >= 2.0 ||
+                horizon.precipitationNext24h >= 8.0)) {
+          negative.add(
+            'Forecast rain (${horizon.precipitationNext6h.toStringAsFixed(1)} mm in 6h / ${horizon.precipitationNext24h.toStringAsFixed(1)} mm in 24h) risks washing away BD 500',
+          );
+          weatherOk = false;
+        }
+        if (horizon != null && horizon.soilMoisture.favorsSoilSpray) {
+          positive.add(
+            'Moist topsoil (API ${horizon.antecedentPrecipitationIndex.toStringAsFixed(1)} mm) aids downward humus absorption',
+          );
+        }
+        if (horizon != null &&
+            horizon.hasAntecedentHistory &&
+            horizon.estimatedSoilTemperatureCelsius != null &&
+            horizon.estimatedSoilTemperatureCelsius! < 6.0) {
+          negative.add(
+            'Cold topsoil (~${horizon.estimatedSoilTemperatureCelsius!.toStringAsFixed(1)}°C < 6°C) slows soil biological uptake',
+          );
+          weatherOk = false;
         }
         break;
 
@@ -333,6 +356,14 @@ abstract final class BiodynamicPrepEvaluator {
         if (windSpeed != null && windSpeed > 6.0) {
           negative.add(
             'Wind too high for fine mist spray (${windSpeed.toStringAsFixed(1)} m/s)',
+          );
+          weatherOk = false;
+        }
+        if (horizon != null &&
+            horizon.hasForecastLookahead &&
+            horizon.hasFoliarSprayWashoffRisk) {
+          negative.add(
+            'Rain forecast within 6h (${horizon.precipitationNext6h.toStringAsFixed(1)} mm) risks washing BD 501 mist off foliage',
           );
           weatherOk = false;
         }
@@ -460,6 +491,14 @@ abstract final class BiodynamicPrepEvaluator {
         if (precipitation != null && precipitation > 1.0) {
           negative.add(
             'Rain likely (${precipitation.toStringAsFixed(1)} mm) - spray may wash away',
+          );
+          weatherOk = false;
+        } else if (horizon != null &&
+            horizon.hasForecastLookahead &&
+            (horizon.precipitationNext6h >= 2.0 ||
+                horizon.precipitationNext24h >= 8.0)) {
+          negative.add(
+            'Forecast rain (${horizon.precipitationNext6h.toStringAsFixed(1)} mm in 6h / ${horizon.precipitationNext24h.toStringAsFixed(1)} mm in 24h) risks washing away CPP',
           );
           weatherOk = false;
         }

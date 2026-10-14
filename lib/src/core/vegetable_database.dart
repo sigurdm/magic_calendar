@@ -302,6 +302,13 @@ final class VegetableEntry {
   /// mean temperatures reach or exceed 20 °C.
   final bool isBoltProneInHeat;
 
+  /// Optional explicit minimum soil temperature (°C at 5–10 cm depth) required
+  /// for outdoor seed germination or active root establishment.
+  ///
+  /// When `null`, [minimumGerminationSoilTempC] derives a botanical threshold
+  /// from the plant's species and thermal traits.
+  final double? minGerminationSoilTempC;
+
   /// Creates an immutable [VegetableEntry].
   ///
   /// It is an error if [id], [nameDa], or [nameEn] are empty.
@@ -340,7 +347,84 @@ final class VegetableEntry {
     this.minHardinessZone,
     this.requiresWarmSummer = false,
     this.isBoltProneInHeat = false,
+    this.minGerminationSoilTempC,
   });
+
+  /// Minimum 5–10 cm topsoil temperature (°C) required for reliable outdoor
+  /// seed germination or root establishment.
+  double get minimumGerminationSoilTempC {
+    if (minGerminationSoilTempC case final explicit?) {
+      return explicit;
+    }
+    if (_veryHardySoilIds.contains(id)) {
+      return 5.0;
+    }
+    if (_moderateWarmthSoilIds.contains(id)) {
+      return 10.0;
+    }
+    if (_warmHeatLovingSoilIds.contains(id)) {
+      return 16.0;
+    }
+    if (isFrostTender && requiresWarmSummer) {
+      return 15.0;
+    }
+    if (isFrostTender) {
+      return 12.0;
+    }
+    if (requiresWarmSummer) {
+      return 10.0;
+    }
+    return 7.0;
+  }
+
+  static const Set<String> _veryHardySoilIds = {
+    'pea',
+    'shelling_pea',
+    'sugar_snap_pea',
+    'snow_pea',
+    'fava_bean',
+    'broad_bean',
+    'spinach',
+    'radish',
+    'winter_radish',
+    'daikon',
+    'black_radish',
+    'parsnip',
+    'jerusalem_artichoke',
+    'garlic',
+    'autumn_garlic',
+    'spring_garlic',
+    'lambs_lettuce',
+    'winter_rye',
+    'oats',
+    'white_mustard',
+    'crimson_clover',
+    'red_clover',
+    'white_clover',
+    'hairy_vetch',
+    'field_pea',
+  };
+
+  static const Set<String> _moderateWarmthSoilIds = {
+    'celeriac',
+    'celery',
+    'fennel',
+    'florence_fennel',
+    'salsify',
+    'scorzonera',
+    'chicory',
+    'endive',
+    'sunflower',
+    'nasturtium',
+    'buckwheat',
+  };
+
+  static const Set<String> _warmHeatLovingSoilIds = {
+    'melon',
+    'watermelon',
+    'aubergine',
+    'sweet_potato',
+  };
 
   /// Formatted localized title string showing Danish and English names.
   String get localizedDisplayName => '$nameDa ($nameEn)';

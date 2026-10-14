@@ -27,6 +27,8 @@ abstract final class AgriculturalTaskEvaluator {
     required CalendarInfo calendarInfo,
     required DateTime time,
     WeatherDataPoint? weather,
+    Iterable<WeatherDataPoint>? weatherSeries,
+    MultiHorizonWeatherAnalysis? horizon,
     String? constellation,
     EphemerisService? ephemeris,
     double? moonLongitude,
@@ -45,6 +47,17 @@ abstract final class AgriculturalTaskEvaluator {
     final constName = constellation ?? '';
     final constLower = constName.toLowerCase();
 
+    final effectiveHorizon =
+        horizon ??
+        ((weather != null || weatherSeries != null)
+            ? MultiHorizonWeatherAnalysis.analyze(
+                referenceTime: time,
+                weatherSeries: weatherSeries,
+                currentWeather: weather,
+              )
+            : null);
+    final effectiveWeather = weather ?? effectiveHorizon?.currentPoint;
+
     final isDescending = calendarInfo.isMoonDescending;
     final isAscending = calendarInfo.isMoonAscending;
     final isWaxing = calendarInfo.moonPhase.isWaxing;
@@ -56,7 +69,8 @@ abstract final class AgriculturalTaskEvaluator {
       case AgriculturalTaskType.soilCultivation:
         return _evaluateSoilCultivation(
           time: time,
-          weather: weather,
+          weather: effectiveWeather,
+          horizon: effectiveHorizon,
           quality: quality,
           isDescending: isDescending,
           isGrayDay: isGrayDay,
@@ -64,7 +78,8 @@ abstract final class AgriculturalTaskEvaluator {
 
       case AgriculturalTaskType.pruning:
         return _evaluatePruning(
-          weather: weather,
+          weather: effectiveWeather,
+          horizon: effectiveHorizon,
           isDescending: isDescending,
           isAscending: isAscending,
           quality: quality,
@@ -73,7 +88,8 @@ abstract final class AgriculturalTaskEvaluator {
 
       case AgriculturalTaskType.harvestStorage:
         return _evaluateHarvestStorage(
-          weather: weather,
+          weather: effectiveWeather,
+          horizon: effectiveHorizon,
           isDescending: isDescending,
           isAscending: isAscending,
           isWaning: isWaning,
@@ -92,7 +108,7 @@ abstract final class AgriculturalTaskEvaluator {
 
       case AgriculturalTaskType.timberFelling:
         return _evaluateTimberFelling(
-          weather: weather,
+          weather: effectiveWeather,
           isWaning: isWaning,
           quality: quality,
           constLower: constLower,
@@ -101,7 +117,7 @@ abstract final class AgriculturalTaskEvaluator {
 
       case AgriculturalTaskType.peppering:
         return _evaluatePeppering(
-          weather: weather,
+          weather: effectiveWeather,
           quality: quality,
           constLower: constLower,
           isGrayDay: isGrayDay,
@@ -114,11 +130,22 @@ abstract final class AgriculturalTaskEvaluator {
     required CalendarInfo calendarInfo,
     required DateTime time,
     WeatherDataPoint? weather,
+    Iterable<WeatherDataPoint>? weatherSeries,
+    MultiHorizonWeatherAnalysis? horizon,
     String? constellation,
     EphemerisService? ephemeris,
     double? moonLongitude,
     double latitude = DefaultLocations.copenhagenLatitude,
   }) {
+    final sharedHorizon =
+        horizon ??
+        ((weather != null || weatherSeries != null)
+            ? MultiHorizonWeatherAnalysis.analyze(
+                referenceTime: time,
+                weatherSeries: weatherSeries,
+                currentWeather: weather,
+              )
+            : null);
     return AgriculturalTaskType.values
         .map(
           (task) => evaluateTask(
@@ -126,6 +153,8 @@ abstract final class AgriculturalTaskEvaluator {
             calendarInfo: calendarInfo,
             time: time,
             weather: weather,
+            weatherSeries: weatherSeries,
+            horizon: sharedHorizon,
             constellation: constellation,
             ephemeris: ephemeris,
             moonLongitude: moonLongitude,
@@ -138,6 +167,7 @@ abstract final class AgriculturalTaskEvaluator {
   static AgriculturalTaskAdvice _evaluateSoilCultivation({
     required DateTime time,
     required WeatherDataPoint? weather,
+    required MultiHorizonWeatherAnalysis? horizon,
     required PlantQuality quality,
     required bool isDescending,
     required bool isGrayDay,
@@ -197,18 +227,29 @@ abstract final class AgriculturalTaskEvaluator {
           'Observe soil moisture and prepare tools for morning cultivation.';
     }
 
-    // Weather conflicts override cosmic suitability
+    // Weather conflicts override cosmic suitability (instantaneous rain OR 48–72h antecedent saturation)
     if (weather != null && weather.precipitation > 2.0) {
       weatherConflict = true;
       suitability = TaskSuitability.restricted;
       terrestrial =
           'CRITICAL: Soil is waterlogged (${weather.precipitation.toStringAsFixed(1)} mm rain). Tillage will smear soil aggregates, cause compaction, and create anaerobic hardpan.';
       action = 'Cease all tillage and heavy bed traffic immediately. Wait for topsoil to dry to crumbly tilth.';
-    } else if (weather?.temperature != null && weather!.temperature! <= 0.0) {
+    } else if (horizon != null && horizon.isSoilSaturated) {
       weatherConflict = true;
       suitability = TaskSuitability.restricted;
       terrestrial =
-          'Soil is frozen (${weather.temperature!.toStringAsFixed(1)}°C). Breaking frozen ground destroys soil crumb structure.';
+          'CRITICAL: Soil remains waterlogged from 48–72h antecedent rain (${horizon.precipitationLast48h.toStringAsFixed(1)} mm in 48h, API ${horizon.antecedentPrecipitationIndex.toStringAsFixed(1)} mm). Cultivating wet soil smears crumb structure and compacts pores.';
+      action = 'Cease tillage and hoeing even though rain has paused. Wait until topsoil drains to crumbly tilth.';
+    } else if ((weather?.temperature != null && weather!.temperature! <= 0.0) ||
+        (horizon != null && horizon.isSoilFrozen)) {
+      weatherConflict = true;
+      suitability = TaskSuitability.restricted;
+      final frozenTemp =
+          weather?.temperature ??
+          horizon?.estimatedSoilTemperatureCelsius ??
+          0.0;
+      terrestrial =
+          'Soil is frozen (${frozenTemp.toStringAsFixed(1)}°C). Breaking frozen ground destroys soil crumb structure.';
       action = 'Postpone cultivation until ground fully thaws.';
     }
 
@@ -226,6 +267,7 @@ abstract final class AgriculturalTaskEvaluator {
 
   static AgriculturalTaskAdvice _evaluatePruning({
     required WeatherDataPoint? weather,
+    required MultiHorizonWeatherAnalysis? horizon,
     required bool isDescending,
     required bool isAscending,
     required PlantQuality quality,
@@ -275,6 +317,14 @@ abstract final class AgriculturalTaskEvaluator {
       terrestrial =
           'Freezing weather (${weather.temperature!.toStringAsFixed(1)}°C) causes bark splitting and frost necrosis at fresh cuts.';
       action = 'Suspend pruning until frost subsides and wood is pliable.';
+    } else if (horizon != null &&
+        horizon.hasForecastLookahead &&
+        horizon.hasUpcomingHardFreeze48h) {
+      weatherConflict = true;
+      suitability = TaskSuitability.restricted;
+      terrestrial =
+          'Upcoming freeze (${horizon.minTemperatureNext48h!.toStringAsFixed(1)}°C within 48h) risks frost splitting and cambium necrosis on fresh pruning cuts.';
+      action = 'Postpone pruning until the 48-hour post-cut window remains above freezing.';
     } else if (weather != null && weather.precipitation > 2.0) {
       weatherConflict = true;
       if (suitability != TaskSuitability.restricted) {
@@ -282,6 +332,16 @@ abstract final class AgriculturalTaskEvaluator {
       }
       terrestrial = 'Wet rain promotes fungal spore dispersal directly into open xylem vessels.';
       action = 'Wait for dry, sunny weather before pruning.';
+    } else if (horizon != null &&
+        horizon.hasForecastLookahead &&
+        horizon.precipitationNext24h >= 3.0) {
+      weatherConflict = true;
+      if (suitability != TaskSuitability.restricted) {
+        suitability = TaskSuitability.unfavorable;
+      }
+      terrestrial =
+          'Forecast rain (${horizon.precipitationNext24h.toStringAsFixed(1)} mm in next 24h) will wet fresh pruning wounds and wash fungal canker spores into xylem vessels.';
+      action = 'Wait for a 24-hour dry forecast window so pruning cuts can suberize cleanly.';
     }
 
     return AgriculturalTaskAdvice(
@@ -298,6 +358,7 @@ abstract final class AgriculturalTaskEvaluator {
 
   static AgriculturalTaskAdvice _evaluateHarvestStorage({
     required WeatherDataPoint? weather,
+    required MultiHorizonWeatherAnalysis? horizon,
     required bool isDescending,
     required bool isAscending,
     required bool isWaning,
@@ -370,6 +431,15 @@ abstract final class AgriculturalTaskEvaluator {
       terrestrial =
           'Rainfall (${weather.precipitation.toStringAsFixed(1)} mm) soaks crop skins. Packing wet crops guarantees cellar rot.';
       action = 'Harvest only when soil and crop surfaces are completely dry.';
+    } else if (horizon != null &&
+        horizon.hasAntecedentHistory &&
+        horizon.isSoilSaturated &&
+        quality == PlantQuality.root) {
+      weatherConflict = true;
+      suitability = TaskSuitability.unfavorable;
+      terrestrial =
+          'Waterlogged soil (${horizon.precipitationLast48h.toStringAsFixed(1)} mm in 48h) coats root skins in wet mud that promotes cellar rot.';
+      action = 'Wait for topsoil to drain before lifting storage roots, or dry-cure thoroughly on slatted racks.';
     }
 
     return AgriculturalTaskAdvice(

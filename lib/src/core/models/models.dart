@@ -6,6 +6,7 @@ export 'default_locations.dart';
 export 'diurnal_rhythm.dart';
 export 'ephemeris_service.dart';
 export 'moon_phase_info.dart';
+export 'multi_horizon_weather.dart';
 export 'planet_info.dart';
 export 'plant_quality.dart';
 export 'transition_envelope.dart';

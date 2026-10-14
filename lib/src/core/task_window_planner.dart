@@ -312,6 +312,9 @@ final class TaskWindow {
   /// Whether normal climatology at [peakTime] poses a frost, cold-soil, or heat-bolt risk.
   final bool hasClimateRisk;
 
+  /// Optional multi-horizon soil moisture, soil temperature, and forecast lookahead analysis at [peakTime].
+  final MultiHorizonWeatherAnalysis? weatherHorizon;
+
   /// Creates an immutable [TaskWindow].
   const TaskWindow({
     required this.start,
@@ -329,6 +332,7 @@ final class TaskWindow {
     this.hasWeatherConflict = false,
     this.climateNote,
     this.hasClimateRisk = false,
+    this.weatherHorizon,
   });
 
   /// Duration of the window.
@@ -765,8 +769,10 @@ abstract final class TaskWindowPlanner {
 
     final weatherCheck = _checkWeatherForWindow(
       action: action,
+      crop: crop,
       peakTime: peakTime,
       weatherForecast: weatherForecast,
+      localProfile: localProfile,
     );
     final climateCheck = _checkClimateForWindow(
       action: action,
@@ -792,6 +798,7 @@ abstract final class TaskWindowPlanner {
       hasWeatherConflict: weatherCheck.conflict,
       climateNote: climateCheck.note,
       hasClimateRisk: climateCheck.risk,
+      weatherHorizon: weatherCheck.horizon,
     );
   }
 
@@ -926,65 +933,141 @@ abstract final class TaskWindowPlanner {
     return start.add(Duration(hours: halfHours));
   }
 
-  static ({String? note, bool conflict}) _checkWeatherForWindow({
+  static ({String? note, bool conflict, MultiHorizonWeatherAnalysis? horizon})
+  _checkWeatherForWindow({
     required TaskActionType action,
+    required VegetableEntry? crop,
     required DateTime peakTime,
     required List<WeatherDataPoint>? weatherForecast,
+    required ClimateProfile? localProfile,
   }) {
     if (weatherForecast == null || weatherForecast.isEmpty) {
-      return (note: null, conflict: false);
+      return (note: null, conflict: false, horizon: null);
     }
 
-    WeatherDataPoint? closest;
-    Duration? minDiff;
-    for (final p in weatherForecast) {
-      final diff = p.time.difference(peakTime).abs();
-      if (minDiff == null || diff < minDiff) {
-        minDiff = diff;
-        closest = p;
-      }
-    }
+    final horizon = MultiHorizonWeatherAnalysis.analyze(
+      referenceTime: peakTime,
+      weatherSeries: weatherForecast,
+      localProfile: localProfile,
+    );
 
-    if (closest == null || minDiff == null || minDiff.inHours > 6) {
-      return (note: null, conflict: false);
+    final closest = horizon.currentPoint;
+    if (closest == null) {
+      return (note: null, conflict: false, horizon: null);
     }
 
     final temp = closest.temperature;
     final rain = closest.precipitation;
     final tempText = temp != null ? '${temp.toStringAsFixed(1)}°C' : 'N/A';
+    final soilTemp = horizon.estimatedSoilTemperatureCelsius;
+    final soilTempText = soilTemp != null
+        ? '~${soilTemp.toStringAsFixed(1)}°C soil'
+        : null;
 
     if (action == TaskActionType.sowIndoor) {
       return (
-        note: 'Protected indoor/greenhouse task ($tempText outside).',
+        note:
+            'Protected indoor/greenhouse task ($tempText outside${soilTempText != null ? ", $soilTempText" : ""}).',
         conflict: false,
+        horizon: horizon,
       );
     }
 
-    if (temp != null && temp < 0.0) {
+    if ((temp != null && temp < 0.0) || horizon.isSoilFrozen) {
       return (
         note:
             'Weather Alert: Frost forecast ($tempText) — avoid pruning or disturbing frozen soil.',
         conflict: true,
+        horizon: horizon,
       );
     }
 
-    if (rain > 2.0 &&
-        (action == TaskActionType.sowOutdoor ||
-            action == TaskActionType.transplant ||
-            action == TaskActionType.divide ||
-            action == TaskActionType.cultivateSoil ||
-            action == TaskActionType.harvestStorage)) {
+    // Post-task 24–48h frost lookahead for transplanting, frost-tender sowing, pruning, or division
+    if (horizon.hasForecastLookahead &&
+        horizon.hasUpcomingFrost48h &&
+        (action == TaskActionType.transplant ||
+            (action == TaskActionType.sowOutdoor &&
+                (crop?.isFrostTender ?? false)) ||
+            (horizon.hasUpcomingHardFreeze48h &&
+                (action == TaskActionType.prune ||
+                    action == TaskActionType.divide)))) {
+      final min48 = horizon.minTemperatureNext48h!;
+      return (
+        note:
+            'Weather Alert: Night frost lookahead (${min48.toStringAsFixed(1)}°C within 48h) — postpone ${action.displayName.toLowerCase()} or protect with fleece / evening BD 507 Valerian.',
+        conflict: true,
+        horizon: horizon,
+      );
+    }
+
+    // Instantaneous rain (> 2.0 mm) OR 48–72h antecedent soil waterlogging
+    final isSoilSensitiveTask =
+        action == TaskActionType.sowOutdoor ||
+        action == TaskActionType.transplant ||
+        action == TaskActionType.divide ||
+        action == TaskActionType.cultivateSoil ||
+        action == TaskActionType.harvestStorage;
+
+    if (isSoilSensitiveTask && (rain > 2.0 || horizon.isSoilSaturated)) {
+      if (horizon.isAntecedentWaterlogging) {
+        return (
+          note:
+              'Weather Alert: Soil saturated from 48–72h rain (${horizon.precipitationLast48h.toStringAsFixed(1)} mm in 48h, API ${horizon.antecedentPrecipitationIndex.toStringAsFixed(1)} mm) — wait for crumbly tilth to avoid compaction.',
+          conflict: true,
+          horizon: horizon,
+        );
+      }
       return (
         note:
             'Weather Alert: Wet conditions (${rain.toStringAsFixed(1)} mm) — avoid compacting wet beds or storing damp crops.',
         conflict: true,
+        horizon: horizon,
       );
     }
 
+    // Post-task 24h rain lookahead for pruning cuts
+    if (action == TaskActionType.prune &&
+        horizon.hasForecastLookahead &&
+        horizon.hasPruningRainRisk24h) {
+      return (
+        note:
+            'Weather Alert: Rain forecast within 24h (${horizon.precipitationNext24h.toStringAsFixed(1)} mm) — wet pruning cuts invite fungal canker spores.',
+        conflict: true,
+        horizon: horizon,
+      );
+    }
+
+    // Soil temperature vs. crop germination / establishment minimum
+    if ((action == TaskActionType.sowOutdoor ||
+            action == TaskActionType.transplant) &&
+        soilTemp != null) {
+      final minSoilTemp = crop?.minimumGerminationSoilTempC ?? 5.0;
+      if (soilTemp < minSoilTemp) {
+        final targetLabel =
+            crop?.localizedDisplayName ?? 'outdoor seed germination';
+        return (
+          note:
+              'Soil Temp Alert: Estimated topsoil temp (${soilTemp.toStringAsFixed(1)}°C) is below ${minSoilTemp.toStringAsFixed(0)}°C minimum for $targetLabel — pre-warm beds with fleece or start under glass.',
+          conflict: true,
+          horizon: horizon,
+        );
+      }
+    }
+
+    final soilClause = soilTempText != null ? ' ($soilTempText)' : '';
+    final tilthClause = horizon.hasAntecedentHistory
+        ? ', Soil ${horizon.soilMoisture.shortLabel} (48h ${horizon.precipitationLast48h.toStringAsFixed(1)} mm)'
+        : '';
+    final lookaheadClause =
+        horizon.hasForecastLookahead && horizon.minTemperatureNext48h != null
+        ? ', 48h min ${horizon.minTemperatureNext48h!.toStringAsFixed(1)}°C'
+        : '';
+
     return (
       note:
-          'Forecast: $tempText, ${rain.toStringAsFixed(1)} mm precip — favorable terrestrial conditions.',
+          'Forecast: $tempText$soilClause, ${rain.toStringAsFixed(1)} mm precip$tilthClause$lookaheadClause — favorable terrestrial conditions.',
       conflict: false,
+      horizon: horizon,
     );
   }
 

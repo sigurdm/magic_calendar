@@ -131,6 +131,13 @@ final class CelestialDetailsCard extends StatelessWidget {
                     : b,
               );
             }
+            final horizon = selectedWeather != null
+                ? MultiHorizonWeatherAnalysis.analyze(
+                    referenceTime: date,
+                    weatherSeries: weatherList,
+                    currentWeather: selectedWeather,
+                  )
+                : null;
 
             return LayoutBuilder(
               builder: (context, constraints) {
@@ -420,6 +427,44 @@ final class CelestialDetailsCard extends StatelessWidget {
                                   ),
                             seed: 3.5,
                           ),
+                          if (horizon != null &&
+                              horizon.estimatedSoilTemperatureCelsius != null)
+                            _buildWeatherMetricCard(
+                              icon: Icons.grass_outlined,
+                              iconColor: GoetheanPalette.aspectGold,
+                              label: 'Est. Soil Temp',
+                              value:
+                                  '~${horizon.estimatedSoilTemperatureCelsius!.toStringAsFixed(1)}°C',
+                              width: isCompact
+                                  ? ((constraints.maxWidth - 8) / 2).clamp(
+                                      100.0,
+                                      200.0,
+                                    )
+                                  : ((constraints.maxWidth - 24) / 4).clamp(
+                                      110.0,
+                                      200.0,
+                                    ),
+                              seed: 4.5,
+                            ),
+                          if (horizon != null)
+                            _buildWeatherMetricCard(
+                              icon: Icons.layers_outlined,
+                              iconColor: horizon.isSoilSaturated
+                                  ? const Color(0xFFEF4444)
+                                  : GoetheanPalette.leafWater,
+                              label: 'Soil Tilth (72h)',
+                              value: horizon.soilMoisture.shortLabel,
+                              width: isCompact
+                                  ? ((constraints.maxWidth - 8) / 2).clamp(
+                                      100.0,
+                                      200.0,
+                                    )
+                                  : ((constraints.maxWidth - 24) / 4).clamp(
+                                      110.0,
+                                      200.0,
+                                    ),
+                              seed: 5.5,
+                            ),
                         ],
                       ),
                     ],

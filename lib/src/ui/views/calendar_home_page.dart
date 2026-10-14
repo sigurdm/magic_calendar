@@ -136,13 +136,26 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
   }
 
   void _fetchWeather() async {
+    final lat = _latNotifier.value;
+    final lon = _lonNotifier.value;
+    final now = DateTime.now();
     try {
-      final forecast = await _weatherService.getForecast(
-        _latNotifier.value,
-        _lonNotifier.value,
-      );
+      final forecast = await _weatherService.getForecast(lat, lon);
+      final combined = <WeatherDataPoint>[...forecast];
+      try {
+        final history = await _weatherService.getHistoricalData(
+          lat,
+          lon,
+          now.subtract(const Duration(hours: 72)),
+          now,
+        );
+        combined.addAll(history.where((p) => !p.time.isAfter(now)));
+        combined.sort((a, b) => a.time.compareTo(b.time));
+      } catch (_) {
+        // Proceed with forecast if historical archive fetch fails.
+      }
       if (!mounted) return;
-      _weatherNotifier.value = forecast;
+      _weatherNotifier.value = combined;
     } catch (e) {
       debugPrint('Failed to fetch weather: $e');
     }

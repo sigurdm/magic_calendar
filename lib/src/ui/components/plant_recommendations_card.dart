@@ -254,6 +254,12 @@ final class _PlantRecommendationsCardState
                             label: climateEval.badgeLabel,
                             color: _climateRatingColor(climateEval.rating),
                           ),
+                        _buildTimingBadge(
+                          icon: Icons.grass_outlined,
+                          label:
+                              'Min Soil Temp: ${crop.minimumGerminationSoilTempC.toStringAsFixed(0)}°C',
+                          color: const Color(0xFF34D399),
+                        ),
                       ],
                     ),
                     if (crop.aliasesDa.isNotEmpty ||
@@ -859,6 +865,47 @@ final class _PlantRecommendationsCardState
             height: 1.35,
           ),
         ),
+        if (ecoResult.horizon != null && ecoResult.horizon!.hasData) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            key: const ValueKey('multi_horizon_synthesis_pills'),
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              _buildHorizonChip(
+                icon: Icons.terrain_outlined,
+                label:
+                    'Soil: ${ecoResult.horizon!.soilMoisture.shortLabel}'
+                    '${ecoResult.horizon!.hasAntecedentHistory ? " (48h ${ecoResult.horizon!.precipitationLast48h.toStringAsFixed(1)} mm)" : ""}',
+                color: ecoResult.horizon!.isSoilSaturated
+                    ? const Color(0xFFEF4444)
+                    : ecoResult.horizon!.soilMoisture ==
+                          SoilMoistureStatus.moist
+                    ? const Color(0xFF38BDF8)
+                    : const Color(0xFF10B981),
+              ),
+              if (ecoResult.horizon!.estimatedSoilTemperatureCelsius != null)
+                _buildHorizonChip(
+                  icon: Icons.thermostat_outlined,
+                  label:
+                      'Est. Soil: ~${ecoResult.horizon!.estimatedSoilTemperatureCelsius!.toStringAsFixed(1)}°C',
+                  color: GoetheanPalette.rootEarth,
+                ),
+              if (ecoResult.horizon!.hasForecastLookahead)
+                _buildHorizonChip(
+                  icon: Icons.schedule_outlined,
+                  label:
+                      'Next 24h: ${ecoResult.horizon!.precipitationNext24h.toStringAsFixed(1)} mm'
+                      '${ecoResult.horizon!.minTemperatureNext48h != null ? " • 48h Min: ${ecoResult.horizon!.minTemperatureNext48h!.toStringAsFixed(1)}°C" : ""}',
+                  color:
+                      ecoResult.horizon!.hasUpcomingFrost48h ||
+                          ecoResult.horizon!.hasSprayWashoffRisk
+                      ? const Color(0xFFF59E0B)
+                      : const Color(0xFFA594C4),
+                ),
+            ],
+          ),
+        ],
         if (ecoResult.alerts.isNotEmpty) ...[
           const SizedBox(height: 10),
           Column(
@@ -941,6 +988,38 @@ final class _PlantRecommendationsCardState
           seed: 2.1,
           child: innerContent,
         ),
+      ),
+    );
+  }
+
+  Widget _buildHorizonChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.32)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              label,
+              style: GoogleFonts.outfit(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFFF6ECD8),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1159,6 +1238,7 @@ final class _PlantRecommendationsCardState
     BuildContext context,
     PlantQuality activeQuality,
     SeasonAlignment alignment,
+    MultiHorizonWeatherAnalysis? horizon,
   ) {
     final gardenProfile = widget.gardenController?.value;
     final starredIds = gardenProfile?.starredCropIds ?? const <String>{};
@@ -1661,6 +1741,19 @@ final class _PlantRecommendationsCardState
                                         ),
                                       ),
                                     ),
+                                  if ((isDirectSow || isTransplant) &&
+                                      horizon?.estimatedSoilTemperatureCelsius !=
+                                          null &&
+                                      horizon!.estimatedSoilTemperatureCelsius! <
+                                          crop.minimumGerminationSoilTempC)
+                                    Text(
+                                      'Cold Soil (~${horizon.estimatedSoilTemperatureCelsius!.toStringAsFixed(1)}°C < ${crop.minimumGerminationSoilTempC.toStringAsFixed(0)}°C min)',
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFFF59E0B),
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
@@ -1710,11 +1803,14 @@ final class _PlantRecommendationsCardState
   Widget _buildFarmOrganismTasksView(
     BuildContext context,
     WeatherDataPoint? effectiveWeather,
+    MultiHorizonWeatherAnalysis? horizon,
   ) {
     final tasks = AgriculturalTaskEvaluator.evaluateAllTasks(
       calendarInfo: widget.info,
       time: widget.selectedDate,
       weather: effectiveWeather,
+      weatherSeries: widget.weatherNotifier?.value,
+      horizon: horizon,
       ephemeris: widget.ephemeris,
       latitude: widget.latitude ?? DefaultLocations.copenhagenLatitude,
     );
@@ -1970,6 +2066,7 @@ final class _PlantRecommendationsCardState
       calendarInfo: widget.info,
       time: widget.selectedDate,
       weather: effectiveWeather,
+      weatherSeries: widget.weatherNotifier?.value,
       latitude: effectiveLatitude,
       seasons: alignment,
     );
@@ -2035,9 +2132,18 @@ final class _PlantRecommendationsCardState
         _buildSectionToggle(),
         const SizedBox(height: 16),
         if (_selectedSection == _RecommendationsSection.vegetableSowing)
-          _buildVegetableSowingView(context, activeQuality, alignment)
+          _buildVegetableSowingView(
+            context,
+            activeQuality,
+            alignment,
+            ecoResult.horizon,
+          )
         else
-          _buildFarmOrganismTasksView(context, effectiveWeather),
+          _buildFarmOrganismTasksView(
+            context,
+            effectiveWeather,
+            ecoResult.horizon,
+          ),
       ],
     );
 
