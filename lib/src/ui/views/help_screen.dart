@@ -117,9 +117,9 @@ final class HelpScreen extends StatelessWidget {
                 ),
                 _buildHelpItem(
                   'Cellar Storage vs. Fresh Consumption Harvest',
-                  'Storage and table harvests require opposing lunar phases.',
+                  'Storage and table harvests follow Plant-Part Day, Ascending/Descending Moon, and diurnal breath.',
                   badgeColor: GoetheanPalette.leafWater,
-                  practical: 'Cellar Storage: Harvest during Waning Moon on Root or Fruit days when moisture is drawn down; dry matter is concentrated and decay fungi are inhibited. Fresh Table Eating: Harvest during Waxing Moon during morning exhalation when turgor pressure, aromatic oils, and crisp vitality are at their peak.',
+                  practical: 'Cellar Storage: Harvest root crops on Root days during a Descending Moon, and above-ground fruits, winter squash, or seeds on Fruit/Flower days during an Ascending Moon (avoid Leaf/Water days, which invite cellar rot). Fresh Table Eating: Harvest during Morning Exhalation on the crop\'s matching Plant-Part Day when turgor pressure and aromatic oils peak.',
                 ),
                 _buildHelpItem(
                   'Timber Felling (Mondholz / Moon Wood)',
@@ -247,8 +247,8 @@ final class HelpScreen extends StatelessWidget {
                 ),
                 _buildHelpItem(
                   'Sap Flow & Vitality Rhythms',
-                  'Reflects lunar ascent/descent and waxing/waning cycles governing plant sap pressure.',
-                  practical: 'Ascending/Waxing Moon: Sap rises into foliage (ideal for taking greenwood cuttings, grafting, and harvesting above-ground fruits). Descending/Waning Moon: Sap drops into roots and soil (ideal for transplanting seedlings as roots establish rapidly, root pruning, and spreading compost).',
+                  'Distinguishes the 27.2-day tropical declination cycle (Ascending/Descending) from the 29.5-day synodic phase cycle (Waxing/Waning).',
+                  practical: 'Ascending vs. Descending Moon (Secondary Structural Rhythm): Ascending Moon draws sap upward (ideal for harvesting above-ground crops for storage, grafting, and BD 501). Descending Moon (Pflanzzeit) draws forces into the soil (ideal for transplanting seedlings, pruning, soil cultivation, BD 500, and root harvest).\nWaxing vs. Waning Moon (Minor Synodic Rhythm): Subordinate to Plant-Part Day in Maria Thun\'s system; mainly relevant 48h before Full Moon (germination moisture pull) and during Waning Moon in Capricorn for timber felling (Mondholz).',
                 ),
               ],
             ),
@@ -299,7 +299,7 @@ final class HelpScreen extends StatelessWidget {
                 _buildHelpItem(
                   'Real-World Prioritization Hierarchy',
                   'Maria Thun stresses that weather conditions and soil moisture take physical precedence. Working wet soil on a "perfect" calendar day causes soil compaction damage. When timing is constrained, follow this hierarchy:',
-                  practical: '1. Avoid Gray Days (Highest Rule): Moving work to ANY clear day is better than working on a Gray Day.\n2. Prioritize Sowing & Planting: Aligning initial seed contact or transplanting gives the strongest lifelong impulse.\n3. Leverage Moon Ascent/Descent: If you miss the exact constellation quality, align with Ascending/Descending moon rhythms.\n4. Secondary Cultivation: Hoeing, weeding, and harvesting can be caught up on subsequent matching days.',
+                  practical: '0. Soil & Weather First: Never work waterlogged or frozen soil.\n1. Avoid Gray Days (Hard Veto): Nodes, perigee, and eclipses override even ideal constellations.\n2. Plant-Part Day (Primary Sidereal Driver): Match seed sowing and hoeing to Root, Leaf, Flower, or Fruit days—regardless of whether the Moon is waxing/waning or ascending/descending.\n3. Ascending vs. Descending Moon (Secondary): Use Descending Moon (Pflanzzeit) for transplanting, pruning, and root storage harvest, and Ascending Moon for above-ground storage harvest.\n4. Diurnal Breath & Synodic Phase (Tertiary/Minor): Use evening inhalation for sowing/transplanting and morning exhalation for fresh harvest; treat waxing/waning moon phase as a minor modifier.',
                 ),
                 _buildHelpItem(
                   'Consequences of Working on a Gray Day',

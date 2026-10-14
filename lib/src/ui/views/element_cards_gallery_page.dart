@@ -8,6 +8,9 @@ import '../components/plant_quality_card.dart';
 
 /// Display mode for the watercolor gallery page.
 enum GalleryDisplayMode {
+  /// Displays the dynamic diurnal sun shading (Morning, Noon, Evening, Night).
+  diurnalSunCycle,
+
   /// Displays the four distinct watercolor texture styles side-by-side on a single element.
   textureComparison,
 
@@ -34,7 +37,7 @@ final class ElementCardsGalleryPage extends StatefulWidget {
 
 final class _ElementCardsGalleryPageState
     extends State<ElementCardsGalleryPage> {
-  GalleryDisplayMode _mode = GalleryDisplayMode.textureComparison;
+  GalleryDisplayMode _mode = GalleryDisplayMode.diurnalSunCycle;
   PlantQuality _comparisonElement = PlantQuality.root;
   WatercolorTextureStyle _activeTextureStyle = WatercolorTextureStyle.lazure;
   bool _animate = true;
@@ -90,6 +93,29 @@ final class _ElementCardsGalleryPageState
         WatercolorTextureStyle.roughRag,
         'Rough Rag (Dry-Brush Scumble)',
         'Heavy mould-made paper & skipping crest reserves',
+      ),
+    ];
+
+    final diurnalVariants = [
+      (
+        DateTime(now.year, now.month, now.day, 7, 30),
+        'Morning (07:30)',
+        'Sun in East — Light from Left',
+      ),
+      (
+        DateTime(now.year, now.month, now.day, 12, 30),
+        'Solar Noon (12:30)',
+        'Sun at Zenith — Light from Overhead',
+      ),
+      (
+        DateTime(now.year, now.month, now.day, 18, 30),
+        'Evening (18:30)',
+        'Sun in West — Light from Right',
+      ),
+      (
+        DateTime(now.year, now.month, now.day, 23, 0),
+        'Night (23:00)',
+        'Moonlight — Silvery Twilight',
       ),
     ];
 
@@ -168,6 +194,11 @@ final class _ElementCardsGalleryPageState
                   ),
                   segments: const [
                     ButtonSegment(
+                      value: GalleryDisplayMode.diurnalSunCycle,
+                      icon: Icon(Icons.wb_sunny_outlined, size: 16),
+                      label: Text('Diurnal Sun Cycle'),
+                    ),
+                    ButtonSegment(
                       value: GalleryDisplayMode.textureComparison,
                       icon: Icon(Icons.texture, size: 16),
                       label: Text('Compare 4 Textures'),
@@ -185,7 +216,8 @@ final class _ElementCardsGalleryPageState
                 ),
 
                 // Contextual Filter Chips
-                if (_mode == GalleryDisplayMode.textureComparison)
+                if (_mode == GalleryDisplayMode.textureComparison ||
+                    _mode == GalleryDisplayMode.diurnalSunCycle)
                   Wrap(
                     spacing: 4,
                     runSpacing: 4,
@@ -262,11 +294,12 @@ final class _ElementCardsGalleryPageState
 
                 final availH = constraints.maxHeight - padV * 2;
                 final availW = constraints.maxWidth - padH * 2;
-                final isComparing =
-                    _mode == GalleryDisplayMode.textureComparison;
+                final hasCaptions =
+                    _mode == GalleryDisplayMode.textureComparison ||
+                    _mode == GalleryDisplayMode.diurnalSunCycle;
 
-                // Subtract height for badge caption if in texture comparison mode
-                final captionHeight = isComparing ? 40.0 : 0.0;
+                // Subtract height for badge caption if in texture comparison or diurnal mode
+                final captionHeight = hasCaptions ? 40.0 : 0.0;
                 final rawHeight = (((availH - gap) / 2) - captionHeight).clamp(
                   200.0,
                   350.0,
@@ -285,7 +318,17 @@ final class _ElementCardsGalleryPageState
                   String title;
                   String subtitle;
 
-                  if (isComparing) {
+                  if (_mode == GalleryDisplayMode.diurnalSunCycle) {
+                    final item = diurnalVariants[index];
+                    card = PlantQualityCard(
+                      info: infoForElement,
+                      selectedTime: item.$1,
+                      animate: _animate,
+                      textureStyle: _activeTextureStyle,
+                    );
+                    title = item.$2;
+                    subtitle = item.$3;
+                  } else if (_mode == GalleryDisplayMode.textureComparison) {
                     final variant = textureVariants[index];
                     card = PlantQualityCard(
                       info: infoForElement,
@@ -315,7 +358,7 @@ final class _ElementCardsGalleryPageState
                         height: targetCardHeight,
                         child: card,
                       ),
-                      if (isComparing) ...[
+                      if (hasCaptions) ...[
                         const SizedBox(height: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(

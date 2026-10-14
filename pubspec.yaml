@@ -34,7 +34,7 @@ dependencies:
   intl: ^0.20.2
   google_fonts: ^8.0.2
   http: ^1.2.0
-  sweph: ^3.2.1+2.10.3
+  sweph: ^4.1.0+2.10.3
   path_provider: ^2.1.2
 
 dev_dependencies:

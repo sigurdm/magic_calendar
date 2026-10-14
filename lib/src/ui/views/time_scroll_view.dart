@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import '../../services/ephemeris_service.dart';
 import '../../services/weather_service.dart';
 import '../painters/infinite_timeline_painter.dart';
+import '../theme/goethean_palette.dart';
 
 /// Controller for programmatic interaction with [TimeScrollView].
 final class TimeScrollController {
@@ -446,36 +447,15 @@ class _TimeScrollViewState extends State<TimeScrollView>
                         ),
                       ),
                     ),
-                    IgnorePointer(
+                    const IgnorePointer(
                       child: Align(
                         alignment: Alignment.center,
-                        child: Stack(
-                          alignment: Alignment.topCenter,
-                          children: [
-                            Container(
-                              width: 2,
-                              height: double.infinity,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEF4444),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFFEF4444)
-                                        .withValues(alpha: 0.5),
-                                    blurRadius: 6,
-                                    spreadRadius: 1,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFEF4444),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ],
+                        child: SizedBox(
+                          width: 24,
+                          height: double.infinity,
+                          child: CustomPaint(
+                            painter: _OrganicPlumbNeedlePainter(),
+                          ),
                         ),
                       ),
                     ),
@@ -488,4 +468,73 @@ class _TimeScrollViewState extends State<TimeScrollView>
       },
     );
   }
+}
+
+/// Sculpted golden-brass botanical plumb-needle replacing the flat red debugger line.
+final class _OrganicPlumbNeedlePainter extends CustomPainter {
+  const _OrganicPlumbNeedlePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+
+    // Soft warm sunbeam aura along the needle shaft
+    canvas.drawLine(
+      Offset(cx, 6),
+      Offset(cx, size.height - 4),
+      Paint()
+        ..color = GoetheanPalette.aspectGold.withValues(alpha: 0.36)
+        ..strokeWidth = 6.0
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5.0),
+    );
+
+    // Tapered brass/gold needle shaft
+    final shaftPath = Path()
+      ..moveTo(cx - 1.6, 12)
+      ..lineTo(cx + 1.6, 12)
+      ..lineTo(cx + 0.5, size.height - 8)
+      ..lineTo(cx, size.height)
+      ..lineTo(cx - 0.5, size.height - 8)
+      ..close();
+
+    canvas.drawPath(
+      shaftPath,
+      Paint()
+        ..shader = ui.Gradient.linear(
+          const Offset(0, 0),
+          Offset(0, size.height),
+          [
+            const Color(0xFFFFF3C4),
+            GoetheanPalette.aspectGold,
+            const Color(0xFFC88A32),
+          ],
+          const [0.0, 0.45, 1.0],
+        ),
+    );
+
+    // Sculpted Goetheanum diamond-teardrop finial at the top crown
+    final finialPath = Path()
+      ..moveTo(cx, 0)
+      ..cubicTo(cx + 6.5, 3.5, cx + 5.5, 10.5, cx, 14.5)
+      ..cubicTo(cx - 5.5, 10.5, cx - 6.5, 3.5, cx, 0)
+      ..close();
+
+    canvas.drawPath(
+      finialPath,
+      Paint()
+        ..shader = ui.Gradient.radial(
+          Offset(cx - 1.5, 5.0),
+          8.0,
+          [
+            const Color(0xFFFFFBE6),
+            GoetheanPalette.aspectGold,
+            const Color(0xFF9E6B24),
+          ],
+          const [0.0, 0.55, 1.0],
+        ),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

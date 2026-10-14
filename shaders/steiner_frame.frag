@@ -128,28 +128,39 @@ float distToInner(vec2 p) {
 
 // Faceted Architectural Heightfield
 // Models sculpted planar facets like Steiner's carved wood/plaster:
-// 1. Outer chamfer facet
-// 2. Broad front sculpted face plateau
-// 3. Inner reveal facet sloping inward into the window
+// The rails have a continuous 3D crowned cross-section with chiseled facets,
+// sloping from the outer edge up to a ridge crest, then sloping down into the window cavity.
 float getFacetedHeight(vec2 p) {
   float dOut = max(distToOuter(p), 0.0);
   float dIn = max(distToInner(p), 0.0);
+  float totalDist = dOut + dIn;
+  if (totalDist < 0.001) return 0.0;
 
-  // Outer chamfer facet
-  float outerBevel = smoothstep(0.000, 0.036, dOut);
+  // Normalized cross-coordinate: 0.0 at outer perimeter, 1.0 at inner window reveal
+  float t = clamp(dOut / totalDist, 0.0, 1.0);
 
-  // Inner reveal facet
-  float innerRevealWidth = 0.032 + 0.010 * smoothstep(0.35, 0.85, p.y);
-  float innerBevel = smoothstep(0.000, innerRevealWidth, dIn);
+  // Sculptural crowned cross-section (ridge crest around t = 0.42)
+  float tCrest = 0.42;
+  float profile;
+  if (t < tCrest) {
+    // Outer slope: rises from outer edge to crest (tilting towards outside)
+    float u = t / tCrest;
+    profile = sin(u * 1.5707963);
+  } else {
+    // Inner slope: slopes downward into recessed window cavity (tilting towards inside)
+    float u = (t - tCrest) / (1.0 - tCrest);
+    profile = cos(u * 1.5707963);
+  }
 
-  // Faceted stone profile: flat face plateau between bevel creases
-  float base = min(outerBevel, innerBevel);
+  // Chiseled planar facets (characteristic of Rudolf Steiner's hand wood carving)
+  float outerBevel = smoothstep(0.000, 0.024, dOut);
+  float innerBevel = smoothstep(0.000, 0.024, dIn);
+  float facetShape = profile * min(outerBevel, innerBevel);
 
-  // Gentle Steiner crowning along the center of the stone ring
-  float cross = clamp(dIn / max(dIn + dOut, 0.001), 0.0, 1.0);
-  float crown = 0.08 * sin(cross * 3.14159265);
+  // Subtle hand-carved tool gouge texture along the wood grain
+  float gouge = 0.025 * sin(t * 9.42) * profile;
 
-  return base + crown;
+  return facetShape * 0.52 + gouge;
 }
 
 void main() {
@@ -161,14 +172,17 @@ void main() {
   float dIn = distToInner(uv);
 
   // 1. Faceted Surface Normals & Creases
-  vec2 eps = vec2(0.003, 0.0);
+  vec2 eps = vec2(0.004, 0.0);
   float hR = getFacetedHeight(uv + eps.xy);
   float hL = getFacetedHeight(uv - eps.xy);
   float hD = getFacetedHeight(uv + eps.yx);
   float hU = getFacetedHeight(uv - eps.yx);
   float crest = getFacetedHeight(uv);
 
-  vec3 normal = normalize(vec3((hL - hR) * 14.0, (hU - hD) * 14.0, 1.0));
+  // Physical 3D normal vector with deep relief:
+  // Nx < 0 on left outer slope, Nx > 0 on right outer slope.
+  // Ny < 0 on top outer slope, Ny > 0 on bottom outer slope.
+  vec3 normal = normalize(vec3((hL - hR) * 12.0, (hU - hD) * 12.0, 0.46));
 
   // 2. Facet Creases & Capillary Pooling Lines
   float innerCreaseDist = abs(dIn - 0.034);
@@ -177,15 +191,39 @@ void main() {
   float outerCreaseDist = abs(dOut - 0.036);
   float outerCrease = pow(clamp(1.0 - outerCreaseDist * 32.0, 0.0, 1.0), 3.0);
 
-  // 3. Directional Solar Modeling (Luminous Watercolor Wash, No Plastic Specular)
+  // 3. Directional Diurnal Solar Modeling
+  // Morning: lightDir comes from the LEFT (lightDir.x < 0)
+  // Noon: lightDir comes from the TOP (lightDir.y < -0.75, lightDir.x ~ 0)
+  // Evening: lightDir comes from the RIGHT (lightDir.x > 0)
   vec3 lightDir = normalize(uLightDir);
-  float directLight = max(0.0, dot(normal, lightDir));
-  float ambientBounce = max(0.0, -normal.x * 0.40 - normal.y * 0.20) * 0.30;
-  float illumination = clamp(mix(0.62, 0.74, uDaylightFactor) + directLight * 0.32 + ambientBounce, 0.0, 1.0);
+  float NdotL = dot(normal, lightDir);
+  float directLight = max(0.0, NdotL);
+
+  // Macro-scale sunlight falloff across the overall card plane
+  vec2 cardUV = uv - vec2(0.50, 0.50);
+  float macroSunSide = dot(cardUV, lightDir.xy);
+
+  // Specular sheen along carved ridges facing the sun
+  vec3 viewDir = vec3(0.0, 0.0, 1.0);
+  vec3 halfVec = normalize(lightDir + viewDir);
+  float specGlint = pow(max(0.0, dot(normal, halfVec)), 18.0) * directLight * 0.28;
+
+  // Ambient wrap-around skylight
+  float skyBounce = max(0.0, dot(normal, vec3(0.0, -0.4, 0.85))) * 0.22;
+
+  // Composite daylight illumination: wide dynamic contrast so time-of-day changes are unmistakable
+  float illumination = clamp(
+    0.26 * uDaylightFactor + // ambient daylight base
+    directLight * (0.48 * uDaylightFactor + 0.12) + // direct sunbeam on facing facets
+    macroSunSide * 0.24 * uDaylightFactor + // overall sunbeam gradient across the card
+    skyBounce * uDaylightFactor + // ambient skylight
+    specGlint * uDaylightFactor + // mineral stone specular glint
+    (1.0 - uDaylightFactor) * 0.25, // nocturnal moonlight base
+    0.06, 1.0
+  );
 
   // 4. Natural Fluid Watercolor Puddle Simulation (Wet-on-Wet Lazure)
   // Subtle organic fluid mottling vectors (incommensurate harmonic orbital shifts)
-  // These generate undulating local liquid pigment currents without directional conveyor-belt drift.
   vec2 flow1 = vec2(cos(uTime * 0.18), sin(uTime * 0.14)) * 0.14;
   vec2 flow2 = vec2(sin(uTime * 0.13), cos(uTime * 0.17)) * 0.14;
 
@@ -223,11 +261,10 @@ void main() {
     // 1. GRANULATING MINERAL: Genuine pigment sedimentation in cold-pressed tooth
     // -------------------------------------------------------------------------
     float granFibers = noise(fragCoord * 0.65) * 0.55 + hash(fragCoord * 1.4) * 0.45;
-    // Granulation concentrates heavily in deeper wash pools and recesses
     float granulation = (granFibers - 0.46) * smoothstep(0.18, 0.75, washBase) * 0.32;
     washDensity = clamp(washBase + granulation, 0.0, 1.0);
     stylePaperReserveMult = 0.30;
-    styleToothDepth = 0.082; // Distinct tactile granulation speckles
+    styleToothDepth = 0.082;
     styleGrainMix = 0.65;
     styleCreasePool = 0.24;
   } else if (uTextureStyle < 2.5) {
@@ -251,23 +288,25 @@ void main() {
     float ragFibers = (sin(fragCoord.x * 0.40) + sin(fragCoord.y * 0.40)) * 0.06;
     float dryBrushSkip = smoothstep(0.40, 0.88, crest) * 0.18;
     washDensity = clamp(washBase + ragFibers - dryBrushSkip, 0.0, 1.0);
-    stylePaperReserveMult = 0.55; // Strong dry-brush paper reserves on high ridges
+    stylePaperReserveMult = 0.55;
     styleToothDepth = 0.088;
     styleGrainMix = 0.50;
-    styleCreasePool = 0.38; // Deep shadow pooling in stone creases
+    styleCreasePool = 0.38;
   }
 
-  // 5. Goethean Multi-Chromatic Glazes (Color Temperature Variation)
+  // 5. Dynamic Goethean Multi-Chromatic Glazes following the Sun Trajectory
+  // Sunward side receives warm golden/amber shelf wash; shadow side receives cool translucent glaze
   vec2 glazeFlow = vec2(sin(uTime * 0.10), cos(uTime * 0.12)) * 0.09;
   float coolGlazeField = fbm(uv * 2.4 + q.yx * 1.4 + vec2(2.8, 6.1) + glazeFlow);
-  float coolWeight = smoothstep(0.55, 0.10, uv.x) * smoothstep(0.28, 0.72, coolGlazeField);
-
   float warmGlazeField = fbm(uv * 2.4 + 8.4 + q * 1.4 + vec2(0.0, 1.9) - glazeFlow);
-  float warmWeight = smoothstep(0.38, 0.88, uv.x) * smoothstep(0.28, 0.72, warmGlazeField);
 
-  // 6. Luminous Watercolor Paper Reserve (Dry Brush on Light Crests)
-  float paperReserve = smoothstep(0.65, 1.02, crest) *
-      smoothstep(0.55, 1.0, illumination) *
+  float sunExposure = clamp(macroSunSide * 2.5 + directLight * 1.0 - (1.0 - directLight) * 0.6, -1.0, 1.0);
+  float warmWeight = smoothstep(-0.25, 0.65, sunExposure) * smoothstep(0.20, 0.75, warmGlazeField) * uDaylightFactor;
+  float coolWeight = smoothstep(0.25, -0.65, sunExposure) * smoothstep(0.20, 0.75, coolGlazeField) * uDaylightFactor;
+
+  // 6. Luminous Watercolor Paper Reserve (Dry Brush on Sunlit Crests)
+  float paperReserve = smoothstep(0.60, 1.02, crest) *
+      smoothstep(0.45, 1.0, illumination) *
       smoothstep(0.20, 0.70, 1.0 - washDensity) *
       stylePaperReserveMult;
 
@@ -277,13 +316,15 @@ void main() {
   float paperGrain = mix(paperFibers, paperTooth, styleGrainMix);
 
   // 8. Effective Pigment Concentration across the Paper (Balanced watercolor lazure)
+  // Direct sun dissolves pigment into luminous paper base; shadows allow deep mineral settling
+  float shadowDeepening = (1.0 - illumination);
   float effectivePigment = clamp(
-      0.06 +
-      washDensity * 0.40 +
-      (1.0 - illumination) * 0.24 +
+      0.04 +
+      washDensity * 0.35 +
+      shadowDeepening * 0.42 +
       innerCrease * styleCreasePool +
-      outerCrease * 0.14 -
-      paperReserve +
+      outerCrease * 0.16 -
+      paperReserve * 1.2 +
       (paperGrain - 0.5) * 0.05,
       0.0, 1.0
   );
@@ -306,16 +347,23 @@ void main() {
     washColor = mix(washDeep, washCrease, (effectivePigment - 0.82) / 0.18);
   }
 
-  // Apply Cool Glaze Bloom (Turquoise / Rose Madder on left flank)
-  washColor = mix(washColor, uColorGlaze.rgb, coolWeight * 0.26);
+  // Apply Cool Glaze Bloom on the shadow side
+  washColor = mix(washColor, uColorGlaze.rgb, coolWeight * 0.32);
 
-  // Apply Warm Glaze Bloom (Chartreuse / Raw Sienna on right flank)
-  washColor = mix(washColor, uColorShelf.rgb, warmWeight * 0.22);
+  // Apply Warm Glaze Bloom on the sunlit side
+  washColor = mix(washColor, uColorShelf.rgb, warmWeight * 0.30);
 
   // Diurnal chromatic warmth
+  // Morning/evening: warm golden/rose amber rays
+  // Noon: brilliant solar gold
+  // Night: cool silvery blue-indigo moonlight
   vec3 diurnalTint = mix(
-    vec3(0.90, 0.94, 1.04),
-    mix(vec3(1.04, 0.97, 0.90), vec3(1.0), smoothstep(0.15, 0.60, max(0.0, uSunAltitude))),
+    vec3(0.88, 0.93, 1.06), // moonlight
+    mix(
+      vec3(1.09, 0.95, 0.80), // low-angle dawn/dusk golden hour
+      vec3(1.02, 1.01, 0.98), // high noon solar zenith
+      smoothstep(0.12, 0.70, max(0.0, uSunAltitude))
+    ),
     uDaylightFactor
   );
   washColor *= diurnalTint;

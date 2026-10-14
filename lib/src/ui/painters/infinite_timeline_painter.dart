@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../services/ephemeris_service.dart';
+import '../theme/goethean_palette.dart';
 
 /// CustomPainter for rendering an interactive infinite timeline of celestial and weather events.
 final class InfiniteTimelinePainter extends CustomPainter {
@@ -23,6 +24,8 @@ final class InfiniteTimelinePainter extends CustomPainter {
   final ui.Image? grayDayImage;
 
   final bool showBiodynamicOverlay;
+  final bool organicFlow;
+  final bool warmPalette;
 
   InfiniteTimelinePainter({
     required this.centerTime,
@@ -33,6 +36,8 @@ final class InfiniteTimelinePainter extends CustomPainter {
     required this.latitude,
     required this.longitude,
     this.showBiodynamicOverlay = false,
+    this.organicFlow = true,
+    this.warmPalette = true,
     this.rootImage,
     this.leafImage,
     this.flowerImage,
@@ -76,16 +81,18 @@ final class InfiniteTimelinePainter extends CustomPainter {
     final stripY = 37.0 - (stripHeight / 2.0);
     final stripRRect = RRect.fromRectAndRadius(
       Rect.fromLTWH(0, stripY, size.width, stripHeight),
-      const Radius.circular(3),
+      Radius.circular(organicFlow ? 6 : 3),
     );
 
     // 1. Base nocturnal track
     final nightPaint = Paint()
-      ..color = const Color(0xFF13131D)
+      ..color = warmPalette || organicFlow
+          ? const Color(0xFF17141D)
+          : const Color(0xFF13131D)
       ..style = PaintingStyle.fill;
     canvas.drawRRect(stripRRect, nightPaint);
 
-    // 2. Daytime solar capsules and sunrise/sunset celestial markers
+    // 2. Daytime solar capsules or Sinusoidal Solar Horizon Wave
     final iconAlpha = hourWidth >= 3.5
         ? ((hourWidth - 3.5) / 4.0).clamp(0.0, 1.0)
         : 0.0;
@@ -129,7 +136,7 @@ final class InfiniteTimelinePainter extends CustomPainter {
             (ss.noon.difference(centerTime).inSeconds / 3600.0 * hourWidth);
 
         // 30-minute twilight transition envelope before sunrise and after sunset
-        final twilightPx = 0.5 * hourWidth;
+        final twilightPx = (organicFlow ? 1.2 : 0.5) * hourWidth;
         final startX = xRise - twilightPx;
         final endX = xSet + twilightPx;
 
@@ -137,27 +144,92 @@ final class InfiniteTimelinePainter extends CustomPainter {
         if (endX >= 0 && startX <= size.width) {
           final dayWidth = endX - startX;
           if (dayWidth > 0) {
-            final tRise = ((xRise - startX) / dayWidth).clamp(0.0, 1.0);
-            final tNoon = ((xNoon - startX) / dayWidth).clamp(0.0, 1.0);
-            final tSet = ((xSet - startX) / dayWidth).clamp(0.0, 1.0);
+            if (organicFlow) {
+              // Sinusoidal solar-altitude hill rising from horizon at sunrise to zenith at solar noon
+              final hillPath = Path()..moveTo(startX, stripY + stripHeight);
+              const steps = 20;
+              for (int s = 0; s <= steps; s++) {
+                final u = s / steps;
+                final px = startX + u * dayWidth;
+                final sinElev = math.sin(u * math.pi);
+                final py =
+                    (stripY + stripHeight) - (sinElev * (stripHeight - 1.5));
+                hillPath.lineTo(px, py);
+              }
+              hillPath.lineTo(endX, stripY + stripHeight);
+              hillPath.close();
 
-            final dayShader = ui.Gradient.linear(
-              Offset(startX, 0),
-              Offset(endX, 0),
-              [
-                const Color(0xFF13131D),
-                dawnGold.withValues(alpha: dayAlpha),
-                peakSun.withValues(alpha: dayAlpha),
-                dawnGold.withValues(alpha: dayAlpha),
-                const Color(0xFF13131D),
-              ],
-              [0.0, tRise, tNoon, tSet, 1.0],
-            );
+              final hillRect = Rect.fromLTRB(
+                startX,
+                stripY,
+                endX,
+                stripY + stripHeight,
+              );
+              canvas.drawPath(
+                hillPath,
+                Paint()
+                  ..shader = ui.Gradient.linear(
+                    Offset(xNoon, stripY),
+                    Offset(xNoon, stripY + stripHeight),
+                    [
+                      peakSun.withValues(alpha: 0.95),
+                      dawnGold.withValues(alpha: 0.78),
+                      GoetheanPalette.rootEarth.withValues(alpha: 0.35),
+                    ],
+                    const [0.0, 0.65, 1.0],
+                  ),
+              );
+              // Golden solar trajectory crest line
+              final arcPath = Path();
+              for (int s = 0; s <= steps; s++) {
+                final u = s / steps;
+                final px = startX + u * dayWidth;
+                final sinElev = math.sin(u * math.pi);
+                final py =
+                    (stripY + stripHeight - 0.5) -
+                    (sinElev * (stripHeight - 2.2));
+                if (s == 0) {
+                  arcPath.moveTo(px, py);
+                } else {
+                  arcPath.lineTo(px, py);
+                }
+              }
+              canvas.drawPath(
+                arcPath,
+                Paint()
+                  ..shader = LinearGradient(
+                    colors: [
+                      dawnGold.withValues(alpha: 0.2),
+                      const Color(0xFFFFF9C4),
+                      dawnGold.withValues(alpha: 0.2),
+                    ],
+                  ).createShader(hillRect)
+                  ..style = PaintingStyle.stroke
+                  ..strokeWidth = 1.4,
+              );
+            } else {
+              final tRise = ((xRise - startX) / dayWidth).clamp(0.0, 1.0);
+              final tNoon = ((xNoon - startX) / dayWidth).clamp(0.0, 1.0);
+              final tSet = ((xSet - startX) / dayWidth).clamp(0.0, 1.0);
 
-            canvas.drawRect(
-              Rect.fromLTRB(startX, stripY, endX, stripY + stripHeight),
-              Paint()..shader = dayShader,
-            );
+              final dayShader = ui.Gradient.linear(
+                Offset(startX, 0),
+                Offset(endX, 0),
+                [
+                  const Color(0xFF13131D),
+                  dawnGold.withValues(alpha: dayAlpha),
+                  peakSun.withValues(alpha: dayAlpha),
+                  dawnGold.withValues(alpha: dayAlpha),
+                  const Color(0xFF13131D),
+                ],
+                [0.0, tRise, tNoon, tSet, 1.0],
+              );
+
+              canvas.drawRect(
+                Rect.fromLTRB(startX, stripY, endX, stripY + stripHeight),
+                Paint()..shader = dayShader,
+              );
+            }
           }
         }
       }
@@ -571,7 +643,9 @@ final class InfiniteTimelinePainter extends CustomPainter {
 
     if (visibleIntervals.isEmpty) return;
 
-    final maxHalfBlendPx = (1.5 / 2.0) * hourWidth; // ~0.75 hours in pixels
+    final maxHalfBlendPx = organicFlow
+        ? math.max(18.0, 5.0 * hourWidth)
+        : (1.5 / 2.0) * hourWidth; // ~0.75 hours in pixels
     final count = visibleIntervals.length;
     final xStarts = List<double>.filled(count, 0.0);
     final xEnds = List<double>.filled(count, 0.0);
@@ -878,6 +952,20 @@ final class InfiniteTimelinePainter extends CustomPainter {
   }
 
   Color _getColorForQuality(PlantQuality quality) {
+    if (warmPalette || organicFlow) {
+      switch (quality) {
+        case PlantQuality.root:
+          return GoetheanPalette.rootEarth;
+        case PlantQuality.leaf:
+          return GoetheanPalette.leafWater;
+        case PlantQuality.flower:
+          return GoetheanPalette.flowerAir;
+        case PlantQuality.fruit:
+          return GoetheanPalette.fruitWarmth;
+        case PlantQuality.none:
+          return Colors.transparent;
+      }
+    }
     switch (quality) {
       case PlantQuality.root:
         return const Color(0xFF8D6E63);

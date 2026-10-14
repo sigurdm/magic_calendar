@@ -396,10 +396,10 @@ packages:
     dependency: "direct main"
     description:
       name: sweph
-      sha256: "32067efbf3984857a970a590adb6502373d199add4867936485678130824a241"
+      sha256: edd55b855350d0daeb6c8209a05777c597c0affd8c789d5c2789dd0234a81401
       url: "https://pub.dev"
     source: hosted
-    version: "3.2.1+2.10.3"
+    version: "4.1.0+2.10.3"
   term_glyph:
     dependency: transitive
     description:
@@ -428,10 +428,10 @@ packages:
     dependency: transitive
     description:
       name: universal_ffi
-      sha256: a4071511e11b96fc741a91f89dd6891ffce196c45e85f89983beb31cde695dee
+      sha256: dd2b662d619e10e24532db6e9b80c5bef9da6a09daf1d9b69bba727b2f6c95c6
       url: "https://pub.dev"
     source: hosted
-    version: "1.5.0"
+    version: "1.5.1"
   vector_math:
     dependency: transitive
     description:
@@ -452,10 +452,10 @@ packages:
     dependency: transitive
     description:
       name: wasm_ffi
-      sha256: "950238f09e2d18b85c5c4356833a06319b049c1d19f936db32c3f0d8194e30b5"
+      sha256: "5a402d5817e3c77e8039f95487a5d8f77d05897c29ce12495b0c5cdd745d5623"
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.0"
+    version: "2.4.0"
   web:
     dependency: transitive
     description:

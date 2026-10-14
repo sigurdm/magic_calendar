@@ -243,7 +243,7 @@ final class PlantQualityCard extends StatefulWidget {
     super.key,
     required this.info,
     this.selectedTime,
-    this.animate = false,
+    this.animate = true,
     this.textureStyle = WatercolorTextureStyle.lazure,
     this.typographyStyle = CardTypographyStyle.dornachGaramond,
   });
@@ -271,7 +271,7 @@ final class _PlantQualityCardState extends State<PlantQualityCard>
   void didUpdateWidget(covariant PlantQualityCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.animate != oldWidget.animate) {
-      if (widget.animate && _program != null) {
+      if (widget.animate && _program != null && !_isTestEnvironment) {
         _animController.repeat();
       } else {
         _animController.stop();
@@ -326,24 +326,19 @@ final class _PlantQualityCardState extends State<PlantQualityCard>
       bannerText = 'SPECIAL ALIGNMENT';
       switch (quality) {
         case PlantQuality.flower:
-          desc =
-              'Exceptional cosmic energy for flowering plants, medicinal herbs & essential oils.';
+          desc = 'Exceptional cosmic energy for flowering plants, medicinal herbs & essential oils.';
           break;
         case PlantQuality.fruit:
-          desc =
-              'Exceptional warmth energy for seed formation, fruit ripening & long storage.';
+          desc = 'Exceptional warmth energy for seed formation, fruit ripening & long storage.';
           break;
         case PlantQuality.leaf:
-          desc =
-              'Exceptional moisture impulse for lush leafy greens, spinach & herbs.';
+          desc = 'Exceptional moisture impulse for lush leafy greens, spinach & herbs.';
           break;
         case PlantQuality.root:
-          desc =
-              'Exceptional gravitational earth focus for carrots, beets & root vegetables.';
+          desc = 'Exceptional gravitational earth focus for carrots, beets & root vegetables.';
           break;
         case PlantQuality.none:
-          desc =
-              'Special planetary alignment boosting elemental plant development.';
+          desc = 'Special planetary alignment boosting elemental plant development.';
           break;
       }
     } else {
@@ -501,10 +496,13 @@ final class _PlantQualityCardState extends State<PlantQualityCard>
             ),
           );
 
+          final livingBreath = widget.animate;
+
           return AnimatedBuilder(
             animation: _animController,
             builder: (context, child) {
-              final timeSeconds = _animController.value * 60.0;
+              final timeSeconds =
+                  _animController.value * 60.0 + (livingBreath ? 13.5 : 0.0);
               ui.FragmentShader? shader;
               if (_program != null) {
                 shader = _program!.fragmentShader();
@@ -567,15 +565,15 @@ final class _PlantQualityCardState extends State<PlantQualityCard>
         return GoogleFonts.cinzel(
           fontSize: textLength <= 8
               ? (isNarrow ? 15.0 : 16.5)
-              : (textLength > 25
-                    ? (isNarrow ? 11.5 : 13.5)
-                    : (isNarrow ? 13.5 : 15.0)),
+              : (textLength > 14
+                    ? (isNarrow ? 10.5 : 11.5)
+                    : (isNarrow ? 12.0 : 13.5)),
           fontWeight: FontWeight.w700,
           letterSpacing: textLength <= 8
               ? (isNarrow ? 4.5 : 5.8)
-              : (textLength > 25
-                    ? (isNarrow ? 1.4 : 1.8)
-                    : (isNarrow ? 2.4 : 3.2)),
+              : (textLength > 14
+                    ? (isNarrow ? 1.0 : 1.4)
+                    : (isNarrow ? 1.8 : 2.4)),
           color: color,
           shadows: _inscriptionShadows,
         );
@@ -583,14 +581,14 @@ final class _PlantQualityCardState extends State<PlantQualityCard>
         return GoogleFonts.marcellus(
           fontSize: textLength <= 8
               ? (isNarrow ? 15.0 : 17.0)
-              : (textLength > 25
-                    ? (isNarrow ? 11.5 : 13.5)
-                    : (isNarrow ? 13.5 : 15.5)),
+              : (textLength > 14
+                    ? (isNarrow ? 10.5 : 12.0)
+                    : (isNarrow ? 12.5 : 14.0)),
           letterSpacing: textLength <= 8
               ? (isNarrow ? 4.2 : 5.5)
-              : (textLength > 25
-                    ? (isNarrow ? 1.3 : 1.8)
-                    : (isNarrow ? 2.2 : 3.0)),
+              : (textLength > 14
+                    ? (isNarrow ? 1.0 : 1.4)
+                    : (isNarrow ? 1.8 : 2.4)),
           color: color,
           shadows: _inscriptionShadows,
         );
@@ -598,14 +596,14 @@ final class _PlantQualityCardState extends State<PlantQualityCard>
         return GoogleFonts.castoroTitling(
           fontSize: textLength <= 8
               ? (isNarrow ? 14.5 : 16.0)
-              : (textLength > 25
-                    ? (isNarrow ? 11.0 : 13.0)
-                    : (isNarrow ? 13.0 : 14.5)),
+              : (textLength > 14
+                    ? (isNarrow ? 10.0 : 11.5)
+                    : (isNarrow ? 12.0 : 13.0)),
           letterSpacing: textLength <= 8
               ? (isNarrow ? 4.0 : 5.2)
-              : (textLength > 25
-                    ? (isNarrow ? 1.2 : 1.6)
-                    : (isNarrow ? 2.0 : 2.8)),
+              : (textLength > 14
+                    ? (isNarrow ? 0.9 : 1.3)
+                    : (isNarrow ? 1.6 : 2.2)),
           color: color,
           shadows: _inscriptionShadows,
         );
@@ -613,15 +611,15 @@ final class _PlantQualityCardState extends State<PlantQualityCard>
         return GoogleFonts.cinzel(
           fontSize: textLength <= 8
               ? (isNarrow ? 15.0 : 16.5)
-              : (textLength > 25
-                    ? (isNarrow ? 11.5 : 13.5)
-                    : (isNarrow ? 13.5 : 15.0)),
+              : (textLength > 14
+                    ? (isNarrow ? 10.5 : 11.5)
+                    : (isNarrow ? 12.0 : 13.5)),
           fontWeight: FontWeight.w800,
           letterSpacing: textLength <= 8
               ? (isNarrow ? 4.8 : 6.0)
-              : (textLength > 25
-                    ? (isNarrow ? 1.5 : 2.0)
-                    : (isNarrow ? 2.6 : 3.4)),
+              : (textLength > 14
+                    ? (isNarrow ? 1.1 : 1.5)
+                    : (isNarrow ? 2.0 : 2.6)),
           color: color,
           shadows: _inscriptionShadows,
         );
@@ -1278,24 +1276,64 @@ final class SteinerFramePainter extends CustomPainter {
       innerPath,
     );
 
-    // 1. Physical drop shadow behind the entire single stone frame polygon
+    // 1. Dynamic physical drop shadow tracking the sun across the sky:
+    // Morning (lx < 0): sun on left -> shadow casts to the RIGHT (dx > 0)
+    // Noon (ly < -0.75, lx ~ 0): sun overhead -> shadow casts straight DOWN (dy > 0, dx ~ 0)
+    // Evening (lx > 0): sun on right -> shadow casts to the LEFT (dx < 0)
+    final lightX = lighting?.lx ?? -0.35;
+    final lightY = lighting?.ly ?? -0.85;
+    final sunAlt = lighting?.sunAltitude ?? 0.8;
+    final daylight = lighting?.daylightFactor ?? 1.0;
+
+    final shadowDx = -lightX * 22.0 * (1.2 - (sunAlt.clamp(0.0, 1.0) * 0.4));
+    final shadowDy = (-lightY).clamp(0.25, 1.0) * 15.0;
+    final shadowBlur = 22.0 + (1.0 - sunAlt.clamp(0.0, 1.0)) * 10.0;
+    final shadowAlpha = (0.55 + daylight * 0.25).clamp(0.40, 0.80);
+
     final dropShadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.72)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 26);
+      ..color = Colors.black.withValues(alpha: shadowAlpha)
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, shadowBlur);
     canvas.save();
-    canvas.translate(0, 13);
+    canvas.translate(shadowDx, shadowDy);
     canvas.drawPath(framePath, dropShadowPaint);
     canvas.restore();
 
     // 2. Recessed Inner Window Cavity (deeply sunken behind the frame)
+    final recessCenterX = w * (0.50 - lightX * 0.10);
+    final recessCenterY = h * (0.52 - lightY * 0.08);
     final innerRecessBg = Paint()
       ..shader = ui.Gradient.radial(
-        Offset(w * 0.5, h * 0.52),
+        Offset(recessCenterX, recessCenterY),
         w * 0.52,
         _getInnerRecessColors(quality, isSpecial, isGrayDay),
         const [0.0, 0.60, 1.0],
       );
     canvas.drawPath(innerPath, innerRecessBg);
+
+    // Dynamic inner frame cast shadow: the sunward frame rail casts a shadow inward into the cavity
+    canvas.save();
+    canvas.clipPath(innerPath);
+    final innerShadowStart = Offset(
+      w * (0.5 + lightX * 0.44),
+      h * (0.5 + lightY * 0.44),
+    );
+    final innerShadowEnd = Offset(
+      w * (0.5 - lightX * 0.20),
+      h * (0.5 - lightY * 0.20),
+    );
+    final innerCastShadow = Paint()
+      ..shader = ui.Gradient.linear(
+        innerShadowStart,
+        innerShadowEnd,
+        [
+          Colors.black.withValues(alpha: 0.58 * daylight),
+          Colors.black.withValues(alpha: 0.15 * daylight),
+          Colors.transparent,
+        ],
+        const [0.0, 0.35, 1.0],
+      );
+    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), innerCastShadow);
+    canvas.restore();
 
     // 3. RENDER THE FRAME AS A SINGLE PIECE
     if (shader != null) {
@@ -1328,17 +1366,25 @@ final class SteinerFramePainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    // Directional light catch based on sun trajectory (morning left vs evening right)
+    // Directional light catch based on sun trajectory (morning left vs midday top vs evening right)
     final lightX = lighting?.lx ?? -0.35;
-    final isLeftLight = lightX < 0;
+    final lightY = lighting?.ly ?? -0.85;
 
-    // Outer edge light catch (pale ivory specular rim)
+    // Outer edge light catch: concentrated on the sunward side
+    final outerStart = Offset(
+      w * (0.5 + lightX * 0.45),
+      h * (0.5 + lightY * 0.45),
+    );
+    final outerEnd = Offset(
+      w * (0.5 - lightX * 0.45),
+      h * (0.5 - lightY * 0.45),
+    );
     final outerHighlight = Paint()
       ..shader = ui.Gradient.linear(
-        Offset(isLeftLight ? w * 0.1 : w * 0.9, 0),
-        Offset(isLeftLight ? w * 0.9 : w * 0.1, h),
+        outerStart,
+        outerEnd,
         [
-          const Color(0xD8FFFFFF),
+          const Color(0xE8FFFFFF),
           const Color(0x66FFFFFF),
           const Color(0x00FFFFFF),
         ],
@@ -1348,17 +1394,25 @@ final class SteinerFramePainter extends CustomPainter {
       ..strokeWidth = 2.0;
     canvas.drawPath(outerPath, outerHighlight);
 
-    // Inner cutout rim: catches crisp specular light along the bottom shelf
+    // Inner cutout rim: catches crisp specular light along the OPPOSITE inner reveal facing the sun
+    final innerStart = Offset(
+      w * (0.5 - lightX * 0.42),
+      h * (0.5 - lightY * 0.42),
+    );
+    final innerEnd = Offset(
+      w * (0.5 + lightX * 0.42),
+      h * (0.5 + lightY * 0.42),
+    );
     final innerShelfRim = Paint()
       ..shader = ui.Gradient.linear(
-        Offset(0, h * 0.3),
-        Offset(0, h * 0.82),
+        innerStart,
+        innerEnd,
         [
-          const Color(0x00FFFFFF),
-          const Color(0x20FFFFFF),
           const Color(0xEEFFFFFF),
+          const Color(0x40FFFFFF),
+          const Color(0x00FFFFFF),
         ],
-        const [0.0, 0.6, 1.0],
+        const [0.0, 0.45, 1.0],
       )
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8;
@@ -1374,15 +1428,17 @@ final class SteinerFramePainter extends CustomPainter {
   ) {
     final w = size.width;
     final h = size.height;
+    final lightX = lighting?.lx ?? -0.35;
+    final lightY = lighting?.ly ?? -0.85;
 
     canvas.save();
     canvas.clipPath(framePath);
 
-    // Base thick frame fill: Multi-stop stone & lazure gradient
+    // Base thick frame fill: Multi-stop stone & lazure gradient angled to match the sun trajectory
     final baseGradient = Paint()
       ..shader = ui.Gradient.linear(
-        Offset(w * 0.15, h * 0.05),
-        Offset(w * 0.85, h * 0.95),
+        Offset(w * (0.5 + lightX * 0.42), h * (0.5 + lightY * 0.42)),
+        Offset(w * (0.5 - lightX * 0.42), h * (0.5 - lightY * 0.42)),
         _getFrameColors(quality, isSpecial, isGrayDay),
         const [0.0, 0.22, 0.50, 0.78, 1.0],
       );
@@ -1512,35 +1568,43 @@ final class SteinerFramePainter extends CustomPainter {
   void _paintLazureWashes(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
+    final lightX = lighting?.lx ?? -0.35;
+    final lightY = lighting?.ly ?? -0.85;
 
-    // Organic pool 1: Warm sunlight sheen on upper-left lintel
+    // Organic pool 1: Direct sunlight sheen following the sun trajectory across the card
     final wash1 = Paint()
-      ..shader = ui.Gradient.radial(Offset(w * 0.28, h * 0.10), w * 0.42, [
-        const Color(0x68FFFFFF),
-        const Color(0x00FFFFFF),
-      ]);
+      ..shader = ui.Gradient.radial(
+        Offset(w * (0.5 + lightX * 0.38), h * (0.5 + lightY * 0.38)),
+        w * 0.45,
+        [const Color(0x75FFFFFF), const Color(0x00FFFFFF)],
+      );
     canvas.drawRect(Rect.fromLTWH(0, 0, w, h), wash1);
 
-    // Organic pool 2: Translucent mineral glaze on left jamb
+    // Organic pool 2: Translucent mineral glaze on sunward jamb
     final wash2 = Paint()
-      ..shader = ui.Gradient.radial(Offset(w * 0.12, h * 0.45), w * 0.35, [
-        elementColor.withValues(alpha: 0.35),
-        Colors.transparent,
-      ]);
+      ..shader = ui.Gradient.radial(
+        Offset(w * (0.5 + lightX * 0.40), h * 0.50),
+        w * 0.38,
+        [elementColor.withValues(alpha: 0.40), Colors.transparent],
+      );
     canvas.drawRect(Rect.fromLTWH(0, 0, w, h), wash2);
 
-    // Organic pool 3: Gentle sunlight catch along right jamb
+    // Organic pool 3: Deep shaded lazure pool on the shadow flank
     final wash3 = Paint()
-      ..shader = ui.Gradient.radial(Offset(w * 0.88, h * 0.45), w * 0.30, [
-        const Color(0x22FFFFFF),
-        const Color(0x00FFFFFF),
-      ]);
+      ..shader = ui.Gradient.radial(
+        Offset(w * (0.5 - lightX * 0.40), h * 0.50),
+        w * 0.38,
+        [const Color(0x35000000), const Color(0x00000000)],
+      );
     canvas.drawRect(Rect.fromLTWH(0, 0, w, h), wash3);
   }
 
   void _paint3DVolumetricBevels(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
+    final lightX = lighting?.lx ?? -0.35;
+    final lightY = lighting?.ly ?? -0.85;
+    final isLeftLight = lightX < 0;
 
     // A. 3D UPWARD-FACING LUMINOUS BOTTOM SILL SHELF:
     final shelfColor = _getShelfHighlightColor(quality, isSpecial, isGrayDay);
@@ -1552,13 +1616,14 @@ final class SteinerFramePainter extends CustomPainter {
       ..cubicTo(w * 0.22, h * 0.940, w * 0.10, h * 0.860, w * 0.15, h * 0.780)
       ..close();
 
+    final shelfBrightness = (-lightY).clamp(0.35, 1.0);
     final shelfGradient = Paint()
       ..shader = ui.Gradient.linear(
         Offset(w * 0.5, h * 0.82),
         Offset(w * 0.5, h * 0.98),
         [
-          shelfColor.withValues(alpha: 0.95),
-          shelfColor.withValues(alpha: 0.60),
+          shelfColor.withValues(alpha: 0.95 * shelfBrightness),
+          shelfColor.withValues(alpha: 0.60 * shelfBrightness),
           _getFrameColors(
             quality,
             isSpecial,
@@ -1572,56 +1637,52 @@ final class SteinerFramePainter extends CustomPainter {
 
     // B. SCULPTURAL CORNER FACET CREASES (soft-chiseled planes):
     final creaseLight = Paint()
-      ..color = const Color(0x44FFFFFF)
+      ..color = const Color(0x50FFFFFF)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5);
 
     final creaseShadow = Paint()
-      ..color = const Color(0x28000000)
+      ..color = const Color(0x35000000)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
 
-    // Top-left corner facet
+    // Top-left corner facet: lit in morning, shaded in evening
     canvas.drawLine(
       Offset(w * 0.12, h * 0.15),
       Offset(w * 0.22, h * 0.25),
-      creaseLight,
+      isLeftLight ? creaseLight : creaseShadow,
     );
 
-    // Top-right corner facet
+    // Top-right corner facet: shaded in morning, lit in evening
     canvas.drawLine(
       Offset(w * 0.84, h * 0.078),
       Offset(w * 0.77, h * 0.230),
-      creaseShadow,
+      isLeftLight ? creaseShadow : creaseLight,
     );
 
     // Bottom-right corner facet
     canvas.drawLine(
       Offset(w * 0.800, h * 0.90),
       Offset(w * 0.795, h * 0.760),
-      creaseShadow,
+      isLeftLight ? creaseShadow : creaseLight,
     );
 
     // Bottom-left corner facet
     canvas.drawLine(
       Offset(w * 0.200, h * 0.90),
       Offset(w * 0.200, h * 0.760),
-      creaseLight,
+      isLeftLight ? creaseLight : creaseShadow,
     );
 
-    // C. Soft directional sunlight wash across entire frame
+    // C. Dynamic directional sunlight wash across entire frame
     final directionalShading = Paint()
       ..shader = ui.Gradient.linear(
-        Offset(0, 0),
-        Offset(w, h),
-        [
-          const Color(0x22FFFFFF),
-          const Color(0x00000000),
-          const Color(0x18000000),
-        ],
-        const [0.0, 0.50, 1.0],
+        Offset(w * (0.5 + lightX * 0.48), h * (0.5 + lightY * 0.48)),
+        Offset(w * (0.5 - lightX * 0.48), h * (0.5 - lightY * 0.48)),
+        [const Color(0x35FFFFFF), Colors.transparent, const Color(0x35000000)],
+        const [0.0, 0.45, 1.0],
       );
     canvas.drawRect(Rect.fromLTWH(0, 0, w, h), directionalShading);
   }
