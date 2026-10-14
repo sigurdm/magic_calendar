@@ -86,6 +86,113 @@ void main() {
       expect(find.text('Hovedsalat (Butterhead Lettuce)'), findsOneWidget);
     });
 
+    testWidgets(
+      'PlantRecommendationsCard opens crop detail modal and renders on 320x568 without overflow',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(320, 568);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          _buildTestApp(
+            SingleChildScrollView(
+              child: PlantRecommendationsCard(
+                info: sampleCalendarInfo,
+                selectedDate: DateTime(2026, 4, 15, 12, 0),
+                onPlanCropRequested: (_) {},
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+
+        // Verify PlantCategory filter chip interaction if present
+        final vegCatFilter = find.byKey(
+          const ValueKey('rec_category_vegetable'),
+        );
+        if (vegCatFilter.evaluate().isNotEmpty) {
+          await tester.ensureVisible(vegCatFilter);
+          await tester.tap(vegCatFilter);
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+
+          final allCatFilter = find.byKey(const ValueKey('rec_category_all'));
+          if (allCatFilter.evaluate().isNotEmpty) {
+            await tester.ensureVisible(allCatFilter);
+            await tester.tap(allCatFilter);
+            await tester.pumpAndSettle();
+            expect(tester.takeException(), isNull);
+          }
+        }
+
+        // Tap Marshmallow Root (or Carrot) to open the crop detail modal bottom sheet
+        final marshmallowFinder = find.text('Lægestokrose (Marshmallow Root)');
+        final targetCropFinder = marshmallowFinder.evaluate().isNotEmpty
+            ? marshmallowFinder
+            : find.text('Gulerod (Carrot)');
+        expect(targetCropFinder, findsOneWidget);
+
+        await tester.ensureVisible(targetCropFinder);
+        await tester.tap(targetCropFinder);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+
+        expect(find.text('Cultivation Guidance (Vejledning)'), findsOneWidget);
+        expect(
+          find.textContaining('Biodynamic Rhythms & Timing ('),
+          findsOneWidget,
+        );
+        expect(find.text('Close Guide'), findsOneWidget);
+
+        // Close modal
+        await tester.ensureVisible(find.text('Close Guide'));
+        await tester.tap(find.text('Close Guide'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'PlantRecommendationsCard includes multi-organ crops in currentMonthCrops when secondaryOrganRules match month and quality',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(1200, 1000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final flowerDayInfo = CalendarInfo(
+          quality: PlantQuality.flower,
+          isGrayDay: false,
+          message: 'Flower Day',
+          sapFlow: 'Ascending: Sap rises to flowers',
+          vitality: 'Waxing Gibbous',
+          moonPhase: MoonPhaseInfo(
+            illuminatedFraction: 0.8,
+            isWaxing: true,
+            phaseAngle: 120,
+          ),
+          planets: [],
+        );
+
+        await tester.pumpWidget(
+          _buildTestApp(
+            SingleChildScrollView(
+              child: PlantRecommendationsCard(
+                info: flowerDayInfo,
+                selectedDate: DateTime(2026, 7, 15, 10, 0),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Marshmallow Root (primary quality: root) has a secondary flower rule in July/August (months: [7, 8])
+        expect(find.text('Lægestokrose (Marshmallow Root)'), findsOneWidget);
+        expect(find.text('Off-Season'), findsNothing);
+      },
+    );
+
     testWidgets('BiodynamicCard renders and opens StirringTimerDialog', (
       WidgetTester tester,
     ) async {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sweph/sweph.dart';
 
+import 'src/services/climate_service.dart';
 import 'src/services/ephemeris_service.dart';
 import 'src/services/weather_service.dart';
 import 'src/ui/theme/app_theme.dart';
@@ -22,17 +23,29 @@ Future<void> main() async {
   );
 
   String? epheFilesPath;
+  ClimateProfileStore? climateStore;
   try {
     final appSupportDir = await getApplicationSupportDirectory();
     epheFilesPath = '${appSupportDir.path}/ephe_files';
+    climateStore = createFileClimateProfileStore(
+      '${appSupportDir.path}/climate_profiles',
+    );
   } catch (_) {
     // Fallback if path_provider fails in non-app environments
   }
 
+  final climateService = OpenMeteoClimateService(store: climateStore);
+
   await Sweph.init(epheFilesPath: epheFilesPath);
   await EphemerisWorker.init(epheFilesPath: epheFilesPath);
 
-  runApp(MyApp(ephemeris: IsolateEphemerisService(), weather: weatherService));
+  runApp(
+    MyApp(
+      ephemeris: IsolateEphemerisService(),
+      weather: weatherService,
+      climate: climateService,
+    ),
+  );
 }
 
 /// Root widget of the Magic Calendar application.
@@ -43,14 +56,27 @@ final class MyApp extends StatelessWidget {
   /// Source of weather forecasts and history.
   final WeatherService weather;
 
+  /// Optional source of 30-year climate normals.
+  final ClimateService? climate;
+
   /// Creates the application root.
-  const MyApp({super.key, required this.ephemeris, required this.weather});
+  const MyApp({
+    super.key,
+    required this.ephemeris,
+    required this.weather,
+    this.climate,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: CalendarHomePage(ephemeris: ephemeris, weather: weather),
+      home: CalendarHomePage(
+        ephemeris: ephemeris,
+        weather: weather,
+        climate: climate,
+      ),
     );
   }
 }

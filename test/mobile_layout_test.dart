@@ -4,6 +4,7 @@ import 'package:magic_calendar/main.dart';
 import 'package:magic_calendar/src/services/ephemeris_service.dart';
 import 'package:magic_calendar/src/ui/components/curved_text.dart';
 import 'package:magic_calendar/src/ui/components/plant_quality_card.dart';
+import 'package:magic_calendar/src/ui/components/task_planner_card.dart';
 import 'package:magic_calendar/src/ui/views/time_scroll_view.dart';
 
 import 'support/fakes.dart';
@@ -170,6 +171,82 @@ void main() {
         },
       );
     }
+
+    testWidgets(
+      'TaskPlannerCard renders category filters, propagation badges, multi-organ crop details, and non-empty window tiles on iPhone SE (320x568) without overflow',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 568);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final errors = <FlutterErrorDetails>[];
+        final oldOnError = FlutterError.onError;
+        FlutterError.onError = (details) {
+          errors.add(details);
+          oldOnError?.call(details);
+        };
+        addTearDown(() => FlutterError.onError = oldOnError);
+
+        final epoch = DateTime.utc(2026, 4, 15, 10, 0);
+        final orbitingEphemeris = FakeEphemerisService(
+          longitudeAt: (time) {
+            final hours = time.difference(epoch).inMinutes / 60.0;
+            return (hours * (360.0 / (27.32 * 24.0))) % 360.0;
+          },
+          declinationAt: (time) {
+            final hours = time.difference(epoch).inMinutes / 60.0;
+            return 20.0 - (hours % 48.0);
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: TaskPlannerCard(
+                  selectedDate: DateTime(2026, 4, 15, 10, 0),
+                  ephemeris: orbitingEphemeris,
+                  onTimeJump: (_) {},
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.text('Jump Timeline'), findsWidgets);
+
+        // Filter by Medicinal Herbs category on 320x568
+        final medicinalChip = find.byKey(
+          const ValueKey('planner_category_medicinalHerb'),
+        );
+        expect(medicinalChip, findsOneWidget);
+        await tester.ensureVisible(medicinalChip);
+        await tester.tap(medicinalChip);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+
+        // Search and select Marshmallow Root on 320x568
+        final searchField = find.byKey(
+          const ValueKey('task_planner_plant_search'),
+        );
+        await tester.enterText(searchField, 'Althea');
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+
+        final marshmallowChip = find.byKey(
+          const ValueKey('planner_crop_marshmallow_root'),
+        );
+        expect(marshmallowChip, findsOneWidget);
+        await tester.ensureVisible(marshmallowChip);
+        await tester.tap(marshmallowChip);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.text('Jump Timeline'), findsWidgets);
+        expect(errors, isEmpty);
+      },
+    );
 
     testWidgets('Timeline sticks to top of screen when scrolling down', (
       tester,

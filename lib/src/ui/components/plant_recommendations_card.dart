@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/agricultural_task_evaluator.dart';
+import '../../core/climate/climate.dart';
 import '../../core/ecological_synthesis.dart';
 import '../../core/models/models.dart';
 import '../../core/vegetable_database.dart';
 import '../../services/ephemeris_service.dart';
 import '../theme/biodynamic_icons.dart';
 import '../theme/goethean_palette.dart';
+import 'organic_vessel_container.dart';
 
 /// Navigation section within the plant recommendations card.
 enum _RecommendationsSection { vegetableSowing, farmOrganismTasks }
@@ -35,6 +37,12 @@ final class PlantRecommendationsCard extends StatefulWidget {
   /// Geographic latitude for seasonal and diurnal adaptation.
   final double? latitude;
 
+  /// Optional seasonal alignment mapping local climate onto the Danish reference calendar.
+  final SeasonAlignment? seasons;
+
+  /// Optional callback invoked when the user wants to plan upcoming windows for a specific crop.
+  final ValueChanged<VegetableEntry>? onPlanCropRequested;
+
   /// Creates an immutable [PlantRecommendationsCard].
   ///
   /// It is an error if [info] or [selectedDate] are null.
@@ -46,6 +54,8 @@ final class PlantRecommendationsCard extends StatefulWidget {
     this.weatherNotifier,
     this.ephemeris,
     this.latitude,
+    this.seasons,
+    this.onPlanCropRequested,
   });
 
   @override
@@ -56,12 +66,30 @@ final class PlantRecommendationsCard extends StatefulWidget {
 final class _PlantRecommendationsCardState
     extends State<PlantRecommendationsCard> {
   PlantQuality? _filterQuality;
+  PlantCategory? _filterCategory;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
   _RecommendationsSection _selectedSection =
       _RecommendationsSection.vegetableSowing;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   Color _getQualityColor(PlantQuality quality) {
     return GoetheanPalette.getColor(quality);
   }
+
+  Color _climateRatingColor(CropClimateRating rating) => switch (rating) {
+    CropClimateRating.wellSuited => const Color(0xFF10B981),
+    CropClimateRating.needsWarmthProtection ||
+    CropClimateRating.boltRiskInSummer ||
+    CropClimateRating.needsWinterProtection => const Color(0xFFF59E0B),
+    CropClimateRating.seasonTooShortOutdoors ||
+    CropClimateRating.overwinterIndoors => const Color(0xFFF87171),
+  };
 
   String _getQualityName(PlantQuality quality) {
     switch (quality) {
@@ -97,6 +125,24 @@ final class _PlantRecommendationsCardState
 
   void _showCropDetails(BuildContext context, VegetableEntry crop) {
     final themeColor = _getQualityColor(crop.quality);
+    final effectiveLatitude =
+        widget.latitude ?? DefaultLocations.copenhagenLatitude;
+    final alignment =
+        widget.seasons ??
+        HemisphereSeasonAlignment(latitude: effectiveLatitude);
+    final sowAnchor = crop.isFrostTender
+        ? SeasonalAnchor.frostTender
+        : SeasonalAnchor.thermal;
+    final localProfile = alignment.localProfile;
+    final climateEval = localProfile == null
+        ? null
+        : CropClimateEvaluation.evaluate(crop, localProfile);
+
+    List<int> localMonths(
+      List<int> danishMonths, {
+      SeasonalAnchor anchor = SeasonalAnchor.thermal,
+    }) => alignment.localMonthsFor(danishMonths, anchor: anchor);
+
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -148,6 +194,7 @@ final class _PlantRecommendationsCardState
                             ],
                           ),
                         ),
+                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -171,6 +218,123 @@ final class _PlantRecommendationsCardState
                         ),
                       ],
                     ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _buildTimingBadge(
+                          icon: Icons.category_outlined,
+                          label: crop.category.bilingualName,
+                          color: themeColor,
+                        ),
+                        _buildTimingBadge(
+                          icon: Icons.autorenew_outlined,
+                          label: crop.lifeCycle.bilingualName,
+                          color: GoetheanPalette.aspectGold,
+                        ),
+                        if (crop.hasMultipleOrgans)
+                          _buildTimingBadge(
+                            icon: Icons.layers_outlined,
+                            label:
+                                'Multi-Organ: ${crop.allQualities.map((q) => q.displayName).join(', ')}',
+                            color: const Color(0xFF38BDF8),
+                          ),
+                        if (climateEval != null)
+                          _buildTimingBadge(
+                            icon: climateEval.needsAttention
+                                ? Icons.thermostat_outlined
+                                : Icons.verified_outlined,
+                            label: climateEval.badgeLabel,
+                            color: _climateRatingColor(climateEval.rating),
+                          ),
+                      ],
+                    ),
+                    if (crop.aliasesDa.isNotEmpty ||
+                        crop.aliasesEn.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Synonymer / Aliases: ${[...crop.aliasesDa, ...crop.aliasesEn].join(' • ')}',
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          color: Colors.white60,
+                        ),
+                      ),
+                    ],
+                    if (climateEval != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        key: const ValueKey('crop_modal_climate_fit'),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _climateRatingColor(climateEval.rating)
+                              .withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _climateRatingColor(climateEval.rating)
+                                .withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.public_outlined,
+                                  size: 16,
+                                  color: _climateRatingColor(
+                                    climateEval.rating,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Local Climate & Season Fit (${localProfile!.koppen.code} · USDA Zone ${localProfile.hardinessZone.label})',
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: _climateRatingColor(
+                                        climateEval.rating,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              climateEval.summary,
+                              style: GoogleFonts.outfit(
+                                fontSize: 12.5,
+                                color: Colors.white.withValues(alpha: 0.92),
+                                height: 1.35,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              climateEval.localWindowNote,
+                              style: GoogleFonts.outfit(
+                                fontSize: 12,
+                                color: const Color(0xFFF3E5C8),
+                                height: 1.35,
+                              ),
+                            ),
+                            if (climateEval.hardinessNote != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                climateEval.hardinessNote!,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 11.5,
+                                  color: Colors.white70,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     Text(
                       'Cultivation Guidance (Vejledning)',
@@ -199,9 +363,118 @@ final class _PlantRecommendationsCardState
                         height: 1.4,
                       ),
                     ),
+                    if (crop.thunNotesDa.isNotEmpty ||
+                        crop.thunNotesEn.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Maria Thun Biodynamic Notes (Aussaattage)',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: GoetheanPalette.aspectGold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      if (crop.thunNotesDa.isNotEmpty)
+                        Text(
+                          crop.thunNotesDa,
+                          style: GoogleFonts.outfit(
+                            fontSize: 13,
+                            color: const Color(0xFFF6ECD8),
+                            height: 1.4,
+                          ),
+                        ),
+                      if (crop.thunNotesEn.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          crop.thunNotesEn,
+                          style: GoogleFonts.outfit(
+                            fontSize: 13,
+                            color: Colors.white70,
+                            fontStyle: FontStyle.italic,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ],
+                    if (crop.secondaryOrganRules.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Multi-Organ Timing Overrides',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...crop.secondaryOrganRules.map((rule) {
+                        final ruleColor = _getQualityColor(rule.quality);
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: ruleColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: ruleColor.withValues(alpha: 0.35),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  Text(
+                                    rule.localizedLabel,
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  _buildTimingBadge(
+                                    icon: Icons.auto_awesome_outlined,
+                                    label:
+                                        '${rule.quality.displayName} Day • ${_formatMonths(localMonths(rule.months))}',
+                                    color: ruleColor,
+                                  ),
+                                ],
+                              ),
+                              if (rule.noteDa.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  rule.noteDa,
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 12,
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
+                              if (rule.noteEn.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  rule.noteEn,
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 12,
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.white70,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
                     const SizedBox(height: 16),
                     Text(
-                      'Astronomical Rhythms & Timing',
+                      'Biodynamic Rhythms & Timing (${alignment.shortLabel})',
                       style: GoogleFonts.outfit(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -214,28 +487,71 @@ final class _PlantRecommendationsCardState
                       runSpacing: 8,
                       children: [
                         _buildTimingBadge(
-                          icon: Icons.calendar_month,
-                          label: 'Sow: ${_formatMonths(crop.sowingMonths)}',
-                          color: const Color(0xFF646CFF),
+                          icon: Icons.auto_awesome_outlined,
+                          label:
+                              'Sow & Hoe: ${_getQualityName(crop.quality)} Day',
+                          color: themeColor,
                         ),
+                        if (crop.indoorSowingMonths.isNotEmpty)
+                          _buildTimingBadge(
+                            icon: Icons.home_work_outlined,
+                            label:
+                                'Indoor Sow: ${_formatMonths(localMonths(crop.indoorSowingMonths, anchor: sowAnchor))}',
+                            color: const Color(0xFF38BDF8),
+                          ),
+                        if (crop.sowingMonths.isNotEmpty)
+                          _buildTimingBadge(
+                            icon: Icons.calendar_month,
+                            label:
+                                'Direct Sow: ${_formatMonths(localMonths(crop.sowingMonths, anchor: sowAnchor))}',
+                            color: const Color(0xFF646CFF),
+                          ),
+                        if (crop.transplantMonths.isNotEmpty)
+                          _buildTimingBadge(
+                            icon: Icons.south_outlined,
+                            label:
+                                'Transplant (Pflanzzeit): ${_formatMonths(localMonths(crop.transplantMonths, anchor: sowAnchor))}',
+                            color: const Color(0xFF8B5CF6),
+                          ),
+                        if (crop.cuttingMonths.isNotEmpty)
+                          _buildTimingBadge(
+                            icon: Icons.content_cut_outlined,
+                            label:
+                                'Cuttings (Descending): ${_formatMonths(localMonths(crop.cuttingMonths, anchor: SeasonalAnchor.dormancy))}',
+                            color: const Color(0xFFEC4899),
+                          ),
+                        if (crop.divisionMonths.isNotEmpty)
+                          _buildTimingBadge(
+                            icon: Icons.call_split_outlined,
+                            label:
+                                'Division (Pflanzzeit): ${_formatMonths(localMonths(crop.divisionMonths, anchor: sowAnchor))}',
+                            color: const Color(0xFF14B8A6),
+                          ),
+                        if (crop.graftingMonths.isNotEmpty)
+                          _buildTimingBadge(
+                            icon: Icons.call_merge_outlined,
+                            label:
+                                'Grafting (Ascending): ${_formatMonths(localMonths(crop.graftingMonths, anchor: SeasonalAnchor.dormancy))}',
+                            color: const Color(0xFFF97316),
+                          ),
+                        if (crop.pruningMonths.isNotEmpty)
+                          _buildTimingBadge(
+                            icon: Icons.carpenter_outlined,
+                            label:
+                                'Pruning (Descending): ${_formatMonths(localMonths(crop.pruningMonths, anchor: SeasonalAnchor.dormancy))}',
+                            color: const Color(0xFFA855F7),
+                          ),
                         _buildTimingBadge(
                           icon: Icons.agriculture,
                           label:
-                              'Harvest: ${_formatMonths(crop.harvestMonths)}',
+                              'Harvest: ${_formatMonths(localMonths(crop.harvestMonths, anchor: SeasonalAnchor.thermal))}',
                           color: const Color(0xFF10B981),
                         ),
                         _buildTimingBadge(
-                          icon: Icons.swap_vert,
-                          label: crop.prefersAscendingMoon
-                              ? 'Ascending Moon (Sap Up)'
-                              : 'Descending Moon (Sap Down)',
-                          color: const Color(0xFF8B5CF6),
-                        ),
-                        _buildTimingBadge(
-                          icon: Icons.nightlight_round,
-                          label: crop.prefersWaxingMoon
-                              ? 'Waxing Moon (Growth)'
-                              : 'Waning Moon (Root/Rest)',
+                          icon: Icons.inventory_2_outlined,
+                          label: crop.quality == PlantQuality.root
+                              ? 'Storage: Root Day + Descending Moon'
+                              : 'Storage: ${crop.quality.displayName} Day + Ascending Moon',
                           color: const Color(0xFFF59E0B),
                         ),
                       ],
@@ -273,7 +589,79 @@ final class _PlantRecommendationsCardState
                           })
                           .toList(growable: false),
                     ),
+                    if (crop.antagonistPlants.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Antagonist Plants (Dårlige Naboplanter)',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFFCA5A5),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: crop.antagonistPlants
+                            .map((plant) {
+                              return Chip(
+                                backgroundColor: const Color(0xFFEF4444)
+                                    .withValues(alpha: 0.12),
+                                side: BorderSide(
+                                  color: const Color(0xFFEF4444)
+                                      .withValues(alpha: 0.35),
+                                ),
+                                label: Text(
+                                  plant,
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 12,
+                                    color: const Color(0xFFFECACA),
+                                  ),
+                                ),
+                              );
+                            })
+                            .toList(growable: false),
+                      ),
+                    ],
                     const SizedBox(height: 24),
+                    if (widget.onPlanCropRequested != null) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: GoetheanPalette.aspectGold
+                                .withValues(alpha: 0.25),
+                            foregroundColor: const Color(0xFFF6ECD8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(
+                                color: GoetheanPalette.aspectGold.withValues(
+                                  alpha: 0.6,
+                                ),
+                              ),
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.event_available_outlined,
+                            size: 18,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            widget.onPlanCropRequested!(crop);
+                          },
+                          label: Text(
+                            'Find Optimal Windows for ${crop.nameEn}',
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
                     SizedBox(
                       width: double.infinity,
                       height: 48,
@@ -325,12 +713,14 @@ final class _PlantRecommendationsCardState
         children: [
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: GoogleFonts.outfit(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
+          Flexible(
+            child: Text(
+              label,
+              style: GoogleFonts.outfit(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
@@ -367,123 +757,127 @@ final class _PlantRecommendationsCardState
         ? const Color(0xFFF59E0B)
         : const Color(0xFF5B8A4E);
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: bannerColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: bannerColor.withValues(alpha: hasConflicts ? 0.4 : 0.25),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(
-                hasConflicts
-                    ? Icons.warning_amber_rounded
-                    : Icons.auto_awesome_outlined,
-                color: bannerColor,
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  EcologicalSynthesis.bannerMotto,
-                  style: GoogleFonts.outfit(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.2,
-                    color: bannerColor,
-                  ),
+    final innerContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(
+              hasConflicts
+                  ? Icons.warning_amber_rounded
+                  : Icons.auto_awesome_outlined,
+              color: !hasConflicts ? GoetheanPalette.aspectGold : bannerColor,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                EcologicalSynthesis.bannerMotto,
+                style: GoogleFonts.cinzel(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0,
+                  color: !hasConflicts
+                      ? GoetheanPalette.aspectGold
+                      : bannerColor,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            ecoResult.bannerSubtitle,
-            style: GoogleFonts.outfit(
-              fontSize: 12,
-              color: Colors.white.withValues(alpha: 0.85),
-              height: 1.35,
-            ),
-          ),
-          if (ecoResult.alerts.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Column(
-              children: ecoResult.alerts
-                  .map((alert) {
-                    final isCrit =
-                        alert.severity == EcologicalAlertSeverity.critical;
-                    final alertColor = isCrit
-                        ? const Color(0xFFEF4444)
-                        : const Color(0xFFF59E0B);
-                    return Container(
-                      margin: const EdgeInsets.only(top: 6),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: alertColor.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: alertColor.withValues(alpha: 0.25),
-                        ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            alert.preventsTillage
-                                ? Icons.water_drop_outlined
-                                : alert.preventsSpray
-                                ? Icons.air_outlined
-                                : alert.indoorSowingAdvised
-                                ? Icons.ac_unit_outlined
-                                : Icons.shield_outlined,
-                            size: 15,
-                            color: alertColor,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  alert.title,
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: alertColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  alert.practicalAdvice,
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 11,
-                                    color: Colors.white70,
-                                    height: 1.3,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  })
-                  .toList(growable: false),
             ),
           ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          ecoResult.bannerSubtitle,
+          style: GoogleFonts.cormorantGaramond(
+            fontSize: 15,
+            fontStyle: FontStyle.italic,
+            color: const Color(0xFFF3E5C8),
+            height: 1.35,
+          ),
+        ),
+        if (ecoResult.alerts.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Column(
+            children: ecoResult.alerts
+                .map((alert) {
+                  final isCrit =
+                      alert.severity == EcologicalAlertSeverity.critical;
+                  final alertColor = isCrit
+                      ? const Color(0xFFEF4444)
+                      : const Color(0xFFF59E0B);
+                  return Container(
+                    margin: const EdgeInsets.only(top: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: alertColor.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: alertColor.withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          alert.preventsTillage
+                              ? Icons.water_drop_outlined
+                              : alert.preventsSpray
+                              ? Icons.air_outlined
+                              : alert.indoorSowingAdvised
+                              ? Icons.ac_unit_outlined
+                              : Icons.shield_outlined,
+                          size: 15,
+                          color: alertColor,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                alert.title,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: alertColor,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                alert.practicalAdvice,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 11,
+                                  color: Colors.white70,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                })
+                .toList(growable: false),
+          ),
         ],
+      ],
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: SizedBox(
+        width: double.infinity,
+        child: OrganicVesselContainer.inset(
+          padding: const EdgeInsets.all(14),
+          accentColor: bannerColor,
+          seed: 2.1,
+          child: innerContent,
+        ),
       ),
     );
   }
@@ -491,9 +885,11 @@ final class _PlantRecommendationsCardState
   Widget _buildSectionToggle() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: const Color(0xFF1A1612).withValues(alpha: 0.75),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: GoetheanPalette.aspectGold.withValues(alpha: 0.22),
+        ),
       ),
       padding: const EdgeInsets.all(4),
       child: Row(
@@ -521,7 +917,7 @@ final class _PlantRecommendationsCardState
                 color:
                     _selectedSection ==
                         _RecommendationsSection.farmOrganismTasks
-                    ? Colors.white
+                    ? const Color(0xFFF6ECD8)
                     : Colors.white60,
               ),
               isSelected:
@@ -545,6 +941,9 @@ final class _PlantRecommendationsCardState
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    const activeAccent = GoetheanPalette.leafWater;
+    const activeTextColor = Color(0xFFF6ECD8);
+
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 44),
       child: InkWell(
@@ -555,12 +954,12 @@ final class _PlantRecommendationsCardState
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: isSelected
-                ? const Color(0xFF646CFF).withValues(alpha: 0.25)
+                ? activeAccent.withValues(alpha: 0.28)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isSelected
-                  ? const Color(0xFF646CFF).withValues(alpha: 0.6)
+                  ? GoetheanPalette.aspectGold.withValues(alpha: 0.65)
                   : Colors.transparent,
             ),
           ),
@@ -571,16 +970,17 @@ final class _PlantRecommendationsCardState
                   Icon(
                     icon,
                     size: 15,
-                    color: isSelected ? Colors.white : Colors.white60,
+                    color: isSelected ? activeTextColor : Colors.white60,
                   ),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   title,
-                  style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    color: isSelected ? Colors.white : Colors.white70,
+                  style: GoogleFonts.cinzel(
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    letterSpacing: 0.6,
+                    color: isSelected ? activeTextColor : Colors.white70,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -595,18 +995,52 @@ final class _PlantRecommendationsCardState
   Widget _buildVegetableSowingView(
     BuildContext context,
     PlantQuality activeQuality,
-    int currentMonth,
+    SeasonAlignment alignment,
   ) {
-    final cropsForQuality = VegetableDatabase.getVegetablesForQuality(
-      activeQuality == PlantQuality.none ? PlantQuality.none : activeQuality,
+    final cropsForQuality = VegetableDatabase.search(
+      _searchQuery,
+      quality: activeQuality == PlantQuality.none ? null : activeQuality,
+      category: _filterCategory,
     );
-    final currentMonthCrops = cropsForQuality
-        .where((crop) => crop.sowingMonths.contains(currentMonth))
-        .toList(growable: false);
+    final transfersSeasonally =
+        alignment.transferability != CalendarTransferability.doesNotTransfer;
 
-    final displayCrops = currentMonthCrops.isNotEmpty
-        ? currentMonthCrops
-        : cropsForQuality;
+    int refMonthFor(VegetableEntry crop) => alignment.referenceMonth(
+      widget.selectedDate,
+      anchor: crop.isFrostTender
+          ? SeasonalAnchor.frostTender
+          : SeasonalAnchor.thermal,
+    );
+
+    final currentMonthCrops = transfersSeasonally
+        ? cropsForQuality
+              .where((crop) {
+                final m = refMonthFor(crop);
+                return crop.sowingMonths.contains(m) ||
+                    crop.indoorSowingMonths.contains(m) ||
+                    crop.transplantMonths.contains(m) ||
+                    crop.cuttingMonths.contains(m) ||
+                    crop.divisionMonths.contains(m) ||
+                    crop.graftingMonths.contains(m) ||
+                    crop.secondaryOrganRules.any(
+                      (r) =>
+                          (activeQuality == PlantQuality.none ||
+                              r.quality == activeQuality) &&
+                          r.months.contains(m),
+                    );
+              })
+              .toList(growable: false)
+        : const <VegetableEntry>[];
+
+    final displayCrops =
+        (_searchQuery.trim().isNotEmpty || currentMonthCrops.isEmpty)
+        ? cropsForQuality
+        : currentMonthCrops;
+
+    final isDescending = widget.info.isMoonDescending;
+    final declinationNote = isDescending
+        ? 'Descending Moon (Pflanzzeit) active: favorable for both sowing and transplanting.'
+        : 'Ascending Moon active: favorable for seed sowing and above-ground harvest; hold root-disturbing transplants until Descending Moon.';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -614,15 +1048,50 @@ final class _PlantRecommendationsCardState
         Text(
           widget.info.isGrayDay
               ? 'Lunar node / perigee interference: Avoid sowing and transplanting today. Aerate beds gently or prepare biodynamic compost.'
-              : 'Optimal crops aligned with the current ${widget.info.quality.name.toUpperCase()} element and seasonal sowing window:',
-          style: GoogleFonts.outfit(
-            fontSize: 13,
-            color: Colors.white.withValues(alpha: 0.8),
+              : 'Optimal crops aligned with the ${widget.info.quality.name.toUpperCase()} constellation. $declinationNote',
+          style: GoogleFonts.cormorantGaramond(
+            fontSize: 15.5,
+            fontStyle: FontStyle.italic,
+            color: const Color(0xFFE5DAC6),
             height: 1.35,
           ),
         ),
+        if (alignment.caveats.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: GoetheanPalette.aspectGold.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: GoetheanPalette.aspectGold.withValues(alpha: 0.25),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.thermostat_outlined,
+                  size: 15,
+                  color: GoetheanPalette.aspectGold,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    alignment.caveats.join(' '),
+                    style: GoogleFonts.outfit(
+                      fontSize: 11.5,
+                      color: const Color(0xFFF3E5C8),
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 16),
-        // Category selector tabs with minimum 48x48 touch targets
+        // Organ quality selector tabs with minimum 48x48 touch targets
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -664,6 +1133,143 @@ final class _PlantRecommendationsCardState
             ],
           ),
         ),
+        const SizedBox(height: 10),
+        // PlantCategory filter row
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: ChoiceChip(
+                  key: const ValueKey('rec_category_all'),
+                  label: Text(
+                    'All Categories',
+                    style: GoogleFonts.outfit(
+                      fontSize: 11.5,
+                      fontWeight: _filterCategory == null
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                      color: _filterCategory == null
+                          ? Colors.white
+                          : Colors.white70,
+                    ),
+                  ),
+                  selected: _filterCategory == null,
+                  selectedColor: _getQualityColor(activeQuality)
+                      .withValues(alpha: 0.3),
+                  backgroundColor: Colors.white.withValues(alpha: 0.05),
+                  side: BorderSide(
+                    color: _filterCategory == null
+                        ? _getQualityColor(activeQuality)
+                        : Colors.white.withValues(alpha: 0.14),
+                  ),
+                  showCheckmark: false,
+                  onSelected: (_) {
+                    setState(() {
+                      _filterCategory = null;
+                    });
+                  },
+                ),
+              ),
+              for (final cat in PlantCategory.values)
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: ChoiceChip(
+                    key: ValueKey('rec_category_${cat.name}'),
+                    label: Text(
+                      cat.pluralNameEn,
+                      style: GoogleFonts.outfit(
+                        fontSize: 11.5,
+                        fontWeight: _filterCategory == cat
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                        color: _filterCategory == cat
+                            ? Colors.white
+                            : Colors.white70,
+                      ),
+                    ),
+                    selected: _filterCategory == cat,
+                    selectedColor: _getQualityColor(activeQuality)
+                        .withValues(alpha: 0.3),
+                    backgroundColor: Colors.white.withValues(alpha: 0.05),
+                    side: BorderSide(
+                      color: _filterCategory == cat
+                          ? _getQualityColor(activeQuality)
+                          : Colors.white.withValues(alpha: 0.14),
+                    ),
+                    showCheckmark: false,
+                    onSelected: (_) {
+                      setState(() {
+                        _filterCategory = cat;
+                      });
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        // Search box for filtering crops
+        TextField(
+          key: const ValueKey('recommendations_plant_search'),
+          controller: _searchController,
+          style: GoogleFonts.outfit(fontSize: 13, color: Colors.white),
+          decoration: InputDecoration(
+            hintText: 'Search 185+ plants, herbs, trees, aliases...',
+            hintStyle: GoogleFonts.outfit(
+              fontSize: 12.5,
+              color: Colors.white38,
+            ),
+            prefixIcon: const Icon(
+              Icons.search,
+              size: 18,
+              color: Colors.white54,
+            ),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(
+                      Icons.clear,
+                      size: 16,
+                      color: Colors.white54,
+                    ),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {
+                        _searchQuery = '';
+                      });
+                    },
+                  )
+                : null,
+            filled: true,
+            fillColor: Colors.black.withValues(alpha: 0.22),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.14),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.14),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: _getQualityColor(activeQuality)),
+            ),
+          ),
+          onChanged: (val) {
+            setState(() {
+              _searchQuery = val;
+            });
+          },
+        ),
         const SizedBox(height: 16),
         if (displayCrops.isEmpty)
           Padding(
@@ -682,7 +1288,88 @@ final class _PlantRecommendationsCardState
             children: displayCrops
                 .map((crop) {
                   final cropColor = _getQualityColor(crop.quality);
-                  final isSeasonal = crop.sowingMonths.contains(currentMonth);
+                  final cropMonth = refMonthFor(crop);
+                  final localProfile = alignment.localProfile;
+                  final climateEval = localProfile == null
+                      ? null
+                      : CropClimateEvaluation.evaluate(crop, localProfile);
+                  final isOutdoorSeasonTooShort =
+                      climateEval?.rating ==
+                      CropClimateRating.seasonTooShortOutdoors;
+                  final isDirectSow =
+                      transfersSeasonally &&
+                      !isOutdoorSeasonTooShort &&
+                      crop.sowingMonths.contains(cropMonth);
+                  final isIndoorSow =
+                      transfersSeasonally &&
+                      crop.indoorSowingMonths.contains(cropMonth);
+                  final isTransplant =
+                      transfersSeasonally &&
+                      crop.transplantMonths.contains(cropMonth);
+                  final isCutting =
+                      transfersSeasonally &&
+                      crop.cuttingMonths.contains(cropMonth);
+                  final isDivision =
+                      transfersSeasonally &&
+                      crop.divisionMonths.contains(cropMonth);
+                  final isGrafting =
+                      transfersSeasonally &&
+                      crop.graftingMonths.contains(cropMonth);
+                  CropTaskSchedule? activeSecondaryRule;
+                  if (transfersSeasonally) {
+                    for (final r in crop.secondaryOrganRules) {
+                      if ((activeQuality == PlantQuality.none ||
+                              r.quality == activeQuality) &&
+                          r.months.contains(cropMonth)) {
+                        activeSecondaryRule = r;
+                        break;
+                      }
+                    }
+                  }
+                  final isSeasonal =
+                      isDirectSow ||
+                      isIndoorSow ||
+                      isTransplant ||
+                      isCutting ||
+                      isDivision ||
+                      isGrafting ||
+                      activeSecondaryRule != null;
+
+                  final String windowLabel;
+                  if (!transfersSeasonally) {
+                    windowLabel = 'Cosmic Rhythm Match';
+                  } else if (isDirectSow && isTransplant && isDescending) {
+                    windowLabel = 'Optimal Sow & Transplant';
+                  } else if (isDirectSow) {
+                    windowLabel = 'Optimal Sow Window';
+                  } else if (isIndoorSow && isTransplant && isDescending) {
+                    windowLabel = 'Indoor Sow & Transplant';
+                  } else if (isIndoorSow) {
+                    windowLabel = 'Optimal Indoor Sow';
+                  } else if (isTransplant) {
+                    windowLabel = isDescending
+                        ? 'Optimal Transplant (Pflanzzeit)'
+                        : 'Transplant Month (Await Descending)';
+                  } else if (isDivision) {
+                    windowLabel = isDescending
+                        ? 'Optimal Division (Pflanzzeit)'
+                        : 'Division Month (Await Descending)';
+                  } else if (isGrafting) {
+                    windowLabel = !isDescending
+                        ? 'Optimal Grafting (Ascending)'
+                        : 'Grafting Month (Await Ascending)';
+                  } else if (isCutting) {
+                    windowLabel = isDescending
+                        ? 'Optimal Cuttings (Descending)'
+                        : 'Cuttings Month (Await Descending)';
+                  } else if (activeSecondaryRule != null) {
+                    windowLabel = activeSecondaryRule.labelEn;
+                  } else if (isOutdoorSeasonTooShort &&
+                      crop.sowingMonths.contains(cropMonth)) {
+                    windowLabel = 'Greenhouse / Tunnel Only';
+                  } else {
+                    windowLabel = 'Off-Season';
+                  }
 
                   return Material(
                     color: Colors.transparent,
@@ -730,9 +1417,7 @@ final class _PlantRecommendationsCardState
                                     ),
                                   ),
                                   Text(
-                                    isSeasonal
-                                        ? 'Optimal Sow Window'
-                                        : 'Off-Season',
+                                    windowLabel,
                                     style: GoogleFonts.outfit(
                                       fontSize: 10,
                                       color: isSeasonal
@@ -740,6 +1425,18 @@ final class _PlantRecommendationsCardState
                                           : Colors.white38,
                                     ),
                                   ),
+                                  if (climateEval != null &&
+                                      climateEval.needsAttention)
+                                    Text(
+                                      climateEval.badgeLabel,
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: _climateRatingColor(
+                                          climateEval.rating,
+                                        ),
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
@@ -1013,7 +1710,11 @@ final class _PlantRecommendationsCardState
 
   Widget _buildCard(BuildContext context) {
     final activeQuality = _filterQuality ?? widget.info.quality;
-    final currentMonth = widget.selectedDate.month;
+    final effectiveLatitude =
+        widget.latitude ?? DefaultLocations.copenhagenLatitude;
+    final alignment =
+        widget.seasons ??
+        HemisphereSeasonAlignment(latitude: effectiveLatitude);
     final activeColor = _getQualityColor(activeQuality);
     final effectiveWeather = _resolveWeather();
 
@@ -1021,80 +1722,84 @@ final class _PlantRecommendationsCardState
       calendarInfo: widget.info,
       time: widget.selectedDate,
       weather: effectiveWeather,
-      latitude: widget.latitude ?? DefaultLocations.copenhagenLatitude,
+      latitude: effectiveLatitude,
+      seasons: alignment,
     );
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: activeColor,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Planting Recommendations',
-                        style: GoogleFonts.outfit(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+    final innerColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: activeColor,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: activeColor.withValues(alpha: 0.45),
+                          blurRadius: 6,
                         ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Planting Recommendations',
+                      style: GoogleFonts.cormorantGaramond(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
+                        color: const Color(0xFFF6ECD8),
                       ),
                     ),
-                  ],
+                  ),
+                ],
+              ),
+            ),
+            if (widget.info.isGrayDay)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.withValues(alpha: 0.4)),
+                ),
+                child: Text(
+                  'Gray Day: Rest Soil',
+                  style: GoogleFonts.outfit(
+                    fontSize: 11,
+                    color: Colors.grey[300],
+                  ),
                 ),
               ),
-              if (widget.info.isGrayDay)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Colors.grey.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: Text(
-                    'Gray Day: Rest Soil',
-                    style: GoogleFonts.outfit(
-                      fontSize: 11,
-                      color: Colors.grey[300],
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _buildWeatherSynthesisBanner(context, ecoResult),
-          _buildSectionToggle(),
-          const SizedBox(height: 16),
-          if (_selectedSection == _RecommendationsSection.vegetableSowing)
-            _buildVegetableSowingView(context, activeQuality, currentMonth)
-          else
-            _buildFarmOrganismTasksView(context, effectiveWeather),
-        ],
+          ],
+        ),
+        const SizedBox(height: 14),
+        _buildWeatherSynthesisBanner(context, ecoResult),
+        _buildSectionToggle(),
+        const SizedBox(height: 16),
+        if (_selectedSection == _RecommendationsSection.vegetableSowing)
+          _buildVegetableSowingView(context, activeQuality, alignment)
+        else
+          _buildFarmOrganismTasksView(context, effectiveWeather),
+      ],
+    );
+
+    return SizedBox(
+      width: double.infinity,
+      child: OrganicVesselContainer(
+        padding: const EdgeInsets.all(20),
+        accentColor: activeColor,
+        seed: 1.8,
+        child: innerColumn,
       ),
     );
   }
