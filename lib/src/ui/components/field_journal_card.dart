@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -173,6 +175,83 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
       noteController.dispose();
       authorController.dispose();
     }
+  }
+
+  Future<void> _showPhotoViewerDialog(
+    FieldJournalEntry entry,
+    JournalAttachment attachment,
+  ) async {
+    final fullBytesFuture = widget.gardenController.loadFullAttachmentBytes(
+      attachment,
+    );
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: const Color(0xFF1F1A14),
+        title: Text(
+          attachment.caption.isNotEmpty ? attachment.caption : entry.title,
+          style: GoogleFonts.cormorantGaramond(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFFF6ECD8),
+          ),
+        ),
+        content: FutureBuilder<Uint8List?>(
+          future: fullBytesFuture,
+          builder: (context, snapshot) {
+            final bytes = snapshot.data ?? attachment.thumbnailBytes;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  key: ValueKey('photo_viewer_image_${attachment.id}'),
+                  width: 320,
+                  height: 220,
+                  decoration: BoxDecoration(
+                    color: Colors.black38,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: GoetheanPalette.aspectGold.withValues(alpha: 0.45),
+                    ),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: bytes != null
+                      ? Image.memory(
+                          bytes,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, _, _) => const Center(
+                            child: Icon(
+                              Icons.photo_outlined,
+                              color: Colors.white70,
+                              size: 40,
+                            ),
+                          ),
+                        )
+                      : const Center(child: CircularProgressIndicator()),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'By ${attachment.authorName} • ${attachment.remoteBlobName.substring(0, 22)}…',
+                  key: ValueKey('photo_viewer_meta_${attachment.id}'),
+                  style: GoogleFonts.outfit(
+                    fontSize: 11.5,
+                    color: Colors.white70,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            key: const ValueKey('photo_viewer_close_button'),
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showSharedGardenSyncDialog() async {
@@ -799,8 +878,93 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                         entry.weatherSnapshot!.compactSummary,
                         const Color(0xFF10B981),
                       ),
+                    if (entry.activeAttachments.isNotEmpty)
+                      _buildSnapshotPill(
+                        '📷 ${entry.activeAttachments.length}',
+                        GoetheanPalette.aspectGold,
+                      ),
                   ],
                 ),
+
+                if (entry.activeAttachments.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 60,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: entry.activeAttachments.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
+                      itemBuilder: (context, idx) {
+                        final att = entry.activeAttachments[idx];
+                        return InkWell(
+                          key: ValueKey('journal_attachment_thumb_${att.id}'),
+                          onTap: () => _showPhotoViewerDialog(entry, att),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            width: 84,
+                            decoration: BoxDecoration(
+                              color: Colors.black38,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: entryColor.withValues(alpha: 0.45),
+                              ),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                if (att.thumbnailBytes != null)
+                                  Image.memory(
+                                    att.thumbnailBytes!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => const Center(
+                                      child: Icon(
+                                        Icons.photo_camera_back_outlined,
+                                        color: Colors.white70,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  const Center(
+                                    child: Icon(
+                                      Icons.photo_camera_back_outlined,
+                                      color: Colors.white70,
+                                      size: 20,
+                                    ),
+                                  ),
+                                if (att.caption.isNotEmpty)
+                                  Positioned(
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                        vertical: 1.5,
+                                      ),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.65,
+                                      ),
+                                      child: Text(
+                                        att.caption,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 9,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
 
                 if (activeNotes.length > 1) ...[
                   const SizedBox(height: 8),

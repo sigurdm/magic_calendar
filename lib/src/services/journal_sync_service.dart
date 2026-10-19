@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 
+import '../core/garden/field_journal_entry.dart';
 import 'journal_sqlite_store.dart';
 
 /// Provider-agnostic cloud or shared-folder blob transport for syncing
@@ -27,7 +28,7 @@ abstract interface class GardenSyncTransport {
 }
 
 final RegExp _validBlobPathPattern = RegExp(
-  r'^(meta\.[0-9a-f]{24}\.sqlite|shards/\d{4}-(0[1-9]|1[0-2])\.[0-9a-f]{24}\.sqlite)$',
+  r'^(meta\.[0-9a-f]{24}\.sqlite|shards/\d{4}-(0[1-9]|1[0-2])\.[0-9a-f]{24}\.sqlite|media/[0-9a-f]{64}\.(jpg|png|webp))$',
 );
 
 final RegExp _shardBlobExtractPattern = RegExp(
@@ -150,6 +151,19 @@ final class DirectoryGardenSyncTransport implements GardenSyncTransport {
       }
     }
 
+    if (prefix.isEmpty || prefix.startsWith('media')) {
+      final mediaDir = Directory(p.join(directory.path, 'media'));
+      if (await mediaDir.exists()) {
+        await for (final entity in mediaDir.list(followLinks: false)) {
+          if (entity is! File) continue;
+          final rel = 'media/${p.basename(entity.path)}';
+          if (rel.startsWith(prefix) && _validBlobPathPattern.hasMatch(rel)) {
+            results.add(rel);
+          }
+        }
+      }
+    }
+
     results.sort();
     return results;
   }
@@ -238,12 +252,14 @@ final class WebDavGardenSyncTransport implements GardenSyncTransport {
   @override
   Future<List<String>> list(String prefix) async {
     final isShards = prefix.startsWith('shards');
+    final isMedia = prefix.startsWith('media');
     final basePath = baseUri.path.endsWith('/')
         ? baseUri.path
         : '${baseUri.path}/';
-    final targetUri = baseUri.replace(
-      path: isShards ? '${basePath}shards/' : basePath,
-    );
+    final subPath = isShards
+        ? '${basePath}shards/'
+        : (isMedia ? '${basePath}media/' : basePath);
+    final targetUri = baseUri.replace(path: subPath);
     final req = http.Request('PROPFIND', targetUri);
     req.headers.addAll(_headers({'Depth': '1'}));
     final streamed = await _client.send(req);
@@ -256,15 +272,21 @@ final class WebDavGardenSyncTransport implements GardenSyncTransport {
     }
     final body = await streamed.stream.bytesToString();
     final matches = RegExp(
-      r'(?:shards/)?\d{4}-(?:0[1-9]|1[0-2])\.[0-9a-f]{24}\.sqlite|meta\.[0-9a-f]{24}\.sqlite',
+      r'(?:shards/)?\d{4}-(?:0[1-9]|1[0-2])\.[0-9a-f]{24}\.sqlite|meta\.[0-9a-f]{24}\.sqlite|(?:media/)?[0-9a-f]{64}\.(?:jpg|png|webp)',
     ).allMatches(body);
     final found = <String>{};
     for (final m in matches) {
       final token = m.group(0)!;
-      final normalized =
-          (!token.startsWith('meta.') && !token.startsWith('shards/'))
-          ? 'shards/$token'
-          : token;
+      final String normalized;
+      if (token.startsWith('meta.') ||
+          token.startsWith('shards/') ||
+          token.startsWith('media/')) {
+        normalized = token;
+      } else if (token.endsWith('.sqlite')) {
+        normalized = 'shards/$token';
+      } else {
+        normalized = 'media/$token';
+      }
       if (normalized.startsWith(prefix) &&
           _validBlobPathPattern.hasMatch(normalized)) {
         found.add(normalized);
@@ -290,9 +312,15 @@ final class WebDavGardenSyncTransport implements GardenSyncTransport {
   @override
   Future<void> putBytes(String name, Uint8List bytes) async {
     final uri = _resolveObjectUri(name);
+    final contentType = switch (p.extension(name)) {
+      '.jpg' => 'image/jpeg',
+      '.png' => 'image/png',
+      '.webp' => 'image/webp',
+      _ => 'application/vnd.sqlite3',
+    };
     final resp = await _client.put(
       uri,
-      headers: _headers({'Content-Type': 'application/vnd.sqlite3'}),
+      headers: _headers({'Content-Type': contentType}),
       body: bytes,
     );
     if (resp.statusCode < 200 || resp.statusCode >= 300) {
@@ -325,6 +353,9 @@ final class GardenSyncReport {
   /// on disk until the user scrolls to them.
   final List<String> lazyUnhydratedShardKeys;
 
+  /// Content-addressed photo blobs (`media/<sha256>.<ext>`) uploaded during this sync pass.
+  final List<String> uploadedMediaBlobs;
+
   /// Number of superseded ancestor blobs garbage-collected on the remote transport.
   final int deletedAncestorBlobs;
 
@@ -334,12 +365,14 @@ final class GardenSyncReport {
     Iterable<String> mergedShardKeys = const [],
     Iterable<String> uploadedShardKeys = const [],
     Iterable<String> lazyUnhydratedShardKeys = const [],
+    Iterable<String> uploadedMediaBlobs = const [],
     this.deletedAncestorBlobs = 0,
   }) : mergedShardKeys = List<String>.unmodifiable(mergedShardKeys),
        uploadedShardKeys = List<String>.unmodifiable(uploadedShardKeys),
        lazyUnhydratedShardKeys = List<String>.unmodifiable(
          lazyUnhydratedShardKeys,
-       );
+       ),
+       uploadedMediaBlobs = List<String>.unmodifiable(uploadedMediaBlobs);
 }
 
 /// Coordinates conflict-free synchronization between a local
@@ -405,13 +438,54 @@ final class GardenSyncEngine {
       deletedAncestors += result.deletedAncestors;
     }
 
+    // 4. Upload any local content-addressed photo blobs (`media/<sha256>.<ext>`)
+    // not yet present on the remote transport. Remote photos are NOT eagerly
+    // downloaded here—inline thumbnails are already inside `YYYY-MM.sqlite` and
+    // full-resolution photos are fetched lazily on demand via [fetchAttachmentMedia].
+    final uploadedMedia = await _uploadMissingLocalMedia();
+
     return GardenSyncReport(
       completedAt: DateTime.now(),
       mergedShardKeys: mergedShards,
       uploadedShardKeys: uploadedShards,
       lazyUnhydratedShardKeys: store.listUnhydratedRemoteShardKeys(),
+      uploadedMediaBlobs: uploadedMedia,
       deletedAncestorBlobs: deletedAncestors,
     );
+  }
+
+  /// Lazily downloads, verifies (SHA-256 + magic bytes), and caches the
+  /// full-resolution image bytes for [attachment] from [transport].
+  ///
+  /// If the verified full-resolution file is already cached in [store], it is
+  /// returned immediately without network I/O.
+  ///
+  /// Throws a [FormatException] if the remote blob fails SHA-256 or magic-byte verification.
+  Future<Uint8List?> fetchAttachmentMedia(JournalAttachment attachment) async {
+    final localBytes = store.readLocalMediaBytes(attachment);
+    if (localBytes != null) return localBytes;
+
+    final remoteBytes = await transport.getBytes(attachment.remoteBlobName);
+    if (remoteBytes == null) return null;
+
+    // Verifies magic bytes and SHA-256 content address before writing to disk.
+    store.saveMediaBytesForAttachment(attachment, remoteBytes);
+    return remoteBytes;
+  }
+
+  Future<List<String>> _uploadMissingLocalMedia() async {
+    final localMedia = store.listLocalMediaBlobNames();
+    if (localMedia.isEmpty) return const [];
+    final remoteMedia = (await transport.list('media/')).toSet();
+    final uploaded = <String>[];
+    for (final blobName in localMedia) {
+      if (remoteMedia.contains(blobName)) continue;
+      final bytes = store.readLocalMediaBlobByName(blobName);
+      if (bytes == null) continue;
+      await transport.putBytes(blobName, bytes);
+      uploaded.add(blobName);
+    }
+    return uploaded;
   }
 
   /// Lazily downloads and merges a single historical month shard [shardKey] on demand.

@@ -15,6 +15,9 @@ import '../core/models/models.dart';
 /// Validates canonical monthly shard keys (`YYYY-MM`).
 final RegExp _shardKeyPattern = RegExp(r'^\d{4}-(0[1-9]|1[0-2])$');
 
+/// Validates canonical content-addressed media filenames (`<64-hex-sha256>.(jpg|png|webp)`).
+final RegExp _mediaFileNamePattern = RegExp(r'^[0-9a-f]{64}\.(jpg|png|webp)$');
+
 /// Monthly SQLite-sharded store for the Biodynamic Field Journal & Shared Garden Diary.
 ///
 /// Stores cross-month garden metadata (members, shared beds, active planting batch
@@ -59,6 +62,7 @@ final class ShardedSqliteJournalStore {
     }
     rootDirectory.createSync(recursive: true);
     Directory(p.join(rootDirectory.path, 'shards')).createSync(recursive: true);
+    Directory(p.join(rootDirectory.path, 'media')).createSync(recursive: true);
 
     final metaPath = p.join(rootDirectory.path, 'garden_meta.sqlite');
     _metaDb = sqlite3.open(metaPath);
@@ -223,6 +227,25 @@ final class ShardedSqliteJournalStore {
       );
       CREATE INDEX IF NOT EXISTS idx_notes_entry
         ON journal_notes(entry_id, timestamp_ms ASC);
+
+      CREATE TABLE IF NOT EXISTS journal_attachments (
+        attachment_id TEXT PRIMARY KEY NOT NULL,
+        entry_id TEXT NOT NULL,
+        note_id TEXT,
+        media_sha256 TEXT NOT NULL,
+        mime_type TEXT NOT NULL,
+        width INTEGER,
+        height INTEGER,
+        caption TEXT NOT NULL DEFAULT '',
+        author_id TEXT NOT NULL,
+        author_name TEXT NOT NULL,
+        timestamp_ms INTEGER NOT NULL,
+        thumbnail_bytes BLOB,
+        updated_hlc TEXT NOT NULL,
+        deleted_hlc TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_attachments_entry
+        ON journal_attachments(entry_id, timestamp_ms ASC);
     ''');
   }
 
@@ -618,6 +641,10 @@ final class ShardedSqliteJournalStore {
         _upsertNoteRow(db, note);
       }
 
+      for (final attachment in entry.attachments) {
+        _upsertAttachmentRow(db, attachment);
+      }
+
       db.execute('COMMIT');
     } catch (_) {
       db.execute('ROLLBACK');
@@ -680,6 +707,179 @@ final class ShardedSqliteJournalStore {
         note.deletedHlc,
       ],
     );
+  }
+
+  void _upsertAttachmentRow(Database db, JournalAttachment attachment) {
+    db.execute(
+      '''
+      INSERT INTO journal_attachments (
+        attachment_id, entry_id, note_id, media_sha256, mime_type,
+        width, height, caption, author_id, author_name, timestamp_ms,
+        thumbnail_bytes, updated_hlc, deleted_hlc
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(attachment_id) DO UPDATE SET
+        caption = excluded.caption,
+        thumbnail_bytes = COALESCE(excluded.thumbnail_bytes, journal_attachments.thumbnail_bytes),
+        updated_hlc = excluded.updated_hlc,
+        deleted_hlc = excluded.deleted_hlc
+      WHERE excluded.updated_hlc >= journal_attachments.updated_hlc
+      ''',
+      [
+        attachment.id,
+        attachment.entryId,
+        attachment.noteId,
+        attachment.mediaSha256,
+        attachment.mimeType,
+        attachment.width,
+        attachment.height,
+        attachment.caption,
+        attachment.authorId,
+        attachment.authorName,
+        attachment.timestamp.toUtc().millisecondsSinceEpoch,
+        attachment.thumbnailBytes,
+        attachment.updatedHlc,
+        attachment.deletedHlc,
+      ],
+    );
+  }
+
+  File _mediaFileForAttachment(JournalAttachment attachment) {
+    final fileName = '${attachment.mediaSha256}.${attachment.fileExtension}';
+    if (!_mediaFileNamePattern.hasMatch(fileName)) {
+      throw ArgumentError.value(
+        fileName,
+        'fileName',
+        'Must be a canonical content-addressed media filename',
+      );
+    }
+    return File(p.join(rootDirectory.path, 'media', p.basename(fileName)));
+  }
+
+  /// Verifies and persists full-resolution [fullBytes] for [attachment] under
+  /// `media/<sha256>.<ext>`.
+  ///
+  /// Throws a [FormatException] if [fullBytes] does not match [attachment]'s
+  /// magic-byte format or SHA-256 content digest.
+  void saveMediaBytesForAttachment(
+    JournalAttachment attachment,
+    Uint8List fullBytes,
+  ) {
+    _checkNotClosed();
+    if (!attachment.verifyBytes(fullBytes)) {
+      throw FormatException(
+        'Attachment bytes failed SHA-256 or magic-byte verification for ${attachment.mediaSha256}',
+      );
+    }
+    final target = _mediaFileForAttachment(attachment);
+    if (target.existsSync()) return;
+    target.parent.createSync(recursive: true);
+    final tmp = File(
+      '${target.path}.${DateTime.now().microsecondsSinceEpoch}.tmp',
+    );
+    tmp.writeAsBytesSync(fullBytes, flush: true);
+    tmp.renameSync(target.path);
+  }
+
+  /// Reads and verifies the local full-resolution media bytes for [attachment],
+  /// or returns `null` if the full-resolution file is not cached on disk.
+  Uint8List? readLocalMediaBytes(JournalAttachment attachment) {
+    _checkNotClosed();
+    final file = _mediaFileForAttachment(attachment);
+    if (!file.existsSync()) return null;
+    final bytes = file.readAsBytesSync();
+    if (!attachment.verifyBytes(bytes)) return null;
+    return bytes;
+  }
+
+  /// Lists all local content-addressed media blob paths (`media/<sha256>.<ext>`)
+  /// stored on disk, sorted alphabetically.
+  List<String> listLocalMediaBlobNames() {
+    _checkNotClosed();
+    final mediaDir = Directory(p.join(rootDirectory.path, 'media'));
+    if (!mediaDir.existsSync()) return const [];
+    final blobs = <String>[];
+    for (final entity in mediaDir.listSync(followLinks: false)) {
+      if (entity is! File) continue;
+      final base = p.basename(entity.path);
+      if (_mediaFileNamePattern.hasMatch(base)) {
+        blobs.add('media/$base');
+      }
+    }
+    blobs.sort();
+    return blobs;
+  }
+
+  /// Reads raw bytes for a canonical `media/<sha256>.<ext>` blob path from local disk.
+  Uint8List? readLocalMediaBlobByName(String blobName) {
+    _checkNotClosed();
+    if (!blobName.startsWith('media/')) return null;
+    final base = p.basename(blobName.substring('media/'.length));
+    if (!_mediaFileNamePattern.hasMatch(base)) return null;
+    final file = File(p.join(rootDirectory.path, 'media', base));
+    if (!file.existsSync()) return null;
+    return file.readAsBytesSync();
+  }
+
+  /// Attaches a photo ([fullBytes] + optional [thumbnailBytes]) to [entryId]
+  /// in its monthly SQLite shard and persists the full-resolution image in
+  /// `media/<sha256>.<ext>`.
+  FieldJournalEntry? attachPhotoToEntry({
+    required String entryId,
+    String? shardKey,
+    String? noteId,
+    required Uint8List fullBytes,
+    Uint8List? thumbnailBytes,
+    int? width,
+    int? height,
+    String caption = '',
+    String? authorId,
+    String? authorName,
+    DateTime? timestamp,
+    String? attachmentId,
+  }) {
+    _checkNotClosed();
+    final resolvedShard = shardKey ?? _findShardKeyForEntry(entryId);
+    if (resolvedShard == null || !hasLocalShard(resolvedShard)) return null;
+
+    final hlc = _nextHlc().toCanonicalString();
+    final now = timestamp ?? DateTime.now();
+    final resolvedAuthorId = (authorId != null && authorId.trim().isNotEmpty)
+        ? authorId.trim()
+        : _localActorId;
+    final resolvedAuthorName =
+        (authorName != null && authorName.trim().isNotEmpty)
+        ? authorName.trim()
+        : _localAuthorName;
+
+    final attachment = JournalAttachment.fromRawBytes(
+      id: attachmentId,
+      entryId: entryId,
+      noteId: noteId,
+      fullBytes: fullBytes,
+      thumbnailBytes: thumbnailBytes,
+      width: width,
+      height: height,
+      caption: caption,
+      authorId: resolvedAuthorId,
+      authorName: resolvedAuthorName,
+      timestamp: now,
+      updatedHlc: hlc,
+    );
+
+    saveMediaBytesForAttachment(attachment, fullBytes);
+
+    final db = _openOrTouchShard(resolvedShard, createIfMissing: false);
+    db.execute('BEGIN IMMEDIATE');
+    try {
+      _upsertAttachmentRow(db, attachment);
+      _rematerializeEntryFromFieldLww(db, entryId);
+      db.execute('COMMIT');
+    } catch (_) {
+      db.execute('ROLLBACK');
+      rethrow;
+    }
+
+    return getEntry(entryId, shardKey: resolvedShard);
   }
 
   void _syncPlantingIndexForEntry(
@@ -856,7 +1056,12 @@ final class ShardedSqliteJournalStore {
     );
     if (rows.isEmpty) return null;
     final notesMap = _loadNotesForEntries(db, [entryId]);
-    return _entryFromRow(rows.first, notesMap[entryId] ?? const []);
+    final attachmentsMap = _loadAttachmentsForEntries(db, [entryId]);
+    return _entryFromRow(
+      rows.first,
+      notesMap[entryId] ?? const [],
+      attachmentsMap[entryId] ?? const [],
+    );
   }
 
   /// Loads only the journal entries within `[start, end]` by querying only the
@@ -885,9 +1090,16 @@ final class ShardedSqliteJournalStore {
       if (rows.isEmpty) continue;
       final ids = [for (final r in rows) r['entry_id'] as String];
       final notesByEntry = _loadNotesForEntries(db, ids);
+      final attachmentsByEntry = _loadAttachmentsForEntries(db, ids);
       for (final row in rows) {
         final id = row['entry_id'] as String;
-        results.add(_entryFromRow(row, notesByEntry[id] ?? const []));
+        results.add(
+          _entryFromRow(
+            row,
+            notesByEntry[id] ?? const [],
+            attachmentsByEntry[id] ?? const [],
+          ),
+        );
       }
     }
     results.sort((a, b) => b.timestamp.compareTo(a.timestamp));
@@ -931,12 +1143,68 @@ final class ShardedSqliteJournalStore {
       if (rows.isEmpty) continue;
       final ids = [for (final r in rows) r['entry_id'] as String];
       final notesByEntry = _loadNotesForEntries(db, ids);
+      final attachmentsByEntry = _loadAttachmentsForEntries(db, ids);
       for (final row in rows) {
         final id = row['entry_id'] as String;
-        results.add(_entryFromRow(row, notesByEntry[id] ?? const []));
+        results.add(
+          _entryFromRow(
+            row,
+            notesByEntry[id] ?? const [],
+            attachmentsByEntry[id] ?? const [],
+          ),
+        );
       }
     }
     return results;
+  }
+
+  Map<String, List<JournalAttachment>> _loadAttachmentsForEntries(
+    Database db,
+    List<String> entryIds,
+  ) {
+    if (entryIds.isEmpty) return const {};
+    final placeholders = List.filled(entryIds.length, '?').join(', ');
+    final rows = db.select('''
+      SELECT * FROM journal_attachments
+      WHERE entry_id IN ($placeholders)
+        AND deleted_hlc IS NULL
+      ORDER BY timestamp_ms ASC, updated_hlc ASC
+      ''', entryIds);
+    final grouped = <String, List<JournalAttachment>>{};
+    for (final row in rows) {
+      final entryId = row['entry_id'] as String;
+      final mimeRaw = row['mime_type'] as String? ?? 'image/jpeg';
+      final format =
+          JournalImageFormat.tryFromMimeOrExtension(mimeRaw) ??
+          JournalImageFormat.jpeg;
+      final rawThumb = row['thumbnail_bytes'];
+      final Uint8List? thumbBytes = switch (rawThumb) {
+        final Uint8List b => b,
+        final List<int> l => Uint8List.fromList(l),
+        _ => null,
+      };
+      final attachment = JournalAttachment(
+        id: row['attachment_id'] as String,
+        entryId: entryId,
+        noteId: row['note_id'] as String?,
+        mediaSha256: row['media_sha256'] as String,
+        format: format,
+        width: row['width'] as int?,
+        height: row['height'] as int?,
+        caption: row['caption'] as String? ?? '',
+        authorId: row['author_id'] as String,
+        authorName: row['author_name'] as String,
+        timestamp: DateTime.fromMillisecondsSinceEpoch(
+          row['timestamp_ms'] as int,
+          isUtc: true,
+        ).toLocal(),
+        thumbnailBytes: thumbBytes,
+        updatedHlc: row['updated_hlc'] as String,
+        deletedHlc: row['deleted_hlc'] as String?,
+      );
+      (grouped[entryId] ??= <JournalAttachment>[]).add(attachment);
+    }
+    return grouped;
   }
 
   Map<String, List<JournalNote>> _loadNotesForEntries(
@@ -982,7 +1250,11 @@ final class ShardedSqliteJournalStore {
     return grouped;
   }
 
-  FieldJournalEntry _entryFromRow(Row row, List<JournalNote> notes) {
+  FieldJournalEntry _entryFromRow(
+    Row row,
+    List<JournalNote> notes, [
+    List<JournalAttachment> attachments = const [],
+  ]) {
     final actionRaw = row['action'] as String;
     FieldJournalAction action = FieldJournalAction.sowSeeds;
     for (final candidate in FieldJournalAction.values) {
@@ -1078,6 +1350,7 @@ final class ShardedSqliteJournalStore {
       outcomeNote: synthesizedOutcome,
       outcomeRating: effectiveRating,
       noteThread: notes,
+      attachments: attachments,
       updatedHlc: row['updated_hlc'] as String,
       deletedHlc: row['deleted_hlc'] as String?,
     );
@@ -1149,6 +1422,26 @@ final class ShardedSqliteJournalStore {
           WHERE excluded.updated_hlc > main.journal_notes.updated_hlc
         ''');
 
+        // 3b. Merge photo attachments (append-only union + per-attachment LWW).
+        db.execute('''
+          INSERT INTO main.journal_attachments (
+            attachment_id, entry_id, note_id, media_sha256, mime_type,
+            width, height, caption, author_id, author_name, timestamp_ms,
+            thumbnail_bytes, updated_hlc, deleted_hlc
+          )
+          SELECT
+            attachment_id, entry_id, note_id, media_sha256, mime_type,
+            width, height, caption, author_id, author_name, timestamp_ms,
+            thumbnail_bytes, updated_hlc, deleted_hlc
+          FROM remote.journal_attachments WHERE true
+          ON CONFLICT(attachment_id) DO UPDATE SET
+            caption = excluded.caption,
+            thumbnail_bytes = COALESCE(excluded.thumbnail_bytes, main.journal_attachments.thumbnail_bytes),
+            updated_hlc = excluded.updated_hlc,
+            deleted_hlc = excluded.deleted_hlc
+          WHERE excluded.updated_hlc > main.journal_attachments.updated_hlc
+        ''');
+
         // 4. Rematerialize all entries in this shard from winning field LWW values.
         final entryIdsRows = db.select(
           'SELECT entry_id FROM main.journal_entries',
@@ -1164,6 +1457,8 @@ final class ShardedSqliteJournalStore {
             SELECT MAX(updated_hlc) AS hlc FROM main.entry_field_lww
             UNION ALL
             SELECT MAX(updated_hlc) AS hlc FROM main.journal_notes
+            UNION ALL
+            SELECT MAX(updated_hlc) AS hlc FROM main.journal_attachments
             UNION ALL
             SELECT MAX(updated_hlc) AS hlc FROM main.journal_entries
           )
@@ -1183,12 +1478,16 @@ final class ShardedSqliteJournalStore {
 
     // Update cross-month planting_index and beds in garden_meta.sqlite.
     final activeRows = db.select('SELECT * FROM journal_entries');
-    final notesByEntry = _loadNotesForEntries(db, [
-      for (final r in activeRows) r['entry_id'] as String,
-    ]);
+    final allIds = [for (final r in activeRows) r['entry_id'] as String];
+    final notesByEntry = _loadNotesForEntries(db, allIds);
+    final attachmentsByEntry = _loadAttachmentsForEntries(db, allIds);
     for (final row in activeRows) {
       final id = row['entry_id'] as String;
-      final entry = _entryFromRow(row, notesByEntry[id] ?? const []);
+      final entry = _entryFromRow(
+        row,
+        notesByEntry[id] ?? const [],
+        attachmentsByEntry[id] ?? const [],
+      );
       if (entry.bedName != null && entry.bedName!.trim().isNotEmpty) {
         addBedName(entry.bedName!, hlcOverride: entry.updatedHlc);
       }
@@ -1220,6 +1519,15 @@ final class ShardedSqliteJournalStore {
     if (noteMaxRows.isNotEmpty && noteMaxRows.first['m'] is String) {
       final noteMax = noteMaxRows.first['m'] as String;
       if (noteMax.compareTo(maxHlc) > 0) maxHlc = noteMax;
+    }
+
+    final attMaxRows = db.select(
+      'SELECT MAX(updated_hlc) AS m FROM journal_attachments WHERE entry_id = ?',
+      [entryId],
+    );
+    if (attMaxRows.isNotEmpty && attMaxRows.first['m'] is String) {
+      final attMax = attMaxRows.first['m'] as String;
+      if (attMax.compareTo(maxHlc) > 0) maxHlc = attMax;
     }
 
     db.execute(
@@ -1380,6 +1688,15 @@ final class ShardedSqliteJournalStore {
     for (final row in notes) {
       buffer.writeln(
         'N:${row['note_id']}:${row['entry_id']}:${row['updated_hlc']}:${row['deleted_hlc'] ?? ''}:${row['outcome_rating'] ?? ''}:${row['body']}',
+      );
+    }
+
+    final attachments = db.select(
+      'SELECT attachment_id, entry_id, media_sha256, updated_hlc, deleted_hlc, caption FROM journal_attachments ORDER BY attachment_id ASC',
+    );
+    for (final row in attachments) {
+      buffer.writeln(
+        'A:${row['attachment_id']}:${row['entry_id']}:${row['media_sha256']}:${row['updated_hlc']}:${row['deleted_hlc'] ?? ''}:${row['caption']}',
       );
     }
 

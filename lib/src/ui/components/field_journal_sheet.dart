@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -9,6 +11,33 @@ import '../../core/vegetable_database.dart';
 import '../../services/garden_service.dart';
 import '../theme/goethean_palette.dart';
 import 'organic_vessel_container.dart';
+
+/// A raw photo and optional thumbnail/caption selected in [FieldJournalSheet].
+final class PickedJournalPhoto {
+  /// Full-resolution image bytes (PNG, JPEG, or WebP).
+  final Uint8List fullBytes;
+
+  /// Optional compact thumbnail bytes (`<= 64 KB`).
+  final Uint8List? thumbnailBytes;
+
+  /// Optional caption describing the photo.
+  final String caption;
+
+  /// Optional width in pixels.
+  final int? width;
+
+  /// Optional height in pixels.
+  final int? height;
+
+  /// Creates a [PickedJournalPhoto].
+  const PickedJournalPhoto({
+    required this.fullBytes,
+    this.thumbnailBytes,
+    this.caption = '',
+    this.width,
+    this.height,
+  });
+}
 
 /// Modal bottom sheet for logging a new comparative biodynamic field action or
 /// recording follow-up collaborative notes and trial outcomes on an existing
@@ -50,6 +79,9 @@ final class FieldJournalSheet extends StatefulWidget {
   /// Existing entry when editing or recording a comparative outcome / follow-up note.
   final FieldJournalEntry? existingEntry;
 
+  /// Optional custom photo picker callback (for mobile camera/gallery plugins or tests).
+  final Future<PickedJournalPhoto?> Function(BuildContext context)? onPickPhoto;
+
   /// Creates a [FieldJournalSheet].
   const FieldJournalSheet({
     super.key,
@@ -65,6 +97,7 @@ final class FieldJournalSheet extends StatefulWidget {
     this.initialTitle,
     this.initialNotes = '',
     this.existingEntry,
+    this.onPickPhoto,
   });
 
   /// Resolves the closest [WeatherDataPoint] to [time] from [weatherSeries].
@@ -105,6 +138,7 @@ final class FieldJournalSheet extends StatefulWidget {
     String? initialTitle,
     String initialNotes = '',
     FieldJournalEntry? existingEntry,
+    Future<PickedJournalPhoto?> Function(BuildContext context)? onPickPhoto,
   }) {
     final resolvedWeather =
         weather ?? resolveClosestWeather(timestamp, weatherSeries);
@@ -135,6 +169,7 @@ final class FieldJournalSheet extends StatefulWidget {
         initialTitle: existingEntry?.title ?? initialTitle,
         initialNotes: existingEntry?.notes ?? initialNotes,
         existingEntry: existingEntry,
+        onPickPhoto: onPickPhoto,
       ),
     );
   }
@@ -155,6 +190,8 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
   late final TextEditingController _outcomeController;
   int? _outcomeRating;
   bool _titleManuallyEdited = false;
+  final List<PickedJournalPhoto> _stagedPhotos = <PickedJournalPhoto>[];
+  String? _photoErrorMessage;
 
   @override
   void initState() {
@@ -220,6 +257,112 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
     );
   }
 
+  Future<void> _handleAttachPhoto() async {
+    setState(() {
+      _photoErrorMessage = null;
+    });
+    try {
+      final PickedJournalPhoto? picked;
+      if (widget.onPickPhoto != null) {
+        picked = await widget.onPickPhoto!(context);
+      } else {
+        picked = await _promptForLocalPhotoFile();
+      }
+      if (picked == null) return;
+      // Validate format and 10 MB limit immediately.
+      if (picked.fullBytes.isEmpty ||
+          picked.fullBytes.length > JournalAttachment.maxPhotoBytes) {
+        setState(() {
+          _photoErrorMessage = 'Photo must be non-empty and at most 10 MB.';
+        });
+        return;
+      }
+      JournalImageFormat.detect(picked.fullBytes);
+      if (!mounted) return;
+      setState(() {
+        _stagedPhotos.add(picked!);
+      });
+    } on FormatException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _photoErrorMessage = e.message;
+      });
+    }
+  }
+
+  Future<PickedJournalPhoto?> _promptForLocalPhotoFile() async {
+    final pathCtrl = TextEditingController();
+    final captionCtrl = TextEditingController();
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          backgroundColor: const Color(0xFF1F1A14),
+          title: Text(
+            'Attach Garden Photo',
+            style: GoogleFonts.cormorantGaramond(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFFF6ECD8),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                key: const ValueKey('journal_photo_path_input'),
+                controller: pathCtrl,
+                style: GoogleFonts.outfit(fontSize: 13, color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Image File Path (.jpg, .png, .webp)',
+                  hintText: '/path/to/photo.jpg',
+                  labelStyle: GoogleFonts.outfit(color: Colors.white70),
+                  hintStyle: GoogleFonts.outfit(color: Colors.white38),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                key: const ValueKey('journal_photo_caption_input'),
+                controller: captionCtrl,
+                style: GoogleFonts.outfit(fontSize: 13, color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Caption (Optional)',
+                  hintText: 'e.g. First true leaves in Bed 2',
+                  labelStyle: GoogleFonts.outfit(color: Colors.white70),
+                  hintStyle: GoogleFonts.outfit(color: Colors.white38),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              key: const ValueKey('journal_photo_dialog_confirm'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Attach'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || pathCtrl.text.trim().isEmpty) return null;
+      final file = File(pathCtrl.text.trim());
+      if (!await file.exists()) {
+        throw const FormatException('Selected image file does not exist');
+      }
+      final bytes = await file.readAsBytes();
+      return PickedJournalPhoto(
+        fullBytes: bytes,
+        caption: captionCtrl.text.trim(),
+      );
+    } finally {
+      pathCtrl.dispose();
+      captionCtrl.dispose();
+    }
+  }
+
   Future<void> _save() async {
     final existing = widget.existingEntry;
     final cosmicSnapshot =
@@ -239,11 +382,36 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
         ? rawTitle
         : _computeAutoTitle(_action, _crop, _prepCode, _quality);
     final rawBed = _bedController.text.trim();
+    final entryId =
+        existing?.id ??
+        'journal_${widget.timestamp.millisecondsSinceEpoch}_${_action.name}_${_crop?.id ?? _prepCode ?? _quality.name}';
+    final authorId = existing?.authorId ?? widget.gardenController.localActorId;
+    final authorName =
+        existing?.authorName ?? widget.gardenController.localAuthorName;
+
+    final mergedAttachments = <JournalAttachment>[
+      ...(existing?.attachments ?? const <JournalAttachment>[]),
+    ];
+    final fullBytesByAttachmentId = <String, Uint8List>{};
+    for (int i = 0; i < _stagedPhotos.length; i++) {
+      final staged = _stagedPhotos[i];
+      final attachment = JournalAttachment.fromRawBytes(
+        entryId: entryId,
+        fullBytes: staged.fullBytes,
+        thumbnailBytes: staged.thumbnailBytes,
+        width: staged.width,
+        height: staged.height,
+        caption: staged.caption,
+        authorId: widget.gardenController.localActorId,
+        authorName: widget.gardenController.localAuthorName,
+        timestamp: DateTime.now().add(Duration(microseconds: i)),
+      );
+      mergedAttachments.add(attachment);
+      fullBytesByAttachmentId[attachment.id] = staged.fullBytes;
+    }
 
     final entry = FieldJournalEntry(
-      id:
-          existing?.id ??
-          'journal_${widget.timestamp.millisecondsSinceEpoch}_${_action.name}_${_crop?.id ?? _prepCode ?? _quality.name}',
+      id: entryId,
       timestamp: widget.timestamp,
       action: _action,
       title: resolvedTitle,
@@ -252,9 +420,8 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
       bedName: rawBed.isEmpty ? null : rawBed,
       parentEntryId: _parentEntryId,
       quality: _quality,
-      authorId: existing?.authorId ?? widget.gardenController.localActorId,
-      authorName:
-          existing?.authorName ?? widget.gardenController.localAuthorName,
+      authorId: authorId,
+      authorName: authorName,
       cosmicSnapshot: cosmicSnapshot,
       weatherSnapshot: weatherSnapshot,
       location:
@@ -263,9 +430,15 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
       outcomeNote: _outcomeController.text.trim(),
       outcomeRating: _outcomeRating,
       noteThread: existing?.noteThread ?? const [],
+      attachments: mergedAttachments,
     );
 
-    await widget.gardenController.addJournalEntry(entry);
+    await widget.gardenController.addJournalEntry(
+      entry,
+      fullMediaBytesByAttachmentId: fullBytesByAttachmentId.isEmpty
+          ? null
+          : fullBytesByAttachmentId,
+    );
     if (!mounted) return;
     Navigator.of(context).pop(entry);
   }
@@ -729,6 +902,113 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
                             accentColor: accentColor,
                           ),
                         ),
+                        const SizedBox(height: 12),
+
+                        // Photo Attachments Section
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'GARDEN PHOTOS (THUMBNAIL + CLOUD MEDIA)',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.9,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            OutlinedButton.icon(
+                              key: const ValueKey(
+                                'field_journal_attach_photo_button',
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: GoetheanPalette.aspectGold,
+                                side: BorderSide(
+                                  color: GoetheanPalette.aspectGold.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                minimumSize: const Size(64, 30),
+                              ),
+                              onPressed: _handleAttachPhoto,
+                              icon: const Icon(
+                                Icons.add_a_photo_outlined,
+                                size: 15,
+                                color: GoetheanPalette.aspectGold,
+                              ),
+                              label: Text(
+                                'Attach Photo',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_photoErrorMessage != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            _photoErrorMessage!,
+                            style: GoogleFonts.outfit(
+                              fontSize: 11,
+                              color: Colors.redAccent,
+                            ),
+                          ),
+                        ],
+                        if ((widget
+                                    .existingEntry
+                                    ?.activeAttachments
+                                    .isNotEmpty ??
+                                false) ||
+                            _stagedPhotos.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 68,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              children: [
+                                for (final existingAtt
+                                    in widget
+                                            .existingEntry
+                                            ?.activeAttachments ??
+                                        const <JournalAttachment>[])
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: _buildStagedPhotoPreview(
+                                      bytes: existingAtt.thumbnailBytes,
+                                      caption: existingAtt.caption,
+                                      accentColor: accentColor,
+                                    ),
+                                  ),
+                                for (int i = 0; i < _stagedPhotos.length; i++)
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: _buildStagedPhotoPreview(
+                                      key: ValueKey('staged_photo_preview_$i'),
+                                      bytes:
+                                          _stagedPhotos[i].thumbnailBytes ??
+                                          _stagedPhotos[i].fullBytes,
+                                      caption: _stagedPhotos[i].caption,
+                                      accentColor: accentColor,
+                                      onRemove: () {
+                                        setState(() {
+                                          _stagedPhotos.removeAt(i);
+                                        });
+                                      },
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 14),
 
                         // Comparative Outcome Section (Closing the Maria Thun Loop)
@@ -864,6 +1144,82 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: BorderSide(color: accentColor),
+      ),
+    );
+  }
+
+  Widget _buildStagedPhotoPreview({
+    Key? key,
+    required Uint8List? bytes,
+    required String caption,
+    required Color accentColor,
+    VoidCallback? onRemove,
+  }) {
+    return Container(
+      key: key,
+      width: 96,
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: accentColor.withValues(alpha: 0.5)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (bytes != null)
+            Image.memory(
+              bytes,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => const Center(
+                child: Icon(
+                  Icons.photo_outlined,
+                  color: Colors.white70,
+                  size: 22,
+                ),
+              ),
+            )
+          else
+            const Center(
+              child: Icon(
+                Icons.photo_outlined,
+                color: Colors.white70,
+                size: 22,
+              ),
+            ),
+          if (caption.isNotEmpty)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                color: Colors.black.withValues(alpha: 0.65),
+                child: Text(
+                  caption,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.outfit(fontSize: 9.5, color: Colors.white),
+                ),
+              ),
+            ),
+          if (onRemove != null)
+            Positioned(
+              top: 2,
+              right: 2,
+              child: InkWell(
+                onTap: onRemove,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(
+                    color: Colors.black87,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close, size: 13, color: Colors.white),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

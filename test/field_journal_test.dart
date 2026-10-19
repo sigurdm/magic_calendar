@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import 'package:magic_calendar/src/core/models/models.dart';
 import 'package:magic_calendar/src/services/garden_service.dart';
 import 'package:magic_calendar/src/ui/components/biodynamic_card.dart';
 import 'package:magic_calendar/src/ui/components/field_journal_card.dart';
+import 'package:magic_calendar/src/ui/components/field_journal_sheet.dart';
 import 'package:magic_calendar/src/ui/components/plant_recommendations_card.dart';
 import 'package:magic_calendar/src/ui/components/task_planner_card.dart';
 import 'package:magic_calendar/src/ui/components/week_ahead_card.dart';
@@ -681,6 +683,232 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(controller.value.journalEntries, hasLength(2));
+      },
+    );
+  });
+
+  group('JournalAttachment Photo Storage & Cloud Media Sync', () {
+    // Valid 1x1 transparent PNG bytes
+    final samplePngBytes = Uint8List.fromList(const <int>[
+      0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
+      0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, // IHDR chunk
+      0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+      0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+      0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41, // IDAT chunk
+      0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+      0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
+      0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, // IEND chunk
+      0x42, 0x60, 0x82,
+    ]);
+
+    test('validates PNG/JPEG/WebP magic bytes and rejects invalid or tampered media', () {
+      expect(
+        JournalImageFormat.detect(samplePngBytes),
+        equals(JournalImageFormat.png),
+      );
+      expect(
+        JournalImageFormat.detect(
+          Uint8List.fromList(const [0xFF, 0xD8, 0xFF, 0xE0]),
+        ),
+        equals(JournalImageFormat.jpeg),
+      );
+      expect(
+        () => JournalImageFormat.detect(
+          Uint8List.fromList(const [0x00, 0x01, 0x02, 0x03]),
+        ),
+        throwsFormatException,
+      );
+
+      final att = JournalAttachment.fromRawBytes(
+        entryId: 'entry_1',
+        fullBytes: samplePngBytes,
+        caption: 'Seedling emergence',
+        authorId: 'actor_sigurd',
+        authorName: 'Sigurd',
+      );
+      expect(att.format, equals(JournalImageFormat.png));
+      expect(att.remoteBlobName, startsWith('media/'));
+      expect(att.remoteBlobName, endsWith('.png'));
+      expect(att.verifyBytes(samplePngBytes), isTrue);
+
+      final tampered = Uint8List.fromList(samplePngBytes);
+      tampered[tampered.length - 1] ^= 0xFF;
+      expect(att.verifyBytes(tampered), isFalse);
+    });
+
+    test('syncs inline thumbnail inside YYYY-MM.sqlite and lazily hydrates full-res media/<sha256>.png on demand', () async {
+      final dirA = Directory.systemTemp.createTempSync('garden_photo_a_');
+      final dirB = Directory.systemTemp.createTempSync('garden_photo_b_');
+      addTearDown(() {
+        if (dirA.existsSync()) dirA.deleteSync(recursive: true);
+        if (dirB.existsSync()) dirB.deleteSync(recursive: true);
+      });
+
+      final storeA = ShardedSqliteJournalStore(
+        rootDirectoryPath: dirA.path,
+        initialActorId: 'actor_sigurd',
+        initialAuthorName: 'Sigurd',
+      );
+      final storeB = ShardedSqliteJournalStore(
+        rootDirectoryPath: dirB.path,
+        initialActorId: 'actor_anna',
+        initialAuthorName: 'Anna',
+      );
+      addTearDown(() {
+        storeA.close();
+        storeB.close();
+      });
+
+      final transport = InMemoryGardenSyncTransport();
+      final engineA = GardenSyncEngine(store: storeA, transport: transport);
+      final engineB = GardenSyncEngine(store: storeB, transport: transport);
+
+      final t0 = DateTime(2026, 4, 15, 10, 0);
+      final info = algo.getCalendarInfo(t0, ephemeris, includePlanets: true);
+      final thumbBytes = Uint8List.fromList(samplePngBytes);
+      // Construct a slightly different valid PNG as "full resolution" so we can distinguish thumbnail vs full-res
+      final fullBytes = Uint8List.fromList([
+        ...samplePngBytes,
+        0x00, // trailing byte after IEND so SHA-256 differs from thumbBytes while PNG header remains valid
+      ]);
+
+      storeA.upsertEntry(
+        FieldJournalEntry.fromLiveContext(
+          id: 'carrot_photo_entry',
+          timestamp: t0,
+          action: FieldJournalAction.sowSeeds,
+          cropId: 'carrot',
+          bedName: 'Bed 1',
+          calendarInfo: info,
+          notes: 'Sown with photo',
+        ),
+      );
+      final withPhoto = storeA.attachPhotoToEntry(
+        entryId: 'carrot_photo_entry',
+        fullBytes: fullBytes,
+        thumbnailBytes: thumbBytes,
+        caption: 'Cotyledons emerging in Bed 1',
+      );
+      expect(withPhoto, isNotNull);
+      expect(withPhoto!.activeAttachments, hasLength(1));
+      final att = withPhoto.activeAttachments.first;
+      expect(att.caption, equals('Cotyledons emerging in Bed 1'));
+      expect(att.thumbnailBytes, equals(thumbBytes));
+
+      // Sync Peer A -> uploads shard + content-addressed media/<sha256>.png
+      final reportA = await engineA.sync(hydrateAllShards: true);
+      expect(reportA.uploadedMediaBlobs, contains(att.remoteBlobName));
+      expect(transport.storedObjectNames, contains(att.remoteBlobName));
+
+      // Sync Peer B -> merges 2026-04 shard with inline thumbnail, WITHOUT downloading full-res media yet
+      await engineB.sync(hydrateAllShards: true);
+      final entryOnB = storeB.getEntry('carrot_photo_entry');
+      expect(entryOnB, isNotNull);
+      expect(entryOnB!.activeAttachments, hasLength(1));
+      final attOnB = entryOnB.activeAttachments.first;
+      expect(attOnB.caption, equals('Cotyledons emerging in Bed 1'));
+      expect(attOnB.thumbnailBytes, equals(thumbBytes));
+
+      // Full-res file is not on Peer B's disk before lazy fetch
+      expect(storeB.readLocalMediaBytes(attOnB), isNull);
+
+      // Lazy fetch downloads and verifies full-res bytes from transport and caches locally
+      final hydratedBytes = await engineB.fetchAttachmentMedia(attOnB);
+      expect(hydratedBytes, equals(fullBytes));
+      expect(storeB.readLocalMediaBytes(attOnB), equals(fullBytes));
+    });
+
+    testWidgets(
+      'FieldJournalSheet attaches photo via onPickPhoto and FieldJournalCard opens photo viewer',
+      (tester) async {
+        final selectedTime = DateTime(2026, 5, 16, 16, 0);
+        final info = algo.getCalendarInfo(
+          selectedTime,
+          ephemeris,
+          includePlanets: true,
+        );
+        final controller = GardenProfileController();
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Builder(
+                      builder: (ctx) => ElevatedButton(
+                        key: const ValueKey('open_sheet_with_picker'),
+                        onPressed: () {
+                          FieldJournalSheet.show(
+                            ctx,
+                            gardenController: controller,
+                            timestamp: selectedTime,
+                            calendarInfo: info,
+                            onPickPhoto: (_) async => PickedJournalPhoto(
+                              fullBytes: samplePngBytes,
+                              thumbnailBytes: samplePngBytes,
+                              caption: 'Morning dew on kale',
+                            ),
+                          );
+                        },
+                        child: const Text('Open Sheet'),
+                      ),
+                    ),
+                    FieldJournalCard(
+                      gardenController: controller,
+                      selectedDate: selectedTime,
+                      info: info,
+                      onTimeJump: (_) {},
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.byKey(const ValueKey('open_sheet_with_picker')));
+        await tester.pumpAndSettle();
+
+        final attachBtn = find.byKey(
+          const ValueKey('field_journal_attach_photo_button'),
+        );
+        await tester.ensureVisible(attachBtn);
+        await tester.tap(attachBtn);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('staged_photo_preview_0')),
+          findsOneWidget,
+        );
+        expect(find.text('Morning dew on kale'), findsOneWidget);
+
+        await tester.tap(
+          find.byKey(const ValueKey('field_journal_save_button')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(controller.value.journalEntries, hasLength(1));
+        final saved = controller.value.journalEntries.first;
+        expect(saved.activeAttachments, hasLength(1));
+        final att = saved.activeAttachments.first;
+
+        final thumbFinder = find.byKey(
+          ValueKey('journal_attachment_thumb_${att.id}'),
+        );
+        expect(thumbFinder, findsOneWidget);
+        await tester.ensureVisible(thumbFinder);
+        await tester.tap(thumbFinder);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(ValueKey('photo_viewer_image_${att.id}')),
+          findsOneWidget,
+        );
+        await tester.tap(
+          find.byKey(const ValueKey('photo_viewer_close_button')),
+        );
+        await tester.pumpAndSettle();
       },
     );
   });

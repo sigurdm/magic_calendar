@@ -281,14 +281,109 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
   }
 
   /// Adds or updates [entry] in the user's Biodynamic Field Journal & Diary.
-  Future<void> addJournalEntry(FieldJournalEntry entry) async {
+  ///
+  /// When [fullMediaBytesByAttachmentId] is provided, each full-resolution image
+  /// is verified and saved to `media/<sha256>.<ext>` in [journalStore].
+  Future<void> addJournalEntry(
+    FieldJournalEntry entry, {
+    Map<String, Uint8List>? fullMediaBytesByAttachmentId,
+  }) async {
     final sqlStore = journalStore;
     if (sqlStore != null && !sqlStore.isClosed) {
+      if (fullMediaBytesByAttachmentId != null) {
+        for (final attachment in entry.attachments) {
+          if (fullMediaBytesByAttachmentId[attachment.id]
+              case final Uint8List fullBytes) {
+            sqlStore.saveMediaBytesForAttachment(attachment, fullBytes);
+          }
+        }
+      }
       final saved = sqlStore.upsertEntry(entry);
       await _update(value.withJournalEntry(saved), persistProfile: false);
       return;
     }
     await _update(value.withJournalEntry(entry));
+  }
+
+  /// Attaches a photo ([fullBytes] + optional [thumbnailBytes]) to [entryId]
+  /// without overwriting existing attachments or notes from other garden members.
+  Future<FieldJournalEntry?> attachPhotoToJournalEntry({
+    required String entryId,
+    String? noteId,
+    required Uint8List fullBytes,
+    Uint8List? thumbnailBytes,
+    int? width,
+    int? height,
+    String caption = '',
+    String? authorName,
+    DateTime? timestamp,
+    String? attachmentId,
+  }) async {
+    final sqlStore = journalStore;
+    if (sqlStore != null && !sqlStore.isClosed) {
+      final updated = sqlStore.attachPhotoToEntry(
+        entryId: entryId,
+        noteId: noteId,
+        fullBytes: fullBytes,
+        thumbnailBytes: thumbnailBytes,
+        width: width,
+        height: height,
+        caption: caption,
+        authorName: authorName,
+        timestamp: timestamp,
+        attachmentId: attachmentId,
+      );
+      if (updated != null) {
+        await _update(value.withJournalEntry(updated), persistProfile: false);
+      }
+      return updated;
+    }
+
+    FieldJournalEntry? target;
+    for (final existing in value.journalEntries) {
+      if (existing.id == entryId) {
+        target = existing;
+        break;
+      }
+    }
+    if (target == null) return null;
+
+    final attachment = JournalAttachment.fromRawBytes(
+      id: attachmentId,
+      entryId: entryId,
+      noteId: noteId,
+      fullBytes: fullBytes,
+      thumbnailBytes: thumbnailBytes,
+      width: width,
+      height: height,
+      caption: caption,
+      authorId: localActorId,
+      authorName: authorName ?? localAuthorName,
+      timestamp: timestamp,
+    );
+    final updated = target.withAddedAttachment(attachment);
+    await _update(value.withJournalEntry(updated));
+    return updated;
+  }
+
+  /// Loads the verified full-resolution image bytes for [attachment] from local
+  /// `media/<sha256>.<ext>` cache or lazily downloads it from [syncTransport],
+  /// falling back to [JournalAttachment.thumbnailBytes] if offline.
+  Future<Uint8List?> loadFullAttachmentBytes(
+    JournalAttachment attachment,
+  ) async {
+    final sqlStore = journalStore;
+    if (sqlStore != null && !sqlStore.isClosed) {
+      final localBytes = sqlStore.readLocalMediaBytes(attachment);
+      if (localBytes != null) return localBytes;
+      final transport = _syncTransport;
+      if (transport != null) {
+        final engine = GardenSyncEngine(store: sqlStore, transport: transport);
+        final fetched = await engine.fetchAttachmentMedia(attachment);
+        if (fetched != null) return fetched;
+      }
+    }
+    return attachment.thumbnailBytes;
   }
 
   /// Updates an existing [entry] (such as comparative outcome notes/rating) in the journal.

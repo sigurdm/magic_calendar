@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -8,6 +11,392 @@ import '../task_window_planner.dart';
 import '../vegetable_database.dart';
 import 'garden_profile.dart';
 import 'hlc.dart';
+
+/// Allowed image file formats for garden diary photo attachments, verified by magic bytes.
+enum JournalImageFormat {
+  /// JPEG (`FF D8 FF`).
+  jpeg('jpg', 'image/jpeg'),
+
+  /// PNG (`89 50 4E 47 0D 0A 1A 0A`).
+  png('png', 'image/png'),
+
+  /// WebP (`RIFF....WEBP`).
+  webp('webp', 'image/webp');
+
+  /// Canonical file extension (`'jpg'`, `'png'`, `'webp'`).
+  final String extension;
+
+  /// Canonical MIME type.
+  final String mimeType;
+
+  const JournalImageFormat(this.extension, this.mimeType);
+
+  /// Inspects the magic-byte header of [bytes] to determine its [JournalImageFormat].
+  ///
+  /// Throws a [FormatException] if [bytes] does not match PNG, JPEG, or WebP magic bytes.
+  static JournalImageFormat detect(Uint8List bytes) {
+    if (bytes.length >= 8 &&
+        bytes[0] == 0x89 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x4E &&
+        bytes[3] == 0x47 &&
+        bytes[4] == 0x0D &&
+        bytes[5] == 0x0A &&
+        bytes[6] == 0x1A &&
+        bytes[7] == 0x0A) {
+      return JournalImageFormat.png;
+    }
+    if (bytes.length >= 3 &&
+        bytes[0] == 0xFF &&
+        bytes[1] == 0xD8 &&
+        bytes[2] == 0xFF) {
+      return JournalImageFormat.jpeg;
+    }
+    if (bytes.length >= 12 &&
+        bytes[0] == 0x52 &&
+        bytes[1] == 0x49 &&
+        bytes[2] == 0x46 &&
+        bytes[3] == 0x46 &&
+        bytes[8] == 0x57 &&
+        bytes[9] == 0x45 &&
+        bytes[10] == 0x42 &&
+        bytes[11] == 0x50) {
+      return JournalImageFormat.webp;
+    }
+    throw const FormatException(
+      'Unsupported image format: magic bytes must be PNG, JPEG, or WebP',
+    );
+  }
+
+  /// Resolves a [JournalImageFormat] from a [mimeType] or [extension] string.
+  static JournalImageFormat? tryFromMimeOrExtension(String value) {
+    final lower = value.trim().toLowerCase();
+    for (final candidate in JournalImageFormat.values) {
+      if (candidate.mimeType == lower ||
+          candidate.extension == lower ||
+          candidate.name == lower) {
+        return candidate;
+      }
+    }
+    if (lower == 'image/jpg' || lower == 'jpeg') {
+      return JournalImageFormat.jpeg;
+    }
+    return null;
+  }
+}
+
+/// A photo attachment associated with a [FieldJournalEntry] or [JournalNote].
+///
+/// Full-resolution image bytes are content-addressed by [mediaSha256] and
+/// stored outside the monthly SQLite database (`media/<mediaSha256>.<ext>`) so
+/// editing text notes in a shard never re-uploads multi-megabyte photos, while
+/// a compact [thumbnailBytes] preview is embedded inside `YYYY-MM.sqlite` for
+/// instant offline rendering.
+final class JournalAttachment {
+  /// Maximum allowed full-resolution photo size (`10 MB`).
+  static const int maxPhotoBytes = 10 * 1024 * 1024;
+
+  /// Maximum inline SQLite thumbnail size (`64 KB`).
+  static const int maxInlineThumbnailBytes = 64 * 1024;
+
+  static final RegExp _sha256HexPattern = RegExp(r'^[0-9a-f]{64}$');
+
+  /// Unique attachment identifier.
+  final String id;
+
+  /// Parent [FieldJournalEntry.id].
+  final String entryId;
+
+  /// Optional [JournalNote.id] if attached to a specific note in the thread.
+  final String? noteId;
+
+  /// Lowercase 64-hex-character SHA-256 hash of the full-resolution image bytes.
+  final String mediaSha256;
+
+  /// Verified image format (`jpeg`, `png`, `webp`).
+  final JournalImageFormat format;
+
+  /// Optional image width in pixels.
+  final int? width;
+
+  /// Optional image height in pixels.
+  final int? height;
+
+  /// Optional user caption describing the photo.
+  final String caption;
+
+  /// Unique actor ID of the gardener who attached the photo.
+  final String authorId;
+
+  /// Display name of the gardener who attached the photo.
+  final String authorName;
+
+  /// Timestamp when the photo was attached.
+  final DateTime timestamp;
+
+  /// Compact inline thumbnail bytes stored in the monthly SQLite shard (`YYYY-MM.sqlite`).
+  final Uint8List? thumbnailBytes;
+
+  /// Hybrid Logical Clock watermark for CRDT synchronization.
+  final String updatedHlc;
+
+  /// Optional HLC tombstone if the attachment was removed.
+  final String? deletedHlc;
+
+  /// Creates a [JournalAttachment].
+  ///
+  /// It is an error if [id] or [entryId] is empty, or if [mediaSha256] is not a
+  /// 64-character lowercase hex SHA-256 string.
+  JournalAttachment({
+    required this.id,
+    required this.entryId,
+    this.noteId,
+    required this.mediaSha256,
+    this.format = JournalImageFormat.jpeg,
+    this.width,
+    this.height,
+    this.caption = '',
+    this.authorId = 'local',
+    this.authorName = 'Gardener',
+    required this.timestamp,
+    Uint8List? thumbnailBytes,
+    String? updatedHlc,
+    this.deletedHlc,
+  }) : thumbnailBytes = thumbnailBytes == null
+           ? null
+           : Uint8List.fromList(thumbnailBytes),
+       updatedHlc =
+           updatedHlc ??
+           Hlc.fromDateTime(
+             timestamp,
+             actorId: authorId.trim().isEmpty ? 'local' : authorId.trim(),
+           ).toCanonicalString() {
+    if (id.trim().isEmpty) {
+      throw ArgumentError.value(id, 'id', 'Must not be empty');
+    }
+    if (entryId.trim().isEmpty) {
+      throw ArgumentError.value(entryId, 'entryId', 'Must not be empty');
+    }
+    if (!_sha256HexPattern.hasMatch(mediaSha256)) {
+      throw ArgumentError.value(
+        mediaSha256,
+        'mediaSha256',
+        'Must be a 64-character lowercase hex SHA-256 digest',
+      );
+    }
+  }
+
+  /// Validates [fullBytes] (magic bytes and `<= 10 MB`), computes its SHA-256
+  /// content address, and constructs a [JournalAttachment].
+  ///
+  /// Throws a [FormatException] if [fullBytes] is empty, exceeds [maxPhotoBytes],
+  /// or does not have valid PNG, JPEG, or WebP magic bytes.
+  factory JournalAttachment.fromRawBytes({
+    String? id,
+    required String entryId,
+    String? noteId,
+    required Uint8List fullBytes,
+    Uint8List? thumbnailBytes,
+    int? width,
+    int? height,
+    String caption = '',
+    String authorId = 'local',
+    String authorName = 'Gardener',
+    DateTime? timestamp,
+    String? updatedHlc,
+  }) {
+    if (fullBytes.isEmpty) {
+      throw const FormatException('Photo bytes must not be empty');
+    }
+    if (fullBytes.length > maxPhotoBytes) {
+      throw FormatException(
+        'Photo exceeds maximum allowed size of $maxPhotoBytes bytes',
+        fullBytes.length,
+      );
+    }
+    final format = JournalImageFormat.detect(fullBytes);
+    final sha = sha256.convert(fullBytes).toString();
+    final now = timestamp ?? DateTime.now();
+    final effectiveThumb =
+        thumbnailBytes ??
+        (fullBytes.length <= maxInlineThumbnailBytes ? fullBytes : null);
+    final resolvedId = (id != null && id.trim().isNotEmpty)
+        ? id.trim()
+        : 'att_${now.toUtc().microsecondsSinceEpoch}_${sha.substring(0, 12)}';
+
+    return JournalAttachment(
+      id: resolvedId,
+      entryId: entryId,
+      noteId: noteId,
+      mediaSha256: sha,
+      format: format,
+      width: width,
+      height: height,
+      caption: caption.trim(),
+      authorId: authorId,
+      authorName: authorName,
+      timestamp: now,
+      thumbnailBytes: effectiveThumb,
+      updatedHlc: updatedHlc,
+    );
+  }
+
+  /// Whether this attachment has been soft-deleted via an HLC tombstone.
+  bool get isDeleted => deletedHlc != null && deletedHlc!.isNotEmpty;
+
+  /// Canonical MIME type (`'image/jpeg'`, `'image/png'`, `'image/webp'`).
+  String get mimeType => format.mimeType;
+
+  /// Canonical file extension (`'jpg'`, `'png'`, `'webp'`).
+  String get fileExtension => format.extension;
+
+  /// Relative content-addressed object path on [`GardenSyncTransport`] (`media/<sha256>.<ext>`).
+  String get remoteBlobName => 'media/$mediaSha256.$fileExtension';
+
+  /// Verifies that [candidateBytes] matches both [format]'s magic header and [mediaSha256].
+  bool verifyBytes(Uint8List candidateBytes) {
+    if (candidateBytes.isEmpty || candidateBytes.length > maxPhotoBytes) {
+      return false;
+    }
+    try {
+      final detected = JournalImageFormat.detect(candidateBytes);
+      if (detected != format) return false;
+    } on FormatException {
+      return false;
+    }
+    final actualSha = sha256.convert(candidateBytes).toString();
+    return actualSha == mediaSha256;
+  }
+
+  /// Serializes this attachment metadata (and base64 inline thumbnail if present) to JSON.
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'entryId': entryId,
+    if (noteId != null && noteId!.isNotEmpty) 'noteId': noteId,
+    'mediaSha256': mediaSha256,
+    'mimeType': mimeType,
+    if (width != null) 'width': width,
+    if (height != null) 'height': height,
+    if (caption.isNotEmpty) 'caption': caption,
+    'authorId': authorId,
+    'authorName': authorName,
+    'timestamp': timestamp.toIso8601String(),
+    if (thumbnailBytes != null)
+      'thumbnailBase64': base64Encode(thumbnailBytes!),
+    'updatedHlc': updatedHlc,
+    if (deletedHlc != null) 'deletedHlc': deletedHlc,
+  };
+
+  /// Deserializes a [JournalAttachment] from [json].
+  ///
+  /// Throws a [FormatException] if required fields are missing or invalid.
+  factory JournalAttachment.fromJson(Map<String, Object?> json) {
+    final idRaw = json['id'];
+    final entryIdRaw = json['entryId'];
+    final shaRaw = json['mediaSha256'];
+    final timestampRaw = json['timestamp'];
+    if (idRaw is! String || idRaw.trim().isEmpty) {
+      throw const FormatException('JournalAttachment requires a non-empty id');
+    }
+    if (entryIdRaw is! String || entryIdRaw.trim().isEmpty) {
+      throw const FormatException(
+        'JournalAttachment requires a non-empty entryId',
+      );
+    }
+    if (shaRaw is! String || !_sha256HexPattern.hasMatch(shaRaw)) {
+      throw const FormatException(
+        'JournalAttachment requires a 64-char hex mediaSha256',
+      );
+    }
+    if (timestampRaw is! String) {
+      throw const FormatException(
+        'JournalAttachment requires an ISO-8601 timestamp',
+      );
+    }
+    final parsedTimestamp = DateTime.tryParse(timestampRaw);
+    if (parsedTimestamp == null) {
+      throw FormatException('Invalid timestamp', timestampRaw);
+    }
+
+    final mimeRaw = json['mimeType'];
+    final format =
+        (mimeRaw is String
+            ? JournalImageFormat.tryFromMimeOrExtension(mimeRaw)
+            : null) ??
+        JournalImageFormat.jpeg;
+
+    Uint8List? thumbBytes;
+    if (json['thumbnailBase64'] case final String b64 when b64.isNotEmpty) {
+      try {
+        thumbBytes = base64Decode(b64);
+      } on FormatException {
+        thumbBytes = null;
+      }
+    }
+
+    return JournalAttachment(
+      id: idRaw,
+      entryId: entryIdRaw,
+      noteId: json['noteId'] is String ? json['noteId'] as String : null,
+      mediaSha256: shaRaw,
+      format: format,
+      width: json['width'] is int ? json['width'] as int : null,
+      height: json['height'] is int ? json['height'] as int : null,
+      caption: json['caption'] is String ? json['caption'] as String : '',
+      authorId: json['authorId'] is String
+          ? json['authorId'] as String
+          : 'local',
+      authorName: json['authorName'] is String
+          ? json['authorName'] as String
+          : 'Gardener',
+      timestamp: parsedTimestamp,
+      thumbnailBytes: thumbBytes,
+      updatedHlc: json['updatedHlc'] is String
+          ? json['updatedHlc'] as String
+          : null,
+      deletedHlc: json['deletedHlc'] is String
+          ? json['deletedHlc'] as String
+          : null,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is JournalAttachment &&
+          id == other.id &&
+          entryId == other.entryId &&
+          noteId == other.noteId &&
+          mediaSha256 == other.mediaSha256 &&
+          format == other.format &&
+          width == other.width &&
+          height == other.height &&
+          caption == other.caption &&
+          authorId == other.authorId &&
+          authorName == other.authorName &&
+          timestamp == other.timestamp &&
+          listEquals(thumbnailBytes, other.thumbnailBytes) &&
+          updatedHlc == other.updatedHlc &&
+          deletedHlc == other.deletedHlc;
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    entryId,
+    noteId,
+    mediaSha256,
+    format,
+    width,
+    height,
+    caption,
+    authorId,
+    authorName,
+    timestamp,
+    thumbnailBytes == null ? null : Object.hashAll(thumbnailBytes!),
+    updatedHlc,
+    deletedHlc,
+  );
+}
 
 /// Categories of field actions recorded in the Biodynamic Field Journal & Diary.
 enum FieldJournalAction {
@@ -859,6 +1248,9 @@ final class FieldJournalEntry {
   /// Collaborative append-only note thread attached to this entry across shared garden members.
   final List<JournalNote> noteThread;
 
+  /// Photo attachments associated with this entry or its notes.
+  final List<JournalAttachment> attachments;
+
   /// Hybrid Logical Clock watermark of the latest mutation on this entry.
   final String updatedHlc;
 
@@ -888,9 +1280,11 @@ final class FieldJournalEntry {
     this.outcomeNote = '',
     this.outcomeRating,
     Iterable<JournalNote> noteThread = const [],
+    Iterable<JournalAttachment> attachments = const [],
     String? updatedHlc,
     this.deletedHlc,
   }) : noteThread = List<JournalNote>.unmodifiable(noteThread),
+       attachments = List<JournalAttachment>.unmodifiable(attachments),
        updatedHlc =
            updatedHlc ??
            Hlc.fromDateTime(
@@ -938,6 +1332,7 @@ final class FieldJournalEntry {
     String outcomeNote = '',
     int? outcomeRating,
     Iterable<JournalNote> noteThread = const [],
+    Iterable<JournalAttachment> attachments = const [],
     String? updatedHlc,
   }) {
     final crop = cropId != null ? VegetableDatabase.findById(cropId) : null;
@@ -977,6 +1372,7 @@ final class FieldJournalEntry {
       outcomeNote: outcomeNote.trim(),
       outcomeRating: outcomeRating,
       noteThread: noteThread,
+      attachments: attachments,
       updatedHlc: updatedHlc,
     );
   }
@@ -1029,6 +1425,12 @@ final class FieldJournalEntry {
         note,
   ];
 
+  /// Active (non-deleted) photo attachments on this entry, ordered chronologically.
+  List<JournalAttachment> get activeAttachments => [
+    for (final att in attachments)
+      if (!att.isDeleted) att,
+  ];
+
   /// Whether the gardener has recorded a follow-up comparative outcome note or star rating.
   bool get hasOutcome =>
       outcomeRating != null ||
@@ -1048,7 +1450,7 @@ final class FieldJournalEntry {
   }
 
   /// Returns a copy of this entry with updated [notes], [outcomeNote], [outcomeRating],
-  /// [bedName], [parentEntryId], or [noteThread].
+  /// [bedName], [parentEntryId], [noteThread], or [attachments].
   FieldJournalEntry withOutcome({
     String? notes,
     String? outcomeNote,
@@ -1057,6 +1459,7 @@ final class FieldJournalEntry {
     String? bedName,
     String? parentEntryId,
     Iterable<JournalNote>? noteThread,
+    Iterable<JournalAttachment>? attachments,
     String? updatedHlc,
   }) {
     return FieldJournalEntry(
@@ -1078,6 +1481,7 @@ final class FieldJournalEntry {
       outcomeNote: outcomeNote ?? this.outcomeNote,
       outcomeRating: clearRating ? null : (outcomeRating ?? this.outcomeRating),
       noteThread: noteThread ?? this.noteThread,
+      attachments: attachments ?? this.attachments,
       updatedHlc: updatedHlc ?? this.updatedHlc,
       deletedHlc: deletedHlc,
     );
@@ -1124,6 +1528,44 @@ final class FieldJournalEntry {
       outcomeNote: nextOutcomeNote,
       outcomeRating: nextRating,
       noteThread: updatedThread,
+      attachments: attachments,
+      updatedHlc: nextHlc,
+      deletedHlc: deletedHlc,
+    );
+  }
+
+  /// Returns a copy of this entry with [attachment] appended or updated in [attachments].
+  FieldJournalEntry withAddedAttachment(JournalAttachment attachment) {
+    final updatedAttachments = <JournalAttachment>[
+      for (final existing in attachments)
+        if (existing.id != attachment.id) existing,
+      attachment,
+    ]..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    final nextHlc = attachment.updatedHlc.compareTo(updatedHlc) > 0
+        ? attachment.updatedHlc
+        : updatedHlc;
+
+    return FieldJournalEntry(
+      id: id,
+      timestamp: timestamp,
+      action: action,
+      title: title,
+      cropId: cropId,
+      prepCode: prepCode,
+      bedName: bedName,
+      parentEntryId: parentEntryId,
+      quality: quality,
+      authorId: authorId,
+      authorName: authorName,
+      cosmicSnapshot: cosmicSnapshot,
+      weatherSnapshot: weatherSnapshot,
+      location: location,
+      notes: notes,
+      outcomeNote: outcomeNote,
+      outcomeRating: outcomeRating,
+      noteThread: noteThread,
+      attachments: updatedAttachments,
       updatedHlc: nextHlc,
       deletedHlc: deletedHlc,
     );
@@ -1151,6 +1593,8 @@ final class FieldJournalEntry {
     if (outcomeRating != null) 'outcomeRating': outcomeRating,
     if (noteThread.isNotEmpty)
       'noteThread': [for (final n in noteThread) n.toJson()],
+    if (attachments.isNotEmpty)
+      'attachments': [for (final a in attachments) a.toJson()],
     'updatedHlc': updatedHlc,
     if (deletedHlc != null) 'deletedHlc': deletedHlc,
   };
@@ -1257,6 +1701,19 @@ final class FieldJournalEntry {
       }
     }
 
+    final parsedAttachments = <JournalAttachment>[];
+    if (json['attachments'] case final List<Object?> rawAttachments) {
+      for (final item in rawAttachments) {
+        if (item is Map<String, Object?>) {
+          try {
+            parsedAttachments.add(JournalAttachment.fromJson(item));
+          } on FormatException {
+            // Skip malformed attachment item.
+          }
+        }
+      }
+    }
+
     return FieldJournalEntry(
       id: idRaw,
       timestamp: parsedTimestamp,
@@ -1286,6 +1743,7 @@ final class FieldJournalEntry {
       outcomeNote: outcomeNoteRaw is String ? outcomeNoteRaw : '',
       outcomeRating: parsedRating,
       noteThread: parsedThread,
+      attachments: parsedAttachments,
       updatedHlc: json['updatedHlc'] is String
           ? json['updatedHlc'] as String
           : null,
@@ -1316,7 +1774,8 @@ final class FieldJournalEntry {
           notes == other.notes &&
           outcomeNote == other.outcomeNote &&
           outcomeRating == other.outcomeRating &&
-          listEquals(noteThread, other.noteThread);
+          listEquals(noteThread, other.noteThread) &&
+          listEquals(attachments, other.attachments);
 
   @override
   int get hashCode => Object.hash(
@@ -1338,5 +1797,6 @@ final class FieldJournalEntry {
     outcomeNote,
     outcomeRating,
     Object.hashAll(noteThread),
+    Object.hashAll(attachments),
   );
 }
