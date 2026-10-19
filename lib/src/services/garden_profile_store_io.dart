@@ -8,6 +8,10 @@ import 'garden_service.dart';
 GardenProfileStore? createFileGardenProfileStore(String filePath) =>
     FileGardenProfileStore(File(filePath));
 
+/// Creates a monthly SQLite-sharded [ShardedSqliteJournalStore] rooted at [dirPath].
+ShardedSqliteJournalStore? createShardedSqliteJournalStore(String dirPath) =>
+    ShardedSqliteJournalStore(rootDirectoryPath: dirPath);
+
 /// File-backed [GardenProfileStore] that stores a [GardenProfile] as JSON in [file].
 ///
 /// Corrupt or version-mismatched files are treated as missing on [read].

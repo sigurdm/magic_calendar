@@ -37,11 +37,12 @@ enum FieldJournalFilter {
   const FieldJournalFilter(this.label);
 }
 
-/// Interactive Biodynamic Field Journal card displaying logged sowing, spraying,
-/// and harvesting actions alongside their captured [CalendarInfo] and weather
-/// snapshots, comparative trial outcomes, and one-tap timeline navigation.
+/// Interactive Biodynamic Field Journal & Shared Garden Diary card displaying
+/// logged sowing, spraying, harvesting, and observation entries alongside their
+/// captured [CalendarInfo] and weather snapshots, collaborative member notes,
+/// seed-to-harvest links, and cloud sync controls.
 final class FieldJournalCard extends StatefulWidget {
-  /// Reactive controller managing the user's persisted [GardenProfile] and journal entries.
+  /// Reactive controller managing the user's persisted [GardenProfile] and SQLite journal shards.
   final GardenProfileController gardenController;
 
   /// Currently selected timeline instant used when logging a new action directly.
@@ -73,33 +74,231 @@ final class FieldJournalCard extends StatefulWidget {
 
 final class _FieldJournalCardState extends State<FieldJournalCard> {
   FieldJournalFilter _selectedFilter = FieldJournalFilter.all;
+  String? _selectedBedFilter;
   bool _showAll = false;
 
-  List<FieldJournalEntry> _filterEntries(List<FieldJournalEntry> entries) =>
-      switch (_selectedFilter) {
-        FieldJournalFilter.all => entries,
-        FieldJournalFilter.root =>
-          entries.where((e) => e.quality == PlantQuality.root).toList(),
-        FieldJournalFilter.leaf =>
-          entries.where((e) => e.quality == PlantQuality.leaf).toList(),
-        FieldJournalFilter.flower =>
-          entries.where((e) => e.quality == PlantQuality.flower).toList(),
-        FieldJournalFilter.fruit =>
-          entries.where((e) => e.quality == PlantQuality.fruit).toList(),
-        FieldJournalFilter.sprays =>
-          entries
-              .where((e) => e.action == FieldJournalAction.sprayPreparation)
-              .toList(),
-        FieldJournalFilter.outcomes =>
-          entries.where((e) => e.hasOutcome).toList(),
-      };
+  List<FieldJournalEntry> _filterEntries(List<FieldJournalEntry> entries) {
+    final byCategory = switch (_selectedFilter) {
+      FieldJournalFilter.all => entries,
+      FieldJournalFilter.root =>
+        entries.where((e) => e.quality == PlantQuality.root).toList(),
+      FieldJournalFilter.leaf =>
+        entries.where((e) => e.quality == PlantQuality.leaf).toList(),
+      FieldJournalFilter.flower =>
+        entries.where((e) => e.quality == PlantQuality.flower).toList(),
+      FieldJournalFilter.fruit =>
+        entries.where((e) => e.quality == PlantQuality.fruit).toList(),
+      FieldJournalFilter.sprays =>
+        entries
+            .where((e) => e.action == FieldJournalAction.sprayPreparation)
+            .toList(),
+      FieldJournalFilter.outcomes =>
+        entries.where((e) => e.hasOutcome).toList(),
+    };
+    if (_selectedBedFilter == null) return byCategory;
+    return byCategory
+        .where((e) => e.bedName?.trim() == _selectedBedFilter)
+        .toList();
+  }
+
+  Future<void> _showAddCoGardenerNoteDialog(FieldJournalEntry entry) async {
+    final noteController = TextEditingController();
+    final authorController = TextEditingController(
+      text: widget.gardenController.localAuthorName,
+    );
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          backgroundColor: const Color(0xFF1F1A14),
+          title: Text(
+            'Add Collaborative Note • ${entry.title}',
+            style: GoogleFonts.cormorantGaramond(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFFF6ECD8),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                key: const ValueKey('co_gardener_author_input'),
+                controller: authorController,
+                style: GoogleFonts.outfit(fontSize: 13, color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Gardener Name',
+                  labelStyle: GoogleFonts.outfit(color: Colors.white70),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                key: const ValueKey('co_gardener_note_input'),
+                controller: noteController,
+                maxLines: 3,
+                style: GoogleFonts.outfit(fontSize: 13, color: Colors.white),
+                decoration: InputDecoration(
+                  hintText:
+                      'Add observation without overwriting existing notes...',
+                  hintStyle: GoogleFonts.outfit(color: Colors.white38),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              key: const ValueKey('co_gardener_note_save_button'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Append Note'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed == true && noteController.text.trim().isNotEmpty) {
+        final author = authorController.text.trim();
+        if (author.isNotEmpty) {
+          widget.gardenController.updateGardenIdentity(authorName: author);
+        }
+        await widget.gardenController.addNoteToJournalEntry(
+          entryId: entry.id,
+          body: noteController.text.trim(),
+          authorName: author.isEmpty ? null : author,
+        );
+      }
+    } finally {
+      noteController.dispose();
+      authorController.dispose();
+    }
+  }
+
+  Future<void> _showSharedGardenSyncDialog() async {
+    final authorCtrl = TextEditingController(
+      text: widget.gardenController.localAuthorName,
+    );
+    final gardenNameCtrl = TextEditingController(
+      text: widget.gardenController.gardenName,
+    );
+    final currentTransport = widget.gardenController.syncTransport;
+    final initialPath = currentTransport is DirectoryGardenSyncTransport
+        ? currentTransport.directory.path
+        : '';
+    final folderCtrl = TextEditingController(text: initialPath);
+
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          backgroundColor: const Color(0xFF1F1A14),
+          title: Text(
+            'Shared Garden & Sharded SQLite Cloud Sync',
+            style: GoogleFonts.cormorantGaramond(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFFF6ECD8),
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Entries are partitioned into monthly SQLite shards (YYYY-MM.<sha256>.sqlite) with Hybrid Logical Clock (HLC) CRDT merge semantics so multiple gardeners can log offline and sync via any shared folder or WebDAV endpoint.',
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    color: Colors.white70,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const ValueKey('shared_garden_name_input'),
+                  controller: gardenNameCtrl,
+                  style: GoogleFonts.outfit(fontSize: 13, color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Shared Garden Name',
+                    labelStyle: GoogleFonts.outfit(color: Colors.white70),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  key: const ValueKey('shared_garden_author_input'),
+                  controller: authorCtrl,
+                  style: GoogleFonts.outfit(fontSize: 13, color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Your Gardener Name (shown on notes)',
+                    labelStyle: GoogleFonts.outfit(color: Colors.white70),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  key: const ValueKey('shared_garden_folder_input'),
+                  controller: folderCtrl,
+                  style: GoogleFonts.outfit(fontSize: 13, color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText:
+                        'Shared Cloud Folder Path or https:// WebDAV URL',
+                    hintText: '/path/to/shared/garden or https://...',
+                    labelStyle: GoogleFonts.outfit(color: Colors.white70),
+                    hintStyle: GoogleFonts.outfit(color: Colors.white38),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Close'),
+            ),
+            ElevatedButton(
+              key: const ValueKey('shared_garden_sync_save_button'),
+              onPressed: () async {
+                widget.gardenController.updateGardenIdentity(
+                  authorName: authorCtrl.text.trim(),
+                  gardenName: gardenNameCtrl.text.trim(),
+                );
+                final endpoint = folderCtrl.text.trim();
+                if (endpoint.isNotEmpty) {
+                  if (endpoint.startsWith('https://')) {
+                    widget.gardenController.setSyncTransport(
+                      WebDavGardenSyncTransport(baseUri: Uri.parse(endpoint)),
+                    );
+                  } else {
+                    widget.gardenController.setSyncTransport(
+                      DirectoryGardenSyncTransport(endpoint),
+                    );
+                  }
+                  await widget.gardenController.syncJournal();
+                }
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
+              },
+              child: const Text('Save & Sync Now'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      authorCtrl.dispose();
+      gardenNameCtrl.dispose();
+      folderCtrl.dispose();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<GardenProfile>(
-      valueListenable: widget.gardenController,
-      builder: (context, profile, _) {
+    return ListenableBuilder(
+      listenable: widget.gardenController,
+      builder: (context, _) {
+        final profile = widget.gardenController.value;
         final allEntries = profile.journalEntries;
+        final knownBeds = widget.gardenController.listBedNames();
         final filtered = _filterEntries(allEntries);
         final visible = _showAll
             ? filtered
@@ -110,14 +309,16 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
             .where((e) => e.cosmicSnapshot.isMoonDescending)
             .length;
         final ratedEntries = allEntries
-            .where((e) => e.outcomeRating != null)
+            .where((e) => e.effectiveOutcomeRating != null)
             .toList(growable: false);
         final avgRating = ratedEntries.isEmpty
             ? null
             : ratedEntries
-                      .map((e) => e.outcomeRating!)
+                      .map((e) => e.effectiveOutcomeRating!)
                       .reduce((a, b) => a + b) /
                   ratedEntries.length;
+        final openShardsCount =
+            widget.gardenController.journalStore?.openShardCount;
 
         return OrganicVesselContainer(
           accentColor: accentColor,
@@ -156,7 +357,8 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                           ),
                         ),
                         Text(
-                          'Comparative sowing, spraying & harvest log pinned to the timeline',
+                          '${widget.gardenController.gardenName} • ${widget.gardenController.localAuthorName}'
+                          '${openShardsCount != null ? " • $openShardsCount SQLite shard(s) active" : ""}',
                           style: GoogleFonts.outfit(
                             fontSize: 12,
                             color: Colors.white70,
@@ -165,11 +367,23 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                       ],
                     ),
                   ),
+                  IconButton(
+                    key: const ValueKey('field_journal_sync_button'),
+                    tooltip: 'Shared Garden & Cloud Sync Settings',
+                    icon: Icon(
+                      widget.gardenController.syncTransport != null
+                          ? Icons.cloud_done_outlined
+                          : Icons.cloud_sync_outlined,
+                      color: accentColor,
+                      size: 20,
+                    ),
+                    onPressed: _showSharedGardenSyncDialog,
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
 
-              // Log Action Button + Comparative Summary Strip
+              // Log Action Button + Quick Observation + Comparative Summary Strip
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -210,6 +424,44 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                       style: GoogleFonts.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    key: const ValueKey('field_journal_quick_note_button'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFF6ECD8),
+                      side: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.24),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: () {
+                      FieldJournalSheet.show(
+                        context,
+                        gardenController: widget.gardenController,
+                        timestamp: widget.selectedDate,
+                        calendarInfo: widget.info,
+                        weatherSeries: widget.weatherNotifier?.value,
+                        initialAction: FieldJournalAction.observation,
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.sticky_note_2_outlined,
+                      size: 15,
+                      color: accentColor,
+                    ),
+                    label: Text(
+                      'Jot Observation',
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -261,47 +513,79 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: FieldJournalFilter.values
-                        .map((filter) {
-                          final isSelected = _selectedFilter == filter;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: ChoiceChip(
-                              key: ValueKey(
-                                'field_journal_filter_${filter.name}',
-                              ),
-                              label: Text(
-                                filter.label,
-                                style: GoogleFonts.outfit(
-                                  fontSize: 11,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w700
-                                      : FontWeight.w400,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : Colors.white70,
-                                ),
-                              ),
-                              selected: isSelected,
-                              selectedColor: accentColor.withValues(alpha: 0.3),
-                              backgroundColor: Colors.white.withValues(
-                                alpha: 0.05,
-                              ),
-                              side: BorderSide(
-                                color: isSelected
-                                    ? accentColor
-                                    : Colors.white.withValues(alpha: 0.14),
-                              ),
-                              showCheckmark: false,
-                              onSelected: (_) {
-                                setState(() {
-                                  _selectedFilter = filter;
-                                });
-                              },
+                    children: [
+                      for (final filter in FieldJournalFilter.values)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: ChoiceChip(
+                            key: ValueKey(
+                              'field_journal_filter_${filter.name}',
                             ),
-                          );
-                        })
-                        .toList(growable: false),
+                            label: Text(
+                              filter.label,
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                fontWeight: _selectedFilter == filter
+                                    ? FontWeight.w700
+                                    : FontWeight.w400,
+                                color: _selectedFilter == filter
+                                    ? Colors.white
+                                    : Colors.white70,
+                              ),
+                            ),
+                            selected: _selectedFilter == filter,
+                            selectedColor: accentColor.withValues(alpha: 0.3),
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.05,
+                            ),
+                            side: BorderSide(
+                              color: _selectedFilter == filter
+                                  ? accentColor
+                                  : Colors.white.withValues(alpha: 0.14),
+                            ),
+                            showCheckmark: false,
+                            onSelected: (_) {
+                              setState(() {
+                                _selectedFilter = filter;
+                              });
+                            },
+                          ),
+                        ),
+                      for (final bed in knownBeds)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: ChoiceChip(
+                            key: ValueKey('field_journal_bed_filter_$bed'),
+                            label: Text(
+                              '📍 $bed',
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                fontWeight: _selectedBedFilter == bed
+                                    ? FontWeight.w700
+                                    : FontWeight.w400,
+                                color: _selectedBedFilter == bed
+                                    ? Colors.white
+                                    : Colors.white70,
+                              ),
+                            ),
+                            selected: _selectedBedFilter == bed,
+                            selectedColor: GoetheanPalette.leafWater.withValues(
+                              alpha: 0.3,
+                            ),
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.05,
+                            ),
+                            showCheckmark: false,
+                            onSelected: (_) {
+                              setState(() {
+                                _selectedBedFilter = _selectedBedFilter == bed
+                                    ? null
+                                    : bed;
+                              });
+                            },
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -376,6 +660,10 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
         ? GoetheanPalette.aspectGold
         : GoetheanPalette.getColor(entry.quality);
     final dateFmt = DateFormat('EEE, MMM d, yyyy • HH:mm');
+    final linkedParent = widget.gardenController.findPlantingBatch(
+      entry.parentEntryId,
+    );
+    final activeNotes = entry.activeNotes;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -428,7 +716,9 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                           const SizedBox(height: 2),
                           Text(
                             '${dateFmt.format(entry.timestamp)}'
-                            '${entry.location != null ? " • ${entry.location!.displayLabel}" : ""}',
+                            '${entry.bedName != null ? " • ${entry.bedName}" : ""}'
+                            '${entry.location != null ? " • ${entry.location!.displayLabel}" : ""}'
+                            ' • by ${entry.authorName}',
                             style: GoogleFonts.outfit(
                               fontSize: 11,
                               color: const Color(0xFFF6ECD8),
@@ -436,6 +726,17 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                           ),
                         ],
                       ),
+                    ),
+                    IconButton(
+                      key: ValueKey('journal_add_note_${entry.id}'),
+                      tooltip: 'Add collaborative garden note',
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(
+                        Icons.add_comment_outlined,
+                        size: 17,
+                        color: Colors.white70,
+                      ),
+                      onPressed: () => _showAddCoGardenerNoteDialog(entry),
                     ),
                     IconButton(
                       key: ValueKey('journal_jump_${entry.id}'),
@@ -465,7 +766,7 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                 ),
                 const SizedBox(height: 8),
 
-                // Cosmic & Weather Snapshot Badges
+                // Cosmic, Weather, Bed & Seed-to-Harvest Badges
                 Wrap(
                   spacing: 6,
                   runSpacing: 6,
@@ -478,6 +779,16 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                       entry.cosmicSnapshot.moonBadgeLabel,
                       GoetheanPalette.aspectGold,
                     ),
+                    if (entry.bedName != null && entry.bedName!.isNotEmpty)
+                      _buildSnapshotPill(
+                        '📍 ${entry.bedName!}',
+                        GoetheanPalette.leafWater,
+                      ),
+                    if (linkedParent != null)
+                      _buildSnapshotPill(
+                        '🌱 ${linkedParent.daysElapsedAt(entry.timestamp)}d since ${linkedParent.title} (${linkedParent.cosmicSummary})',
+                        GoetheanPalette.aspectGold,
+                      ),
                     if (entry.cosmicSnapshot.diurnalPhaseName != null)
                       _buildSnapshotPill(
                         entry.cosmicSnapshot.diurnalPhaseName!,
@@ -491,7 +802,22 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                   ],
                 ),
 
-                if (entry.notes.isNotEmpty) ...[
+                if (activeNotes.length > 1) ...[
+                  const SizedBox(height: 8),
+                  for (final note in activeNotes)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        '${note.authorName}: ${note.body}'
+                        '${note.outcomeRating != null ? " (★ ${note.outcomeRating}/5)" : ""}',
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          color: Colors.white70,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                ] else if (entry.notes.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(
                     entry.notes,
@@ -526,7 +852,7 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                             ),
                           ),
                           child: Text(
-                            '${entry.outcomeRating != null ? "★ ${entry.outcomeRating}/5" : "Outcome"}'
+                            '${entry.effectiveOutcomeRating != null ? "★ ${entry.effectiveOutcomeRating}/5" : "Outcome"}'
                             '${entry.outcomeNote.isNotEmpty ? " · ${entry.outcomeNote}" : ""}',
                             style: GoogleFonts.outfit(
                               fontSize: 11.5,

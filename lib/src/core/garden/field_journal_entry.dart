@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../biodynamic_prep.dart';
@@ -6,8 +7,9 @@ import '../models/models.dart';
 import '../task_window_planner.dart';
 import '../vegetable_database.dart';
 import 'garden_profile.dart';
+import 'hlc.dart';
 
-/// Categories of field actions recorded in the Biodynamic Field Journal.
+/// Categories of field actions recorded in the Biodynamic Field Journal & Diary.
 enum FieldJournalAction {
   /// Direct or indoor seed sowing.
   sowSeeds('Sow Seeds', 'Sow', '🌱', Icons.grass_outlined),
@@ -60,7 +62,10 @@ enum FieldJournalAction {
   harvestStorage('Harvest & Store', 'Store', '🏺', Icons.inventory_2_outlined),
 
   /// Inoculating compost (BD 502–507), mulching, or general field care.
-  compostAndCare('Compost & Field Care', 'Compost', '♻️', Icons.eco_outlined);
+  compostAndCare('Compost & Field Care', 'Compost', '♻️', Icons.eco_outlined),
+
+  /// Free-form diary note or field observation (frost, pests, emergence, weather).
+  observation('Note & Observation', 'Note', '📝', Icons.sticky_note_2_outlined);
 
   /// User-facing action label.
   final String displayName;
@@ -80,6 +85,16 @@ enum FieldJournalAction {
     this.timelineGlyph,
     this.icon,
   );
+
+  /// Whether this action establishes a new planting batch that later observations or harvests can link to.
+  bool get isPlantingBatch => switch (this) {
+    FieldJournalAction.sowSeeds ||
+    FieldJournalAction.transplant ||
+    FieldJournalAction.takeCuttings ||
+    FieldJournalAction.dividePerennials ||
+    FieldJournalAction.graft => true,
+    _ => false,
+  };
 
   /// Maps a [TaskActionType] from [TaskWindowPlanner] to a [FieldJournalAction].
   static FieldJournalAction fromTaskAction(TaskActionType action) =>
@@ -114,6 +129,336 @@ enum FieldJournalAction {
         PrepCategory.fieldSpray => FieldJournalAction.sprayPreparation,
         PrepCategory.compostPrep => FieldJournalAction.compostAndCare,
       };
+}
+
+/// Classification of a collaborative [JournalNote] attached to a [FieldJournalEntry].
+enum JournalNoteKind {
+  /// Initial or follow-up field note (bed details, seed lot, soil condition).
+  fieldNote('Field Note'),
+
+  /// General diary observation (emergence, pests, frost, moisture).
+  observation('Observation'),
+
+  /// Comparative trial outcome observation and/or vigor rating.
+  outcome('Trial Outcome');
+
+  /// Display label for badges.
+  final String displayName;
+
+  const JournalNoteKind(this.displayName);
+}
+
+/// An individual append-only / per-note CRDT note attached to a [FieldJournalEntry].
+///
+/// Storing notes as discrete [JournalNote] rows keyed by [id] with an HLC
+/// watermark ([updatedHlc]) allows multiple gardeners sharing a garden to add
+/// notes to the same planting or day offline and merge them without overwriting
+/// each other's notes.
+final class JournalNote {
+  /// Unique identifier for this note.
+  final String id;
+
+  /// Identifier of the parent [FieldJournalEntry].
+  final String entryId;
+
+  /// Timestamp when the note was written.
+  final DateTime timestamp;
+
+  /// Unique actor identifier of the gardener who wrote this note.
+  final String authorId;
+
+  /// Display name of the gardener who wrote this note.
+  final String authorName;
+
+  /// Semantic category of this note.
+  final JournalNoteKind kind;
+
+  /// Text content of the note.
+  final String body;
+
+  /// Optional 1..5 comparative rating associated with this note.
+  final int? outcomeRating;
+
+  /// Canonical Hybrid Logical Clock string for Last-Write-Wins updates on this specific [id].
+  final String updatedHlc;
+
+  /// Optional HLC tombstone if this note was deleted.
+  final String? deletedHlc;
+
+  /// Creates a [JournalNote].
+  ///
+  /// It is an error if [id] or [entryId] is empty, or if [outcomeRating] is
+  /// non-null and outside `1..5`.
+  JournalNote({
+    required this.id,
+    required this.entryId,
+    required this.timestamp,
+    this.authorId = 'local',
+    this.authorName = 'Gardener',
+    this.kind = JournalNoteKind.fieldNote,
+    required this.body,
+    this.outcomeRating,
+    String? updatedHlc,
+    this.deletedHlc,
+  }) : updatedHlc =
+           updatedHlc ??
+           Hlc.fromDateTime(
+             timestamp,
+             actorId: authorId.trim().isEmpty ? 'local' : authorId.trim(),
+           ).toCanonicalString() {
+    if (id.trim().isEmpty) {
+      throw ArgumentError.value(id, 'id', 'Must not be empty');
+    }
+    if (entryId.trim().isEmpty) {
+      throw ArgumentError.value(entryId, 'entryId', 'Must not be empty');
+    }
+    if (outcomeRating != null) {
+      RangeError.checkValueInInterval(outcomeRating!, 1, 5, 'outcomeRating');
+    }
+  }
+
+  /// Whether this note has been soft-deleted via a tombstone.
+  bool get isDeleted => deletedHlc != null && deletedHlc!.isNotEmpty;
+
+  /// Serializes this note to a JSON map.
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'entryId': entryId,
+    'timestamp': timestamp.toIso8601String(),
+    'authorId': authorId,
+    'authorName': authorName,
+    'kind': kind.name,
+    'body': body,
+    if (outcomeRating != null) 'outcomeRating': outcomeRating,
+    'updatedHlc': updatedHlc,
+    if (deletedHlc != null) 'deletedHlc': deletedHlc,
+  };
+
+  /// Deserializes a [JournalNote] from [json].
+  ///
+  /// Throws a [FormatException] if required fields are missing or invalid.
+  factory JournalNote.fromJson(Map<String, Object?> json) {
+    final idRaw = json['id'];
+    final entryIdRaw = json['entryId'];
+    final timestampRaw = json['timestamp'];
+    final bodyRaw = json['body'];
+    if (idRaw is! String || idRaw.trim().isEmpty) {
+      throw const FormatException('JournalNote requires a non-empty id');
+    }
+    if (entryIdRaw is! String || entryIdRaw.trim().isEmpty) {
+      throw const FormatException('JournalNote requires a non-empty entryId');
+    }
+    if (timestampRaw is! String) {
+      throw const FormatException('JournalNote requires an ISO-8601 timestamp');
+    }
+    final parsedTimestamp = DateTime.tryParse(timestampRaw);
+    if (parsedTimestamp == null) {
+      throw FormatException('Invalid JournalNote timestamp', timestampRaw);
+    }
+
+    final kindRaw = json['kind'];
+    JournalNoteKind parsedKind = JournalNoteKind.fieldNote;
+    if (kindRaw is String) {
+      for (final candidate in JournalNoteKind.values) {
+        if (candidate.name == kindRaw) {
+          parsedKind = candidate;
+          break;
+        }
+      }
+    }
+
+    final ratingRaw = json['outcomeRating'];
+    final int? parsedRating =
+        (ratingRaw is int && ratingRaw >= 1 && ratingRaw <= 5)
+        ? ratingRaw
+        : null;
+
+    return JournalNote(
+      id: idRaw,
+      entryId: entryIdRaw,
+      timestamp: parsedTimestamp,
+      authorId: json['authorId'] is String
+          ? json['authorId'] as String
+          : 'local',
+      authorName: json['authorName'] is String
+          ? json['authorName'] as String
+          : 'Gardener',
+      kind: parsedKind,
+      body: bodyRaw is String ? bodyRaw : '',
+      outcomeRating: parsedRating,
+      updatedHlc: json['updatedHlc'] is String
+          ? json['updatedHlc'] as String
+          : null,
+      deletedHlc: json['deletedHlc'] is String
+          ? json['deletedHlc'] as String
+          : null,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is JournalNote &&
+          id == other.id &&
+          entryId == other.entryId &&
+          timestamp == other.timestamp &&
+          authorId == other.authorId &&
+          authorName == other.authorName &&
+          kind == other.kind &&
+          body == other.body &&
+          outcomeRating == other.outcomeRating &&
+          updatedHlc == other.updatedHlc &&
+          deletedHlc == other.deletedHlc;
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    entryId,
+    timestamp,
+    authorId,
+    authorName,
+    kind,
+    body,
+    outcomeRating,
+    updatedHlc,
+    deletedHlc,
+  );
+}
+
+/// A member participating in a shared garden diary.
+final class GardenMember {
+  /// Unique actor identifier for this member or device.
+  final String actorId;
+
+  /// Human-readable gardener name shown on diary notes.
+  final String displayName;
+
+  /// ARGB accent color value used for author badges.
+  final int colorValue;
+
+  /// HLC watermark of the latest profile update for this member.
+  final String updatedHlc;
+
+  /// Creates a [GardenMember].
+  GardenMember({
+    required this.actorId,
+    required this.displayName,
+    this.colorValue = 0xFFD4AF37,
+    String? updatedHlc,
+  }) : updatedHlc =
+           updatedHlc ??
+           Hlc.fromDateTime(
+             DateTime.now().toUtc(),
+             actorId: actorId.trim().isEmpty ? 'local' : actorId.trim(),
+           ).toCanonicalString() {
+    if (actorId.trim().isEmpty) {
+      throw ArgumentError.value(actorId, 'actorId', 'Must not be empty');
+    }
+    if (displayName.trim().isEmpty) {
+      throw ArgumentError.value(
+        displayName,
+        'displayName',
+        'Must not be empty',
+      );
+    }
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GardenMember &&
+          actorId == other.actorId &&
+          displayName == other.displayName &&
+          colorValue == other.colorValue &&
+          updatedHlc == other.updatedHlc;
+
+  @override
+  int get hashCode => Object.hash(actorId, displayName, colorValue, updatedHlc);
+}
+
+/// Compact cross-month summary of a sowing or planting entry stored in `garden_meta.sqlite`.
+///
+/// Allows linking a harvest or observation in October back to a sowing in April
+/// without loading all intermediate monthly shards into memory.
+final class PlantingBatchSummary {
+  /// Identifier of the planting [FieldJournalEntry].
+  final String entryId;
+
+  /// Monthly shard key (`YYYY-MM`) where the full entry is stored.
+  final String shardKey;
+
+  /// Timestamp when the batch was sown or planted.
+  final DateTime timestamp;
+
+  /// Planting action performed.
+  final FieldJournalAction action;
+
+  /// Entry headline.
+  final String title;
+
+  /// Optional crop ID in [VegetableDatabase].
+  final String? cropId;
+
+  /// Optional garden bed or plot name.
+  final String? bedName;
+
+  /// Target plant organ quality.
+  final PlantQuality quality;
+
+  /// Concise cosmic rhythm summary at planting time (e.g. `'Root · Descending ↓'`).
+  final String cosmicSummary;
+
+  /// HLC watermark for CRDT synchronization.
+  final String updatedHlc;
+
+  /// Optional HLC tombstone if the planting entry was deleted.
+  final String? deletedHlc;
+
+  /// Creates a [PlantingBatchSummary].
+  const PlantingBatchSummary({
+    required this.entryId,
+    required this.shardKey,
+    required this.timestamp,
+    required this.action,
+    required this.title,
+    required this.quality,
+    required this.cosmicSummary,
+    required this.updatedHlc,
+    this.cropId,
+    this.bedName,
+    this.deletedHlc,
+  });
+
+  /// Creates a [PlantingBatchSummary] from a full [FieldJournalEntry].
+  factory PlantingBatchSummary.fromEntry(FieldJournalEntry entry) {
+    return PlantingBatchSummary(
+      entryId: entry.id,
+      shardKey: entry.shardKey,
+      timestamp: entry.timestamp,
+      action: entry.action,
+      title: entry.title,
+      cropId: entry.cropId,
+      bedName: entry.bedName,
+      quality: entry.quality,
+      cosmicSummary: entry.cosmicSnapshot.rhythmBadgeLabel,
+      updatedHlc: entry.updatedHlc,
+      deletedHlc: entry.deletedHlc,
+    );
+  }
+
+  /// Number of whole days elapsed between this planting and [laterTime].
+  int daysElapsedAt(DateTime laterTime) =>
+      laterTime.difference(timestamp).inDays;
+
+  /// Concise display label for lifecycle dropdowns and chips.
+  String get displayLabel {
+    final bedPart = (bedName != null && bedName!.trim().isNotEmpty)
+        ? ' • ${bedName!.trim()}'
+        : '';
+    final ymd =
+        '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')}';
+    return '$title$bedPart ($ymd · $cosmicSummary)';
+  }
 }
 
 /// Immutable snapshot of the astronomical/biodynamic [CalendarInfo] at the moment a field action was logged.
@@ -453,11 +798,12 @@ final class FieldJournalWeatherSnapshot {
   );
 }
 
-/// A comparative sowing, spraying, or harvesting entry in the Biodynamic Field Journal.
+/// A sowing, spraying, harvesting, or observation entry in the Biodynamic Field Journal & Diary.
 ///
 /// Captures what the gardener performed alongside a snapshot of the active
 /// [CalendarInfo] ([cosmicSnapshot]) and local [WeatherDataPoint] ([weatherSnapshot]),
-/// plus optional comparative trial outcome notes and rating.
+/// plus collaborative [noteThread] items, optional bed/plot tag ([bedName]),
+/// and optional seed-to-harvest link ([parentEntryId]).
 final class FieldJournalEntry {
   /// Unique identifier for this journal entry.
   final String id;
@@ -477,8 +823,20 @@ final class FieldJournalEntry {
   /// Optional biodynamic preparation code (e.g. `'BD 500'`, `'BD 501'`, `'CPP'`).
   final String? prepCode;
 
+  /// Optional garden bed, plot, or greenhouse name (e.g. `'Bed 2'`, `'Greenhouse'`).
+  final String? bedName;
+
+  /// Optional ID of an earlier planting [FieldJournalEntry] that this entry follows up on.
+  final String? parentEntryId;
+
   /// Target or active plant organ quality governing the entry's pigment color.
   final PlantQuality quality;
+
+  /// Unique actor identifier of the gardener who created this entry.
+  final String authorId;
+
+  /// Display name of the gardener who created this entry.
+  final String authorName;
 
   /// Snapshot of the cosmic/biodynamic conditions at [timestamp].
   final FieldJournalCosmicSnapshot cosmicSnapshot;
@@ -489,7 +847,7 @@ final class FieldJournalEntry {
   /// Optional saved location where the action took place.
   final SavedLocation? location;
 
-  /// Field notes recorded at the time of logging (e.g. bed, seed lot, row count).
+  /// Primary field notes recorded on this entry.
   final String notes;
 
   /// Follow-up comparative trial notes (e.g. germination days, vigor, cellar keeping quality).
@@ -497,6 +855,15 @@ final class FieldJournalEntry {
 
   /// Optional comparative trial rating from `1` (poor) to `5` (exceptional).
   final int? outcomeRating;
+
+  /// Collaborative append-only note thread attached to this entry across shared garden members.
+  final List<JournalNote> noteThread;
+
+  /// Hybrid Logical Clock watermark of the latest mutation on this entry.
+  final String updatedHlc;
+
+  /// Optional HLC tombstone if this entry was deleted.
+  final String? deletedHlc;
 
   /// Creates a [FieldJournalEntry].
   ///
@@ -511,12 +878,25 @@ final class FieldJournalEntry {
     required this.cosmicSnapshot,
     this.cropId,
     this.prepCode,
+    this.bedName,
+    this.parentEntryId,
+    this.authorId = 'local',
+    this.authorName = 'Gardener',
     this.weatherSnapshot,
     this.location,
     this.notes = '',
     this.outcomeNote = '',
     this.outcomeRating,
-  }) {
+    Iterable<JournalNote> noteThread = const [],
+    String? updatedHlc,
+    this.deletedHlc,
+  }) : noteThread = List<JournalNote>.unmodifiable(noteThread),
+       updatedHlc =
+           updatedHlc ??
+           Hlc.fromDateTime(
+             timestamp,
+             actorId: authorId.trim().isEmpty ? 'local' : authorId.trim(),
+           ).toCanonicalString() {
     if (id.trim().isEmpty) {
       throw ArgumentError.value(id, 'id', 'Must not be empty');
     }
@@ -528,6 +908,15 @@ final class FieldJournalEntry {
     }
   }
 
+  /// Computes the canonical monthly SQLite shard key (`YYYY-MM` in UTC) for [time].
+  static String shardKeyFor(DateTime time) {
+    final utc = time.toUtc();
+    return '${utc.year.toString().padLeft(4, '0')}-${utc.month.toString().padLeft(2, '0')}';
+  }
+
+  /// Monthly shard key (`YYYY-MM` in UTC) where this entry resides.
+  String get shardKey => shardKeyFor(timestamp);
+
   /// Creates a [FieldJournalEntry] from live [CalendarInfo] and optional [WeatherDataPoint].
   factory FieldJournalEntry.fromLiveContext({
     String? id,
@@ -536,7 +925,11 @@ final class FieldJournalEntry {
     String? title,
     String? cropId,
     String? prepCode,
+    String? bedName,
+    String? parentEntryId,
     PlantQuality? quality,
+    String authorId = 'local',
+    String authorName = 'Gardener',
     required CalendarInfo calendarInfo,
     WeatherDataPoint? weather,
     MultiHorizonWeatherAnalysis? horizon,
@@ -544,6 +937,8 @@ final class FieldJournalEntry {
     String notes = '',
     String outcomeNote = '',
     int? outcomeRating,
+    Iterable<JournalNote> noteThread = const [],
+    String? updatedHlc,
   }) {
     final crop = cropId != null ? VegetableDatabase.findById(cropId) : null;
     final effectiveQuality = quality ?? crop?.quality ?? calendarInfo.quality;
@@ -566,7 +961,13 @@ final class FieldJournalEntry {
       title: resolvedTitle,
       cropId: cropId,
       prepCode: prepCode,
+      bedName: bedName?.trim().isEmpty == true ? null : bedName?.trim(),
+      parentEntryId: parentEntryId?.trim().isEmpty == true
+          ? null
+          : parentEntryId?.trim(),
       quality: effectiveQuality,
+      authorId: authorId,
+      authorName: authorName,
       cosmicSnapshot: FieldJournalCosmicSnapshot.fromCalendarInfo(calendarInfo),
       weatherSnapshot: weather != null
           ? FieldJournalWeatherSnapshot.fromWeather(weather, horizon: horizon)
@@ -575,6 +976,8 @@ final class FieldJournalEntry {
       notes: notes.trim(),
       outcomeNote: outcomeNote.trim(),
       outcomeRating: outcomeRating,
+      noteThread: noteThread,
+      updatedHlc: updatedHlc,
     );
   }
 
@@ -612,18 +1015,49 @@ final class FieldJournalEntry {
     if (resolvedCrop != null) {
       return resolvedCrop.nameEn;
     }
+    if (bedName != null && bedName!.trim().isNotEmpty) {
+      return '${action.shortLabel} (${bedName!.trim()})';
+    }
     return action.shortLabel;
   }
 
-  /// Whether the gardener has recorded a follow-up comparative outcome note or star rating.
-  bool get hasOutcome => outcomeRating != null || outcomeNote.trim().isNotEmpty;
+  /// Active (non-deleted) collaborative notes from [noteThread], ordered chronologically.
+  List<JournalNote> get activeNotes => [
+    for (final note in noteThread)
+      if (!note.isDeleted &&
+          (note.body.trim().isNotEmpty || note.outcomeRating != null))
+        note,
+  ];
 
-  /// Returns a copy of this entry with updated [notes], [outcomeNote], or [outcomeRating].
+  /// Whether the gardener has recorded a follow-up comparative outcome note or star rating.
+  bool get hasOutcome =>
+      outcomeRating != null ||
+      outcomeNote.trim().isNotEmpty ||
+      activeNotes.any(
+        (n) => n.kind == JournalNoteKind.outcome || n.outcomeRating != null,
+      );
+
+  /// Effective star rating, checking [outcomeRating] or the latest rated note in [activeNotes].
+  int? get effectiveOutcomeRating {
+    if (outcomeRating != null) return outcomeRating;
+    for (int i = activeNotes.length - 1; i >= 0; i--) {
+      final rating = activeNotes[i].outcomeRating;
+      if (rating != null) return rating;
+    }
+    return null;
+  }
+
+  /// Returns a copy of this entry with updated [notes], [outcomeNote], [outcomeRating],
+  /// [bedName], [parentEntryId], or [noteThread].
   FieldJournalEntry withOutcome({
     String? notes,
     String? outcomeNote,
     int? outcomeRating,
     bool clearRating = false,
+    String? bedName,
+    String? parentEntryId,
+    Iterable<JournalNote>? noteThread,
+    String? updatedHlc,
   }) {
     return FieldJournalEntry(
       id: id,
@@ -632,13 +1066,66 @@ final class FieldJournalEntry {
       title: title,
       cropId: cropId,
       prepCode: prepCode,
+      bedName: bedName ?? this.bedName,
+      parentEntryId: parentEntryId ?? this.parentEntryId,
       quality: quality,
+      authorId: authorId,
+      authorName: authorName,
       cosmicSnapshot: cosmicSnapshot,
       weatherSnapshot: weatherSnapshot,
       location: location,
       notes: notes ?? this.notes,
       outcomeNote: outcomeNote ?? this.outcomeNote,
       outcomeRating: clearRating ? null : (outcomeRating ?? this.outcomeRating),
+      noteThread: noteThread ?? this.noteThread,
+      updatedHlc: updatedHlc ?? this.updatedHlc,
+      deletedHlc: deletedHlc,
+    );
+  }
+
+  /// Returns a copy of this entry with [note] appended or updated in [noteThread].
+  FieldJournalEntry withAddedNote(JournalNote note) {
+    final updatedThread = <JournalNote>[
+      for (final existing in noteThread)
+        if (existing.id != note.id) existing,
+      note,
+    ]..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    final isOutcome =
+        note.kind == JournalNoteKind.outcome || note.outcomeRating != null;
+    final nextOutcomeNote = isOutcome && note.body.trim().isNotEmpty
+        ? note.body.trim()
+        : outcomeNote;
+    final nextRating = note.outcomeRating ?? outcomeRating;
+    final nextNotes = !isOutcome && notes.isEmpty && note.body.trim().isNotEmpty
+        ? note.body.trim()
+        : notes;
+
+    final nextHlc = note.updatedHlc.compareTo(updatedHlc) > 0
+        ? note.updatedHlc
+        : updatedHlc;
+
+    return FieldJournalEntry(
+      id: id,
+      timestamp: timestamp,
+      action: action,
+      title: title,
+      cropId: cropId,
+      prepCode: prepCode,
+      bedName: bedName,
+      parentEntryId: parentEntryId,
+      quality: quality,
+      authorId: authorId,
+      authorName: authorName,
+      cosmicSnapshot: cosmicSnapshot,
+      weatherSnapshot: weatherSnapshot,
+      location: location,
+      notes: nextNotes,
+      outcomeNote: nextOutcomeNote,
+      outcomeRating: nextRating,
+      noteThread: updatedThread,
+      updatedHlc: nextHlc,
+      deletedHlc: deletedHlc,
     );
   }
 
@@ -650,13 +1137,22 @@ final class FieldJournalEntry {
     'title': title,
     if (cropId != null && cropId!.isNotEmpty) 'cropId': cropId,
     if (prepCode != null && prepCode!.isNotEmpty) 'prepCode': prepCode,
+    if (bedName != null && bedName!.isNotEmpty) 'bedName': bedName,
+    if (parentEntryId != null && parentEntryId!.isNotEmpty)
+      'parentEntryId': parentEntryId,
     'quality': quality.name,
+    'authorId': authorId,
+    'authorName': authorName,
     'cosmicSnapshot': cosmicSnapshot.toJson(),
     if (weatherSnapshot != null) 'weatherSnapshot': weatherSnapshot!.toJson(),
     if (location != null) 'location': location!.toJson(),
     if (notes.isNotEmpty) 'notes': notes,
     if (outcomeNote.isNotEmpty) 'outcomeNote': outcomeNote,
     if (outcomeRating != null) 'outcomeRating': outcomeRating,
+    if (noteThread.isNotEmpty)
+      'noteThread': [for (final n in noteThread) n.toJson()],
+    'updatedHlc': updatedHlc,
+    if (deletedHlc != null) 'deletedHlc': deletedHlc,
   };
 
   /// Deserializes a [FieldJournalEntry] from [json].
@@ -736,12 +1232,29 @@ final class FieldJournalEntry {
 
     final cropIdRaw = json['cropId'];
     final prepCodeRaw = json['prepCode'];
+    final bedNameRaw = json['bedName'];
+    final parentEntryIdRaw = json['parentEntryId'];
+    final authorIdRaw = json['authorId'];
+    final authorNameRaw = json['authorName'];
     final notesRaw = json['notes'];
     final outcomeNoteRaw = json['outcomeNote'];
     final ratingRaw = json['outcomeRating'];
     int? parsedRating;
     if (ratingRaw is int && ratingRaw >= 1 && ratingRaw <= 5) {
       parsedRating = ratingRaw;
+    }
+
+    final parsedThread = <JournalNote>[];
+    if (json['noteThread'] case final List<Object?> rawThread) {
+      for (final item in rawThread) {
+        if (item is Map<String, Object?>) {
+          try {
+            parsedThread.add(JournalNote.fromJson(item));
+          } on FormatException {
+            // Skip malformed note item.
+          }
+        }
+      }
     }
 
     return FieldJournalEntry(
@@ -753,13 +1266,32 @@ final class FieldJournalEntry {
       prepCode: prepCodeRaw is String && prepCodeRaw.isNotEmpty
           ? prepCodeRaw
           : null,
+      bedName: bedNameRaw is String && bedNameRaw.isNotEmpty
+          ? bedNameRaw
+          : null,
+      parentEntryId: parentEntryIdRaw is String && parentEntryIdRaw.isNotEmpty
+          ? parentEntryIdRaw
+          : null,
       quality: parsedQuality,
+      authorId: authorIdRaw is String && authorIdRaw.isNotEmpty
+          ? authorIdRaw
+          : 'local',
+      authorName: authorNameRaw is String && authorNameRaw.isNotEmpty
+          ? authorNameRaw
+          : 'Gardener',
       cosmicSnapshot: cosmicSnapshot,
       weatherSnapshot: weatherSnapshot,
       location: location,
       notes: notesRaw is String ? notesRaw : '',
       outcomeNote: outcomeNoteRaw is String ? outcomeNoteRaw : '',
       outcomeRating: parsedRating,
+      noteThread: parsedThread,
+      updatedHlc: json['updatedHlc'] is String
+          ? json['updatedHlc'] as String
+          : null,
+      deletedHlc: json['deletedHlc'] is String
+          ? json['deletedHlc'] as String
+          : null,
     );
   }
 
@@ -773,13 +1305,18 @@ final class FieldJournalEntry {
           title == other.title &&
           cropId == other.cropId &&
           prepCode == other.prepCode &&
+          bedName == other.bedName &&
+          parentEntryId == other.parentEntryId &&
           quality == other.quality &&
+          authorId == other.authorId &&
+          authorName == other.authorName &&
           cosmicSnapshot == other.cosmicSnapshot &&
           weatherSnapshot == other.weatherSnapshot &&
           location == other.location &&
           notes == other.notes &&
           outcomeNote == other.outcomeNote &&
-          outcomeRating == other.outcomeRating;
+          outcomeRating == other.outcomeRating &&
+          listEquals(noteThread, other.noteThread);
 
   @override
   int get hashCode => Object.hash(
@@ -789,12 +1326,17 @@ final class FieldJournalEntry {
     title,
     cropId,
     prepCode,
+    bedName,
+    parentEntryId,
     quality,
+    authorId,
+    authorName,
     cosmicSnapshot,
     weatherSnapshot,
     location,
     notes,
     outcomeNote,
     outcomeRating,
+    Object.hashAll(noteThread),
   );
 }

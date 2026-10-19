@@ -28,6 +28,9 @@ enum _CalendarWorkspaceMode {
 
   /// Plan a specific task ("When is a good time to...?") and jump to upcoming windows.
   planTask,
+
+  /// Browse and log entries in the shared Biodynamic Garden Diary.
+  gardenDiary,
 }
 
 /// Main calendar screen coordinating timeline scrolling, celestial rhythms, and agricultural advice.
@@ -200,6 +203,10 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
   void _onTimeSelected(DateTime time) {
     _selectedDateNotifier.value = time;
     _updateInfo(time);
+    _gardenController.ensureWindowLoaded(
+      time.subtract(const Duration(days: 60)),
+      time.add(const Duration(days: 60)),
+    );
   }
 
   /// Handles a selection made outside the timeline, e.g. the header's date
@@ -242,6 +249,17 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
               icon: Icons.event_available_outlined,
               title: 'When Is a Good Time To...?',
               subtitle: 'Cuttings, sow, prune, harvest',
+              accentColor: GoetheanPalette.aspectGold,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _buildModeButton(
+              key: const ValueKey('mode_garden_diary_button'),
+              mode: _CalendarWorkspaceMode.gardenDiary,
+              icon: Icons.menu_book_outlined,
+              title: 'Garden Diary',
+              subtitle: 'Log work, notes & shared beds',
               accentColor: GoetheanPalette.aspectGold,
             ),
           ),
@@ -545,6 +563,20 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                                             ),
                                             const SizedBox(height: 20),
                                           ],
+                                          if (_workspaceMode ==
+                                                  _CalendarWorkspaceMode
+                                                      .gardenDiary &&
+                                              info != null) ...[
+                                            FieldJournalCard(
+                                              gardenController:
+                                                  _gardenController,
+                                              selectedDate: selectedTime,
+                                              info: info,
+                                              weatherNotifier: _weatherNotifier,
+                                              onTimeJump: _onDateJump,
+                                            ),
+                                            const SizedBox(height: 20),
+                                          ],
                                           PlanetaryRibbon(
                                             timeNotifier: _selectedDateNotifier,
                                             ephemeris: widget.ephemeris,
@@ -612,16 +644,20 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                                                       _gardenController,
                                                   onTimeJump: _onDateJump,
                                                 ),
-                                                const SizedBox(height: 20),
-                                                FieldJournalCard(
-                                                  gardenController:
-                                                      _gardenController,
-                                                  selectedDate: selectedTime,
-                                                  info: info,
-                                                  weatherNotifier:
-                                                      _weatherNotifier,
-                                                  onTimeJump: _onDateJump,
-                                                ),
+                                                if (_workspaceMode !=
+                                                    _CalendarWorkspaceMode
+                                                        .gardenDiary) ...[
+                                                  const SizedBox(height: 20),
+                                                  FieldJournalCard(
+                                                    gardenController:
+                                                        _gardenController,
+                                                    selectedDate: selectedTime,
+                                                    info: info,
+                                                    weatherNotifier:
+                                                        _weatherNotifier,
+                                                    onTimeJump: _onDateJump,
+                                                  ),
+                                                ],
                                                 const SizedBox(height: 24),
                                               ],
                                             ),

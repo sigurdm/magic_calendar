@@ -11,9 +11,10 @@ import '../theme/goethean_palette.dart';
 import 'organic_vessel_container.dart';
 
 /// Modal bottom sheet for logging a new comparative biodynamic field action or
-/// recording follow-up outcome observations on an existing [FieldJournalEntry].
+/// recording follow-up collaborative notes and trial outcomes on an existing
+/// [FieldJournalEntry].
 final class FieldJournalSheet extends StatefulWidget {
-  /// Controller persisting the user's [GardenProfile] and journal entries.
+  /// Controller persisting the user's [GardenProfile] and monthly SQLite journal shards.
   final GardenProfileController gardenController;
 
   /// Timestamp of the action being logged.
@@ -46,7 +47,7 @@ final class FieldJournalSheet extends StatefulWidget {
   /// Optional initial field notes.
   final String initialNotes;
 
-  /// Existing entry when editing or recording a comparative outcome.
+  /// Existing entry when editing or recording a comparative outcome / follow-up note.
   final FieldJournalEntry? existingEntry;
 
   /// Creates a [FieldJournalSheet].
@@ -146,8 +147,10 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
   late FieldJournalAction _action;
   VegetableEntry? _crop;
   String? _prepCode;
+  String? _parentEntryId;
   late PlantQuality _quality;
   late final TextEditingController _titleController;
+  late final TextEditingController _bedController;
   late final TextEditingController _notesController;
   late final TextEditingController _outcomeController;
   int? _outcomeRating;
@@ -159,6 +162,7 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
     _action = widget.initialAction;
     _crop = widget.initialCrop;
     _prepCode = widget.initialPrepCode;
+    _parentEntryId = widget.existingEntry?.parentEntryId;
     _quality =
         widget.initialQuality ??
         _crop?.quality ??
@@ -173,6 +177,9 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
     _titleManuallyEdited =
         widget.existingEntry != null || widget.initialTitle != null;
     _titleController = TextEditingController(text: defaultTitle);
+    _bedController = TextEditingController(
+      text: widget.existingEntry?.bedName ?? '',
+    );
     _notesController = TextEditingController(text: widget.initialNotes);
     _outcomeController = TextEditingController(
       text: widget.existingEntry?.outcomeNote ?? '',
@@ -182,6 +189,7 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
   @override
   void dispose() {
     _titleController.dispose();
+    _bedController.dispose();
     _notesController.dispose();
     _outcomeController.dispose();
     super.dispose();
@@ -230,6 +238,7 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
     final resolvedTitle = rawTitle.isNotEmpty
         ? rawTitle
         : _computeAutoTitle(_action, _crop, _prepCode, _quality);
+    final rawBed = _bedController.text.trim();
 
     final entry = FieldJournalEntry(
       id:
@@ -240,7 +249,12 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
       title: resolvedTitle,
       cropId: _crop?.id,
       prepCode: _prepCode,
+      bedName: rawBed.isEmpty ? null : rawBed,
+      parentEntryId: _parentEntryId,
       quality: _quality,
+      authorId: existing?.authorId ?? widget.gardenController.localActorId,
+      authorName:
+          existing?.authorName ?? widget.gardenController.localAuthorName,
       cosmicSnapshot: cosmicSnapshot,
       weatherSnapshot: weatherSnapshot,
       location:
@@ -248,6 +262,7 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
       notes: _notesController.text.trim(),
       outcomeNote: _outcomeController.text.trim(),
       outcomeRating: _outcomeRating,
+      noteThread: existing?.noteThread ?? const [],
     );
 
     await widget.gardenController.addJournalEntry(entry);
@@ -271,6 +286,12 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
             : null);
     final dateFmt = DateFormat('EEE, MMM d, yyyy • HH:mm');
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final knownBeds = widget.gardenController.listBedNames();
+    final candidateBatches = widget.gardenController
+        .listPlantingBatches(cropId: _crop?.id)
+        .where((b) => b.entryId != widget.existingEntry?.id)
+        .take(6)
+        .toList(growable: false);
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
@@ -327,7 +348,7 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
                             ),
                           ),
                           Text(
-                            dateFmt.format(widget.timestamp),
+                            '${dateFmt.format(widget.timestamp)} • ${widget.gardenController.localAuthorName}',
                             style: GoogleFonts.outfit(
                               fontSize: 12,
                               color: GoetheanPalette.aspectGold,
@@ -551,9 +572,142 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
                         ),
                         const SizedBox(height: 12),
 
+                        // Garden Bed / Plot Tag
+                        Text(
+                          'GARDEN BED / PLOT (SHARED ACROSS GARDEN)',
+                          style: GoogleFonts.outfit(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.9,
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        if (knownBeds.isNotEmpty) ...[
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: knownBeds
+                                .map((bed) {
+                                  final selected =
+                                      _bedController.text.trim() == bed;
+                                  return ActionChip(
+                                    key: ValueKey('journal_sheet_bed_$bed'),
+                                    label: Text(
+                                      bed,
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 11,
+                                        fontWeight: selected
+                                            ? FontWeight.w700
+                                            : FontWeight.w400,
+                                        color: selected
+                                            ? GoetheanPalette.aspectGold
+                                            : Colors.white70,
+                                      ),
+                                    ),
+                                    backgroundColor: selected
+                                        ? GoetheanPalette.aspectGold.withValues(
+                                            alpha: 0.2,
+                                          )
+                                        : Colors.white.withValues(alpha: 0.05),
+                                    onPressed: () {
+                                      setState(() {
+                                        _bedController.text = selected
+                                            ? ''
+                                            : bed;
+                                      });
+                                    },
+                                  );
+                                })
+                                .toList(growable: false),
+                          ),
+                          const SizedBox(height: 6),
+                        ],
+                        TextField(
+                          key: const ValueKey('field_journal_bed_input'),
+                          controller: _bedController,
+                          style: GoogleFonts.outfit(
+                            fontSize: 12.5,
+                            color: Colors.white,
+                          ),
+                          decoration: _inputDecoration(
+                            hint: 'e.g. Bed 2, South Greenhouse, Orchard Row A',
+                            accentColor: accentColor,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Seed-to-Harvest Lifecycle Link
+                        if (candidateBatches.isNotEmpty) ...[
+                          Text(
+                            'LINK TO EARLIER SOWING / PLANTING BATCH (OPTIONAL)',
+                            style: GoogleFonts.outfit(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.9,
+                              color: GoetheanPalette.aspectGold,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: candidateBatches
+                                .map((batch) {
+                                  final isLinked =
+                                      _parentEntryId == batch.entryId;
+                                  final days = batch.daysElapsedAt(
+                                    widget.timestamp,
+                                  );
+                                  return ChoiceChip(
+                                    key: ValueKey(
+                                      'journal_sheet_parent_${batch.entryId}',
+                                    ),
+                                    label: Text(
+                                      '${batch.action.timelineGlyph} ${batch.title}'
+                                      '${batch.bedName != null ? " (${batch.bedName})" : ""}'
+                                      ' • ${days >= 0 ? "${days}d ago" : batch.shardKey}',
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 11,
+                                        fontWeight: isLinked
+                                            ? FontWeight.w700
+                                            : FontWeight.w400,
+                                        color: isLinked
+                                            ? Colors.white
+                                            : Colors.white70,
+                                      ),
+                                    ),
+                                    selected: isLinked,
+                                    selectedColor: GoetheanPalette.aspectGold
+                                        .withValues(alpha: 0.28),
+                                    backgroundColor: Colors.white.withValues(
+                                      alpha: 0.05,
+                                    ),
+                                    showCheckmark: false,
+                                    onSelected: (_) {
+                                      setState(() {
+                                        _parentEntryId = isLinked
+                                            ? null
+                                            : batch.entryId;
+                                        if (_parentEntryId != null &&
+                                            _bedController.text
+                                                .trim()
+                                                .isEmpty &&
+                                            batch.bedName != null) {
+                                          _bedController.text = batch.bedName!;
+                                        }
+                                      });
+                                    },
+                                  );
+                                })
+                                .toList(growable: false),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+
                         // Field Notes
                         Text(
-                          'FIELD NOTES (BED, CULTIVAR, SEED LOT)',
+                          'FIELD NOTES (BED, CULTIVAR, SEED LOT, OBSERVATIONS)',
                           style: GoogleFonts.outfit(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,

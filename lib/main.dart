@@ -26,6 +26,7 @@ Future<void> main() async {
   String? epheFilesPath;
   ClimateProfileStore? climateStore;
   GardenProfileStore? gardenStore;
+  ShardedSqliteJournalStore? journalStore;
   try {
     final appSupportDir = await getApplicationSupportDirectory();
     epheFilesPath = '${appSupportDir.path}/ephe_files';
@@ -35,6 +36,9 @@ Future<void> main() async {
     gardenStore = createFileGardenProfileStore(
       '${appSupportDir.path}/garden_profile.json',
     );
+    journalStore = createShardedSqliteJournalStore(
+      '${appSupportDir.path}/journal',
+    );
   } catch (_) {
     // Fallback if path_provider fails in non-app environments
   }
@@ -42,6 +46,7 @@ Future<void> main() async {
   final climateService = OpenMeteoClimateService(store: climateStore);
   final gardenController = await GardenProfileController.load(
     store: gardenStore,
+    journalStore: journalStore,
   );
 
   await Sweph.init(epheFilesPath: epheFilesPath);
