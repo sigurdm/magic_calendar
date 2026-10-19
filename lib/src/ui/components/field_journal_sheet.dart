@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -76,6 +76,12 @@ final class FieldJournalSheet extends StatefulWidget {
   /// Optional initial field notes.
   final String initialNotes;
 
+  /// Optional initial garden bed or plot name.
+  final String? initialBedName;
+
+  /// Optional initial parent planting batch entry ID for observations or harvests.
+  final String? initialParentEntryId;
+
   /// Existing entry when editing or recording a comparative outcome / follow-up note.
   final FieldJournalEntry? existingEntry;
 
@@ -96,6 +102,8 @@ final class FieldJournalSheet extends StatefulWidget {
     this.initialQuality,
     this.initialTitle,
     this.initialNotes = '',
+    this.initialBedName,
+    this.initialParentEntryId,
     this.existingEntry,
     this.onPickPhoto,
   });
@@ -137,6 +145,8 @@ final class FieldJournalSheet extends StatefulWidget {
     PlantQuality? initialQuality,
     String? initialTitle,
     String initialNotes = '',
+    String? initialBedName,
+    String? initialParentEntryId,
     FieldJournalEntry? existingEntry,
     Future<PickedJournalPhoto?> Function(BuildContext context)? onPickPhoto,
   }) {
@@ -168,6 +178,9 @@ final class FieldJournalSheet extends StatefulWidget {
         initialQuality: existingEntry?.quality ?? initialQuality,
         initialTitle: existingEntry?.title ?? initialTitle,
         initialNotes: existingEntry?.notes ?? initialNotes,
+        initialBedName: existingEntry?.bedName ?? initialBedName,
+        initialParentEntryId:
+            existingEntry?.parentEntryId ?? initialParentEntryId,
         existingEntry: existingEntry,
         onPickPhoto: onPickPhoto,
       ),
@@ -188,6 +201,8 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
   late final TextEditingController _bedController;
   late final TextEditingController _notesController;
   late final TextEditingController _outcomeController;
+  late final TextEditingController _cropSearchController;
+  String _cropSearchQuery = '';
   int? _outcomeRating;
   bool _titleManuallyEdited = false;
   final List<PickedJournalPhoto> _stagedPhotos = <PickedJournalPhoto>[];
@@ -199,7 +214,8 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
     _action = widget.initialAction;
     _crop = widget.initialCrop;
     _prepCode = widget.initialPrepCode;
-    _parentEntryId = widget.existingEntry?.parentEntryId;
+    _parentEntryId =
+        widget.existingEntry?.parentEntryId ?? widget.initialParentEntryId;
     _quality =
         widget.initialQuality ??
         _crop?.quality ??
@@ -215,12 +231,13 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
         widget.existingEntry != null || widget.initialTitle != null;
     _titleController = TextEditingController(text: defaultTitle);
     _bedController = TextEditingController(
-      text: widget.existingEntry?.bedName ?? '',
+      text: widget.existingEntry?.bedName ?? widget.initialBedName ?? '',
     );
     _notesController = TextEditingController(text: widget.initialNotes);
     _outcomeController = TextEditingController(
       text: widget.existingEntry?.outcomeNote ?? '',
     );
+    _cropSearchController = TextEditingController();
   }
 
   @override
@@ -229,6 +246,7 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
     _bedController.dispose();
     _notesController.dispose();
     _outcomeController.dispose();
+    _cropSearchController.dispose();
     super.dispose();
   }
 
@@ -278,9 +296,22 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
         return;
       }
       JournalImageFormat.detect(picked.fullBytes);
+      Uint8List? thumbBytes = picked.thumbnailBytes;
+      if (thumbBytes == null &&
+          picked.fullBytes.length > JournalAttachment.maxInlineThumbnailBytes) {
+        thumbBytes = await _downscalePhotoThumbnail(picked.fullBytes);
+      }
       if (!mounted) return;
       setState(() {
-        _stagedPhotos.add(picked!);
+        _stagedPhotos.add(
+          PickedJournalPhoto(
+            fullBytes: picked!.fullBytes,
+            thumbnailBytes: thumbBytes ?? picked.thumbnailBytes,
+            caption: picked.caption,
+            width: picked.width,
+            height: picked.height,
+          ),
+        );
       });
     } on FormatException catch (e) {
       if (!mounted) return;
@@ -288,6 +319,26 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
         _photoErrorMessage = e.message;
       });
     }
+  }
+
+  Future<Uint8List?> _downscalePhotoThumbnail(Uint8List fullBytes) async {
+    try {
+      final codec = await ui.instantiateImageCodec(fullBytes, targetWidth: 200);
+      final frame = await codec.getNextFrame();
+      final byteData = await frame.image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+      frame.image.dispose();
+      codec.dispose();
+      if (byteData == null) return null;
+      final encoded = byteData.buffer.asUint8List();
+      if (encoded.length <= JournalAttachment.maxInlineThumbnailBytes) {
+        return encoded;
+      }
+    } catch (_) {
+      // Fallback to null if codec downscaling is unavailable.
+    }
+    return null;
   }
 
   Future<PickedJournalPhoto?> _promptForLocalPhotoFile() async {
@@ -471,7 +522,7 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
       child: ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: Container(
             constraints: BoxConstraints(
               maxHeight: MediaQuery.of(context).size.height * 0.88,
@@ -713,6 +764,181 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
                                       );
                                     })
                                     .toList(growable: false),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+
+                        // Target Organ / Element Quality Selector
+                        Text(
+                          'TARGET ORGAN QUALITY',
+                          style: GoogleFonts.outfit(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.9,
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children:
+                              const [
+                                    PlantQuality.root,
+                                    PlantQuality.leaf,
+                                    PlantQuality.flower,
+                                    PlantQuality.fruit,
+                                  ]
+                                  .map((q) {
+                                    final selected = _quality == q;
+                                    final qColor = GoetheanPalette.getColor(q);
+                                    return ChoiceChip(
+                                      key: ValueKey(
+                                        'journal_sheet_quality_${q.name}',
+                                      ),
+                                      label: Text(
+                                        q.displayName,
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 11.5,
+                                          fontWeight: selected
+                                              ? FontWeight.w700
+                                              : FontWeight.w400,
+                                          color: selected
+                                              ? Colors.white
+                                              : Colors.white70,
+                                        ),
+                                      ),
+                                      selected: selected,
+                                      selectedColor: qColor.withValues(
+                                        alpha: 0.35,
+                                      ),
+                                      backgroundColor: Colors.white.withValues(
+                                        alpha: 0.05,
+                                      ),
+                                      side: BorderSide(
+                                        color: selected
+                                            ? qColor
+                                            : Colors.white.withValues(
+                                                alpha: 0.14,
+                                              ),
+                                      ),
+                                      showCheckmark: false,
+                                      onSelected: (_) {
+                                        setState(() {
+                                          _quality = q;
+                                          _syncAutoTitle();
+                                        });
+                                      },
+                                    );
+                                  })
+                                  .toList(growable: false),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Crop / Plant Selector
+                        if (_action.supportsCropSelection) ...[
+                          Text(
+                            'CROP / PLANT (OPTIONAL)',
+                            style: GoogleFonts.outfit(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.9,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          TextField(
+                            key: const ValueKey(
+                              'field_journal_crop_search_input',
+                            ),
+                            controller: _cropSearchController,
+                            style: GoogleFonts.outfit(
+                              fontSize: 12,
+                              color: Colors.white,
+                            ),
+                            onChanged: (val) {
+                              setState(() {
+                                _cropSearchQuery = val;
+                              });
+                            },
+                            decoration: _inputDecoration(
+                              hint:
+                                  'Search crop (e.g. Carrot, Tomato, Kale)...',
+                              accentColor: accentColor,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              ChoiceChip(
+                                key: const ValueKey('journal_sheet_crop_none'),
+                                label: Text(
+                                  'General / None',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 11,
+                                    fontWeight: _crop == null
+                                        ? FontWeight.w700
+                                        : FontWeight.w400,
+                                    color: _crop == null
+                                        ? Colors.white
+                                        : Colors.white70,
+                                  ),
+                                ),
+                                selected: _crop == null,
+                                selectedColor: accentColor.withValues(
+                                  alpha: 0.28,
+                                ),
+                                backgroundColor: Colors.white.withValues(
+                                  alpha: 0.05,
+                                ),
+                                showCheckmark: false,
+                                onSelected: (_) {
+                                  setState(() {
+                                    _crop = null;
+                                    _syncAutoTitle();
+                                  });
+                                },
+                              ),
+                              for (final candidate in _candidateCrops())
+                                ChoiceChip(
+                                  key: ValueKey(
+                                    'journal_sheet_crop_${candidate.id}',
+                                  ),
+                                  label: Text(
+                                    candidate.localizedDisplayName,
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 11,
+                                      fontWeight: _crop?.id == candidate.id
+                                          ? FontWeight.w700
+                                          : FontWeight.w400,
+                                      color: _crop?.id == candidate.id
+                                          ? Colors.white
+                                          : Colors.white70,
+                                    ),
+                                  ),
+                                  selected: _crop?.id == candidate.id,
+                                  selectedColor: GoetheanPalette.getColor(
+                                    candidate.quality,
+                                  ).withValues(alpha: 0.35),
+                                  backgroundColor: Colors.white.withValues(
+                                    alpha: 0.05,
+                                  ),
+                                  showCheckmark: false,
+                                  onSelected: (_) {
+                                    setState(() {
+                                      _crop = _crop?.id == candidate.id
+                                          ? null
+                                          : candidate;
+                                      if (_crop != null) {
+                                        _quality = _crop!.quality;
+                                      }
+                                      _syncAutoTitle();
+                                    });
+                                  },
+                                ),
+                            ],
                           ),
                           const SizedBox(height: 12),
                         ],
@@ -1121,6 +1347,37 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
         ),
       ),
     );
+  }
+
+  List<VegetableEntry> _candidateCrops() {
+    final starredIds = widget.gardenController.value.starredCropIds;
+    final seen = <String>{};
+    final results = <VegetableEntry>[];
+
+    void addUnique(VegetableEntry? v) {
+      if (v != null && seen.add(v.id)) {
+        results.add(v);
+      }
+    }
+
+    addUnique(_crop);
+    if (_cropSearchQuery.trim().isNotEmpty) {
+      for (final match in VegetableDatabase.search(_cropSearchQuery).take(10)) {
+        addUnique(match);
+      }
+      return results;
+    }
+
+    for (final id in starredIds) {
+      addUnique(VegetableDatabase.findById(id));
+    }
+    for (final v in VegetableDatabase.getVegetablesForQuality(
+      _quality,
+    ).take(8)) {
+      addUnique(v);
+      if (results.length >= 10) break;
+    }
+    return results;
   }
 
   InputDecoration _inputDecoration({

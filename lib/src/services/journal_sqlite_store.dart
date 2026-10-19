@@ -11,6 +11,7 @@ import '../core/garden/field_journal_entry.dart';
 import '../core/garden/garden_profile.dart';
 import '../core/garden/hlc.dart';
 import '../core/models/models.dart';
+import '../core/task_window_planner.dart';
 
 /// Validates canonical monthly shard keys (`YYYY-MM`).
 final RegExp _shardKeyPattern = RegExp(r'^\d{4}-(0[1-9]|1[0-2])$');
@@ -159,10 +160,22 @@ final class ShardedSqliteJournalStore {
         quality TEXT NOT NULL,
         cosmic_summary TEXT NOT NULL,
         updated_hlc TEXT NOT NULL,
+        harvested_by_entry_id TEXT,
         deleted_hlc TEXT
       );
       CREATE INDEX IF NOT EXISTS idx_planting_time
         ON planting_index(timestamp_ms DESC);
+
+      CREATE TABLE IF NOT EXISTS garden_task_queue (
+        task_id TEXT PRIMARY KEY NOT NULL,
+        action TEXT NOT NULL,
+        crop_id TEXT,
+        target_quality TEXT NOT NULL,
+        note TEXT NOT NULL DEFAULT '',
+        updated_hlc TEXT NOT NULL,
+        completed_by_entry_id TEXT,
+        deleted_hlc TEXT
+      );
 
       CREATE TABLE IF NOT EXISTS sync_merged_blobs (
         blob_name TEXT PRIMARY KEY NOT NULL,
@@ -175,6 +188,20 @@ final class ShardedSqliteJournalStore {
         PRIMARY KEY (shard_key, blob_name)
       );
     ''');
+    _ensureColumnExists(db, 'planting_index', 'harvested_by_entry_id', 'TEXT');
+  }
+
+  static void _ensureColumnExists(
+    Database db,
+    String tableName,
+    String columnName,
+    String columnType,
+  ) {
+    final cols = db.select('PRAGMA table_info($tableName)');
+    for (final col in cols) {
+      if (col['name'] == columnName) return;
+    }
+    db.execute('ALTER TABLE $tableName ADD COLUMN $columnName $columnType');
   }
 
   static void _initShardSchema(Database db) {
@@ -366,14 +393,21 @@ final class ShardedSqliteJournalStore {
   }
 
   /// Queries the cross-month planting index in `garden_meta.sqlite` without opening monthly shards.
-  List<PlantingBatchSummary> listPlantingBatches({String? cropId}) {
+  List<PlantingBatchSummary> listPlantingBatches({
+    String? cropId,
+    bool onlyActiveInGround = false,
+  }) {
     _checkNotClosed();
+    final activeClause = onlyActiveInGround
+        ? 'AND harvested_by_entry_id IS NULL'
+        : '';
     final ResultSet rows;
     if (cropId != null && cropId.trim().isNotEmpty) {
       rows = _metaDb.select(
         '''
         SELECT * FROM planting_index
         WHERE (deleted_hlc IS NULL OR deleted_hlc < updated_hlc)
+          $activeClause
           AND crop_id = ?
         ORDER BY timestamp_ms DESC
         ''',
@@ -383,10 +417,130 @@ final class ShardedSqliteJournalStore {
       rows = _metaDb.select('''
         SELECT * FROM planting_index
         WHERE (deleted_hlc IS NULL OR deleted_hlc < updated_hlc)
+          $activeClause
         ORDER BY timestamp_ms DESC
         ''');
     }
     return [for (final row in rows) _plantingSummaryFromRow(row)];
+  }
+
+  /// Lists active (uncompleted, undeleted) queued tasks from `garden_meta.sqlite`.
+  List<QueuedGardenTask> listQueuedTasks() {
+    _checkNotClosed();
+    final rows = _metaDb.select('''
+      SELECT * FROM garden_task_queue
+      WHERE (deleted_hlc IS NULL OR deleted_hlc < updated_hlc)
+        AND completed_by_entry_id IS NULL
+      ORDER BY updated_hlc ASC
+    ''');
+    final tasks = <QueuedGardenTask>[];
+    for (final row in rows) {
+      final actionName = row['action'] as String;
+      final qualityName = row['target_quality'] as String;
+      TaskActionType? action;
+      for (final candidate in TaskActionType.values) {
+        if (candidate.name == actionName) {
+          action = candidate;
+          break;
+        }
+      }
+      PlantQuality? quality;
+      for (final candidate in PlantQuality.values) {
+        if (candidate.name == qualityName && candidate != PlantQuality.none) {
+          quality = candidate;
+          break;
+        }
+      }
+      if (action == null || quality == null) continue;
+      tasks.add(
+        QueuedGardenTask(
+          id: row['task_id'] as String,
+          action: action,
+          cropId: row['crop_id'] as String?,
+          targetQuality: quality,
+          note: row['note'] as String? ?? '',
+        ),
+      );
+    }
+    return tasks;
+  }
+
+  /// Adds or updates [task] in `garden_meta.sqlite`'s shared CRDT task queue.
+  void upsertQueuedTask(QueuedGardenTask task, {String? hlcOverride}) {
+    _checkNotClosed();
+    final hlc = hlcOverride ?? _nextHlc().toCanonicalString();
+    _metaDb.execute(
+      '''
+      INSERT INTO garden_task_queue (
+        task_id, action, crop_id, target_quality, note,
+        updated_hlc, completed_by_entry_id, deleted_hlc
+      ) VALUES (?, ?, ?, ?, ?, ?, NULL, NULL)
+      ON CONFLICT(task_id) DO UPDATE SET
+        action = excluded.action,
+        crop_id = excluded.crop_id,
+        target_quality = excluded.target_quality,
+        note = excluded.note,
+        updated_hlc = excluded.updated_hlc,
+        completed_by_entry_id = NULL,
+        deleted_hlc = NULL
+      WHERE excluded.updated_hlc >= garden_task_queue.updated_hlc
+      ''',
+      [
+        task.id,
+        task.action.name,
+        task.cropId,
+        task.targetQuality.name,
+        task.note,
+        hlc,
+      ],
+    );
+  }
+
+  /// Soft-deletes or marks [taskId] completed in `garden_meta.sqlite`.
+  void removeQueuedTask(
+    String taskId, {
+    String? completedByEntryId,
+    String? hlcOverride,
+  }) {
+    _checkNotClosed();
+    final hlc = hlcOverride ?? _nextHlc().toCanonicalString();
+    _metaDb.execute(
+      '''
+      UPDATE garden_task_queue
+      SET updated_hlc = ?,
+          completed_by_entry_id = COALESCE(?, completed_by_entry_id),
+          deleted_hlc = ?
+      WHERE task_id = ?
+      ''',
+      [hlc, completedByEntryId, hlc, taskId],
+    );
+  }
+
+  /// Marks any active queued tasks matching [entry] as completed by [entry.id].
+  List<String> completeMatchingTasksForEntry(
+    FieldJournalEntry entry, {
+    String? hlcOverride,
+  }) {
+    _checkNotClosed();
+    final activeTasks = listQueuedTasks();
+    if (activeTasks.isEmpty) return const [];
+    final hlc = hlcOverride ?? _nextHlc().toCanonicalString();
+    final completedIds = <String>[];
+    for (final task in activeTasks) {
+      if (!entry.action.fulfillsTaskAction(task.action)) continue;
+      final cropMatches =
+          task.cropId == entry.cropId ||
+          (task.cropId == null && task.targetQuality == entry.quality);
+      if (cropMatches) {
+        removeQueuedTask(
+          task.id,
+          completedByEntryId: entry.id,
+          hlcOverride: hlc,
+        );
+        completedIds.add(task.id);
+      }
+    }
+    return completedIds;
   }
 
   /// Looks up a specific [PlantingBatchSummary] by [entryId] from `garden_meta.sqlite`.
@@ -434,6 +588,7 @@ final class ShardedSqliteJournalStore {
       quality: quality,
       cosmicSummary: row['cosmic_summary'] as String,
       updatedHlc: row['updated_hlc'] as String,
+      harvestedByEntryId: row['harvested_by_entry_id'] as String?,
       deletedHlc: row['deleted_hlc'] as String?,
     );
   }
@@ -657,6 +812,7 @@ final class ShardedSqliteJournalStore {
 
     final saved = getEntry(entry.id, shardKey: shardKey) ?? entry;
     _syncPlantingIndexForEntry(saved, hlc: hlc);
+    completeMatchingTasksForEntry(saved, hlcOverride: hlc);
     return saved;
   }
 
@@ -886,6 +1042,20 @@ final class ShardedSqliteJournalStore {
     FieldJournalEntry entry, {
     required String hlc,
   }) {
+    if (entry.action.isHarvestAction &&
+        entry.parentEntryId != null &&
+        entry.parentEntryId!.isNotEmpty &&
+        (entry.deletedHlc == null || entry.deletedHlc!.isEmpty)) {
+      _metaDb.execute(
+        '''
+        UPDATE planting_index
+        SET harvested_by_entry_id = ?,
+            updated_hlc = CASE WHEN ? > updated_hlc THEN ? ELSE updated_hlc END
+        WHERE entry_id = ?
+        ''',
+        [entry.id, hlc, hlc, entry.parentEntryId],
+      );
+    }
     if (!entry.action.isPlantingBatch) return;
     _metaDb.execute(
       '''
@@ -1140,6 +1310,70 @@ final class ShardedSqliteJournalStore {
           [remaining],
         );
       }
+      if (rows.isEmpty) continue;
+      final ids = [for (final r in rows) r['entry_id'] as String];
+      final notesByEntry = _loadNotesForEntries(db, ids);
+      final attachmentsByEntry = _loadAttachmentsForEntries(db, ids);
+      for (final row in rows) {
+        final id = row['entry_id'] as String;
+        results.add(
+          _entryFromRow(
+            row,
+            notesByEntry[id] ?? const [],
+            attachmentsByEntry[id] ?? const [],
+          ),
+        );
+      }
+    }
+    return results;
+  }
+
+  /// Searches across all local monthly SQLite shards (`YYYY-MM.sqlite`) for
+  /// entries matching [query] in title, crop, bed, notes, outcomes, or photo captions.
+  List<FieldJournalEntry> searchEntries(String query, {int limit = 50}) {
+    _checkNotClosed();
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return loadRecentPage(limit: limit);
+    final likePattern = '%${trimmed.toLowerCase()}%';
+    final results = <FieldJournalEntry>[];
+
+    for (final key in listLocalShardKeys()) {
+      if (results.length >= limit) break;
+      final remaining = limit - results.length;
+      final db = _openOrTouchShard(key, createIfMissing: false);
+      final rows = db.select(
+        '''
+        SELECT DISTINCT e.* FROM journal_entries e
+        LEFT JOIN journal_notes n
+          ON n.entry_id = e.entry_id AND n.deleted_hlc IS NULL
+        LEFT JOIN journal_attachments a
+          ON a.entry_id = e.entry_id AND a.deleted_hlc IS NULL
+        WHERE e.deleted_hlc IS NULL
+          AND (
+            LOWER(e.title) LIKE ?
+            OR LOWER(COALESCE(e.crop_id, '')) LIKE ?
+            OR LOWER(COALESCE(e.bed_name, '')) LIKE ?
+            OR LOWER(COALESCE(e.prep_code, '')) LIKE ?
+            OR LOWER(e.initial_notes) LIKE ?
+            OR LOWER(e.outcome_note) LIKE ?
+            OR LOWER(COALESCE(n.body, '')) LIKE ?
+            OR LOWER(COALESCE(a.caption, '')) LIKE ?
+          )
+        ORDER BY e.timestamp_ms DESC
+        LIMIT ?
+        ''',
+        [
+          likePattern,
+          likePattern,
+          likePattern,
+          likePattern,
+          likePattern,
+          likePattern,
+          likePattern,
+          likePattern,
+          remaining,
+        ],
+      );
       if (rows.isEmpty) continue;
       final ids = [for (final r in rows) r['entry_id'] as String];
       final notesByEntry = _loadNotesForEntries(db, ids);
@@ -1603,14 +1837,25 @@ final class ShardedSqliteJournalStore {
           WHERE excluded.updated_hlc > main.garden_beds.updated_hlc
         ''');
 
+        final remotePlantingCols = _metaDb.select(
+          'PRAGMA remote_meta.table_info(planting_index)',
+        );
+        final hasHarvestedCol = remotePlantingCols.any(
+          (col) => col['name'] == 'harvested_by_entry_id',
+        );
+        final harvestedSelectExpr = hasHarvestedCol
+            ? 'harvested_by_entry_id'
+            : 'NULL';
         _metaDb.execute('''
           INSERT INTO main.planting_index (
             entry_id, shard_key, timestamp_ms, action, title,
-            crop_id, bed_name, quality, cosmic_summary, updated_hlc, deleted_hlc
+            crop_id, bed_name, quality, cosmic_summary, updated_hlc,
+            harvested_by_entry_id, deleted_hlc
           )
           SELECT
             entry_id, shard_key, timestamp_ms, action, title,
-            crop_id, bed_name, quality, cosmic_summary, updated_hlc, deleted_hlc
+            crop_id, bed_name, quality, cosmic_summary, updated_hlc,
+            $harvestedSelectExpr, deleted_hlc
           FROM remote_meta.planting_index WHERE true
           ON CONFLICT(entry_id) DO UPDATE SET
             shard_key = excluded.shard_key,
@@ -1622,9 +1867,35 @@ final class ShardedSqliteJournalStore {
             quality = excluded.quality,
             cosmic_summary = excluded.cosmic_summary,
             updated_hlc = excluded.updated_hlc,
+            harvested_by_entry_id = COALESCE(excluded.harvested_by_entry_id, main.planting_index.harvested_by_entry_id),
             deleted_hlc = excluded.deleted_hlc
           WHERE excluded.updated_hlc > main.planting_index.updated_hlc
         ''');
+
+        final remoteTaskTable = _metaDb.select(
+          "SELECT name FROM remote_meta.sqlite_master WHERE type='table' AND name='garden_task_queue'",
+        );
+        if (remoteTaskTable.isNotEmpty) {
+          _metaDb.execute('''
+            INSERT INTO main.garden_task_queue (
+              task_id, action, crop_id, target_quality, note,
+              updated_hlc, completed_by_entry_id, deleted_hlc
+            )
+            SELECT
+              task_id, action, crop_id, target_quality, note,
+              updated_hlc, completed_by_entry_id, deleted_hlc
+            FROM remote_meta.garden_task_queue WHERE true
+            ON CONFLICT(task_id) DO UPDATE SET
+              action = excluded.action,
+              crop_id = excluded.crop_id,
+              target_quality = excluded.target_quality,
+              note = excluded.note,
+              updated_hlc = excluded.updated_hlc,
+              completed_by_entry_id = excluded.completed_by_entry_id,
+              deleted_hlc = excluded.deleted_hlc
+            WHERE excluded.updated_hlc > main.garden_task_queue.updated_hlc
+          ''');
+        }
 
         _metaDb.execute('COMMIT');
       } catch (_) {
@@ -1726,11 +1997,19 @@ final class ShardedSqliteJournalStore {
       );
     }
     final plantings = _metaDb.select(
-      'SELECT entry_id, shard_key, updated_hlc, deleted_hlc FROM planting_index ORDER BY entry_id ASC',
+      'SELECT entry_id, shard_key, updated_hlc, harvested_by_entry_id, deleted_hlc FROM planting_index ORDER BY entry_id ASC',
     );
     for (final r in plantings) {
       buffer.writeln(
-        'P:${r['entry_id']}:${r['shard_key']}:${r['updated_hlc']}:${r['deleted_hlc'] ?? ''}',
+        'P:${r['entry_id']}:${r['shard_key']}:${r['updated_hlc']}:${r['harvested_by_entry_id'] ?? ''}:${r['deleted_hlc'] ?? ''}',
+      );
+    }
+    final tasks = _metaDb.select(
+      'SELECT task_id, action, crop_id, target_quality, updated_hlc, completed_by_entry_id, deleted_hlc FROM garden_task_queue ORDER BY task_id ASC',
+    );
+    for (final r in tasks) {
+      buffer.writeln(
+        'T:${r['task_id']}:${r['action']}:${r['crop_id'] ?? ''}:${r['target_quality']}:${r['updated_hlc']}:${r['completed_by_entry_id'] ?? ''}:${r['deleted_hlc'] ?? ''}',
       );
     }
     final digest = sha256.convert(utf8.encode(buffer.toString())).toString();

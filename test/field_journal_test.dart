@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic_calendar/src/core/algorithm.dart' as algo;
 import 'package:magic_calendar/src/core/models/models.dart';
+import 'package:magic_calendar/src/core/task_window_planner.dart';
 import 'package:magic_calendar/src/services/garden_service.dart';
 import 'package:magic_calendar/src/ui/components/biodynamic_card.dart';
 import 'package:magic_calendar/src/ui/components/field_journal_card.dart';
@@ -565,16 +566,20 @@ void main() {
         expect(find.text('South raised bed, 3 rows'), findsOneWidget);
 
         // Tap entry to jump timeline
-        await tester.tap(
-          find.byKey(ValueKey('journal_entry_${savedEntry.id}')),
+        final entryFinder = find.byKey(
+          ValueKey('journal_entry_${savedEntry.id}'),
         );
+        await tester.ensureVisible(entryFinder);
+        await tester.tap(entryFinder);
         await tester.pump();
         expect(jumpedTo, equals(selectedTime));
 
         // Tap "Log Outcome" to record Maria Thun comparative trial outcome
-        await tester.tap(
-          find.byKey(ValueKey('journal_record_outcome_${savedEntry.id}')),
+        final recordOutcomeFinder = find.byKey(
+          ValueKey('journal_record_outcome_${savedEntry.id}'),
         );
+        await tester.ensureVisible(recordOutcomeFinder);
+        await tester.tap(recordOutcomeFinder);
         await tester.pumpAndSettle();
 
         final star5 = find.byKey(const ValueKey('field_journal_star_5'));
@@ -909,6 +914,247 @@ void main() {
           find.byKey(const ValueKey('photo_viewer_close_button')),
         );
         await tester.pumpAndSettle();
+      },
+    );
+  });
+
+  group('Field Workflow: Crop Picker, Active Plantings, Task Queue Completion & Search', () {
+    test('auto-completes matching QueuedGardenTask on journal log, tracks active vs harvested planting batches, and searches across SQLite shards', () async {
+      final dirA = Directory.systemTemp.createTempSync('garden_wf_a_');
+      final dirB = Directory.systemTemp.createTempSync('garden_wf_b_');
+      addTearDown(() {
+        if (dirA.existsSync()) dirA.deleteSync(recursive: true);
+        if (dirB.existsSync()) dirB.deleteSync(recursive: true);
+      });
+
+      final storeA = ShardedSqliteJournalStore(
+        rootDirectoryPath: dirA.path,
+        initialActorId: 'actor_sigurd',
+        initialAuthorName: 'Sigurd',
+      );
+      final storeB = ShardedSqliteJournalStore(
+        rootDirectoryPath: dirB.path,
+        initialActorId: 'actor_anna',
+        initialAuthorName: 'Anna',
+      );
+      final transport = InMemoryGardenSyncTransport();
+      final controllerA = GardenProfileController(
+        journalStore: storeA,
+        syncTransport: transport,
+      );
+      final controllerB = GardenProfileController(
+        journalStore: storeB,
+        syncTransport: transport,
+      );
+      addTearDown(() {
+        controllerA.dispose();
+        controllerB.dispose();
+      });
+
+      // 1. Queue a planned task on Peer A and sync to Peer B
+      await controllerA.toggleQueuedTask(
+        action: TaskActionType.sowOutdoor,
+        cropId: 'carrot',
+        targetQuality: PlantQuality.root,
+        note: 'Nantes 2 in Bed 1',
+      );
+      expect(controllerA.value.taskQueue, hasLength(1));
+      await controllerA.syncJournal(hydrateAllShards: true);
+      await controllerB.syncJournal(hydrateAllShards: true);
+      expect(controllerB.value.taskQueue, hasLength(1));
+
+      // 2. Peer B logs sowing carrot in April -> automatically completes the queued task!
+      final aprilTime = DateTime.utc(2026, 4, 14, 9, 0);
+      final aprilInfo = algo.getCalendarInfo(
+        aprilTime,
+        ephemeris,
+        includePlanets: true,
+      );
+      await controllerB.addJournalEntry(
+        FieldJournalEntry.fromLiveContext(
+          id: 'batch_carrot_apr',
+          timestamp: aprilTime,
+          action: FieldJournalAction.sowSeeds,
+          cropId: 'carrot',
+          bedName: 'Bed 1',
+          calendarInfo: aprilInfo,
+          notes: 'Sown Nantes 2 heirloom lot #42',
+        ),
+      );
+      expect(controllerB.value.taskQueue, isEmpty);
+      expect(
+        controllerB.listPlantingBatches(onlyActiveInGround: true),
+        hasLength(1),
+      );
+
+      // Sync Peer B -> Peer A sees the queued task completed and the active planting batch
+      await controllerB.syncJournal(hydrateAllShards: true);
+      await controllerA.syncJournal(hydrateAllShards: true);
+      expect(controllerA.value.taskQueue, isEmpty);
+      expect(
+        controllerA.listPlantingBatches(onlyActiveInGround: true),
+        hasLength(1),
+      );
+
+      // 3. Cross-shard full-text search finds the April entry by cultivar note
+      final searchHits = controllerA.searchJournalEntries('heirloom lot #42');
+      expect(searchHits, hasLength(1));
+      expect(searchHits.first.id, equals('batch_carrot_apr'));
+
+      // 4. Peer A logs a harvest in July linked to 'batch_carrot_apr' -> batch is marked harvested
+      final julyTime = DateTime.utc(2026, 7, 20, 10, 0);
+      final julyInfo = algo.getCalendarInfo(
+        julyTime,
+        ephemeris,
+        includePlanets: true,
+      );
+      await controllerA.addJournalEntry(
+        FieldJournalEntry.fromLiveContext(
+          id: 'harvest_carrot_jul',
+          timestamp: julyTime,
+          action: FieldJournalAction.harvestStorage,
+          cropId: 'carrot',
+          bedName: 'Bed 1',
+          parentEntryId: 'batch_carrot_apr',
+          calendarInfo: julyInfo,
+          notes: 'Sweet crisp roots',
+        ),
+      );
+      expect(
+        controllerA.listPlantingBatches(onlyActiveInGround: true),
+        isEmpty,
+      );
+      final allBatches = controllerA.listPlantingBatches(
+        onlyActiveInGround: false,
+      );
+      expect(allBatches, hasLength(1));
+      expect(allBatches.first.isHarvested, isTrue);
+      expect(allBatches.first.harvestedByEntryId, equals('harvest_carrot_jul'));
+    });
+
+    test('InfiniteTimelinePainter.hitTestJournalEntry resolves tapped journal marker', () {
+      final centerTime = DateTime(2026, 5, 16, 12, 0);
+      final info = algo.getCalendarInfo(
+        centerTime,
+        ephemeris,
+        includePlanets: true,
+      );
+      final entry = FieldJournalEntry.fromLiveContext(
+        id: 'pin_1',
+        timestamp: centerTime.add(const Duration(hours: 2)),
+        action: FieldJournalAction.sowSeeds,
+        cropId: 'carrot',
+        calendarInfo: info,
+      );
+      final painter = InfiniteTimelinePainter(
+        centerTime: centerTime,
+        hourWidth: 10.0,
+        intervals: const [],
+        weatherData: const [],
+        journalEntries: [entry],
+        ephemeris: ephemeris,
+        latitude: 54.9037,
+        longitude: 10.6074,
+      );
+      const canvasSize = Size(600, 200);
+      final markerX = painter.xForTime(entry.timestamp, canvasSize.width);
+
+      // Tap on the badge capsule at y = 162
+      final hitBadge = painter.hitTestJournalEntry(
+        Offset(markerX, 162.0),
+        canvasSize,
+      );
+      expect(hitBadge, equals(entry));
+
+      // Tap far away returns null
+      final miss = painter.hitTestJournalEntry(
+        const Offset(20.0, 162.0),
+        canvasSize,
+      );
+      expect(miss, isNull);
+    });
+
+    testWidgets(
+      'FieldJournalSheet selects crop and FieldJournalCard renders Active in the Ground with 1-tap Observe & Harvest',
+      (tester) async {
+        final selectedTime = DateTime(2026, 5, 16, 16, 0);
+        final info = algo.getCalendarInfo(
+          selectedTime,
+          ephemeris,
+          includePlanets: true,
+        );
+        final controller = GardenProfileController(
+          initialProfile: GardenProfile(starredCropIds: const ['carrot']),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: FieldJournalCard(
+                  gardenController: controller,
+                  selectedDate: selectedTime,
+                  info: info,
+                  onTimeJump: (_) {},
+                ),
+              ),
+            ),
+          ),
+        );
+
+        // Open sheet via "Log Action at Selected Time"
+        await tester.tap(
+          find.byKey(const ValueKey('field_journal_log_now_button')),
+        );
+        await tester.pumpAndSettle();
+
+        // Select starred Carrot crop inside FieldJournalSheet
+        final carrotChip = find.byKey(
+          const ValueKey('journal_sheet_crop_carrot'),
+        );
+        expect(carrotChip, findsOneWidget);
+        await tester.ensureVisible(carrotChip);
+        await tester.tap(carrotChip);
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.byKey(const ValueKey('field_journal_bed_input')),
+          'Bed A',
+        );
+        await tester.tap(
+          find.byKey(const ValueKey('field_journal_save_button')),
+        );
+        await tester.pumpAndSettle();
+
+        // Verify Active in the Ground section appears with Carrot in Bed A
+        expect(
+          find.byKey(const ValueKey('field_journal_active_plantings_section')),
+          findsOneWidget,
+        );
+        final batchId = controller.value.journalEntries.first.id;
+
+        // Tap "+ Observe" on the active batch -> opens sheet pre-linked to the batch
+        final observeBtn = find.byKey(
+          ValueKey('active_batch_observe_$batchId'),
+        );
+        await tester.ensureVisible(observeBtn);
+        await tester.tap(observeBtn);
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.byKey(const ValueKey('field_journal_notes_input')),
+          'First true leaves visible',
+        );
+        await tester.tap(
+          find.byKey(const ValueKey('field_journal_save_button')),
+        );
+        await tester.pumpAndSettle();
+
+        // Verify lifecycle trail appears on the parent sowing card
+        expect(
+          find.byKey(ValueKey('journal_lifecycle_trail_$batchId')),
+          findsOneWidget,
+        );
       },
     );
   });

@@ -52,6 +52,9 @@ final class TimeScrollView extends StatefulWidget {
   /// Logged biodynamic field journal entries rendered as markers on the timeline.
   final List<FieldJournalEntry> journalEntries;
 
+  /// Optional callback invoked when the user taps a journal marker on the timeline.
+  final ValueChanged<FieldJournalEntry>? onJournalEntryTapped;
+
   /// Creates a [TimeScrollView].
   const TimeScrollView({
     super.key,
@@ -60,6 +63,7 @@ final class TimeScrollView extends StatefulWidget {
     required this.onTimeSelected,
     this.onWeatherDataChanged,
     this.journalEntries = const [],
+    this.onJournalEntryTapped,
     this.controller,
     this.latitude = 54.9037,
     this.longitude = 10.6074,
@@ -387,6 +391,31 @@ class _TimeScrollViewState extends State<TimeScrollView>
               }
             },
             child: GestureDetector(
+              onTapUp: (details) {
+                if (widget.journalEntries.isEmpty) return;
+                final painter = InfiniteTimelinePainter(
+                  centerTime: _baseTime,
+                  hourWidth: _hourWidth,
+                  intervals: _visibleIntervals,
+                  weatherData: _weatherData,
+                  journalEntries: widget.journalEntries,
+                  ephemeris: widget.ephemeris,
+                  latitude: widget.latitude,
+                  longitude: widget.longitude,
+                );
+                // The 3x-wide canvas is centered inside the viewport and translated by _panOffset.
+                final canvasX =
+                    _viewportWidth + details.localPosition.dx - _panOffset;
+                final hit = painter.hitTestJournalEntry(
+                  Offset(canvasX, details.localPosition.dy),
+                  Size(canvasWidth, 200),
+                );
+                if (hit != null) {
+                  _scrollToTime(hit.timestamp);
+                  widget.onTimeSelected(hit.timestamp);
+                  widget.onJournalEntryTapped?.call(hit);
+                }
+              },
               onScaleStart: (details) {
                 _baseScaleHourWidth = _hourWidth;
                 _momentumController.stop();

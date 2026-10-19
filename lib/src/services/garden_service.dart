@@ -67,8 +67,11 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
     _syncTransport = syncTransport;
     final sqlStore = journalStore;
     if (sqlStore != null && !sqlStore.isClosed) {
-      // Seed any entries passed in initialProfile into SQLite shards, then load initial window.
-      if (initialProfile != null && initialProfile.journalEntries.isNotEmpty) {
+      // Seed any entries or queued tasks passed in initialProfile into SQLite shards, then load initial window.
+      if (initialProfile != null) {
+        for (final task in initialProfile.taskQueue) {
+          sqlStore.upsertQueuedTask(task);
+        }
         for (final entry in initialProfile.journalEntries) {
           sqlStore.upsertEntry(entry);
         }
@@ -140,11 +143,12 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
       for (final e in windowed) e.id: e,
       for (final e in recent) e.id: e,
     };
+    final syncedQueue = sqlStore.listQueuedTasks();
     value = GardenProfile(
       activeLocation: value.activeLocation,
       savedLocations: value.savedLocations,
       starredCropIds: value.starredCropIds,
-      taskQueue: value.taskQueue,
+      taskQueue: syncedQueue,
       journalEntries: mergedById.values,
     );
   }
@@ -243,12 +247,22 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
       _update(value.withToggledCrop(cropId));
 
   /// Adds [task] to the active garden task queue.
-  Future<void> addQueuedTask(QueuedGardenTask task) =>
-      _update(value.withQueuedTask(task));
+  Future<void> addQueuedTask(QueuedGardenTask task) {
+    final sqlStore = journalStore;
+    if (sqlStore != null && !sqlStore.isClosed) {
+      sqlStore.upsertQueuedTask(task);
+    }
+    return _update(value.withQueuedTask(task));
+  }
 
   /// Removes the task with [taskId] from the active garden task queue.
-  Future<void> removeQueuedTask(String taskId) =>
-      _update(value.withoutQueuedTask(taskId));
+  Future<void> removeQueuedTask(String taskId) {
+    final sqlStore = journalStore;
+    if (sqlStore != null && !sqlStore.isClosed) {
+      sqlStore.removeQueuedTask(taskId);
+    }
+    return _update(value.withoutQueuedTask(taskId));
+  }
 
   /// Toggles a task in the active garden queue for [action], [cropId], and [targetQuality].
   Future<void> toggleQueuedTask({
@@ -282,6 +296,9 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
 
   /// Adds or updates [entry] in the user's Biodynamic Field Journal & Diary.
   ///
+  /// Also automatically completes/dequeues any matching [QueuedGardenTask] in
+  /// the active task queue (same action and crop/organ quality).
+  ///
   /// When [fullMediaBytesByAttachmentId] is provided, each full-resolution image
   /// is verified and saved to `media/<sha256>.<ext>` in [journalStore].
   Future<void> addJournalEntry(
@@ -299,10 +316,27 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
         }
       }
       final saved = sqlStore.upsertEntry(entry);
-      await _update(value.withJournalEntry(saved), persistProfile: false);
+      GardenProfile next = value.withJournalEntry(saved);
+      for (final task in value.taskQueue) {
+        if (saved.action.fulfillsTaskAction(task.action) &&
+            (task.cropId == saved.cropId ||
+                (task.cropId == null && task.targetQuality == saved.quality))) {
+          next = next.withoutQueuedTask(task.id);
+        }
+      }
+      await _update(next, persistProfile: false);
       return;
     }
-    await _update(value.withJournalEntry(entry));
+
+    GardenProfile next = value.withJournalEntry(entry);
+    for (final task in value.taskQueue) {
+      if (entry.action.fulfillsTaskAction(task.action) &&
+          (task.cropId == entry.cropId ||
+              (task.cropId == null && task.targetQuality == entry.quality))) {
+        next = next.withoutQueuedTask(task.id);
+      }
+    }
+    await _update(next);
   }
 
   /// Attaches a photo ([fullBytes] + optional [thumbnailBytes]) to [entryId]
@@ -466,19 +500,88 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
     return sorted;
   }
 
-  /// Lists active planting batches (sowings, transplants, cuttings, divisions, grafts)
+  /// Lists planting batches (sowings, transplants, cuttings, divisions, grafts)
   /// across months so harvests and observations can link back to them.
-  List<PlantingBatchSummary> listPlantingBatches({String? cropId}) {
+  ///
+  /// When [onlyActiveInGround] is `true`, only unharvested batches are returned.
+  List<PlantingBatchSummary> listPlantingBatches({
+    String? cropId,
+    bool onlyActiveInGround = false,
+  }) {
     final sqlStore = journalStore;
     if (sqlStore != null && !sqlStore.isClosed) {
-      return sqlStore.listPlantingBatches(cropId: cropId);
+      return sqlStore.listPlantingBatches(
+        cropId: cropId,
+        onlyActiveInGround: onlyActiveInGround,
+      );
     }
+    final harvestedParentIds = <String, String>{
+      for (final e in value.journalEntries)
+        if (e.action.isHarvestAction &&
+            e.parentEntryId != null &&
+            e.parentEntryId!.isNotEmpty)
+          e.parentEntryId!: e.id,
+    };
     return [
       for (final entry in value.journalEntries)
         if (entry.action.isPlantingBatch &&
-            (cropId == null || entry.cropId == cropId))
-          PlantingBatchSummary.fromEntry(entry),
+            (cropId == null || entry.cropId == cropId) &&
+            (!onlyActiveInGround || !harvestedParentIds.containsKey(entry.id)))
+          PlantingBatchSummary.fromEntry(
+            entry,
+            harvestedByEntryId: harvestedParentIds[entry.id],
+          ),
     ];
+  }
+
+  /// Searches journal entries across all local monthly SQLite shards (or loaded entries).
+  List<FieldJournalEntry> searchJournalEntries(String query) {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return value.journalEntries;
+    final sqlStore = journalStore;
+    if (sqlStore != null && !sqlStore.isClosed) {
+      return sqlStore.searchEntries(trimmed);
+    }
+    final q = trimmed.toLowerCase();
+    return value.journalEntries
+        .where((e) {
+          if (e.title.toLowerCase().contains(q)) return true;
+          if (e.cropId?.toLowerCase().contains(q) ?? false) return true;
+          if (e.bedName?.toLowerCase().contains(q) ?? false) return true;
+          if (e.notes.toLowerCase().contains(q)) return true;
+          if (e.outcomeNote.toLowerCase().contains(q)) return true;
+          if (e.activeNotes.any((n) => n.body.toLowerCase().contains(q))) {
+            return true;
+          }
+          if (e.activeAttachments.any(
+            (a) => a.caption.toLowerCase().contains(q),
+          )) {
+            return true;
+          }
+          return false;
+        })
+        .toList(growable: false);
+  }
+
+  /// Lists all known monthly shard keys (`YYYY-MM`) across local disk and
+  /// unhydrated cloud catalog, sorted newest-first.
+  List<String> listKnownShardKeys() {
+    final keys = <String>{
+      if (journalStore != null && !journalStore!.isClosed) ...[
+        ...journalStore!.listLocalShardKeys(),
+        ...journalStore!.listUnhydratedRemoteShardKeys(),
+      ],
+      for (final entry in value.journalEntries) entry.shardKey,
+    };
+    final sorted = keys.toList()..sort((a, b) => b.compareTo(a));
+    return sorted;
+  }
+
+  /// Whether the monthly shard [shardKey] (`YYYY-MM`) is already downloaded on local disk.
+  bool isShardHydrated(String shardKey) {
+    final sqlStore = journalStore;
+    if (sqlStore == null || sqlStore.isClosed) return true;
+    return sqlStore.hasLocalShard(shardKey);
   }
 
   /// Resolves a [PlantingBatchSummary] by [entryId].

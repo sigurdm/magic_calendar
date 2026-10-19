@@ -72,6 +72,38 @@ final class InfiniteTimelinePainter extends CustomPainter {
     return result;
   }
 
+  /// Hit-tests whether [canvasLocalPosition] lands on a visible journal marker's
+  /// crown pin (`y ≈ 15`) or badge capsule (`y ≈ 154..172`), returning the
+  /// matching [FieldJournalEntry] or `null`.
+  FieldJournalEntry? hitTestJournalEntry(
+    Offset canvasLocalPosition,
+    Size canvasSize,
+  ) {
+    if (journalEntries.isEmpty || canvasSize.width <= 0) return null;
+    final visible = visibleJournalEntries(canvasSize.width);
+    if (visible.isEmpty) return null;
+
+    final inPinBand =
+        canvasLocalPosition.dy >= 4.0 && canvasLocalPosition.dy <= 26.0;
+    final inBadgeBand =
+        canvasLocalPosition.dy >= 146.0 && canvasLocalPosition.dy <= 178.0;
+    if (!inPinBand && !inBadgeBand) return null;
+
+    FieldJournalEntry? best;
+    double bestDx = double.infinity;
+    final maxHitHalfWidth = hourWidth >= 6.0 ? 38.0 : 18.0;
+
+    for (final entry in visible) {
+      final x = xForTime(entry.timestamp, canvasSize.width);
+      final dx = (canvasLocalPosition.dx - x).abs();
+      if (dx <= maxHitHalfWidth && dx < bestDx) {
+        bestDx = dx;
+        best = entry;
+      }
+    }
+    return best;
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     if (size.width <= 0 || hourWidth <= 0) {

@@ -77,7 +77,22 @@ final class FieldJournalCard extends StatefulWidget {
 final class _FieldJournalCardState extends State<FieldJournalCard> {
   FieldJournalFilter _selectedFilter = FieldJournalFilter.all;
   String? _selectedBedFilter;
+  String? _selectedShardFilter;
+  String _searchQuery = '';
   bool _showAll = false;
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   List<FieldJournalEntry> _filterEntries(List<FieldJournalEntry> entries) {
     final byCategory = switch (_selectedFilter) {
@@ -97,10 +112,13 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
       FieldJournalFilter.outcomes =>
         entries.where((e) => e.hasOutcome).toList(),
     };
-    if (_selectedBedFilter == null) return byCategory;
-    return byCategory
-        .where((e) => e.bedName?.trim() == _selectedBedFilter)
-        .toList();
+    final byBed = _selectedBedFilter == null
+        ? byCategory
+        : byCategory
+              .where((e) => e.bedName?.trim() == _selectedBedFilter)
+              .toList();
+    if (_selectedShardFilter == null) return byBed;
+    return byBed.where((e) => e.shardKey == _selectedShardFilter).toList();
   }
 
   Future<void> _showAddCoGardenerNoteDialog(FieldJournalEntry entry) async {
@@ -377,8 +395,15 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
       builder: (context, _) {
         final profile = widget.gardenController.value;
         final allEntries = profile.journalEntries;
+        final baseEntries = _searchQuery.trim().isEmpty
+            ? allEntries
+            : widget.gardenController.searchJournalEntries(_searchQuery);
         final knownBeds = widget.gardenController.listBedNames();
-        final filtered = _filterEntries(allEntries);
+        final knownShards = widget.gardenController.listKnownShardKeys();
+        final activeBatches = widget.gardenController.listPlantingBatches(
+          onlyActiveInGround: true,
+        );
+        final filtered = _filterEntries(baseEntries);
         final visible = _showAll
             ? filtered
             : filtered.take(5).toList(growable: false);
@@ -559,7 +584,12 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
               ),
               const SizedBox(height: 14),
 
-              if (allEntries.isEmpty)
+              if (activeBatches.isNotEmpty) ...[
+                _buildActivePlantingsSection(context, activeBatches),
+                const SizedBox(height: 14),
+              ],
+
+              if (allEntries.isEmpty && knownShards.isEmpty)
                 OrganicVesselContainer.inset(
                   accentColor: accentColor,
                   seed: 3.4,
@@ -588,6 +618,156 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                   ),
                 )
               else ...[
+                // Search Bar + Month Shard Browser
+                TextField(
+                  key: const ValueKey('field_journal_search_input'),
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                  style: GoogleFonts.outfit(
+                    fontSize: 12.5,
+                    color: Colors.white,
+                  ),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    hintText: 'Search diary notes, crops, beds, cultivars, or outcomes...',
+                    hintStyle: GoogleFonts.outfit(
+                      fontSize: 12,
+                      color: Colors.white38,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      size: 17,
+                      color: accentColor,
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(
+                              Icons.clear,
+                              size: 16,
+                              color: Colors.white54,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _searchController.clear();
+                                _searchQuery = '';
+                              });
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.black.withValues(alpha: 0.24),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 9,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.14),
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.14),
+                      ),
+                    ),
+                  ),
+                ),
+                if (knownShards.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: ChoiceChip(
+                            key: const ValueKey('field_journal_shard_all'),
+                            label: Text(
+                              'All Loaded Months',
+                              style: GoogleFonts.outfit(
+                                fontSize: 10.5,
+                                fontWeight: _selectedShardFilter == null
+                                    ? FontWeight.w700
+                                    : FontWeight.w400,
+                                color: _selectedShardFilter == null
+                                    ? Colors.white
+                                    : Colors.white70,
+                              ),
+                            ),
+                            selected: _selectedShardFilter == null,
+                            selectedColor: accentColor.withValues(alpha: 0.28),
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.05,
+                            ),
+                            showCheckmark: false,
+                            onSelected: (_) {
+                              setState(() {
+                                _selectedShardFilter = null;
+                              });
+                            },
+                          ),
+                        ),
+                        for (final shardKey in knownShards)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: ChoiceChip(
+                              key: ValueKey('field_journal_shard_$shardKey'),
+                              label: Text(
+                                '${widget.gardenController.isShardHydrated(shardKey) ? "🗓️" : "☁️"} $shardKey',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 10.5,
+                                  fontWeight: _selectedShardFilter == shardKey
+                                      ? FontWeight.w700
+                                      : FontWeight.w400,
+                                  color: _selectedShardFilter == shardKey
+                                      ? Colors.white
+                                      : Colors.white70,
+                                ),
+                              ),
+                              selected: _selectedShardFilter == shardKey,
+                              selectedColor: accentColor.withValues(alpha: 0.3),
+                              backgroundColor: Colors.white.withValues(
+                                alpha: 0.05,
+                              ),
+                              showCheckmark: false,
+                              onSelected: (_) async {
+                                final parts = shardKey.split('-');
+                                final year = int.parse(parts[0]);
+                                final month = int.parse(parts[1]);
+                                final monthStart = DateTime.utc(year, month, 1);
+                                final monthEnd = DateTime.utc(
+                                  year,
+                                  month + 1,
+                                  0,
+                                  23,
+                                  59,
+                                  59,
+                                );
+                                await widget.gardenController
+                                    .ensureWindowLoaded(monthStart, monthEnd);
+                                if (!mounted) return;
+                                setState(() {
+                                  _selectedShardFilter =
+                                      _selectedShardFilter == shardKey
+                                      ? null
+                                      : shardKey;
+                                });
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 10),
+
                 // Filter Row
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -681,7 +861,8 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                     ),
                   )
                 else ...[
-                  for (final entry in visible) _buildEntryTile(context, entry),
+                  for (final entry in visible)
+                    _buildEntryTile(context, entry, allEntries),
                   if (filtered.length > 5)
                     TextButton.icon(
                       key: const ValueKey('field_journal_toggle_all_button'),
@@ -715,6 +896,166 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
     );
   }
 
+  Widget _buildActivePlantingsSection(
+    BuildContext context,
+    List<PlantingBatchSummary> activeBatches,
+  ) {
+    return OrganicVesselContainer.inset(
+      key: const ValueKey('field_journal_active_plantings_section'),
+      accentColor: GoetheanPalette.leafWater,
+      seed: 4.1,
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.grass_outlined,
+                size: 16,
+                color: GoetheanPalette.leafWater,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'ACTIVE IN THE GROUND (${activeBatches.length})',
+                  style: GoogleFonts.outfit(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.9,
+                    color: GoetheanPalette.aspectGold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (final batch in activeBatches.take(6))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Container(
+                key: ValueKey('active_batch_tile_${batch.entryId}'),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: GoetheanPalette.getColor(batch.quality)
+                        .withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${batch.action.timelineGlyph} ${batch.title}'
+                            '${batch.bedName != null ? " • 📍 ${batch.bedName}" : ""}',
+                            style: GoogleFonts.outfit(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            '${batch.daysElapsedAt(widget.selectedDate) >= 0 ? "${batch.daysElapsedAt(widget.selectedDate)}d in ground" : batch.shardKey}'
+                            ' • ${batch.cosmicSummary}',
+                            style: GoogleFonts.outfit(
+                              fontSize: 10.5,
+                              color: const Color(0xFFF6ECD8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    OutlinedButton(
+                      key: ValueKey('active_batch_observe_${batch.entryId}'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.25),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        minimumSize: const Size(52, 26),
+                      ),
+                      onPressed: () {
+                        FieldJournalSheet.show(
+                          context,
+                          gardenController: widget.gardenController,
+                          timestamp: widget.selectedDate,
+                          calendarInfo: widget.info,
+                          weatherSeries: widget.weatherNotifier?.value,
+                          initialAction: FieldJournalAction.observation,
+                          initialCrop: batch.crop,
+                          initialQuality: batch.quality,
+                          initialBedName: batch.bedName,
+                          initialParentEntryId: batch.entryId,
+                        );
+                      },
+                      child: Text(
+                        '+ Observe',
+                        style: GoogleFonts.outfit(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    OutlinedButton(
+                      key: ValueKey('active_batch_harvest_${batch.entryId}'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: GoetheanPalette.aspectGold,
+                        side: BorderSide(
+                          color: GoetheanPalette.aspectGold.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        minimumSize: const Size(56, 26),
+                      ),
+                      onPressed: () {
+                        FieldJournalSheet.show(
+                          context,
+                          gardenController: widget.gardenController,
+                          timestamp: widget.selectedDate,
+                          calendarInfo: widget.info,
+                          weatherSeries: widget.weatherNotifier?.value,
+                          initialAction: FieldJournalAction.harvestFresh,
+                          initialCrop: batch.crop,
+                          initialQuality: batch.quality,
+                          initialBedName: batch.bedName,
+                          initialParentEntryId: batch.entryId,
+                        );
+                      },
+                      child: Text(
+                        '🧺 Harvest',
+                        style: GoogleFonts.outfit(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSummaryChip(String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -734,7 +1075,11 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
     );
   }
 
-  Widget _buildEntryTile(BuildContext context, FieldJournalEntry entry) {
+  Widget _buildEntryTile(
+    BuildContext context,
+    FieldJournalEntry entry,
+    List<FieldJournalEntry> allEntries,
+  ) {
     final entryColor = entry.quality == PlantQuality.none
         ? GoetheanPalette.aspectGold
         : GoetheanPalette.getColor(entry.quality);
@@ -742,6 +1087,11 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
     final linkedParent = widget.gardenController.findPlantingBatch(
       entry.parentEntryId,
     );
+    final childEntries =
+        allEntries
+            .where((e) => e.parentEntryId == entry.id && !e.isDeleted)
+            .toList()
+          ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
     final activeNotes = entry.activeNotes;
 
     return Padding(
@@ -962,6 +1312,36 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                           ),
                         );
                       },
+                    ),
+                  ),
+                ],
+
+                if (childEntries.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    key: ValueKey('journal_lifecycle_trail_${entry.id}'),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: entryColor.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Text(
+                      [
+                        '${entry.action.timelineGlyph} ${entry.action.shortLabel}',
+                        for (final child in childEntries)
+                          '${child.action.timelineGlyph} ${child.action.shortLabel} (${DateFormat("MMM d").format(child.timestamp)})',
+                      ].join(' → '),
+                      style: GoogleFonts.outfit(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFF6ECD8),
+                      ),
                     ),
                   ),
                 ],

@@ -485,6 +485,18 @@ enum FieldJournalAction {
     _ => false,
   };
 
+  /// Whether this action represents harvesting a planting batch.
+  bool get isHarvestAction =>
+      this == FieldJournalAction.harvestFresh ||
+      this == FieldJournalAction.harvestStorage;
+
+  /// Whether this action supports selecting a specific crop from [VegetableDatabase].
+  bool get supportsCropSelection => this != FieldJournalAction.sprayPreparation;
+
+  /// Whether this action fulfills a queued [TaskActionType].
+  bool fulfillsTaskAction(TaskActionType taskAction) =>
+      FieldJournalAction.fromTaskAction(taskAction) == this;
+
   /// Maps a [TaskActionType] from [TaskWindowPlanner] to a [FieldJournalAction].
   static FieldJournalAction fromTaskAction(TaskActionType action) =>
       switch (action) {
@@ -800,6 +812,9 @@ final class PlantingBatchSummary {
   /// HLC watermark for CRDT synchronization.
   final String updatedHlc;
 
+  /// Optional ID of the harvest [FieldJournalEntry] that completed this planting batch.
+  final String? harvestedByEntryId;
+
   /// Optional HLC tombstone if the planting entry was deleted.
   final String? deletedHlc;
 
@@ -815,11 +830,15 @@ final class PlantingBatchSummary {
     required this.updatedHlc,
     this.cropId,
     this.bedName,
+    this.harvestedByEntryId,
     this.deletedHlc,
   });
 
   /// Creates a [PlantingBatchSummary] from a full [FieldJournalEntry].
-  factory PlantingBatchSummary.fromEntry(FieldJournalEntry entry) {
+  factory PlantingBatchSummary.fromEntry(
+    FieldJournalEntry entry, {
+    String? harvestedByEntryId,
+  }) {
     return PlantingBatchSummary(
       entryId: entry.id,
       shardKey: entry.shardKey,
@@ -831,9 +850,22 @@ final class PlantingBatchSummary {
       quality: entry.quality,
       cosmicSummary: entry.cosmicSnapshot.rhythmBadgeLabel,
       updatedHlc: entry.updatedHlc,
+      harvestedByEntryId: harvestedByEntryId,
       deletedHlc: entry.deletedHlc,
     );
   }
+
+  /// Resolves the associated [VegetableEntry] from [VegetableDatabase], if any.
+  VegetableEntry? get crop =>
+      cropId == null ? null : VegetableDatabase.findById(cropId!);
+
+  /// Whether this planting batch has been harvested.
+  bool get isHarvested =>
+      harvestedByEntryId != null && harvestedByEntryId!.isNotEmpty;
+
+  /// Whether this planting batch is currently active in the ground (not harvested and not deleted).
+  bool get isActiveInGround =>
+      !isHarvested && (deletedHlc == null || deletedHlc!.isEmpty);
 
   /// Number of whole days elapsed between this planting and [laterTime].
   int daysElapsedAt(DateTime laterTime) =>
@@ -1394,6 +1426,9 @@ final class FieldJournalEntry {
     }
     return action.displayName;
   }
+
+  /// Whether this entry has been soft-deleted via an HLC tombstone.
+  bool get isDeleted => deletedHlc != null && deletedHlc!.isNotEmpty;
 
   /// Resolved [VegetableEntry] from [VegetableDatabase], if [cropId] is set.
   VegetableEntry? get crop =>

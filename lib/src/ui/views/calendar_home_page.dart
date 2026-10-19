@@ -11,6 +11,7 @@ import '../../services/weather_service.dart';
 import '../components/biodynamic_card.dart';
 import '../components/celestial_details_card.dart';
 import '../components/field_journal_card.dart';
+import '../components/field_journal_sheet.dart';
 import '../components/home_header.dart';
 import '../components/organic_vessel_container.dart';
 import '../components/planetary_ribbon.dart';
@@ -506,6 +507,20 @@ final class _CalendarHomePageState extends State<CalendarHomePage> {
                                         journalEntries: _gardenController
                                             .value
                                             .journalEntries,
+                                        onJournalEntryTapped: (entry) {
+                                          if (info != null) {
+                                            FieldJournalSheet.show(
+                                              context,
+                                              gardenController:
+                                                  _gardenController,
+                                              timestamp: entry.timestamp,
+                                              calendarInfo: info,
+                                              weatherSeries:
+                                                  _weatherNotifier.value,
+                                              existingEntry: entry,
+                                            );
+                                          }
+                                        },
                                         latitude: _latNotifier.value,
                                         longitude: _lonNotifier.value,
                                       );
