@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -5,6 +6,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:magic_calendar/src/core/algorithm.dart' as algo;
 import 'package:magic_calendar/src/core/models/models.dart';
 import 'package:magic_calendar/src/core/task_window_planner.dart';
@@ -1605,6 +1608,288 @@ void main() {
           ),
           isTrue,
         );
+      },
+    );
+
+    test('GoogleDriveGardenSyncTransport syncs shards over Drive v3 REST API, manages permissions, and parses GardenInviteLink', () async {
+      // 1. Verify GardenInviteLink parsing across Drive URLs, magiccalendar:// URIs, and raw IDs
+      final fromDriveUrl = GardenInviteLink.tryParse(
+        'https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz?usp=sharing',
+      );
+      expect(fromDriveUrl, isNotNull);
+      expect(
+        fromDriveUrl!.driveFolderId,
+        equals('1AbCdEfGhIjKlMnOpQrStUvWxYz'),
+      );
+
+      final inviteMsg = GardenInviteLink(
+        driveFolderId: '1AbCdEfGhIjKlMnOpQrStUvWxYz',
+        gardenName: 'Svendborg Fælleshave',
+      ).formatInviteMessage();
+      final fromInviteMsg = GardenInviteLink.tryParse(inviteMsg);
+      expect(fromInviteMsg, isNotNull);
+      expect(
+        fromInviteMsg!.driveFolderId,
+        equals('1AbCdEfGhIjKlMnOpQrStUvWxYz'),
+      );
+      expect(fromInviteMsg.gardenName, equals('Svendborg Fælleshave'));
+
+      // 2. Build a simulated Google Drive v3 server using MockClient
+      int nextFileId = 100;
+      final filesById =
+          <
+            String,
+            ({String name, String parentId, String mimeType, Uint8List bytes})
+          >{};
+      final grantedPermissions =
+          <({String folderId, String email, String role})>[];
+
+      final mockDriveClient = MockClient((request) async {
+        expect(
+          request.headers['Authorization'],
+          equals('Bearer test-drive-token'),
+        );
+        final path = request.url.path;
+
+        // Create folder or permission or multipart upload
+        if (request.method == 'POST') {
+          if (path.endsWith('/permissions')) {
+            final parts = path.split('/');
+            final folderId = parts[parts.length - 2];
+            final body = jsonDecode(request.body) as Map<String, Object?>;
+            grantedPermissions.add((
+              folderId: folderId,
+              email: body['emailAddress'] as String,
+              role: body['role'] as String,
+            ));
+            return http.Response(jsonEncode({'id': 'perm_1'}), 200);
+          }
+
+          if (request.url.queryParameters['uploadType'] == 'multipart') {
+            // Parse multipart/related body
+            final rawBytes = request.bodyBytes;
+            final contentType = request.headers['Content-Type'] ?? '';
+            final boundary = contentType.split('boundary=').last.trim();
+            final marker = utf8.encode('--$boundary');
+            final rawStr = latin1.decode(rawBytes);
+            final jsonStart = rawStr.indexOf('{');
+            final jsonEnd = rawStr.indexOf('}\r\n--$boundary');
+            final metaMap = jsonDecode(
+              utf8.decode(rawBytes.sublist(jsonStart, jsonEnd + 1)),
+            ) as Map<String, Object?>;
+            final fileName = metaMap['name'] as String;
+            final parents = (metaMap['parents'] as List).cast<String>();
+
+            // Extract binary payload after second header '\r\n\r\n'
+            final secondPartIdx = rawStr.indexOf('\r\n\r\n', jsonEnd);
+            final payloadStart = secondPartIdx + 4;
+            final closingMarker = '\r\n--$boundary--';
+            final payloadEnd = rawStr.lastIndexOf(closingMarker);
+            final payload = Uint8List.fromList(
+              rawBytes.sublist(payloadStart, payloadEnd),
+            );
+            expect(marker, isNotEmpty);
+
+            final id = 'drive_file_${++nextFileId}';
+            filesById[id] = (
+              name: fileName,
+              parentId: parents.first,
+              mimeType: 'application/octet-stream',
+              bytes: payload,
+            );
+            return http.Response(jsonEncode({'id': id, 'name': fileName}), 200);
+          }
+
+          // Metadata-only POST (folder creation)
+          final meta = jsonDecode(request.body) as Map<String, Object?>;
+          final id = 'drive_folder_${++nextFileId}';
+          final name = meta['name'] as String;
+          final parents =
+              (meta['parents'] as List?)?.cast<String>() ?? const ['root'];
+          filesById[id] = (
+            name: name,
+            parentId: parents.first,
+            mimeType:
+                meta['mimeType'] as String? ??
+                'application/vnd.google-apps.folder',
+            bytes: Uint8List(0),
+          );
+          return http.Response(
+            jsonEncode({
+              'id': id,
+              'name': name,
+              'webViewLink': 'https://drive.google.com/drive/folders/$id',
+            }),
+            200,
+          );
+        }
+
+        if (request.method == 'GET') {
+          if (request.url.queryParameters['alt'] == 'media') {
+            final fileId = path.split('/').last;
+            final entry = filesById[fileId];
+            if (entry == null) return http.Response('Not Found', 404);
+            return http.Response.bytes(entry.bytes, 200);
+          }
+
+          // files.list query
+          final q = request.url.queryParameters['q'] ?? '';
+          final parentMatch = RegExp(r"'([^']+)' in parents").firstMatch(q);
+          final parentId = parentMatch?.group(1) ?? '';
+          final nameMatch = RegExp(r"name = '([^']+)'").firstMatch(q);
+          final requiredName = nameMatch?.group(1);
+
+          final matching = <Map<String, String>>[];
+          for (final e in filesById.entries) {
+            if (e.value.parentId != parentId) continue;
+            if (requiredName != null && e.value.name != requiredName) continue;
+            matching.add({'id': e.key, 'name': e.value.name});
+          }
+          return http.Response(jsonEncode({'files': matching}), 200);
+        }
+
+        if (request.method == 'DELETE') {
+          final fileId = path.split('/').last;
+          filesById.remove(fileId);
+          return http.Response('', 204);
+        }
+
+        return http.Response('Unsupported', 400);
+      });
+
+      // 3. Create a shared garden folder on Google Drive & invite a co-gardener
+      final createdFolder =
+          await GoogleDriveGardenSyncTransport.createSharedGardenFolder(
+            tokenProvider: () async => 'test-drive-token',
+            gardenName: 'Langeland Have',
+            client: mockDriveClient,
+          );
+      expect(createdFolder.folderId, startsWith('drive_folder_'));
+
+      final transport = GoogleDriveGardenSyncTransport(
+        rootFolderId: createdFolder.folderId,
+        gardenName: createdFolder.name,
+        tokenProvider: () async => 'test-drive-token',
+        client: mockDriveClient,
+      );
+      await transport.shareFolderWithEmail(emailAddress: 'anna@example.com');
+      expect(grantedPermissions, hasLength(1));
+      expect(grantedPermissions.first.email, equals('anna@example.com'));
+      expect(grantedPermissions.first.role, equals('writer'));
+
+      // 4. Upload and download a shard blob + meta blob through GoogleDriveGardenSyncTransport
+      const sampleShard = 'shards/2026-05.0123456789abcdef01234567.sqlite';
+      final samplePayload = Uint8List.fromList([1, 2, 3, 4, 5, 6, 7, 8]);
+      await transport.putBytes(sampleShard, samplePayload);
+
+      final listedShards = await transport.list('shards/');
+      expect(listedShards, equals([sampleShard]));
+
+      final downloaded = await transport.getBytes(sampleShard);
+      expect(downloaded, equals(samplePayload));
+
+      await transport.delete(sampleShard);
+      expect(await transport.list('shards/'), isEmpty);
+    });
+
+    testWidgets(
+      'GardenNoteShareFormatter, GardenSharedNoteBundle CRDT import, and FieldJournalCard share buttons',
+      (tester) async {
+        final controllerA = GardenProfileController();
+        controllerA.updateGardenIdentity(
+          authorName: 'Sigurd',
+          gardenName: 'Svendborg Have',
+        );
+        controllerA.upsertPlot(
+          GardenPlot(
+            name: 'Herb Spiral',
+            plotType: GardenPlotType.perennialBed,
+            dimensions: '2m diameter',
+            lastSoilPrepSummary: 'BD 500 + Leaf Mold',
+          ),
+        );
+
+        final sowTime = DateTime.utc(2026, 5, 12, 10, 30);
+        final info = algo.getCalendarInfo(
+          sowTime,
+          ephemeris,
+          includePlanets: true,
+        );
+        final entry = FieldJournalEntry.fromLiveContext(
+          id: 'dill_spiral_2026',
+          timestamp: sowTime,
+          action: FieldJournalAction.sowSeeds,
+          cropId: 'dill',
+          bedName: 'Herb Spiral',
+          notes: 'Sown on upper warm tier',
+          authorId: 'sigurd',
+          authorName: 'Sigurd',
+          calendarInfo: info,
+        );
+        await controllerA.addJournalEntry(entry);
+
+        // 1. Verify human-readable note formatting
+        final formattedNote = GardenNoteShareFormatter.formatEntry(
+          controllerA.value.journalEntries.first,
+          gardenName: 'Svendborg Have',
+        );
+        expect(formattedNote, contains('Dill / Dild'));
+        expect(formattedNote, contains('📍 Herb Spiral'));
+        expect(formattedNote, contains('Sown on upper warm tier'));
+
+        // 2. Export portable note bundle from controllerA and import into controllerB
+        final bundle = controllerA.exportSharedNoteBundle();
+        final jsonStr = bundle.toJsonString();
+
+        final controllerB = GardenProfileController();
+        final imported = await controllerB.importSharedNoteBundle(jsonStr);
+        expect(imported.entries, hasLength(1));
+        expect(imported.plots, hasLength(1));
+        expect(controllerB.listPlots().first.name, equals('Herb Spiral'));
+        expect(
+          controllerB.value.journalEntries.first.id,
+          equals('dill_spiral_2026'),
+        );
+
+        // 3. Render FieldJournalCard and tap Share buttons on Plot and Journal Entry
+        final sharedTexts = <String>[];
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: FieldJournalCard(
+                  gardenController: controllerA,
+                  selectedDate: sowTime,
+                  info: info,
+                  onTimeJump: (_) {},
+                  onShareText: (text, {subject}) {
+                    sharedTexts.add(text);
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+
+        final plotShareBtn = find.byKey(
+          const ValueKey('plot_share_Herb Spiral'),
+        );
+        expect(plotShareBtn, findsOneWidget);
+        await tester.ensureVisible(plotShareBtn);
+        await tester.tap(plotShareBtn);
+        await tester.pumpAndSettle();
+        expect(sharedTexts, hasLength(1));
+        expect(sharedTexts.first, contains('Plot: Herb Spiral'));
+
+        final entryShareBtn = find.byKey(
+          const ValueKey('journal_entry_share_dill_spiral_2026'),
+        );
+        expect(entryShareBtn, findsOneWidget);
+        await tester.ensureVisible(entryShareBtn);
+        await tester.tap(entryShareBtn);
+        await tester.pumpAndSettle();
+        expect(sharedTexts, hasLength(2));
+        expect(sharedTexts.last, contains('Dill / Dild'));
       },
     );
   });

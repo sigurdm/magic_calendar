@@ -422,6 +422,62 @@ final class GardenPlot {
     deletedHlc: deletedHlc ?? this.deletedHlc,
   );
 
+  /// Serializes this [GardenPlot] to a JSON map.
+  Map<String, Object?> toJson() => <String, Object?>{
+    'name': name,
+    if (areaName.isNotEmpty) 'areaName': areaName,
+    'plotType': plotType.name,
+    if (dimensions.isNotEmpty) 'dimensions': dimensions,
+    if (notes.isNotEmpty) 'notes': notes,
+    if (lastSoilPrepSummary != null) 'lastSoilPrepSummary': lastSoilPrepSummary,
+    if (lastSoilPrepTimestamp != null)
+      'lastSoilPrepTimestamp': lastSoilPrepTimestamp!.toUtc().toIso8601String(),
+    if (updatedHlc != null) 'updatedHlc': updatedHlc,
+    if (deletedHlc != null) 'deletedHlc': deletedHlc,
+  };
+
+  /// Deserializes a [GardenPlot] from [json].
+  ///
+  /// Throws a [FormatException] if `name` is missing or empty.
+  factory GardenPlot.fromJson(Map<String, Object?> json) {
+    final nameRaw = json['name'];
+    if (nameRaw is! String || nameRaw.trim().isEmpty) {
+      throw const FormatException('GardenPlot requires a non-empty name');
+    }
+    final typeRaw = json['plotType'];
+    GardenPlotType parsedType = GardenPlotType.openBed;
+    if (typeRaw is String) {
+      for (final candidate in GardenPlotType.values) {
+        if (candidate.name == typeRaw) {
+          parsedType = candidate;
+          break;
+        }
+      }
+    }
+    final prepTimeRaw = json['lastSoilPrepTimestamp'];
+    return GardenPlot(
+      name: nameRaw.trim(),
+      areaName: json['areaName'] is String ? json['areaName'] as String : '',
+      plotType: parsedType,
+      dimensions: json['dimensions'] is String
+          ? json['dimensions'] as String
+          : '',
+      notes: json['notes'] is String ? json['notes'] as String : '',
+      lastSoilPrepSummary: json['lastSoilPrepSummary'] is String
+          ? json['lastSoilPrepSummary'] as String
+          : null,
+      lastSoilPrepTimestamp: prepTimeRaw is String
+          ? DateTime.tryParse(prepTimeRaw)
+          : null,
+      updatedHlc: json['updatedHlc'] is String
+          ? json['updatedHlc'] as String
+          : null,
+      deletedHlc: json['deletedHlc'] is String
+          ? json['deletedHlc'] as String
+          : null,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

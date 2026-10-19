@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -5,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 
 import '../core/garden/field_journal_entry.dart';
+import '../core/garden/garden_note_share.dart';
 import 'journal_sqlite_store.dart';
 
 /// Provider-agnostic cloud or shared-folder blob transport for syncing
@@ -335,6 +337,551 @@ final class WebDavGardenSyncTransport implements GardenSyncTransport {
   Future<void> delete(String name) async {
     final uri = _resolveObjectUri(name);
     await _client.delete(uri, headers: _headers());
+  }
+}
+
+/// Callback that returns a valid OAuth 2.0 Bearer access token for the
+/// Google Drive v3 API (`https://www.googleapis.com/auth/drive.file` or
+/// `https://www.googleapis.com/auth/drive`).
+///
+/// On Android and iOS, wire this to `GoogleSignInAccount.authentication.accessToken`.
+typedef GoogleDriveAccessTokenProvider = Future<String> Function();
+
+/// Metadata returned when creating or inspecting a shared garden folder on Google Drive.
+final class GoogleDriveGardenFolderInfo {
+  /// Google Drive file ID of the folder.
+  final String folderId;
+
+  /// Human-readable folder name on Google Drive.
+  final String name;
+
+  /// Direct browser/app link to open the folder in Google Drive.
+  final Uri webViewLink;
+
+  /// Creates an immutable [GoogleDriveGardenFolderInfo].
+  const GoogleDriveGardenFolderInfo({
+    required this.folderId,
+    required this.name,
+    required this.webViewLink,
+  });
+
+  /// Shareable [GardenInviteLink] for inviting co-gardeners to join this folder.
+  GardenInviteLink get inviteLink =>
+      GardenInviteLink(driveFolderId: folderId, gardenName: name);
+}
+
+/// Google Drive REST API v3 implementation of [GardenSyncTransport] for mobile
+/// (Android / iOS) and desktop co-gardener synchronization.
+///
+/// Stores content-addressed SQLite shards (`meta.<digest>.sqlite`,
+/// `shards/YYYY-MM.<digest>.sqlite`) and photo attachments (`media/<sha256>.<ext>`)
+/// inside a shared Google Drive folder (`[rootFolderId]`), and supports creating
+/// shared folders and inviting co-gardeners via Drive permissions.
+final class GoogleDriveGardenSyncTransport implements GardenSyncTransport {
+  static const String _folderMimeType = 'application/vnd.google-apps.folder';
+
+  static final RegExp _driveIdPattern = RegExp(r'^[A-Za-z0-9_-]{6,128}$');
+
+  /// Google Drive folder ID hosting the shared garden (`meta.*.sqlite`, `shards/`, `media/`).
+  final String rootFolderId;
+
+  /// Optional human-readable name of the shared garden.
+  final String? gardenName;
+
+  /// Supplies a fresh OAuth2 Bearer access token for Google Drive requests.
+  final GoogleDriveAccessTokenProvider tokenProvider;
+
+  /// Base URI for Google Drive v3 metadata/file endpoints.
+  final Uri apiBaseUri;
+
+  /// Base URI for Google Drive v3 multipart upload endpoints.
+  final Uri uploadBaseUri;
+
+  final http.Client _client;
+  final Map<String, String> _subfolderIdCache = {};
+  final Map<String, String> _blobFileIdCache = {};
+
+  /// Creates a [GoogleDriveGardenSyncTransport] rooted at [rootFolderId].
+  ///
+  /// The [rootFolderId] must be a valid alphanumeric Google Drive file ID.
+  GoogleDriveGardenSyncTransport({
+    required this.rootFolderId,
+    required this.tokenProvider,
+    this.gardenName,
+    Uri? apiBaseUri,
+    Uri? uploadBaseUri,
+    http.Client? client,
+  }) : apiBaseUri =
+           apiBaseUri ?? Uri.parse('https://www.googleapis.com/drive/v3'),
+       uploadBaseUri =
+           uploadBaseUri ??
+           Uri.parse('https://www.googleapis.com/upload/drive/v3'),
+       _client = client ?? http.Client() {
+    if (!_driveIdPattern.hasMatch(rootFolderId)) {
+      throw ArgumentError.value(
+        rootFolderId,
+        'rootFolderId',
+        'Must be a valid alphanumeric Google Drive folder ID',
+      );
+    }
+  }
+
+  @override
+  String get displayName =>
+      (gardenName != null && gardenName!.trim().isNotEmpty)
+      ? 'Google Drive (${gardenName!.trim()})'
+      : 'Google Drive ($rootFolderId)';
+
+  /// Shareable [GardenInviteLink] for inviting other gardeners to join this Drive folder.
+  GardenInviteLink get inviteLink =>
+      GardenInviteLink(driveFolderId: rootFolderId, gardenName: gardenName);
+
+  Future<Map<String, String>> _authHeaders([Map<String, String>? extra]) async {
+    final token = (await tokenProvider()).trim();
+    if (token.isEmpty) {
+      throw StateError(
+        'GoogleDriveAccessTokenProvider returned an empty token',
+      );
+    }
+    return <String, String>{'Authorization': 'Bearer $token', ...?extra};
+  }
+
+  /// Creates a new shared garden folder on Google Drive and returns its
+  /// [GoogleDriveGardenFolderInfo].
+  static Future<GoogleDriveGardenFolderInfo> createSharedGardenFolder({
+    required GoogleDriveAccessTokenProvider tokenProvider,
+    required String gardenName,
+    Uri? apiBaseUri,
+    http.Client? client,
+  }) async {
+    final trimmedName = gardenName.trim().isNotEmpty
+        ? gardenName.trim()
+        : 'Shared Biodynamic Garden';
+    final base = apiBaseUri ?? Uri.parse('https://www.googleapis.com/drive/v3');
+    final httpClient = client ?? http.Client();
+    final token = (await tokenProvider()).trim();
+    if (token.isEmpty) {
+      throw StateError(
+        'GoogleDriveAccessTokenProvider returned an empty token',
+      );
+    }
+
+    final uri = base.replace(
+      path: '${base.path}/files',
+      queryParameters: const <String, String>{
+        'fields': 'id,name,webViewLink',
+        'supportsAllDrives': 'true',
+      },
+    );
+
+    final resp = await httpClient.post(
+      uri,
+      headers: <String, String>{
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+      body: jsonEncode(<String, Object?>{
+        'name': trimmedName,
+        'mimeType': _folderMimeType,
+      }),
+    );
+
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      throw HttpException(
+        'Google Drive folder creation failed with status ${resp.statusCode}',
+        uri: uri,
+      );
+    }
+
+    final decoded = jsonDecode(resp.body);
+    if (decoded is! Map) {
+      throw const FormatException('Invalid Google Drive folder response');
+    }
+    final id = decoded['id'];
+    if (id is! String || id.isEmpty) {
+      throw const FormatException('Google Drive folder response missing id');
+    }
+    final name = decoded['name'] is String
+        ? decoded['name'] as String
+        : trimmedName;
+    final webLinkRaw = decoded['webViewLink'];
+    final webUri = (webLinkRaw is String && Uri.tryParse(webLinkRaw) != null)
+        ? Uri.parse(webLinkRaw)
+        : Uri.https('drive.google.com', '/drive/folders/$id');
+
+    return GoogleDriveGardenFolderInfo(
+      folderId: id,
+      name: name,
+      webViewLink: webUri,
+    );
+  }
+
+  /// Grants [emailAddress] access (`'writer'` or `'reader'`) to [rootFolderId]
+  /// on Google Drive so a co-gardener can sync or view the shared diary.
+  Future<void> shareFolderWithEmail({
+    required String emailAddress,
+    String role = 'writer',
+    bool sendNotificationEmail = true,
+  }) async {
+    final trimmedEmail = emailAddress.trim();
+    if (!trimmedEmail.contains('@') || trimmedEmail.length < 5) {
+      throw ArgumentError.value(
+        emailAddress,
+        'emailAddress',
+        'Must be a valid email address',
+      );
+    }
+    if (role != 'writer' && role != 'reader') {
+      throw ArgumentError.value(
+        role,
+        'role',
+        'Must be either "writer" or "reader"',
+      );
+    }
+
+    final uri = apiBaseUri.replace(
+      path: '${apiBaseUri.path}/files/$rootFolderId/permissions',
+      queryParameters: <String, String>{
+        'sendNotificationEmail': sendNotificationEmail ? 'true' : 'false',
+        'supportsAllDrives': 'true',
+      },
+    );
+
+    final resp = await _client.post(
+      uri,
+      headers: await _authHeaders(const <String, String>{
+        'Content-Type': 'application/json; charset=utf-8',
+      }),
+      body: jsonEncode(<String, Object?>{
+        'type': 'user',
+        'role': role,
+        'emailAddress': trimmedEmail,
+      }),
+    );
+
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      throw HttpException(
+        'Google Drive permission grant failed with status ${resp.statusCode}',
+        uri: uri,
+      );
+    }
+  }
+
+  Future<String?> _findOrCreateSubfolder(
+    String subfolderName, {
+    required bool createIfMissing,
+  }) async {
+    if (_subfolderIdCache[subfolderName] case final cachedId?) {
+      return cachedId;
+    }
+
+    final query =
+        "'$rootFolderId' in parents and name = '$subfolderName' and mimeType = '$_folderMimeType' and trashed = false";
+    final listUri = apiBaseUri.replace(
+      path: '${apiBaseUri.path}/files',
+      queryParameters: <String, String>{
+        'q': query,
+        'fields': 'files(id,name)',
+        'pageSize': '10',
+        'includeItemsFromAllDrives': 'true',
+        'supportsAllDrives': 'true',
+      },
+    );
+
+    final listResp = await _client.get(listUri, headers: await _authHeaders());
+    if (listResp.statusCode < 200 || listResp.statusCode >= 300) {
+      throw HttpException(
+        'Google Drive subfolder lookup failed with status ${listResp.statusCode}',
+        uri: listUri,
+      );
+    }
+
+    final decoded = jsonDecode(listResp.body);
+    if (decoded is Map && decoded['files'] is List) {
+      final files = decoded['files'] as List;
+      for (final f in files) {
+        if (f is Map && f['id'] is String) {
+          final id = f['id'] as String;
+          _subfolderIdCache[subfolderName] = id;
+          return id;
+        }
+      }
+    }
+
+    if (!createIfMissing) return null;
+
+    final createUri = apiBaseUri.replace(
+      path: '${apiBaseUri.path}/files',
+      queryParameters: const <String, String>{
+        'fields': 'id,name',
+        'supportsAllDrives': 'true',
+      },
+    );
+    final createResp = await _client.post(
+      createUri,
+      headers: await _authHeaders(const <String, String>{
+        'Content-Type': 'application/json; charset=utf-8',
+      }),
+      body: jsonEncode(<String, Object?>{
+        'name': subfolderName,
+        'mimeType': _folderMimeType,
+        'parents': <String>[rootFolderId],
+      }),
+    );
+
+    if (createResp.statusCode < 200 || createResp.statusCode >= 300) {
+      throw HttpException(
+        'Google Drive subfolder creation failed with status ${createResp.statusCode}',
+        uri: createUri,
+      );
+    }
+
+    final createdJson = jsonDecode(createResp.body);
+    if (createdJson is Map && createdJson['id'] is String) {
+      final id = createdJson['id'] as String;
+      _subfolderIdCache[subfolderName] = id;
+      return id;
+    }
+    throw const FormatException('Google Drive subfolder response missing id');
+  }
+
+  Future<List<(String id, String name)>> _listFilesInDriveFolder(
+    String folderId,
+  ) async {
+    final results = <(String id, String name)>[];
+    String? pageToken;
+
+    do {
+      final uri = apiBaseUri.replace(
+        path: '${apiBaseUri.path}/files',
+        queryParameters: <String, String>{
+          'q': "'$folderId' in parents and trashed = false",
+          'fields': 'nextPageToken,files(id,name)',
+          'pageSize': '200',
+          'includeItemsFromAllDrives': 'true',
+          'supportsAllDrives': 'true',
+          'pageToken': ?pageToken,
+        },
+      );
+      final resp = await _client.get(uri, headers: await _authHeaders());
+      if (resp.statusCode == 404) return const [];
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        throw HttpException(
+          'Google Drive files.list failed with status ${resp.statusCode}',
+          uri: uri,
+        );
+      }
+
+      final decoded = jsonDecode(resp.body);
+      if (decoded is Map) {
+        final files = decoded['files'];
+        if (files is List) {
+          for (final item in files) {
+            if (item is Map && item['id'] is String && item['name'] is String) {
+              results.add((item['id'] as String, item['name'] as String));
+            }
+          }
+        }
+        final next = decoded['nextPageToken'];
+        pageToken = (next is String && next.isNotEmpty) ? next : null;
+      } else {
+        pageToken = null;
+      }
+    } while (pageToken != null);
+
+    return results;
+  }
+
+  @override
+  Future<List<String>> list(String prefix) async {
+    final matched = <String>{};
+
+    if (prefix.isEmpty || prefix.startsWith('meta')) {
+      final rootFiles = await _listFilesInDriveFolder(rootFolderId);
+      for (final (id, fileName) in rootFiles) {
+        if (fileName.startsWith(prefix) &&
+            _validBlobPathPattern.hasMatch(fileName)) {
+          _blobFileIdCache[fileName] = id;
+          matched.add(fileName);
+        }
+      }
+    }
+
+    if (prefix.isEmpty || prefix.startsWith('shards')) {
+      final shardsFolderId = await _findOrCreateSubfolder(
+        'shards',
+        createIfMissing: false,
+      );
+      if (shardsFolderId != null) {
+        final shardFiles = await _listFilesInDriveFolder(shardsFolderId);
+        for (final (id, fileName) in shardFiles) {
+          final fullPath = 'shards/$fileName';
+          if (fullPath.startsWith(prefix) &&
+              _validBlobPathPattern.hasMatch(fullPath)) {
+            _blobFileIdCache[fullPath] = id;
+            matched.add(fullPath);
+          }
+        }
+      }
+    }
+
+    if (prefix.isEmpty || prefix.startsWith('media')) {
+      final mediaFolderId = await _findOrCreateSubfolder(
+        'media',
+        createIfMissing: false,
+      );
+      if (mediaFolderId != null) {
+        final mediaFiles = await _listFilesInDriveFolder(mediaFolderId);
+        for (final (id, fileName) in mediaFiles) {
+          final fullPath = 'media/$fileName';
+          if (fullPath.startsWith(prefix) &&
+              _validBlobPathPattern.hasMatch(fullPath)) {
+            _blobFileIdCache[fullPath] = id;
+            matched.add(fullPath);
+          }
+        }
+      }
+    }
+
+    return matched.toList()..sort();
+  }
+
+  Future<String?> _resolveBlobFileId(String name) async {
+    _validateBlobName(name);
+    if (_blobFileIdCache[name] case final cached?) {
+      return cached;
+    }
+
+    if (name.startsWith('shards/')) {
+      await list('shards/');
+    } else if (name.startsWith('media/')) {
+      await list('media/');
+    } else {
+      await list('meta.');
+    }
+    return _blobFileIdCache[name];
+  }
+
+  @override
+  Future<Uint8List?> getBytes(String name) async {
+    final fileId = await _resolveBlobFileId(name);
+    if (fileId == null) return null;
+
+    final uri = apiBaseUri.replace(
+      path: '${apiBaseUri.path}/files/$fileId',
+      queryParameters: const <String, String>{
+        'alt': 'media',
+        'supportsAllDrives': 'true',
+      },
+    );
+    final resp = await _client.get(uri, headers: await _authHeaders());
+    if (resp.statusCode == 404) {
+      _blobFileIdCache.remove(name);
+      return null;
+    }
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      throw HttpException(
+        'Google Drive file download failed with status ${resp.statusCode}',
+        uri: uri,
+      );
+    }
+    return resp.bodyBytes;
+  }
+
+  @override
+  Future<void> putBytes(String name, Uint8List bytes) async {
+    _validateBlobName(name);
+    String parentFolderId = rootFolderId;
+    String leafFileName = name;
+
+    if (name.startsWith('shards/')) {
+      parentFolderId = (await _findOrCreateSubfolder(
+        'shards',
+        createIfMissing: true,
+      ))!;
+      leafFileName = name.substring('shards/'.length);
+    } else if (name.startsWith('media/')) {
+      parentFolderId = (await _findOrCreateSubfolder(
+        'media',
+        createIfMissing: true,
+      ))!;
+      leafFileName = name.substring('media/'.length);
+    }
+
+    final contentType = switch (p.extension(leafFileName)) {
+      '.jpg' => 'image/jpeg',
+      '.png' => 'image/png',
+      '.webp' => 'image/webp',
+      _ => 'application/vnd.sqlite3',
+    };
+
+    const boundary = 'magic_calendar_drive_multipart_boundary';
+    final metaJson = jsonEncode(<String, Object?>{
+      'name': leafFileName,
+      'parents': <String>[parentFolderId],
+    });
+
+    final bodyBuilder = BytesBuilder(copy: false)
+      ..add(
+        utf8.encode(
+          '--$boundary\r\n'
+          'Content-Type: application/json; charset= UTF-8\r\n\r\n'
+          '$metaJson\r\n'
+          '--$boundary\r\n'
+          'Content-Type: $contentType\r\n\r\n',
+        ),
+      )
+      ..add(bytes)
+      ..add(utf8.encode('\r\n--$boundary--\r\n'));
+
+    final uri = uploadBaseUri.replace(
+      path: '${uploadBaseUri.path}/files',
+      queryParameters: const <String, String>{
+        'uploadType': 'multipart',
+        'fields': 'id,name',
+        'supportsAllDrives': 'true',
+      },
+    );
+
+    final resp = await _client.post(
+      uri,
+      headers: await _authHeaders(<String, String>{
+        'Content-Type': 'multipart/related; boundary=$boundary',
+      }),
+      body: bodyBuilder.takeBytes(),
+    );
+
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      throw HttpException(
+        'Google Drive multipart upload failed with status ${resp.statusCode}',
+        uri: uri,
+      );
+    }
+
+    final decoded = jsonDecode(resp.body);
+    if (decoded is Map && decoded['id'] is String) {
+      _blobFileIdCache[name] = decoded['id'] as String;
+    }
+  }
+
+  @override
+  Future<void> delete(String name) async {
+    final fileId = await _resolveBlobFileId(name);
+    if (fileId == null) return;
+
+    final uri = apiBaseUri.replace(
+      path: '${apiBaseUri.path}/files/$fileId',
+      queryParameters: const <String, String>{'supportsAllDrives': 'true'},
+    );
+    final resp = await _client.delete(uri, headers: await _authHeaders());
+    _blobFileIdCache.remove(name);
+    if (resp.statusCode == 404) return;
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      throw HttpException(
+        'Google Drive file delete failed with status ${resp.statusCode}',
+        uri: uri,
+      );
+    }
   }
 }
 

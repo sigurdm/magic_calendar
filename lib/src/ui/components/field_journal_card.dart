@@ -1,6 +1,7 @@
-import 'dart:typed_data';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
@@ -60,6 +61,14 @@ final class FieldJournalCard extends StatefulWidget {
   /// to that entry's marker.
   final ValueChanged<DateTime> onTimeJump;
 
+  /// Optional callback invoked when the user shares a formatted garden note,
+  /// plot summary, invite link, or portable note bundle (e.g. to open the native
+  /// mobile share sheet). Always copies to the system clipboard as well.
+  final void Function(String text, {String? subject})? onShareText;
+
+  /// Optional mobile OAuth2 access token provider for Google Drive sync.
+  final GoogleDriveAccessTokenProvider? googleDriveTokenProvider;
+
   /// Creates an immutable [FieldJournalCard].
   const FieldJournalCard({
     super.key,
@@ -68,6 +77,8 @@ final class FieldJournalCard extends StatefulWidget {
     required this.info,
     required this.onTimeJump,
     this.weatherNotifier,
+    this.onShareText,
+    this.googleDriveTokenProvider,
   });
 
   @override
@@ -272,6 +283,23 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
     );
   }
 
+  Future<void> _shareOrCopyText(
+    String text, {
+    required String label,
+    String? subject,
+  }) async {
+    widget.onShareText?.call(text, subject: subject ?? label);
+    unawaited(Clipboard.setData(ClipboardData(text: text)).catchError((_) {}));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        key: const ValueKey('field_journal_share_snackbar'),
+        content: Text('$label copied & ready to share'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   Future<void> _showSharedGardenSyncDialog() async {
     final authorCtrl = TextEditingController(
       text: widget.gardenController.localAuthorName,
@@ -280,111 +308,417 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
       text: widget.gardenController.gardenName,
     );
     final currentTransport = widget.gardenController.syncTransport;
-    final initialPath = currentTransport is DirectoryGardenSyncTransport
-        ? currentTransport.directory.path
+    final initialPath = switch (currentTransport) {
+      DirectoryGardenSyncTransport(:final directory) => directory.path,
+      WebDavGardenSyncTransport(:final baseUri) => baseUri.toString(),
+      _ => '',
+    };
+    final initialDriveFolder =
+        currentTransport is GoogleDriveGardenSyncTransport
+        ? currentTransport.rootFolderId
         : '';
     final folderCtrl = TextEditingController(text: initialPath);
+    final driveFolderCtrl = TextEditingController(text: initialDriveFolder);
+    final driveTokenCtrl = TextEditingController();
+    final inviteEmailCtrl = TextEditingController();
+    final importBundleCtrl = TextEditingController();
+    String? statusFeedback;
 
     try {
       await showDialog<void>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          backgroundColor: const Color(0xFF1F1A14),
-          title: Text(
-            'Shared Garden & Sharded SQLite Cloud Sync',
-            style: GoogleFonts.cormorantGaramond(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFFF6ECD8),
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Entries are partitioned into monthly SQLite shards (YYYY-MM.<sha256>.sqlite) with Hybrid Logical Clock (HLC) CRDT merge semantics so multiple gardeners can log offline and sync via any shared folder or WebDAV endpoint.',
-                  style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    color: Colors.white70,
-                    height: 1.35,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setDialogState) {
+            final activeTransport = widget.gardenController.syncTransport;
+            final driveTransport =
+                activeTransport is GoogleDriveGardenSyncTransport
+                ? activeTransport
+                : null;
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1F1A14),
+              title: Text(
+                'Google Drive Sync & Share Garden Notes',
+                style: GoogleFonts.cormorantGaramond(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFFF6ECD8),
+                ),
+              ),
+              content: SizedBox(
+                width: 440,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Entries are partitioned into monthly SQLite shards (YYYY-MM.<sha256>.sqlite) with HLC CRDT merge so co-gardeners can log offline on mobile and sync via Google Drive, a shared folder, or portable note bundles.',
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          color: Colors.white70,
+                          height: 1.35,
+                        ),
+                      ),
+                      if (activeTransport != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          key: const ValueKey('active_sync_transport_banner'),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981)
+                                .withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFF10B981)
+                                  .withValues(alpha: 0.45),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.cloud_done_outlined,
+                                size: 16,
+                                color: Color(0xFF6EE7B7),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Connected: ${activeTransport.displayName}',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFFA7F3D0),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 10),
+                      TextField(
+                        key: const ValueKey('shared_garden_name_input'),
+                        controller: gardenNameCtrl,
+                        style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          color: Colors.white,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'Shared Garden Name',
+                          labelStyle: GoogleFonts.outfit(color: Colors.white70),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        key: const ValueKey('shared_garden_author_input'),
+                        controller: authorCtrl,
+                        style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          color: Colors.white,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'Your Gardener Name (shown on notes)',
+                          labelStyle: GoogleFonts.outfit(color: Colors.white70),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        'GOOGLE DRIVE MOBILE SYNC',
+                        style: GoogleFonts.outfit(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: GoetheanPalette.aspectGold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        key: const ValueKey('drive_folder_input'),
+                        controller: driveFolderCtrl,
+                        style: GoogleFonts.outfit(
+                          fontSize: 12.5,
+                          color: Colors.white,
+                        ),
+                        decoration: InputDecoration(
+                          labelText:
+                              'Google Drive Folder Link, ID, or Invite Code',
+                          hintText: 'https://drive.google.com/drive/folders/... or magiccalendar://...',
+                          labelStyle: GoogleFonts.outfit(color: Colors.white70),
+                          hintStyle: GoogleFonts.outfit(color: Colors.white38),
+                        ),
+                      ),
+                      if (widget.googleDriveTokenProvider == null) ...[
+                        const SizedBox(height: 6),
+                        TextField(
+                          key: const ValueKey('drive_access_token_input'),
+                          controller: driveTokenCtrl,
+                          obscureText: true,
+                          style: GoogleFonts.outfit(
+                            fontSize: 12.5,
+                            color: Colors.white,
+                          ),
+                          decoration: InputDecoration(
+                            labelText:
+                                'Google OAuth Access Token (Drive Scope)',
+                            labelStyle: GoogleFonts.outfit(
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (driveTransport != null) ...[
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            OutlinedButton.icon(
+                              key: const ValueKey('drive_copy_invite_button'),
+                              onPressed: () async {
+                                final msg = driveTransport.inviteLink
+                                    .formatInviteMessage();
+                                await _shareOrCopyText(
+                                  msg,
+                                  label: 'Google Drive Garden Invite',
+                                );
+                              },
+                              icon: const Icon(Icons.share_outlined, size: 14),
+                              label: const Text('Share Garden Invite Link'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                key: const ValueKey('drive_invite_email_input'),
+                                controller: inviteEmailCtrl,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 12.5,
+                                  color: Colors.white,
+                                ),
+                                decoration: InputDecoration(
+                                  labelText:
+                                      'Invite Co-Gardener on Drive (Email)',
+                                  labelStyle: GoogleFonts.outfit(
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              key: const ValueKey('drive_invite_email_button'),
+                              onPressed: () async {
+                                final email = inviteEmailCtrl.text.trim();
+                                if (email.isEmpty) return;
+                                try {
+                                  await driveTransport.shareFolderWithEmail(
+                                    emailAddress: email,
+                                  );
+                                  setDialogState(() {
+                                    statusFeedback =
+                                        'Granted Google Drive write access to $email';
+                                    inviteEmailCtrl.clear();
+                                  });
+                                } catch (e) {
+                                  setDialogState(() {
+                                    statusFeedback = 'Drive share failed: $e';
+                                  });
+                                }
+                              },
+                              child: const Text('Invite'),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      Text(
+                        'LOCAL SHARED FOLDER OR WEBDAV (OPTIONAL)',
+                        style: GoogleFonts.outfit(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: Colors.white60,
+                        ),
+                      ),
+                      TextField(
+                        key: const ValueKey('shared_garden_folder_input'),
+                        controller: folderCtrl,
+                        style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          color: Colors.white,
+                        ),
+                        decoration: InputDecoration(
+                          labelText:
+                              'Shared Cloud Folder Path or https:// WebDAV URL',
+                          hintText: '/path/to/shared/garden or https://...',
+                          labelStyle: GoogleFonts.outfit(color: Colors.white70),
+                          hintStyle: GoogleFonts.outfit(color: Colors.white38),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        'PORTABLE GARDEN NOTE BUNDLES (NO ACCOUNT NEEDED)',
+                        style: GoogleFonts.outfit(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: GoetheanPalette.aspectGold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          OutlinedButton.icon(
+                            key: const ValueKey('export_note_bundle_button'),
+                            onPressed: () async {
+                              final bundle = widget.gardenController
+                                  .exportSharedNoteBundle();
+                              await _shareOrCopyText(
+                                bundle.toJsonString(),
+                                label:
+                                    'Portable Garden Bundle (${bundle.entries.length} notes)',
+                              );
+                            },
+                            icon: const Icon(
+                              Icons.ios_share_outlined,
+                              size: 14,
+                            ),
+                            label: const Text('Copy Note Bundle'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              key: const ValueKey('import_note_bundle_input'),
+                              controller: importBundleCtrl,
+                              style: GoogleFonts.outfit(
+                                fontSize: 12,
+                                color: Colors.white,
+                              ),
+                              decoration: InputDecoration(
+                                labelText: 'Paste Shared Note Bundle JSON',
+                                labelStyle: GoogleFonts.outfit(
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            key: const ValueKey('import_note_bundle_button'),
+                            onPressed: () async {
+                              final raw = importBundleCtrl.text.trim();
+                              if (raw.isEmpty) return;
+                              try {
+                                final imported = await widget.gardenController
+                                    .importSharedNoteBundle(raw);
+                                setDialogState(() {
+                                  statusFeedback =
+                                      'Merged ${imported.entries.length} note(s) & ${imported.plots.length} plot(s) from ${imported.exportedBy}';
+                                  importBundleCtrl.clear();
+                                });
+                              } catch (e) {
+                                setDialogState(() {
+                                  statusFeedback = 'Bundle import failed: $e';
+                                });
+                              }
+                            },
+                            child: const Text('Import'),
+                          ),
+                        ],
+                      ),
+                      if (statusFeedback != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          statusFeedback!,
+                          key: const ValueKey('sync_dialog_status_feedback'),
+                          style: GoogleFonts.outfit(
+                            fontSize: 11.5,
+                            color: const Color(0xFFA7F3D0),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  key: const ValueKey('shared_garden_name_input'),
-                  controller: gardenNameCtrl,
-                  style: GoogleFonts.outfit(fontSize: 13, color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Shared Garden Name',
-                    labelStyle: GoogleFonts.outfit(color: Colors.white70),
-                  ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Close'),
                 ),
-                const SizedBox(height: 8),
-                TextField(
-                  key: const ValueKey('shared_garden_author_input'),
-                  controller: authorCtrl,
-                  style: GoogleFonts.outfit(fontSize: 13, color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Your Gardener Name (shown on notes)',
-                    labelStyle: GoogleFonts.outfit(color: Colors.white70),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  key: const ValueKey('shared_garden_folder_input'),
-                  controller: folderCtrl,
-                  style: GoogleFonts.outfit(fontSize: 13, color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText:
-                        'Shared Cloud Folder Path or https:// WebDAV URL',
-                    hintText: '/path/to/shared/garden or https://...',
-                    labelStyle: GoogleFonts.outfit(color: Colors.white70),
-                    hintStyle: GoogleFonts.outfit(color: Colors.white38),
-                  ),
+                ElevatedButton(
+                  key: const ValueKey('shared_garden_sync_save_button'),
+                  onPressed: () async {
+                    widget.gardenController.updateGardenIdentity(
+                      authorName: authorCtrl.text.trim(),
+                      gardenName: gardenNameCtrl.text.trim(),
+                    );
+                    final driveTarget = driveFolderCtrl.text.trim();
+                    final endpoint = folderCtrl.text.trim();
+                    if (driveTarget.isNotEmpty) {
+                      final provider =
+                          widget.googleDriveTokenProvider ??
+                          () async => driveTokenCtrl.text.trim();
+                      widget.gardenController.connectGoogleDrive(
+                        folderIdOrInvite: driveTarget,
+                        tokenProvider: provider,
+                        gardenName: gardenNameCtrl.text.trim(),
+                      );
+                      await widget.gardenController.syncJournal();
+                    } else if (endpoint.isNotEmpty) {
+                      if (endpoint.contains('drive.google.com') ||
+                          endpoint.startsWith('magiccalendar://')) {
+                        final provider =
+                            widget.googleDriveTokenProvider ??
+                            () async => driveTokenCtrl.text.trim();
+                        widget.gardenController.connectGoogleDrive(
+                          folderIdOrInvite: endpoint,
+                          tokenProvider: provider,
+                          gardenName: gardenNameCtrl.text.trim(),
+                        );
+                      } else if (endpoint.startsWith('https://')) {
+                        widget.gardenController.setSyncTransport(
+                          WebDavGardenSyncTransport(
+                            baseUri: Uri.parse(endpoint),
+                          ),
+                        );
+                      } else {
+                        widget.gardenController.setSyncTransport(
+                          DirectoryGardenSyncTransport(endpoint),
+                        );
+                      }
+                      await widget.gardenController.syncJournal();
+                    } else if (widget.gardenController.syncTransport != null) {
+                      await widget.gardenController.syncJournal();
+                    }
+                    if (dialogContext.mounted) {
+                      Navigator.of(dialogContext).pop();
+                    }
+                  },
+                  child: const Text('Save & Sync Now'),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Close'),
-            ),
-            ElevatedButton(
-              key: const ValueKey('shared_garden_sync_save_button'),
-              onPressed: () async {
-                widget.gardenController.updateGardenIdentity(
-                  authorName: authorCtrl.text.trim(),
-                  gardenName: gardenNameCtrl.text.trim(),
-                );
-                final endpoint = folderCtrl.text.trim();
-                if (endpoint.isNotEmpty) {
-                  if (endpoint.startsWith('https://')) {
-                    widget.gardenController.setSyncTransport(
-                      WebDavGardenSyncTransport(baseUri: Uri.parse(endpoint)),
-                    );
-                  } else {
-                    widget.gardenController.setSyncTransport(
-                      DirectoryGardenSyncTransport(endpoint),
-                    );
-                  }
-                  await widget.gardenController.syncJournal();
-                }
-                if (dialogContext.mounted) {
-                  Navigator.of(dialogContext).pop();
-                }
-              },
-              child: const Text('Save & Sync Now'),
-            ),
-          ],
+            );
+          },
         ),
       );
     } finally {
       authorCtrl.dispose();
       gardenNameCtrl.dispose();
       folderCtrl.dispose();
+      driveFolderCtrl.dispose();
+      driveTokenCtrl.dispose();
+      inviteEmailCtrl.dispose();
+      importBundleCtrl.dispose();
     }
   }
 
@@ -1525,6 +1859,53 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                                   ),
                                 ),
                               ),
+                              OutlinedButton.icon(
+                                key: ValueKey('plot_share_${plot.name}'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white70,
+                                  side: BorderSide(
+                                    color: Colors.white.withValues(alpha: 0.25),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  minimumSize: const Size(56, 28),
+                                ),
+                                onPressed: () {
+                                  final plotEntries = widget
+                                      .gardenController
+                                      .value
+                                      .journalEntries
+                                      .where(
+                                        (e) =>
+                                            e.bedName?.trim().toLowerCase() ==
+                                            plot.name.trim().toLowerCase(),
+                                      );
+                                  final summary =
+                                      GardenNoteShareFormatter.formatPlotSummary(
+                                        plot: plot,
+                                        rotation: rotation,
+                                        successionPlan: successionPlan,
+                                        recentEntries: plotEntries,
+                                      );
+                                  _shareOrCopyText(
+                                    summary,
+                                    label: 'Plot "${plot.name}" summary',
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.share_outlined,
+                                  size: 13,
+                                ),
+                                label: Text(
+                                  'Share Plot',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -2062,6 +2443,31 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                         ),
                       ),
                     const SizedBox(width: 8),
+                    IconButton(
+                      key: ValueKey('journal_entry_share_${entry.id}'),
+                      tooltip: 'Share Note',
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
+                      padding: const EdgeInsets.all(4),
+                      icon: const Icon(
+                        Icons.share_outlined,
+                        size: 15,
+                        color: Colors.white70,
+                      ),
+                      onPressed: () {
+                        final formatted = GardenNoteShareFormatter.formatEntry(
+                          entry,
+                          gardenName: widget.gardenController.gardenName,
+                        );
+                        _shareOrCopyText(
+                          formatted,
+                          label: 'Note "${entry.title}"',
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 4),
                     OutlinedButton.icon(
                       key: ValueKey('journal_record_outcome_${entry.id}'),
                       style: OutlinedButton.styleFrom(

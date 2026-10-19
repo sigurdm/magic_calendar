@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import '../core/garden/garden.dart';
 import '../core/models/models.dart';
@@ -746,6 +747,84 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
   void setSyncTransport(GardenSyncTransport? transport) {
     _syncTransport = transport;
     notifyListeners();
+  }
+
+  /// Connects a [GoogleDriveGardenSyncTransport] from a Google Drive folder ID,
+  /// Drive folder URL, or `magiccalendar://join-garden` invite link.
+  ///
+  /// Throws a [FormatException] if [folderIdOrInvite] is not a valid folder ID or invite link.
+  GoogleDriveGardenSyncTransport connectGoogleDrive({
+    required String folderIdOrInvite,
+    required GoogleDriveAccessTokenProvider tokenProvider,
+    String? gardenName,
+    http.Client? client,
+  }) {
+    final parsed = GardenInviteLink.tryParse(folderIdOrInvite);
+    if (parsed == null) {
+      throw FormatException(
+        'Invalid Google Drive folder link or invite code',
+        folderIdOrInvite,
+      );
+    }
+    final effectiveGardenName =
+        (gardenName != null && gardenName.trim().isNotEmpty)
+        ? gardenName.trim()
+        : parsed.gardenName;
+    if (effectiveGardenName != null && effectiveGardenName.isNotEmpty) {
+      updateGardenIdentity(gardenName: effectiveGardenName);
+    }
+    final transport = GoogleDriveGardenSyncTransport(
+      rootFolderId: parsed.driveFolderId,
+      tokenProvider: tokenProvider,
+      gardenName: effectiveGardenName ?? this.gardenName,
+      client: client,
+    );
+    _syncTransport = transport;
+    notifyListeners();
+    return transport;
+  }
+
+  /// Exports a portable [GardenSharedNoteBundle] of [entries] and [plots]
+  /// (defaulting to the active profile entries and plots).
+  GardenSharedNoteBundle exportSharedNoteBundle({
+    Iterable<FieldJournalEntry>? entries,
+    Iterable<GardenPlot>? plots,
+  }) {
+    return GardenSharedNoteBundle(
+      gardenName: gardenName,
+      exportedBy: localAuthorName,
+      exportedAt: DateTime.now().toUtc(),
+      plots: plots ?? listPlots(),
+      entries: (entries ?? value.journalEntries).where((e) => !e.isDeleted),
+    );
+  }
+
+  /// Imports and merges a shared [GardenSharedNoteBundle] from a JSON string.
+  ///
+  /// Returns the parsed [GardenSharedNoteBundle] after merging its plots and entries.
+  /// Throws a [FormatException] if [rawJson] is not a valid bundle.
+  Future<GardenSharedNoteBundle> importSharedNoteBundle(String rawJson) async {
+    final bundle = GardenSharedNoteBundle.fromJsonString(rawJson);
+
+    for (final plot in bundle.plots) {
+      upsertPlot(plot);
+    }
+
+    final sqlStore = journalStore;
+    if (sqlStore != null && !sqlStore.isClosed) {
+      for (final incoming in bundle.entries) {
+        sqlStore.upsertEntry(incoming);
+      }
+      _refreshEntriesFromSqlite();
+      return bundle;
+    }
+
+    GardenProfile next = value;
+    for (final incoming in bundle.entries) {
+      next = next.withJournalEntry(incoming);
+    }
+    await _update(next);
+    return bundle;
   }
 
   /// Synchronizes the local monthly SQLite shards with [syncTransport].
