@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/models.dart';
+import '../task_window_planner.dart';
 import '../vegetable_database.dart';
 import 'field_journal_entry.dart';
 
@@ -519,8 +520,12 @@ final class PlotRotationAssessment {
   /// soil-borne disease rotation rule.
   final bool hasFamilyConflict;
 
+  /// Whether [candidateCrop] is a valid within-season staggered sowing (*Hold-såning*)
+  /// of the same short/medium-cycle crop in [plotName].
+  final bool isStaggeredSameSeasonSowing;
+
   /// Previous planting batch in [plotName] that triggered [hasFamilyConflict]
-  /// or triggered a self-compatible compost note.
+  /// or triggered a self-compatible compost / staggered sowing note.
   final PlantingBatchSummary? conflictingBatch;
 
   /// Years elapsed since [conflictingBatch] was planted in [plotName].
@@ -546,6 +551,7 @@ final class PlotRotationAssessment {
     this.candidateFamily,
     this.sensitivity,
     required this.hasFamilyConflict,
+    this.isStaggeredSameSeasonSowing = false,
     this.conflictingBatch,
     this.yearsSinceSameFamily,
     required this.recommendedNextQuality,
@@ -698,10 +704,7 @@ final class PlotRotationAssessment {
       if (prevFamily != candidateFamily) continue;
 
       final yearDiff = (targetYear - batch.timestamp.year).abs();
-      final isPriorCrop =
-          (yearDiff > 0 && yearDiff < 3) ||
-          (yearDiff == 0 && batch.isHarvested);
-      if (!isPriorCrop) continue;
+      if (yearDiff >= 3) continue;
 
       // Special case: Tomatoes (Solanum lycopersicum)
       if (_isTomato(candidateCrop)) {
@@ -734,24 +737,48 @@ final class PlotRotationAssessment {
         break;
       }
 
-      if (minBreakYears > 1 &&
-          ((yearDiff > 0 && yearDiff < minBreakYears) ||
-              (yearDiff == 0 && batch.isHarvested))) {
+      // Within the same growing season (yearDiff == 0):
+      // Distinguish staggered interval sowings (Hold-såning of the same short/medium
+      // crop, e.g. a second sowing of carrot, spinach, radish, beetroot, or bush beans)
+      // from back-to-back relay cropping of different species in a strict family
+      // (e.g. Spring Radish followed by Winter Kale).
+      if (yearDiff == 0) {
+        final maturity = CropMaturityProfile.forCrop(candidateCrop);
+        if (prevCrop.id == candidateCrop.id &&
+            maturity.supportsStaggeredSowing) {
+          sameCropStationaryMatch = batch;
+          yearsElapsed = 0;
+          break;
+        }
+        if (minBreakYears > 1 &&
+            (prevCrop.id != candidateCrop.id || batch.isHarvested)) {
+          conflict = batch;
+          yearsElapsed = 0;
+          break;
+        }
+        continue;
+      }
+
+      if (minBreakYears > 1 && yearDiff > 0 && yearDiff < minBreakYears) {
         conflict = batch;
         yearsElapsed = yearDiff;
         break;
       }
     }
 
+    final isStaggered =
+        conflict == null &&
+        sameCropStationaryMatch != null &&
+        yearsElapsed == 0 &&
+        sameCropStationaryMatch.crop?.id == candidateCrop.id &&
+        CropMaturityProfile.forCrop(candidateCrop).supportsStaggeredSowing;
+
     String? warning;
     if (conflict != null) {
       final prevName = conflict.crop?.nameEn ?? conflict.title;
-      final whenLabel = yearsElapsed == 0
-          ? 'earlier in ${conflict.timestamp.year}'
-          : 'in ${conflict.timestamp.year} (${yearsElapsed}y ago)';
       final breakRequired = minBreakYears > 1 ? minBreakYears : 3;
       final reason = switch (candidateFamily) {
-        BotanicalFamily.brassicaceae => 'to prevent clubroot (Plasmodiophora brassicae) and brassica pest buildup',
+        BotanicalFamily.brassicaceae => 'to prevent clubroot (Plasmodiophora brassicae), cabbage root fly, and flea beetle buildup',
         BotanicalFamily.solanaceae => 'to prevent potato cyst nematodes (PCN) and shared Phytophthora blight',
         BotanicalFamily.alliaceae =>
           'to prevent persistent allium white rot (Sclerotium cepivorum)',
@@ -759,9 +786,19 @@ final class PlotRotationAssessment {
           'to prevent pea/broad-bean foot & root rot ("pea sickness")',
         _ => 'for root health and disease prevention',
       };
-      warning =
-          'Rotation Alert: $prevName (${candidateFamily.shortLabel}) grew in $plotName $whenLabel — '
-          'recommend a $breakRequired-year break before planting ${candidateCrop.nameEn} $reason.';
+      if (yearsElapsed == 0) {
+        warning =
+            'Same-Season Relay Alert: Following $prevName with ${candidateCrop.nameEn} (${candidateFamily.shortLabel}) in $plotName within the same season bridges pest and disease cycles — '
+            'choose a different family for your relay crop ($reason).';
+      } else {
+        warning =
+            'Rotation Alert: $prevName (${candidateFamily.shortLabel}) grew in $plotName in ${conflict.timestamp.year} (${yearsElapsed}y ago) — '
+            'recommend a $breakRequired-year break before planting ${candidateCrop.nameEn} $reason.';
+      }
+    } else if (isStaggered) {
+      final maturity = CropMaturityProfile.forCrop(candidateCrop);
+      guidance =
+          'Hold-såning (Staggered Sowing): Sowing a follow-up batch of ${candidateCrop.nameEn} in $plotName (~every ${maturity.staggeredIntervalDays} days) extends continuous harvest within the season.';
     } else if (sameCropStationaryMatch != null) {
       if (_isTomato(candidateCrop)) {
         guidance =
@@ -782,12 +819,435 @@ final class PlotRotationAssessment {
       candidateFamily: candidateFamily,
       sensitivity: sensitivity,
       hasFamilyConflict: conflict != null,
+      isStaggeredSameSeasonSowing: isStaggered,
       conflictingBatch: conflict ?? sameCropStationaryMatch,
       yearsSinceSameFamily: yearsElapsed,
       recommendedNextQuality: recommendedQuality,
       rotationGuidance: guidance,
       conflictWarning: warning,
       seasonTrail: trail,
+    );
+  }
+}
+
+/// Agronomic maturity, bed-occupancy duration, and staggered-sowing (*Hold-såning*)
+/// profile for a [VegetableEntry].
+final class CropMaturityProfile {
+  /// Estimated days the crop occupies the bed from sowing/transplanting until clearing.
+  final int estimatedDaysInGround;
+
+  /// Typical indoor/module nursery lead time in days before outdoor transplanting (`0` if direct-sown only).
+  final int moduleLeadTimeDays;
+
+  /// Whether this crop is suitable for staggered interval sowings (*Hold-såning*)
+  /// in the same bed within a single season.
+  final bool supportsStaggeredSowing;
+
+  /// Recommended interval in days between staggered sowings when [supportsStaggeredSowing] is `true`.
+  final int staggeredIntervalDays;
+
+  /// Creates an immutable [CropMaturityProfile].
+  const CropMaturityProfile({
+    required this.estimatedDaysInGround,
+    this.moduleLeadTimeDays = 0,
+    this.supportsStaggeredSowing = false,
+    this.staggeredIntervalDays = 14,
+  });
+
+  /// Derives a [CropMaturityProfile] for [crop].
+  static CropMaturityProfile forCrop(VegetableEntry crop) {
+    if (crop.lifeCycle == PlantLifeCycle.perennial) {
+      return const CropMaturityProfile(
+        estimatedDaysInGround: 365,
+        moduleLeadTimeDays: 0,
+        supportsStaggeredSowing: false,
+      );
+    }
+
+    final id = crop.id;
+    final hasIndoorStart =
+        crop.indoorSowingMonths.isNotEmpty && crop.transplantMonths.isNotEmpty;
+    final defaultLeadTime = hasIndoorStart ? 28 : 0;
+
+    // 1. Fast catch-crops (30–50 days) with 14-day staggered Hold-såning
+    if (const {
+      'radish',
+      'spinach',
+      'lettuce',
+      'romaine_lettuce',
+      'arugula',
+      'cress',
+      'coriander',
+      'dill',
+      'pak_choi',
+      'mizuna',
+      'lambs_lettuce',
+      'winter_purslane',
+    }.contains(id)) {
+      return CropMaturityProfile(
+        estimatedDaysInGround: id == 'radish' ? 32 : 45,
+        moduleLeadTimeDays: hasIndoorStart ? 21 : 0,
+        supportsStaggeredSowing: true,
+        staggeredIntervalDays: 14,
+      );
+    }
+
+    // 2. Medium-short crops (55–75 days) with 14–21 day staggered sowing
+    if (const {
+      'turnip',
+      'kohlrabi',
+      'bush_bean',
+      'spring_onion',
+      'pea',
+      'sugar_snap_pea',
+      'snow_pea',
+      'fennel',
+      'swiss_chard',
+      'beetroot',
+      'carrot',
+    }.contains(id)) {
+      return CropMaturityProfile(
+        estimatedDaysInGround: (id == 'carrot' || id == 'beetroot') ? 75 : 60,
+        moduleLeadTimeDays: hasIndoorStart ? 24 : 0,
+        supportsStaggeredSowing: true,
+        staggeredIntervalDays: 21,
+      );
+    }
+
+    // 3. Medium-season maincrops (75–95 days)
+    if (const {
+      'pointed_cabbage',
+      'broccoli',
+      'cauliflower',
+      'romanesco',
+      'courgette',
+      'cucumber',
+      'sweetcorn',
+      'broad_bean',
+      'runner_bean',
+      'climbing_bean',
+    }.contains(id)) {
+      return CropMaturityProfile(
+        estimatedDaysInGround: 85,
+        moduleLeadTimeDays: defaultLeadTime,
+        supportsStaggeredSowing: false,
+      );
+    }
+
+    // 4. Long-season & overwintering maincrops (110–150 days)
+    return CropMaturityProfile(
+      estimatedDaysInGround: 115,
+      moduleLeadTimeDays: defaultLeadTime,
+      supportsStaggeredSowing: false,
+    );
+  }
+
+  /// Estimates the date when [batch] will finish harvesting and release the plot.
+  static DateTime estimateClearingDate(PlantingBatchSummary batch) {
+    final crop = batch.crop;
+    if (crop == null) {
+      return batch.timestamp.add(const Duration(days: 75));
+    }
+    final profile = forCrop(crop);
+    // Transplanting starts with seedlings already raised for moduleLeadTimeDays.
+    final effectiveDays =
+        batch.action == FieldJournalAction.transplant &&
+            profile.moduleLeadTimeDays > 0
+        ? (profile.estimatedDaysInGround - (profile.moduleLeadTimeDays ~/ 2))
+              .clamp(25, 365)
+        : profile.estimatedDaysInGround;
+    return batch.timestamp.add(Duration(days: effectiveDays));
+  }
+}
+
+/// How a [PlotSuccessionCandidate] fits into a plot's current season timeline.
+enum SuccessionStage {
+  ///Sow another batch of an active short/medium-cycle crop (*Hold-såning*).
+  staggeredNextBatch(label: 'Hold-såning (Next Batch)', glyph: '🔁'),
+
+  /// Start seedlings in module trays now so they are ready to transplant as soon
+  /// as the current crop in the plot is harvested.
+  startInModulesNow(label: 'Start in Modules for Relay', glyph: '🪴'),
+
+  /// Direct-sow or transplant immediately into an open or newly harvested plot.
+  directRelayNow(label: 'Relay in Plot Now', glyph: '🌱');
+
+  /// Display label.
+  final String label;
+
+  /// Compact emoji glyph.
+  final String glyph;
+
+  const SuccessionStage({required this.label, required this.glyph});
+}
+
+/// A recommended follow-up or staggered succession crop for a [GardenPlot].
+final class PlotSuccessionCandidate {
+  /// Target crop from [VegetableDatabase].
+  final VegetableEntry crop;
+
+  /// How this candidate enters the plot (`staggeredNextBatch`, `startInModulesNow`, `directRelayNow`).
+  final SuccessionStage stage;
+
+  /// Task planner action to queue when selected (`sowIndoor`, `sowOutdoor`, or `transplant`).
+  final TaskActionType taskAction;
+
+  /// Date when the plot is expected to be ready for this crop.
+  final DateTime targetPlotDate;
+
+  /// Human-readable explanation of why this succession crop fits the plot now.
+  final String reason;
+
+  /// Creates an immutable [PlotSuccessionCandidate].
+  const PlotSuccessionCandidate({
+    required this.crop,
+    required this.stage,
+    required this.taskAction,
+    required this.targetPlotDate,
+    required this.reason,
+  });
+
+  /// Compact chip label for UI display.
+  String get badgeLabel => switch (stage) {
+    SuccessionStage.staggeredNextBatch =>
+      '${stage.glyph} Hold-såning: ${crop.nameEn}',
+    SuccessionStage.startInModulesNow =>
+      '${stage.glyph} Start in Modules: ${crop.nameEn}',
+    SuccessionStage.directRelayNow =>
+      '${stage.glyph} ${taskAction == TaskActionType.transplant ? "Transplant" : "Sow"}: ${crop.nameEn}',
+  };
+}
+
+/// Complete within-season succession plan for a [GardenPlot], combining harvested
+/// spring/summer crops, active crops with estimated clearing dates, and relay or
+/// staggered (*Hold-såning*) candidates.
+final class PlotSuccessionPlan {
+  /// Target plot.
+  final GardenPlot plot;
+
+  /// Batches already harvested in [referenceTime.year] in this plot.
+  final List<PlantingBatchSummary> harvestedThisSeason;
+
+  /// Batches currently active in the ground in this plot.
+  final List<PlantingBatchSummary> activeInGround;
+
+  /// Estimated date when the plot becomes open for a relay crop (equals [referenceTime] if already open).
+  final DateTime estimatedAvailableDate;
+
+  /// Ranked succession candidates (staggered sowings, module pre-starts, or immediate relays).
+  final List<PlotSuccessionCandidate> candidates;
+
+  /// Concise one-line summary of the plot's Spring → Summer → Autumn pipeline in the current year.
+  final String seasonPipelineSummary;
+
+  /// Creates an immutable [PlotSuccessionPlan].
+  PlotSuccessionPlan({
+    required this.plot,
+    required Iterable<PlantingBatchSummary> harvestedThisSeason,
+    required Iterable<PlantingBatchSummary> activeInGround,
+    required this.estimatedAvailableDate,
+    required Iterable<PlotSuccessionCandidate> candidates,
+    required this.seasonPipelineSummary,
+  }) : harvestedThisSeason = List<PlantingBatchSummary>.unmodifiable(
+         harvestedThisSeason,
+       ),
+       activeInGround = List<PlantingBatchSummary>.unmodifiable(activeInGround),
+       candidates = List<PlotSuccessionCandidate>.unmodifiable(candidates);
+
+  static const List<String> _monthShort = [
+    '',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  /// Builds a [PlotSuccessionPlan] for [plot] at [referenceTime].
+  factory PlotSuccessionPlan.build({
+    required GardenPlot plot,
+    required Iterable<PlantingBatchSummary> batchesInPlot,
+    required DateTime referenceTime,
+    Set<String> starredCropIds = const <String>{},
+  }) {
+    final validBatches =
+        batchesInPlot.where((b) => b.deletedHlc == null).toList(growable: false)
+          ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    final currentYear = referenceTime.year;
+    final harvestedThisYear = validBatches
+        .where((b) => b.timestamp.year == currentYear && b.isHarvested)
+        .toList(growable: false);
+    final active = validBatches
+        .where((b) => b.isActiveInGround)
+        .toList(growable: false);
+
+    // Compute when the plot (or a relay slot in the plot) will clear.
+    DateTime availableDate = referenceTime;
+    if (active.isNotEmpty) {
+      final clearingDates =
+          active
+              .map(CropMaturityProfile.estimateClearingDate)
+              .toList(growable: false)
+            ..sort();
+      // Earliest clearing batch frees the first relay slot in the bed.
+      if (clearingDates.first.isAfter(referenceTime)) {
+        availableDate = clearingDates.first;
+      }
+    }
+
+    // Build season pipeline summary string for the current year.
+    final stages = <String>[];
+    for (final h in harvestedThisYear) {
+      final name = h.crop?.nameEn ?? h.title;
+      stages.add('✓ $name (${_monthShort[h.timestamp.month]})');
+    }
+    for (final a in active) {
+      final name = a.crop?.nameEn ?? a.title;
+      final clearDate = CropMaturityProfile.estimateClearingDate(a);
+      stages.add(
+        '🌱 $name (${_monthShort[a.timestamp.month]}→~${_monthShort[clearDate.month]})',
+      );
+    }
+
+    final baseRotation = PlotRotationAssessment.evaluate(
+      plotName: plot.name,
+      batchesInPlot: validBatches,
+      referenceTime: referenceTime,
+    );
+
+    final candidates = <PlotSuccessionCandidate>[];
+    final seenCropIds = <String>{};
+
+    // 1. Check active batches for Staggered Interval Sowing (Hold-såning)
+    for (final batch in active) {
+      final crop = batch.crop;
+      if (crop == null || !seenCropIds.add(crop.id)) continue;
+      final maturity = CropMaturityProfile.forCrop(crop);
+      if (maturity.supportsStaggeredSowing &&
+          crop.sowingMonths.contains(referenceTime.month)) {
+        final nextSowDate = batch.timestamp.add(
+          Duration(days: maturity.staggeredIntervalDays),
+        );
+        candidates.add(
+          PlotSuccessionCandidate(
+            crop: crop,
+            stage: SuccessionStage.staggeredNextBatch,
+            taskAction: TaskActionType.sowOutdoor,
+            targetPlotDate: nextSowDate.isAfter(referenceTime)
+                ? nextSowDate
+                : referenceTime,
+            reason:
+                'Hold-såning: sow next staggered batch of ${crop.nameEn} in ${plot.name} (~${maturity.staggeredIntervalDays}d interval)',
+          ),
+        );
+      }
+    }
+
+    // 2. If plot has active crops clearing within 45 days, find module-start relay crops
+    //    OR if plot is already open/clearing now, find direct relay crops.
+    final daysUntilClear = availableDate.difference(referenceTime).inDays;
+    final targetMonth = availableDate.month;
+    final currentMonth = referenceTime.month;
+
+    bool monthMatchesWithProtection(List<int> months, int month) {
+      if (months.contains(month)) return true;
+      if (!plot.plotType.isProtectedEnvironment) return false;
+      final prevMonth = month == 1 ? 12 : month - 1;
+      final nextMonth = month == 12 ? 1 : month + 1;
+      return months.contains(prevMonth) || months.contains(nextMonth);
+    }
+
+    final allCrops = VegetableDatabase.allEntries;
+    final scoredRelay = <(int score, PlotSuccessionCandidate candidate)>[];
+
+    for (final crop in allCrops) {
+      if (seenCropIds.contains(crop.id)) continue;
+      if (crop.lifeCycle == PlantLifeCycle.perennial) continue;
+
+      final assessment = PlotRotationAssessment.evaluate(
+        plotName: plot.name,
+        batchesInPlot: validBatches,
+        candidateCrop: crop,
+        referenceTime: availableDate,
+      );
+      if (assessment.hasFamilyConflict) continue;
+
+      PlotSuccessionCandidate? candidate;
+      if (active.isNotEmpty && daysUntilClear > 7 && daysUntilClear <= 45) {
+        // Plot is occupied now but clearing soon -> look for crops to start in modules now
+        // for transplanting when the bed clears, or direct-sow at clearing time.
+        if (monthMatchesWithProtection(crop.transplantMonths, targetMonth) &&
+            (crop.indoorSowingMonths.contains(currentMonth) ||
+                crop.sowingMonths.contains(currentMonth))) {
+          candidate = PlotSuccessionCandidate(
+            crop: crop,
+            stage: SuccessionStage.startInModulesNow,
+            taskAction: TaskActionType.sowIndoor,
+            targetPlotDate: availableDate,
+            reason:
+                'Start ${crop.nameEn} in modules now to transplant into ${plot.name} when bed clears (~${_monthShort[targetMonth]})',
+          );
+        }
+      } else if (active.isEmpty || daysUntilClear <= 7) {
+        // Plot is open now (or clearing within a week) -> direct sow or transplant now!
+        if (monthMatchesWithProtection(crop.transplantMonths, currentMonth)) {
+          candidate = PlotSuccessionCandidate(
+            crop: crop,
+            stage: SuccessionStage.directRelayNow,
+            taskAction: TaskActionType.transplant,
+            targetPlotDate: referenceTime,
+            reason:
+                'Transplant ${crop.nameEn} into ${plot.name} (${crop.quality.displayName} succession)',
+          );
+        } else if (monthMatchesWithProtection(
+          crop.sowingMonths,
+          currentMonth,
+        )) {
+          candidate = PlotSuccessionCandidate(
+            crop: crop,
+            stage: SuccessionStage.directRelayNow,
+            taskAction: TaskActionType.sowOutdoor,
+            targetPlotDate: referenceTime,
+            reason:
+                'Direct-sow ${crop.nameEn} into ${plot.name} (${crop.quality.displayName} succession)',
+          );
+        }
+      }
+
+      if (candidate == null) continue;
+
+      int score = 0;
+      if (starredCropIds.contains(crop.id)) score += 30;
+      if (crop.quality == baseRotation.recommendedNextQuality) score += 20;
+      if (currentMonth >= 8 && crop.category == PlantCategory.greenManure) {
+        score += 25;
+      }
+      if (candidate.stage == SuccessionStage.startInModulesNow) score += 15;
+      scoredRelay.add((score, candidate));
+    }
+
+    scoredRelay.sort((a, b) => b.$1.compareTo(a.$1));
+    for (final item in scoredRelay.take(5)) {
+      if (seenCropIds.add(item.$2.crop.id)) {
+        candidates.add(item.$2);
+      }
+    }
+
+    return PlotSuccessionPlan(
+      plot: plot,
+      harvestedThisSeason: harvestedThisYear,
+      activeInGround: active,
+      estimatedAvailableDate: availableDate,
+      candidates: candidates,
+      seasonPipelineSummary: stages.join(' → '),
     );
   }
 }

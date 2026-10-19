@@ -1415,5 +1415,182 @@ void main() {
         );
       },
     );
+
+    test('Within-season succession: Hold-såning vs Same-Season Relay Alert & PlotSuccessionPlan', () async {
+      final controller = GardenProfileController();
+
+      controller.upsertPlot(
+        GardenPlot(name: 'Relay Bed', plotType: GardenPlotType.raisedBed),
+      );
+
+      final radish = VegetableDatabase.findById('radish')!;
+      final kale = VegetableDatabase.findById('kale')!;
+      final carrot = VegetableDatabase.findById('carrot')!;
+
+      // 1. Check maturity profiles
+      final radishProfile = CropMaturityProfile.forCrop(radish);
+      expect(radishProfile.estimatedDaysInGround, 32);
+      expect(radishProfile.supportsStaggeredSowing, isTrue);
+
+      final kaleProfile = CropMaturityProfile.forCrop(kale);
+      expect(kaleProfile.moduleLeadTimeDays, greaterThan(0));
+
+      // 2. Log spring radish sowing in April 2026
+      final aprilSow = DateTime.utc(2026, 4, 10, 9);
+      await controller.addJournalEntry(
+        FieldJournalEntry.fromLiveContext(
+          id: 'radish_2026_1',
+          timestamp: aprilSow,
+          action: FieldJournalAction.sowSeeds,
+          cropId: 'radish',
+          bedName: 'Relay Bed',
+          calendarInfo: algo.getCalendarInfo(
+            aprilSow,
+            ephemeris,
+            includePlanets: true,
+          ),
+        ),
+      );
+
+      // Staggered same-season sowing (Hold-såning) of Radish in the same bed in 2026:
+      // No family conflict, and isStaggeredSameSeasonSowing is true!
+      final staggeredRadish = controller.evaluatePlotRotation(
+        'Relay Bed',
+        candidateCrop: radish,
+        referenceTime: DateTime.utc(2026, 4, 24, 12),
+      );
+      expect(staggeredRadish.hasFamilyConflict, isFalse);
+      expect(staggeredRadish.isStaggeredSameSeasonSowing, isTrue);
+      expect(staggeredRadish.rotationGuidance, contains('Hold-såning'));
+
+      // Same-season relay of a DIFFERENT Brassicaceae (Kale after Radish in 2026):
+      // Triggers Same-Season Relay Alert!
+      final relayKale = controller.evaluatePlotRotation(
+        'Relay Bed',
+        candidateCrop: kale,
+        referenceTime: DateTime.utc(2026, 5, 20, 12),
+      );
+      expect(relayKale.hasFamilyConflict, isTrue);
+      expect(relayKale.conflictWarning, contains('Same-Season Relay Alert'));
+
+      // Different family (Carrot, Apiaceae) after Radish in 2026: clean!
+      final relayCarrot = controller.evaluatePlotRotation(
+        'Relay Bed',
+        candidateCrop: carrot,
+        referenceTime: DateTime.utc(2026, 5, 20, 12),
+      );
+      expect(relayCarrot.hasFamilyConflict, isFalse);
+
+      // 3. Build PlotSuccessionPlan 10 days after sowing Radish (est. 22 days left):
+      // Should offer staggered next batch of Radish AND module pre-start candidates
+      final planMidCrop = controller.buildPlotSuccessionPlan(
+        'Relay Bed',
+        referenceTime: DateTime.utc(2026, 4, 20, 12),
+      );
+      expect(planMidCrop.activeInGround, hasLength(1));
+      expect(
+        planMidCrop.estimatedAvailableDate.isAfter(
+          DateTime.utc(2026, 4, 20, 12),
+        ),
+        isTrue,
+      );
+      expect(
+        planMidCrop.candidates.any(
+          (c) =>
+              c.crop.id == 'radish' &&
+              c.stage == SuccessionStage.staggeredNextBatch,
+        ),
+        isTrue,
+      );
+      expect(
+        planMidCrop.candidates.any(
+          (c) => c.stage == SuccessionStage.startInModulesNow,
+        ),
+        isTrue,
+      );
+      // None of the suggested relay candidates should be Brassicaceae (except staggered radish)
+      for (final cand in planMidCrop.candidates) {
+        if (cand.stage != SuccessionStage.staggeredNextBatch) {
+          expect(
+            BotanicalFamily.forCrop(cand.crop),
+            isNot(BotanicalFamily.brassicaceae),
+          );
+        }
+      }
+    });
+
+    testWidgets(
+      'FieldJournalCard renders season pipeline and succession suggestion chips that queue tasks',
+      (tester) async {
+        final controller = GardenProfileController();
+
+        controller.upsertPlot(
+          GardenPlot(name: 'South Bed', plotType: GardenPlotType.raisedBed),
+        );
+
+        final sowTime = DateTime.utc(2026, 4, 15, 9);
+        await controller.addJournalEntry(
+          FieldJournalEntry.fromLiveContext(
+            id: 'spinach_2026',
+            timestamp: sowTime,
+            action: FieldJournalAction.sowSeeds,
+            cropId: 'spinach',
+            bedName: 'South Bed',
+            calendarInfo: algo.getCalendarInfo(
+              sowTime,
+              ephemeris,
+              includePlanets: true,
+            ),
+          ),
+        );
+
+        final viewTime = DateTime.utc(2026, 5, 10, 12);
+        final info = algo.getCalendarInfo(
+          viewTime,
+          ephemeris,
+          includePlanets: true,
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: FieldJournalCard(
+                  gardenController: controller,
+                  selectedDate: viewTime,
+                  info: info,
+                  onTimeJump: (_) {},
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(
+          find.byKey(const ValueKey('plot_season_pipeline_South Bed')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('plot_succession_suggestions_South Bed')),
+          findsOneWidget,
+        );
+
+        // Tap the staggered spinach succession chip to queue the next batch
+        final spinachChip = find.byKey(
+          const ValueKey('plot_succession_chip_South Bed_spinach'),
+        );
+        expect(spinachChip, findsOneWidget);
+        await tester.ensureVisible(spinachChip);
+        await tester.tap(spinachChip);
+        await tester.pumpAndSettle();
+
+        expect(
+          controller.value.taskQueue.any(
+            (t) => t.cropId == 'spinach' && t.bedName == 'South Bed',
+          ),
+          isTrue,
+        );
+      },
+    );
   });
 }

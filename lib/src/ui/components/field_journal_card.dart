@@ -1174,6 +1174,11 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                   plot.name,
                   referenceTime: widget.selectedDate,
                 );
+                final successionPlan = widget.gardenController
+                    .buildPlotSuccessionPlan(
+                      plot.name,
+                      referenceTime: widget.selectedDate,
+                    );
                 final isSelected = _selectedBedFilter == plot.name;
                 final prepDays = plot.daysSinceSoilPrepAt(widget.selectedDate);
                 final nextOrganColor = GoetheanPalette.getColor(
@@ -1273,6 +1278,22 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                               ),
                             ),
                           ],
+                          if (successionPlan
+                              .seasonPipelineSummary
+                              .isNotEmpty) ...[
+                            const SizedBox(height: 5),
+                            Text(
+                              'Season Pipeline: ${successionPlan.seasonPipelineSummary}',
+                              key: ValueKey(
+                                'plot_season_pipeline_${plot.name}',
+                              ),
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFFF3E5C8),
+                              ),
+                            ),
+                          ],
                           if (plotActive.isNotEmpty) ...[
                             const SizedBox(height: 6),
                             Wrap(
@@ -1314,6 +1335,87 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                                   color: const Color(0xFF6EE7B7),
                                 ),
                               ),
+                          ],
+                          if (successionPlan.candidates.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Column(
+                              key: ValueKey(
+                                'plot_succession_suggestions_${plot.name}',
+                              ),
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'SUCCESSION & RELAY SUGGESTIONS (TAP TO QUEUE):',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.7,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 4,
+                                  children: successionPlan.candidates
+                                      .take(4)
+                                      .map((cand) {
+                                        final isQueued = widget
+                                            .gardenController
+                                            .value
+                                            .isTaskQueued(
+                                              action: cand.taskAction,
+                                              cropId: cand.crop.id,
+                                              targetQuality: cand.crop.quality,
+                                              bedName: plot.name,
+                                            );
+                                        return ActionChip(
+                                          key: ValueKey(
+                                            'plot_succession_chip_${plot.name}_${cand.crop.id}',
+                                          ),
+                                          visualDensity: VisualDensity.compact,
+                                          backgroundColor: isQueued
+                                              ? const Color(0xFF10B981)
+                                                    .withValues(alpha: 0.24)
+                                              : Colors.white.withValues(
+                                                  alpha: 0.06,
+                                                ),
+                                          side: BorderSide(
+                                            color: isQueued
+                                                ? const Color(0xFF10B981)
+                                                : GoetheanPalette.getColor(
+                                                    cand.crop.quality,
+                                                  ).withValues(alpha: 0.45),
+                                          ),
+                                          label: Text(
+                                            '${isQueued ? "✓ " : ""}${cand.badgeLabel}',
+                                            style: GoogleFonts.outfit(
+                                              fontSize: 10.5,
+                                              fontWeight: isQueued
+                                                  ? FontWeight.w700
+                                                  : FontWeight.w500,
+                                              color: isQueued
+                                                  ? const Color(0xFF6EE7B7)
+                                                  : Colors.white,
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            widget.gardenController
+                                                .toggleQueuedTask(
+                                                  action: cand.taskAction,
+                                                  cropId: cand.crop.id,
+                                                  targetQuality:
+                                                      cand.crop.quality,
+                                                  bedName: plot.name,
+                                                  note: cand.reason,
+                                                );
+                                          },
+                                        );
+                                      })
+                                      .toList(growable: false),
+                                ),
+                              ],
+                            ),
                           ],
                           if (plot.lastSoilPrepSummary != null) ...[
                             const SizedBox(height: 4),

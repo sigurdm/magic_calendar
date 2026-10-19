@@ -1134,6 +1134,91 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
                                         ),
                                       ),
                                     ],
+                                    if (_action.isHarvestAction) ...[
+                                      const SizedBox(height: 6),
+                                      Builder(
+                                        builder: (context) {
+                                          final plan = widget.gardenController
+                                              .buildPlotSuccessionPlan(
+                                                plotName,
+                                                referenceTime: widget.timestamp,
+                                              );
+                                          if (plan.candidates.isEmpty) {
+                                            return const SizedBox.shrink();
+                                          }
+                                          return Column(
+                                            key: const ValueKey(
+                                              'harvest_succession_strip',
+                                            ),
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'QUEUE NEXT SUCCESSION CROP FOR ${plotName.toUpperCase()}:',
+                                                style: GoogleFonts.outfit(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: GoetheanPalette
+                                                      .aspectGold,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Wrap(
+                                                spacing: 6,
+                                                runSpacing: 4,
+                                                children: plan.candidates
+                                                    .take(3)
+                                                    .map((cand) {
+                                                      return ActionChip(
+                                                        key: ValueKey(
+                                                          'harvest_succession_chip_${cand.crop.id}',
+                                                        ),
+                                                        visualDensity:
+                                                            VisualDensity
+                                                                .compact,
+                                                        backgroundColor: Colors
+                                                            .white
+                                                            .withValues(
+                                                              alpha: 0.08,
+                                                            ),
+                                                        label: Text(
+                                                          cand.badgeLabel,
+                                                          style:
+                                                              GoogleFonts.outfit(
+                                                                fontSize: 10.5,
+                                                                color: Colors
+                                                                    .white,
+                                                              ),
+                                                        ),
+                                                        onPressed: () {
+                                                          widget
+                                                              .gardenController
+                                                              .toggleQueuedTask(
+                                                                action: cand
+                                                                    .taskAction,
+                                                                cropId: cand
+                                                                    .crop
+                                                                    .id,
+                                                                targetQuality:
+                                                                    cand
+                                                                        .crop
+                                                                        .quality,
+                                                                bedName:
+                                                                    plotName,
+                                                                note:
+                                                                    cand.reason,
+                                                              );
+                                                          setState(() {});
+                                                        },
+                                                      );
+                                                    })
+                                                    .toList(growable: false),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      ),
+                                    ],
                                   ],
                                 ),
                               );

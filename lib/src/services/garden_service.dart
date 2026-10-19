@@ -605,6 +605,25 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
     );
   }
 
+  /// Builds a within-season [PlotSuccessionPlan] for [plotName] at [referenceTime],
+  /// combining harvested batches from earlier in the season, active batches with
+  /// estimated bed-clearing dates, staggered *Hold-såning* batches, and relay
+  /// crop candidates (direct sow, transplant, or start in module trays now).
+  PlotSuccessionPlan buildPlotSuccessionPlan(
+    String plotName, {
+    DateTime? referenceTime,
+  }) {
+    final trimmed = plotName.trim();
+    final plot = findPlot(trimmed) ?? GardenPlot(name: trimmed);
+    final batches = listPlantingBatches(bedName: trimmed);
+    return PlotSuccessionPlan.build(
+      plot: plot,
+      batchesInPlot: batches,
+      referenceTime: referenceTime ?? DateTime.now(),
+      starredCropIds: value.starredCropIds,
+    );
+  }
+
   /// Lists planting batches (sowings, transplants, cuttings, divisions, grafts)
   /// across months so harvests and observations can link back to them.
   ///
