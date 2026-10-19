@@ -990,10 +990,15 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
                                 .map((bed) {
                                   final selected =
                                       _bedController.text.trim() == bed;
+                                  final plotMeta = widget.gardenController
+                                      .findPlot(bed);
+                                  final chipText = plotMeta != null
+                                      ? plotMeta.badgeLabel
+                                      : bed;
                                   return ActionChip(
                                     key: ValueKey('journal_sheet_bed_$bed'),
                                     label: Text(
-                                      bed,
+                                      chipText,
                                       style: GoogleFonts.outfit(
                                         fontSize: 11,
                                         fontWeight: selected
@@ -1025,6 +1030,9 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
                         TextField(
                           key: const ValueKey('field_journal_bed_input'),
                           controller: _bedController,
+                          onChanged: (_) {
+                            setState(() {});
+                          },
                           style: GoogleFonts.outfit(
                             fontSize: 12.5,
                             color: Colors.white,
@@ -1034,6 +1042,104 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
                             accentColor: accentColor,
                           ),
                         ),
+                        if (_bedController.text.trim().isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Builder(
+                            builder: (context) {
+                              final plotName = _bedController.text.trim();
+                              final plotMeta = widget.gardenController.findPlot(
+                                plotName,
+                              );
+                              final rotation = widget.gardenController
+                                  .evaluatePlotRotation(
+                                    plotName,
+                                    candidateCrop: _crop,
+                                    referenceTime: widget.timestamp,
+                                  );
+                              final hasWarning = rotation.hasFamilyConflict;
+                              final bannerColor = hasWarning
+                                  ? const Color(0xFFF59E0B)
+                                  : GoetheanPalette.leafWater;
+                              return Container(
+                                key: const ValueKey(
+                                  'field_journal_rotation_banner',
+                                ),
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: bannerColor.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: bannerColor.withValues(alpha: 0.45),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          hasWarning
+                                              ? Icons.warning_amber_rounded
+                                              : Icons.autorenew_rounded,
+                                          size: 15,
+                                          color: bannerColor,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            plotMeta != null
+                                                ? '${plotMeta.badgeLabel} (${plotMeta.plotType.displayName})'
+                                                      '${plotMeta.dimensions.isNotEmpty ? " • ${plotMeta.dimensions}" : ""}'
+                                                : 'Plot Rotation & Soil Memory • $plotName',
+                                            style: GoogleFonts.outfit(
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w700,
+                                              color: const Color(0xFFF6ECD8),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    if (rotation.conflictWarning != null) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        rotation.conflictWarning!,
+                                        key: const ValueKey(
+                                          'field_journal_rotation_warning',
+                                        ),
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 11.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: const Color(0xFFFCD34D),
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      rotation.rotationGuidance,
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 11,
+                                        color: Colors.white70,
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                    if (rotation.seasonTrail.isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'History: ${rotation.seasonTrail.join(" → ")}',
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 10.5,
+                                          color: GoetheanPalette.aspectGold,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                         const SizedBox(height: 12),
 
                         // Seed-to-Harvest Lifecycle Link

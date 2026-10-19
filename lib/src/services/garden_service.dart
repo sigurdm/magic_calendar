@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../core/garden/garden.dart';
 import '../core/models/models.dart';
 import '../core/task_window_planner.dart';
+import '../core/vegetable_database.dart';
 import 'journal_sqlite_store.dart';
 import 'journal_sync_service.dart';
 
@@ -264,22 +265,26 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
     return _update(value.withoutQueuedTask(taskId));
   }
 
-  /// Toggles a task in the active garden queue for [action], [cropId], and [targetQuality].
+  /// Toggles a task in the active garden queue for [action], [cropId], [targetQuality],
+  /// and optional [bedName].
   Future<void> toggleQueuedTask({
     required TaskActionType action,
     String? cropId,
     required PlantQuality targetQuality,
     String note = '',
+    String? bedName,
   }) {
     final id = QueuedGardenTask.canonicalIdFor(
       action: action,
       cropId: cropId,
       targetQuality: targetQuality,
+      bedName: bedName,
     );
     if (value.isTaskQueued(
       action: action,
       cropId: cropId,
       targetQuality: targetQuality,
+      bedName: bedName,
     )) {
       return removeQueuedTask(id);
     }
@@ -290,6 +295,7 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
         cropId: cropId,
         targetQuality: targetQuality,
         note: note,
+        bedName: bedName,
       ),
     );
   }
@@ -318,7 +324,12 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
       final saved = sqlStore.upsertEntry(entry);
       GardenProfile next = value.withJournalEntry(saved);
       for (final task in value.taskQueue) {
+        final bedMatches =
+            task.bedName == null ||
+            saved.bedName == null ||
+            task.bedName == saved.bedName;
         if (saved.action.fulfillsTaskAction(task.action) &&
+            bedMatches &&
             (task.cropId == saved.cropId ||
                 (task.cropId == null && task.targetQuality == saved.quality))) {
           next = next.withoutQueuedTask(task.id);
@@ -330,7 +341,12 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
 
     GardenProfile next = value.withJournalEntry(entry);
     for (final task in value.taskQueue) {
+      final bedMatches =
+          task.bedName == null ||
+          entry.bedName == null ||
+          task.bedName == entry.bedName;
       if (entry.action.fulfillsTaskAction(task.action) &&
+          bedMatches &&
           (task.cropId == entry.cropId ||
               (task.cropId == null && task.targetQuality == entry.quality))) {
         next = next.withoutQueuedTask(task.id);
@@ -487,10 +503,14 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
   }
 
   /// Lists known bed/plot names across both `garden_meta.sqlite` and loaded entries.
+  final Map<String, GardenPlot> _inMemoryPlots = <String, GardenPlot>{};
+
+  /// Lists all known garden bed/plot names across the shared garden and local entries.
   List<String> listBedNames() {
     final names = <String>{
       if (journalStore != null && !journalStore!.isClosed)
         ...journalStore!.listBedNames(),
+      ..._inMemoryPlots.keys,
       for (final entry in value.journalEntries)
         if (entry.bedName != null && entry.bedName!.trim().isNotEmpty)
           entry.bedName!.trim(),
@@ -500,18 +520,105 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
     return sorted;
   }
 
+  /// Lists all active [GardenPlot] definitions across the garden.
+  List<GardenPlot> listPlots() {
+    final sqlStore = journalStore;
+    final byName = <String, GardenPlot>{
+      if (sqlStore != null && !sqlStore.isClosed)
+        for (final plot in sqlStore.listPlots()) plot.name: plot,
+      ..._inMemoryPlots,
+    };
+    for (final entry in value.journalEntries) {
+      final bed = entry.bedName?.trim();
+      if (bed != null && bed.isNotEmpty) {
+        byName.putIfAbsent(bed, () => GardenPlot(name: bed));
+      }
+    }
+    final list = byName.values.toList(growable: false);
+    list.sort((a, b) {
+      final areaCmp = a.areaName.toLowerCase().compareTo(
+        b.areaName.toLowerCase(),
+      );
+      if (areaCmp != 0) return areaCmp;
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
+    return list;
+  }
+
+  /// Looks up a [GardenPlot] by [plotName].
+  GardenPlot? findPlot(String? plotName) {
+    if (plotName == null || plotName.trim().isEmpty) return null;
+    final trimmed = plotName.trim();
+    final sqlStore = journalStore;
+    if (sqlStore != null && !sqlStore.isClosed) {
+      final found = sqlStore.findPlot(trimmed);
+      if (found != null) return found;
+    }
+    return _inMemoryPlots[trimmed] ??
+        (listBedNames().contains(trimmed) ? GardenPlot(name: trimmed) : null);
+  }
+
+  /// Creates or updates a [GardenPlot] and notifies listeners.
+  GardenPlot upsertPlot(GardenPlot plot) {
+    final sqlStore = journalStore;
+    if (sqlStore != null && !sqlStore.isClosed) {
+      final saved = sqlStore.upsertPlot(plot);
+      notifyListeners();
+      return saved;
+    }
+    _inMemoryPlots[plot.name] = plot;
+    notifyListeners();
+    return plot;
+  }
+
+  /// Soft-deletes a [GardenPlot] by [plotName].
+  void deletePlot(String plotName) {
+    final trimmed = plotName.trim();
+    if (trimmed.isEmpty) return;
+    final sqlStore = journalStore;
+    if (sqlStore != null && !sqlStore.isClosed) {
+      sqlStore.deletePlot(trimmed);
+    }
+    _inMemoryPlots.remove(trimmed);
+    notifyListeners();
+  }
+
+  /// Evaluates crop rotation history and botanical family break rules for [plotName].
+  PlotRotationAssessment evaluatePlotRotation(
+    String plotName, {
+    VegetableEntry? candidateCrop,
+    DateTime? referenceTime,
+  }) {
+    final sqlStore = journalStore;
+    if (sqlStore != null && !sqlStore.isClosed) {
+      return sqlStore.evaluatePlotRotation(
+        plotName,
+        candidateCrop: candidateCrop,
+        referenceTime: referenceTime,
+      );
+    }
+    return PlotRotationAssessment.evaluate(
+      plotName: plotName.trim(),
+      batchesInPlot: listPlantingBatches(bedName: plotName),
+      candidateCrop: candidateCrop,
+      referenceTime: referenceTime,
+    );
+  }
+
   /// Lists planting batches (sowings, transplants, cuttings, divisions, grafts)
   /// across months so harvests and observations can link back to them.
   ///
   /// When [onlyActiveInGround] is `true`, only unharvested batches are returned.
   List<PlantingBatchSummary> listPlantingBatches({
     String? cropId,
+    String? bedName,
     bool onlyActiveInGround = false,
   }) {
     final sqlStore = journalStore;
     if (sqlStore != null && !sqlStore.isClosed) {
       return sqlStore.listPlantingBatches(
         cropId: cropId,
+        bedName: bedName,
         onlyActiveInGround: onlyActiveInGround,
       );
     }
@@ -522,10 +629,14 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
             e.parentEntryId!.isNotEmpty)
           e.parentEntryId!: e.id,
     };
+    final normalizedBed = bedName != null && bedName.trim().isNotEmpty
+        ? bedName.trim()
+        : null;
     return [
       for (final entry in value.journalEntries)
         if (entry.action.isPlantingBatch &&
             (cropId == null || entry.cropId == cropId) &&
+            (normalizedBed == null || entry.bedName == normalizedBed) &&
             (!onlyActiveInGround || !harvestedParentIds.containsKey(entry.id)))
           PlantingBatchSummary.fromEntry(
             entry,

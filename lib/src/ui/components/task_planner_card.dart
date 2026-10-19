@@ -76,6 +76,7 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
   VegetableEntry? _selectedCrop;
   late PlantQuality _selectedQuality;
   PlantCategory? _selectedCategory;
+  String? _selectedPlotName;
   bool _onlyStarredCrops = false;
   bool _onlyOptimal = false;
   String _searchQuery = '';
@@ -1307,66 +1308,188 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
             const SizedBox(height: 12),
             Builder(
               builder: (context) {
+                final knownPlots = widget.gardenController!.listPlots();
                 final isQueued =
                     gardenProfile?.isTaskQueued(
                       action: _selectedAction,
                       cropId: _selectedCrop?.id,
                       targetQuality: _selectedQuality,
+                      bedName: _selectedPlotName,
                     ) ??
                     false;
                 final targetLabel =
                     _selectedCrop?.localizedDisplayName ??
                     'Any ${_selectedQuality.displayName} Plant';
-                return SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    key: const ValueKey('toggle_queue_task_button'),
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: isQueued
-                          ? const Color(0xFF10B981).withValues(alpha: 0.16)
-                          : GoetheanPalette.aspectGold.withValues(alpha: 0.12),
-                      foregroundColor: isQueued
-                          ? const Color(0xFF6EE7B7)
-                          : const Color(0xFFF6ECD8),
-                      side: BorderSide(
-                        color: isQueued
-                            ? const Color(0xFF10B981).withValues(alpha: 0.5)
-                            : GoetheanPalette.aspectGold.withValues(
-                                alpha: 0.45,
+                final plotSuffix = _selectedPlotName != null
+                    ? ' (${_selectedPlotName!})'
+                    : '';
+                final plotRotation =
+                    (_selectedPlotName != null && _selectedCrop != null)
+                    ? widget.gardenController!.evaluatePlotRotation(
+                        _selectedPlotName!,
+                        candidateCrop: _selectedCrop,
+                        referenceTime: widget.selectedDate,
+                      )
+                    : null;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (knownPlots.isNotEmpty) ...[
+                      Text(
+                        'TARGET PLOT / BED (OPTIONAL SUCCESSION ASSIGNMENT)',
+                        style: GoogleFonts.outfit(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: Colors.white70,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          ChoiceChip(
+                            key: const ValueKey('planner_plot_any'),
+                            label: Text(
+                              'Any Plot',
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                fontWeight: _selectedPlotName == null
+                                    ? FontWeight.w700
+                                    : FontWeight.w400,
+                                color: _selectedPlotName == null
+                                    ? Colors.white
+                                    : Colors.white70,
                               ),
+                            ),
+                            selected: _selectedPlotName == null,
+                            selectedColor: accentColor.withValues(alpha: 0.3),
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.05,
+                            ),
+                            showCheckmark: false,
+                            onSelected: (_) {
+                              setState(() {
+                                _selectedPlotName = null;
+                              });
+                            },
+                          ),
+                          for (final plot in knownPlots)
+                            ChoiceChip(
+                              key: ValueKey('planner_plot_${plot.name}'),
+                              label: Text(
+                                plot.badgeLabel,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 11,
+                                  fontWeight: _selectedPlotName == plot.name
+                                      ? FontWeight.w700
+                                      : FontWeight.w400,
+                                  color: _selectedPlotName == plot.name
+                                      ? Colors.white
+                                      : Colors.white70,
+                                ),
+                              ),
+                              selected: _selectedPlotName == plot.name,
+                              selectedColor: GoetheanPalette.leafWater
+                                  .withValues(alpha: 0.32),
+                              backgroundColor: Colors.white.withValues(
+                                alpha: 0.05,
+                              ),
+                              showCheckmark: false,
+                              onSelected: (_) {
+                                setState(() {
+                                  _selectedPlotName =
+                                      _selectedPlotName == plot.name
+                                      ? null
+                                      : plot.name;
+                                });
+                              },
+                            ),
+                        ],
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                      if (plotRotation != null &&
+                          plotRotation.conflictWarning != null) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          key: const ValueKey('planner_plot_rotation_warning'),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF59E0B)
+                                .withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFFF59E0B)
+                                  .withValues(alpha: 0.45),
+                            ),
+                          ),
+                          child: Text(
+                            plotRotation.conflictWarning!,
+                            style: GoogleFonts.outfit(
+                              fontSize: 11,
+                              color: const Color(0xFFFCD34D),
+                            ),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 8),
+                    ],
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        key: const ValueKey('toggle_queue_task_button'),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: isQueued
+                              ? const Color(0xFF10B981).withValues(alpha: 0.16)
+                              : GoetheanPalette.aspectGold.withValues(
+                                  alpha: 0.12,
+                                ),
+                          foregroundColor: isQueued
+                              ? const Color(0xFF6EE7B7)
+                              : const Color(0xFFF6ECD8),
+                          side: BorderSide(
+                            color: isQueued
+                                ? const Color(0xFF10B981).withValues(alpha: 0.5)
+                                : GoetheanPalette.aspectGold.withValues(
+                                    alpha: 0.45,
+                                  ),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        icon: Icon(
+                          isQueued
+                              ? Icons.playlist_add_check_rounded
+                              : Icons.playlist_add_rounded,
+                          size: 18,
+                        ),
+                        onPressed: () {
+                          widget.gardenController!.toggleQueuedTask(
+                            action: _selectedAction,
+                            cropId: _selectedCrop?.id,
+                            targetQuality: _selectedQuality,
+                            bedName: _selectedPlotName,
+                          );
+                        },
+                        label: Text(
+                          isQueued
+                              ? 'In My Task Queue: ${_selectedAction.displayName} · $targetLabel$plotSuffix (Tap to Remove)'
+                              : 'Add to My Task Queue: ${_selectedAction.displayName} · $targetLabel$plotSuffix',
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.outfit(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
-                    icon: Icon(
-                      isQueued
-                          ? Icons.playlist_add_check_rounded
-                          : Icons.playlist_add_rounded,
-                      size: 18,
-                    ),
-                    onPressed: () {
-                      widget.gardenController!.toggleQueuedTask(
-                        action: _selectedAction,
-                        cropId: _selectedCrop?.id,
-                        targetQuality: _selectedQuality,
-                      );
-                    },
-                    label: Text(
-                      isQueued
-                          ? 'In My Task Queue: ${_selectedAction.displayName} · $targetLabel (Tap to Remove)'
-                          : 'Add to My Task Queue: ${_selectedAction.displayName} · $targetLabel',
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.outfit(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+                  ],
                 );
               },
             ),

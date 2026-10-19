@@ -188,6 +188,9 @@ final class QueuedGardenTask {
   /// Optional user note (e.g. bed name or cultivar).
   final String note;
 
+  /// Optional target garden plot or bed name (e.g. `'Bed 1'`, `'Greenhouse'`).
+  final String? bedName;
+
   /// Creates a [QueuedGardenTask].
   ///
   /// It is an error if [id] is empty or if [targetQuality] is [PlantQuality.none].
@@ -197,7 +200,10 @@ final class QueuedGardenTask {
     required this.targetQuality,
     this.cropId,
     this.note = '',
-  }) {
+    String? bedName,
+  }) : bedName = bedName != null && bedName.trim().isNotEmpty
+           ? bedName.trim()
+           : null {
     if (id.trim().isEmpty) {
       throw ArgumentError.value(id, 'id', 'Must not be empty');
     }
@@ -210,12 +216,18 @@ final class QueuedGardenTask {
     }
   }
 
-  /// Deterministic canonical ID for an [action], optional [cropId], and [targetQuality].
+  /// Deterministic canonical ID for an [action], optional [cropId], [targetQuality],
+  /// and optional [bedName].
   static String canonicalIdFor({
     required TaskActionType action,
     String? cropId,
     required PlantQuality targetQuality,
-  }) => '${action.name}:${cropId ?? "any"}:${targetQuality.name}';
+    String? bedName,
+  }) {
+    final base = '${action.name}:${cropId ?? "any"}:${targetQuality.name}';
+    final trimmedBed = bedName?.trim() ?? '';
+    return trimmedBed.isEmpty ? base : '$base:$trimmedBed';
+  }
 
   /// Resolves the associated [VegetableEntry] from [VegetableDatabase], if any.
   VegetableEntry? get crop =>
@@ -225,18 +237,26 @@ final class QueuedGardenTask {
   String get targetLabel =>
       crop?.localizedDisplayName ?? 'Any ${targetQuality.displayName} Plant';
 
-  /// Concise summary combining [action] and [targetLabel].
-  String get summaryLabel => '${action.displayName} · $targetLabel';
+  /// Concise summary combining [action], [targetLabel], and optional [bedName].
+  String get summaryLabel =>
+      '${action.displayName} · $targetLabel${bedName != null ? " ($bedName)" : ""}';
 
   /// Whether this queued task matches the given selection parameters.
   bool matchesSelection({
     required TaskActionType selectedAction,
     required String? selectedCropId,
     required PlantQuality selectedQuality,
-  }) =>
-      action == selectedAction &&
-      cropId == selectedCropId &&
-      targetQuality == selectedQuality;
+    String? selectedBedName,
+  }) {
+    final normalizedSelectedBed =
+        selectedBedName != null && selectedBedName.trim().isNotEmpty
+        ? selectedBedName.trim()
+        : null;
+    return action == selectedAction &&
+        cropId == selectedCropId &&
+        targetQuality == selectedQuality &&
+        bedName == normalizedSelectedBed;
+  }
 
   /// Serializes this queued task to a JSON map.
   Map<String, Object?> toJson() => {
@@ -245,6 +265,7 @@ final class QueuedGardenTask {
     'cropId': cropId,
     'targetQuality': targetQuality.name,
     if (note.isNotEmpty) 'note': note,
+    if (bedName != null) 'bedName': bedName,
   };
 
   /// Deserializes a [QueuedGardenTask] from [json].
@@ -256,6 +277,7 @@ final class QueuedGardenTask {
     final cropIdRaw = json['cropId'];
     final qualityRaw = json['targetQuality'];
     final noteRaw = json['note'];
+    final bedNameRaw = json['bedName'];
 
     if (idRaw is! String || idRaw.trim().isEmpty) {
       throw const FormatException('QueuedGardenTask requires a non-empty id');
@@ -297,6 +319,9 @@ final class QueuedGardenTask {
       cropId: cropIdRaw is String && cropIdRaw.isNotEmpty ? cropIdRaw : null,
       targetQuality: parsedQuality,
       note: noteRaw is String ? noteRaw : '',
+      bedName: bedNameRaw is String && bedNameRaw.trim().isNotEmpty
+          ? bedNameRaw.trim()
+          : null,
     );
   }
 
@@ -308,10 +333,12 @@ final class QueuedGardenTask {
           action == other.action &&
           cropId == other.cropId &&
           targetQuality == other.targetQuality &&
-          note == other.note;
+          note == other.note &&
+          bedName == other.bedName;
 
   @override
-  int get hashCode => Object.hash(id, action, cropId, targetQuality, note);
+  int get hashCode =>
+      Object.hash(id, action, cropId, targetQuality, note, bedName);
 }
 
 /// Immutable user garden profile storing saved locations, starred crops, and queued tasks.
@@ -373,16 +400,18 @@ final class GardenProfile {
   /// Whether [cropId] is currently starred in [starredCropIds].
   bool isCropStarred(String cropId) => starredCropIds.contains(cropId);
 
-  /// Whether a task matching [action], [cropId], and [targetQuality] is in [taskQueue].
+  /// Whether a task matching [action], [cropId], [targetQuality], and optional [bedName] is in [taskQueue].
   bool isTaskQueued({
     required TaskActionType action,
     String? cropId,
     required PlantQuality targetQuality,
+    String? bedName,
   }) => taskQueue.any(
     (t) => t.matchesSelection(
       selectedAction: action,
       selectedCropId: cropId,
       selectedQuality: targetQuality,
+      selectedBedName: bedName,
     ),
   );
 

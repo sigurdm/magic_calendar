@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magic_calendar/src/core/algorithm.dart' as algo;
 import 'package:magic_calendar/src/core/models/models.dart';
 import 'package:magic_calendar/src/core/task_window_planner.dart';
+import 'package:magic_calendar/src/core/vegetable_database.dart';
 import 'package:magic_calendar/src/services/garden_service.dart';
 import 'package:magic_calendar/src/ui/components/biodynamic_card.dart';
 import 'package:magic_calendar/src/ui/components/field_journal_card.dart';
@@ -1153,6 +1154,263 @@ void main() {
         // Verify lifecycle trail appears on the parent sowing card
         expect(
           find.byKey(ValueKey('journal_lifecycle_trail_$batchId')),
+          findsOneWidget,
+        );
+      },
+    );
+  });
+
+  group('GardenPlot, Soil Memory & Biodynamic Crop Rotation', () {
+    test('syncs structured GardenPlot metadata across peers, tracks BD 500 soil prep, and detects botanical family rotation conflicts', () async {
+      final dirA = Directory.systemTemp.createTempSync('magic_plot_a_');
+      final dirB = Directory.systemTemp.createTempSync('magic_plot_b_');
+      addTearDown(() {
+        if (dirA.existsSync()) dirA.deleteSync(recursive: true);
+        if (dirB.existsSync()) dirB.deleteSync(recursive: true);
+      });
+
+      final storeA = ShardedSqliteJournalStore(
+        rootDirectoryPath: dirA.path,
+        initialGardenId: 'shared_plot_garden',
+        initialActorId: 'alice',
+        initialAuthorName: 'Alice',
+      );
+      final storeB = ShardedSqliteJournalStore(
+        rootDirectoryPath: dirB.path,
+        initialGardenId: 'shared_plot_garden',
+        initialActorId: 'bob',
+        initialAuthorName: 'Bob',
+      );
+      final transport = InMemoryGardenSyncTransport();
+      final controllerA = GardenProfileController(
+        journalStore: storeA,
+        syncTransport: transport,
+      );
+      final controllerB = GardenProfileController(
+        journalStore: storeB,
+        syncTransport: transport,
+      );
+      addTearDown(() {
+        controllerA.dispose();
+        controllerB.dispose();
+      });
+
+      // 1. Alice defines a Raised Bed plot in Kitchen Garden
+      controllerA.upsertPlot(
+        GardenPlot(
+          name: 'Bed 1',
+          areaName: 'Kitchen Garden',
+          plotType: GardenPlotType.raisedBed,
+          dimensions: '1.2m × 4.0m',
+          notes: 'South-facing loam',
+        ),
+      );
+
+      // 2. Alice logs a BD 500 spray on Bed 1 and sows Kale (Brassicaceae) in 2025
+      final prepTime = DateTime.utc(2025, 4, 2, 17, 0);
+      final prepInfo = algo.getCalendarInfo(
+        prepTime,
+        ephemeris,
+        includePlanets: true,
+      );
+      await controllerA.addJournalEntry(
+        FieldJournalEntry.fromLiveContext(
+          id: 'prep_bd500_2025',
+          timestamp: prepTime,
+          action: FieldJournalAction.sprayPreparation,
+          prepCode: 'BD 500',
+          bedName: 'Bed 1',
+          calendarInfo: prepInfo,
+        ),
+      );
+
+      final kaleSowTime = DateTime.utc(2025, 5, 10, 9, 0);
+      final kaleInfo = algo.getCalendarInfo(
+        kaleSowTime,
+        ephemeris,
+        includePlanets: true,
+      );
+      await controllerA.addJournalEntry(
+        FieldJournalEntry.fromLiveContext(
+          id: 'sow_kale_2025',
+          timestamp: kaleSowTime,
+          action: FieldJournalAction.sowSeeds,
+          cropId: 'kale',
+          bedName: 'Bed 1',
+          calendarInfo: kaleInfo,
+        ),
+      );
+
+      // 3. Sync Alice -> Bob
+      await controllerA.syncJournal(hydrateAllShards: true);
+      await controllerB.syncJournal(hydrateAllShards: true);
+
+      final syncedPlot = controllerB.findPlot('Bed 1');
+      expect(syncedPlot, isNotNull);
+      expect(syncedPlot!.areaName, equals('Kitchen Garden'));
+      expect(syncedPlot.plotType, equals(GardenPlotType.raisedBed));
+      expect(syncedPlot.dimensions, equals('1.2m × 4.0m'));
+      expect(syncedPlot.lastSoilPrepSummary, equals('BD 500'));
+
+      // 4. Evaluate 2026 crop rotation on Bed 1:
+      // White Cabbage (also Brassicaceae, strict tier) in 2026 triggers a 3-year clubroot rotation conflict!
+      final cabbage = VegetableDatabase.findById('white_cabbage');
+      expect(cabbage, isNotNull);
+      final cabbageEval = controllerB.evaluatePlotRotation(
+        'Bed 1',
+        candidateCrop: cabbage,
+        referenceTime: DateTime.utc(2026, 4, 15),
+      );
+      expect(cabbageEval.hasFamilyConflict, isTrue);
+      expect(cabbageEval.sensitivity, equals(RotationSensitivity.strict));
+      expect(cabbageEval.candidateFamily, equals(BotanicalFamily.brassicaceae));
+      expect(cabbageEval.conflictWarning, contains('clubroot'));
+      // After heavy-feeding Leaf (Kale), recommended next organ quality is Root
+      expect(cabbageEval.recommendedNextQuality, equals(PlantQuality.root));
+
+      // Carrot (Apiaceae, Root) in 2026 has no conflict!
+      final carrot = VegetableDatabase.findById('carrot')!;
+      final carrotEval = controllerB.evaluatePlotRotation(
+        'Bed 1',
+        candidateCrop: carrot,
+        referenceTime: DateTime.utc(2026, 4, 15),
+      );
+      expect(carrotEval.hasFamilyConflict, isFalse);
+
+      // 5. Verify Maria Thun stationary Tomato exception vs Potato blight conflict
+      controllerB.upsertPlot(
+        GardenPlot(
+          name: 'South Greenhouse',
+          plotType: GardenPlotType.greenhouse,
+        ),
+      );
+      await controllerB.addJournalEntry(
+        FieldJournalEntry.fromLiveContext(
+          id: 'sow_tomato_2025',
+          timestamp: kaleSowTime,
+          action: FieldJournalAction.transplant,
+          cropId: 'tomato',
+          bedName: 'South Greenhouse',
+          calendarInfo: kaleInfo,
+        ),
+      );
+      final tomato = VegetableDatabase.findById('tomato')!;
+      final tomatoIn2026 = controllerB.evaluatePlotRotation(
+        'South Greenhouse',
+        candidateCrop: tomato,
+        referenceTime: DateTime.utc(2026, 5, 1),
+      );
+      // Tomato -> Tomato is self-compatible with tomato-haulm compost per Maria Thun!
+      expect(tomatoIn2026.hasFamilyConflict, isFalse);
+      expect(
+        tomatoIn2026.sensitivity,
+        equals(RotationSensitivity.selfCompatibleWithCompost),
+      );
+      expect(tomatoIn2026.rotationGuidance, contains('Maria Thun'));
+
+      // Potato after Tomato in the same plot IS a strict conflict (shared Phytophthora blight & PCN)
+      final potato = VegetableDatabase.findById('potato')!;
+      final potatoAfterTomato = controllerB.evaluatePlotRotation(
+        'South Greenhouse',
+        candidateCrop: potato,
+        referenceTime: DateTime.utc(2026, 5, 1),
+      );
+      expect(potatoAfterTomato.hasFamilyConflict, isTrue);
+    });
+
+    testWidgets(
+      'FieldJournalCard creates GardenPlot, renders Plot card, and FieldJournalSheet shows rotation alert',
+      (tester) async {
+        final selectedTime = DateTime(2026, 5, 16, 16, 0);
+        final info = algo.getCalendarInfo(
+          selectedTime,
+          ephemeris,
+          includePlanets: true,
+        );
+        final controller = GardenProfileController(
+          initialProfile: GardenProfile(
+            starredCropIds: const ['kale', 'cabbage', 'carrot'],
+          ),
+        );
+        controller.upsertPlot(
+          GardenPlot(
+            name: 'Bed 1',
+            areaName: 'Kitchen Garden',
+            plotType: GardenPlotType.raisedBed,
+            dimensions: '1.2m × 4.0m',
+          ),
+        );
+        // Log 2025 Kale in Bed 1
+        final kale2025Time = DateTime(2025, 5, 10, 10, 0);
+        await controller.addJournalEntry(
+          FieldJournalEntry.fromLiveContext(
+            id: 'kale_2025',
+            timestamp: kale2025Time,
+            action: FieldJournalAction.sowSeeds,
+            cropId: 'kale',
+            bedName: 'Bed 1',
+            calendarInfo: algo.getCalendarInfo(
+              kale2025Time,
+              ephemeris,
+              includePlanets: true,
+            ),
+          ),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: FieldJournalCard(
+                  gardenController: controller,
+                  selectedDate: selectedTime,
+                  info: info,
+                  onTimeJump: (_) {},
+                ),
+              ),
+            ),
+          ),
+        );
+
+        // Verify Garden Plots section and Bed 1 card are rendered
+        expect(
+          find.byKey(const ValueKey('field_journal_plots_section')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('garden_plot_card_Bed 1')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('plot_rotation_trail_Bed 1')),
+          findsOneWidget,
+        );
+
+        // Tap "+ Sow in Plot" on Bed 1 card
+        final quickLogBtn = find.byKey(const ValueKey('plot_quick_log_Bed 1'));
+        await tester.ensureVisible(quickLogBtn);
+        await tester.tap(quickLogBtn);
+        await tester.pumpAndSettle();
+
+        // Rotation banner is visible for Bed 1 inside FieldJournalSheet
+        expect(
+          find.byKey(const ValueKey('field_journal_rotation_banner')),
+          findsOneWidget,
+        );
+
+        // Search and select 'kale' (Brassicaceae) in 2026 -> triggers rotation warning!
+        await tester.enterText(
+          find.byKey(const ValueKey('field_journal_crop_search_input')),
+          'kale',
+        );
+        await tester.pumpAndSettle();
+        final kaleChip = find.byKey(const ValueKey('journal_sheet_crop_kale'));
+        await tester.ensureVisible(kaleChip);
+        await tester.tap(kaleChip);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('field_journal_rotation_warning')),
           findsOneWidget,
         );
       },

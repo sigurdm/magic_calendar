@@ -388,6 +388,173 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
     }
   }
 
+  Future<void> _showUpsertPlotDialog([GardenPlot? existing]) async {
+    final nameCtrl = TextEditingController(text: existing?.name ?? '');
+    final areaCtrl = TextEditingController(text: existing?.areaName ?? '');
+    final dimCtrl = TextEditingController(text: existing?.dimensions ?? '');
+    final notesCtrl = TextEditingController(text: existing?.notes ?? '');
+    GardenPlotType selectedType = existing?.plotType ?? GardenPlotType.openBed;
+
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            backgroundColor: const Color(0xFF1F1A14),
+            title: Text(
+              existing == null
+                  ? 'Add Garden Plot / Bed'
+                  : 'Edit Plot • ${existing.name}',
+              style: GoogleFonts.cormorantGaramond(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFFF6ECD8),
+              ),
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    key: const ValueKey('plot_dialog_name_input'),
+                    controller: nameCtrl,
+                    enabled: existing == null,
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      color: Colors.white,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Plot / Bed Name (e.g. Bed 1, North Tunnel)',
+                      labelStyle: GoogleFonts.outfit(color: Colors.white70),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    key: const ValueKey('plot_dialog_area_input'),
+                    controller: areaCtrl,
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      color: Colors.white,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Garden Section / Zone (e.g. Kitchen Garden, Greenhouse)',
+                      labelStyle: GoogleFonts.outfit(color: Colors.white70),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'PLOT ENVIRONMENT',
+                    style: GoogleFonts.outfit(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                      color: GoetheanPalette.aspectGold,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: GardenPlotType.values
+                        .map((type) {
+                          final isSelected = selectedType == type;
+                          return ChoiceChip(
+                            key: ValueKey('plot_dialog_type_${type.name}'),
+                            label: Text(
+                              '${type.glyph} ${type.displayName}',
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w400,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.white70,
+                              ),
+                            ),
+                            selected: isSelected,
+                            selectedColor: GoetheanPalette.aspectGold
+                                .withValues(alpha: 0.3),
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.05,
+                            ),
+                            showCheckmark: false,
+                            onSelected: (_) {
+                              setDialogState(() {
+                                selectedType = type;
+                              });
+                            },
+                          );
+                        })
+                        .toList(growable: false),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    key: const ValueKey('plot_dialog_dimensions_input'),
+                    controller: dimCtrl,
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      color: Colors.white,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Dimensions / Area (e.g. 1.2m × 4.0m)',
+                      labelStyle: GoogleFonts.outfit(color: Colors.white70),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    key: const ValueKey('plot_dialog_notes_input'),
+                    controller: notesCtrl,
+                    maxLines: 2,
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      color: Colors.white,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Soil Type, Sun Exposure, or Notes',
+                      labelStyle: GoogleFonts.outfit(color: Colors.white70),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                key: const ValueKey('plot_dialog_save_button'),
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('Save Plot'),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (confirmed == true && nameCtrl.text.trim().isNotEmpty) {
+        widget.gardenController.upsertPlot(
+          GardenPlot(
+            name: nameCtrl.text.trim(),
+            areaName: areaCtrl.text.trim(),
+            plotType: selectedType,
+            dimensions: dimCtrl.text.trim(),
+            notes: notesCtrl.text.trim(),
+            lastSoilPrepSummary: existing?.lastSoilPrepSummary,
+            lastSoilPrepTimestamp: existing?.lastSoilPrepTimestamp,
+          ),
+        );
+      }
+    } finally {
+      nameCtrl.dispose();
+      areaCtrl.dispose();
+      dimCtrl.dispose();
+      notesCtrl.dispose();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -399,6 +566,7 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
             ? allEntries
             : widget.gardenController.searchJournalEntries(_searchQuery);
         final knownBeds = widget.gardenController.listBedNames();
+        final knownPlots = widget.gardenController.listPlots();
         final knownShards = widget.gardenController.listKnownShardKeys();
         final activeBatches = widget.gardenController.listPlantingBatches(
           onlyActiveInGround: true,
@@ -487,7 +655,7 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
               ),
               const SizedBox(height: 12),
 
-              // Log Action Button + Quick Observation + Comparative Summary Strip
+              // Log Action Button + Quick Observation + Add Plot + Comparative Summary Strip
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -569,6 +737,37 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                       ),
                     ),
                   ),
+                  OutlinedButton.icon(
+                    key: const ValueKey('field_journal_add_plot_button'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFF6ECD8),
+                      side: BorderSide(
+                        color: GoetheanPalette.leafWater.withValues(
+                          alpha: 0.45,
+                        ),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: _showUpsertPlotDialog,
+                    icon: const Icon(
+                      Icons.grid_view_outlined,
+                      size: 15,
+                      color: GoetheanPalette.leafWater,
+                    ),
+                    label: Text(
+                      '+ Add Plot / Bed',
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                   if (allEntries.isNotEmpty) ...[
                     _buildSummaryChip(
                       'Pflanzzeit: $pflanzzeitCount/${allEntries.length}',
@@ -583,6 +782,16 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                 ],
               ),
               const SizedBox(height: 14),
+
+              if (knownPlots.isNotEmpty) ...[
+                _buildPlotsOverviewSection(
+                  context,
+                  knownPlots,
+                  activeBatches,
+                  profile.taskQueue,
+                ),
+                const SizedBox(height: 14),
+              ],
 
               if (activeBatches.isNotEmpty) ...[
                 _buildActivePlantingsSection(context, activeBatches),
@@ -893,6 +1102,338 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildPlotsOverviewSection(
+    BuildContext context,
+    List<GardenPlot> plots,
+    List<PlantingBatchSummary> activeBatches,
+    List<QueuedGardenTask> taskQueue,
+  ) {
+    return OrganicVesselContainer.inset(
+      key: const ValueKey('field_journal_plots_section'),
+      accentColor: GoetheanPalette.aspectGold,
+      seed: 4.8,
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.grid_view_outlined,
+                size: 16,
+                color: GoetheanPalette.aspectGold,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'GARDEN PLOTS & BEDS (${plots.length})',
+                  style: GoogleFonts.outfit(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.9,
+                    color: GoetheanPalette.aspectGold,
+                  ),
+                ),
+              ),
+              if (_selectedBedFilter != null)
+                TextButton(
+                  key: const ValueKey('clear_plot_filter_button'),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _selectedBedFilter = null;
+                    });
+                  },
+                  child: Text(
+                    'Show All Plots',
+                    style: GoogleFonts.outfit(
+                      fontSize: 11,
+                      color: GoetheanPalette.aspectGold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (final plot in plots)
+            Builder(
+              builder: (context) {
+                final plotActive = activeBatches
+                    .where((b) => b.bedName == plot.name)
+                    .toList(growable: false);
+                final plotTasks = taskQueue
+                    .where((t) => t.bedName == plot.name)
+                    .toList(growable: false);
+                final rotation = widget.gardenController.evaluatePlotRotation(
+                  plot.name,
+                  referenceTime: widget.selectedDate,
+                );
+                final isSelected = _selectedBedFilter == plot.name;
+                final prepDays = plot.daysSinceSoilPrepAt(widget.selectedDate);
+                final nextOrganColor = GoetheanPalette.getColor(
+                  rotation.recommendedNextQuality,
+                );
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: InkWell(
+                    key: ValueKey('garden_plot_card_${plot.name}'),
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () {
+                      setState(() {
+                        _selectedBedFilter = isSelected ? null : plot.name;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? GoetheanPalette.aspectGold.withValues(alpha: 0.14)
+                            : Colors.white.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isSelected
+                              ? GoetheanPalette.aspectGold
+                              : Colors.white.withValues(alpha: 0.15),
+                          width: isSelected ? 1.5 : 1.0,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${plot.plotType.glyph} ${plot.displayTitle}'
+                                  '${plot.dimensions.isNotEmpty ? " • ${plot.dimensions}" : ""}',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFFF6ECD8),
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 7,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: nextOrganColor.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: nextOrganColor.withValues(
+                                      alpha: 0.45,
+                                    ),
+                                  ),
+                                ),
+                                child: Text(
+                                  plotActive.isEmpty
+                                      ? 'Fallow • Next: ${rotation.recommendedNextQuality.displayName}'
+                                      : '${plotActive.length} Active • Next: ${rotation.recommendedNextQuality.displayName}',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                key: ValueKey('edit_plot_${plot.name}'),
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 28,
+                                  minHeight: 28,
+                                ),
+                                tooltip: 'Edit plot details',
+                                icon: const Icon(
+                                  Icons.edit_outlined,
+                                  size: 15,
+                                  color: Colors.white70,
+                                ),
+                                onPressed: () => _showUpsertPlotDialog(plot),
+                              ),
+                            ],
+                          ),
+                          if (plot.notes.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              plot.notes,
+                              style: GoogleFonts.outfit(
+                                fontSize: 11,
+                                color: Colors.white60,
+                              ),
+                            ),
+                          ],
+                          if (plotActive.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              children: plotActive
+                                  .map(
+                                    (b) => Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: GoetheanPalette.getColor(
+                                          b.quality,
+                                        ).withValues(alpha: 0.22),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        '${b.action.timelineGlyph} ${b.crop?.nameEn ?? b.title} (${b.daysElapsedAt(widget.selectedDate)}d)',
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(growable: false),
+                            ),
+                          ],
+                          if (plotTasks.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            for (final task in plotTasks)
+                              Text(
+                                '📋 Planned: ${task.action.displayName} · ${task.targetLabel}',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 11,
+                                  color: const Color(0xFF6EE7B7),
+                                ),
+                              ),
+                          ],
+                          if (plot.lastSoilPrepSummary != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              '🌀 Last Soil Prep: ${plot.lastSoilPrepSummary}'
+                              '${prepDays != null && prepDays >= 0 ? " (${prepDays}d ago)" : ""}',
+                              key: ValueKey('plot_soil_prep_${plot.name}'),
+                              style: GoogleFonts.outfit(
+                                fontSize: 10.5,
+                                color: const Color(0xFFF3E5C8),
+                              ),
+                            ),
+                          ],
+                          if (rotation.seasonTrail.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'Rotation: ${rotation.seasonTrail.join(" → ")}',
+                              key: ValueKey('plot_rotation_trail_${plot.name}'),
+                              style: GoogleFonts.outfit(
+                                fontSize: 10.5,
+                                color: GoetheanPalette.aspectGold,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              OutlinedButton.icon(
+                                key: ValueKey('plot_quick_log_${plot.name}'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  side: BorderSide(
+                                    color: nextOrganColor.withValues(
+                                      alpha: 0.55,
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  minimumSize: const Size(56, 28),
+                                ),
+                                onPressed: () {
+                                  FieldJournalSheet.show(
+                                    context,
+                                    gardenController: widget.gardenController,
+                                    timestamp: widget.selectedDate,
+                                    calendarInfo: widget.info,
+                                    weatherSeries:
+                                        widget.weatherNotifier?.value,
+                                    initialAction: FieldJournalAction.sowSeeds,
+                                    initialQuality:
+                                        rotation.recommendedNextQuality,
+                                    initialBedName: plot.name,
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.grass_outlined,
+                                  size: 13,
+                                ),
+                                label: Text(
+                                  '+ Sow in Plot',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              OutlinedButton.icon(
+                                key: ValueKey('plot_quick_prep_${plot.name}'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFFF6ECD8),
+                                  side: BorderSide(
+                                    color: GoetheanPalette.aspectGold
+                                        .withValues(alpha: 0.45),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  minimumSize: const Size(56, 28),
+                                ),
+                                onPressed: () {
+                                  FieldJournalSheet.show(
+                                    context,
+                                    gardenController: widget.gardenController,
+                                    timestamp: widget.selectedDate,
+                                    calendarInfo: widget.info,
+                                    weatherSeries:
+                                        widget.weatherNotifier?.value,
+                                    initialAction:
+                                        FieldJournalAction.sprayPreparation,
+                                    initialBedName: plot.name,
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.cyclone_outlined,
+                                  size: 13,
+                                ),
+                                label: Text(
+                                  '🌀 Prep / BD 500',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
     );
   }
 

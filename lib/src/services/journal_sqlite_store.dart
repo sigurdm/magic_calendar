@@ -8,10 +8,12 @@ import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart';
 
 import '../core/garden/field_journal_entry.dart';
+import '../core/garden/garden_plot.dart';
 import '../core/garden/garden_profile.dart';
 import '../core/garden/hlc.dart';
 import '../core/models/models.dart';
 import '../core/task_window_planner.dart';
+import '../core/vegetable_database.dart';
 
 /// Validates canonical monthly shard keys (`YYYY-MM`).
 final RegExp _shardKeyPattern = RegExp(r'^\d{4}-(0[1-9]|1[0-2])$');
@@ -149,6 +151,18 @@ final class ShardedSqliteJournalStore {
         deleted_hlc TEXT
       );
 
+      CREATE TABLE IF NOT EXISTS garden_plots (
+        plot_name TEXT PRIMARY KEY NOT NULL,
+        area_name TEXT NOT NULL DEFAULT '',
+        plot_type TEXT NOT NULL DEFAULT 'openBed',
+        dimensions TEXT NOT NULL DEFAULT '',
+        notes TEXT NOT NULL DEFAULT '',
+        last_prep_summary TEXT,
+        last_prep_timestamp_ms INTEGER,
+        updated_hlc TEXT NOT NULL,
+        deleted_hlc TEXT
+      );
+
       CREATE TABLE IF NOT EXISTS planting_index (
         entry_id TEXT PRIMARY KEY NOT NULL,
         shard_key TEXT NOT NULL,
@@ -172,6 +186,7 @@ final class ShardedSqliteJournalStore {
         crop_id TEXT,
         target_quality TEXT NOT NULL,
         note TEXT NOT NULL DEFAULT '',
+        bed_name TEXT,
         updated_hlc TEXT NOT NULL,
         completed_by_entry_id TEXT,
         deleted_hlc TEXT
@@ -189,6 +204,7 @@ final class ShardedSqliteJournalStore {
       );
     ''');
     _ensureColumnExists(db, 'planting_index', 'harvested_by_entry_id', 'TEXT');
+    _ensureColumnExists(db, 'garden_task_queue', 'bed_name', 'TEXT');
   }
 
   static void _ensureColumnExists(
@@ -390,37 +406,207 @@ final class ShardedSqliteJournalStore {
       ''',
       [trimmed, hlc],
     );
+    _metaDb.execute(
+      '''
+      INSERT INTO garden_plots (
+        plot_name, area_name, plot_type, dimensions, notes,
+        last_prep_summary, last_prep_timestamp_ms, updated_hlc, deleted_hlc
+      )
+      VALUES (?, '', 'openBed', '', '', NULL, NULL, ?, NULL)
+      ON CONFLICT(plot_name) DO UPDATE SET
+        updated_hlc = CASE
+          WHEN garden_plots.deleted_hlc IS NOT NULL THEN excluded.updated_hlc
+          ELSE garden_plots.updated_hlc
+        END,
+        deleted_hlc = NULL
+      ''',
+      [trimmed, hlc],
+    );
+  }
+
+  /// Creates or updates a structured [GardenPlot] in `garden_meta.sqlite`.
+  GardenPlot upsertPlot(GardenPlot plot, {String? hlcOverride}) {
+    _checkNotClosed();
+    final hlc = hlcOverride ?? _nextHlc().toCanonicalString();
+    _metaDb.execute(
+      '''
+      INSERT INTO garden_beds (bed_name, updated_hlc, deleted_hlc)
+      VALUES (?, ?, NULL)
+      ON CONFLICT(bed_name) DO UPDATE SET
+        updated_hlc = excluded.updated_hlc,
+        deleted_hlc = NULL
+      WHERE excluded.updated_hlc >= garden_beds.updated_hlc
+      ''',
+      [plot.name, hlc],
+    );
+    _metaDb.execute(
+      '''
+      INSERT INTO garden_plots (
+        plot_name, area_name, plot_type, dimensions, notes,
+        last_prep_summary, last_prep_timestamp_ms, updated_hlc, deleted_hlc
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)
+      ON CONFLICT(plot_name) DO UPDATE SET
+        area_name = excluded.area_name,
+        plot_type = excluded.plot_type,
+        dimensions = excluded.dimensions,
+        notes = excluded.notes,
+        last_prep_summary = COALESCE(excluded.last_prep_summary, garden_plots.last_prep_summary),
+        last_prep_timestamp_ms = COALESCE(excluded.last_prep_timestamp_ms, garden_plots.last_prep_timestamp_ms),
+        updated_hlc = excluded.updated_hlc,
+        deleted_hlc = NULL
+      WHERE excluded.updated_hlc >= garden_plots.updated_hlc
+      ''',
+      [
+        plot.name,
+        plot.areaName.trim(),
+        plot.plotType.name,
+        plot.dimensions.trim(),
+        plot.notes.trim(),
+        plot.lastSoilPrepSummary,
+        plot.lastSoilPrepTimestamp?.toUtc().millisecondsSinceEpoch,
+        hlc,
+      ],
+    );
+    return findPlot(plot.name) ?? plot.copyWith(updatedHlc: hlc);
+  }
+
+  /// Soft-deletes a [GardenPlot] by [plotName] via an HLC tombstone.
+  void deletePlot(String plotName, {String? hlcOverride}) {
+    _checkNotClosed();
+    final trimmed = plotName.trim();
+    if (trimmed.isEmpty) return;
+    final hlc = hlcOverride ?? _nextHlc().toCanonicalString();
+    _metaDb.execute(
+      '''
+      UPDATE garden_plots
+      SET updated_hlc = ?, deleted_hlc = ?
+      WHERE plot_name = ?
+      ''',
+      [hlc, hlc, trimmed],
+    );
+    _metaDb.execute(
+      '''
+      UPDATE garden_beds
+      SET updated_hlc = ?, deleted_hlc = ?
+      WHERE bed_name = ?
+      ''',
+      [hlc, hlc, trimmed],
+    );
+  }
+
+  /// Lists all active [GardenPlot] definitions in `garden_meta.sqlite`
+  /// (including any legacy `garden_beds` entries not yet promoted to `garden_plots`).
+  List<GardenPlot> listPlots() {
+    _checkNotClosed();
+    final rows = _metaDb.select('''
+      SELECT * FROM garden_plots
+      WHERE deleted_hlc IS NULL OR deleted_hlc < updated_hlc
+      ORDER BY area_name COLLATE NOCASE ASC, plot_name COLLATE NOCASE ASC
+    ''');
+    final byName = <String, GardenPlot>{
+      for (final row in rows) (row['plot_name'] as String): _plotFromRow(row),
+    };
+    for (final bedName in listBedNames()) {
+      byName.putIfAbsent(bedName, () => GardenPlot(name: bedName));
+    }
+    final list = byName.values.toList(growable: false);
+    list.sort((a, b) {
+      final areaCmp = a.areaName.toLowerCase().compareTo(
+        b.areaName.toLowerCase(),
+      );
+      if (areaCmp != 0) return areaCmp;
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
+    return list;
+  }
+
+  /// Looks up a single active [GardenPlot] by [plotName].
+  GardenPlot? findPlot(String plotName) {
+    _checkNotClosed();
+    final trimmed = plotName.trim();
+    if (trimmed.isEmpty) return null;
+    final rows = _metaDb.select(
+      '''
+      SELECT * FROM garden_plots
+      WHERE plot_name = ? AND (deleted_hlc IS NULL OR deleted_hlc < updated_hlc)
+      ''',
+      [trimmed],
+    );
+    if (rows.isNotEmpty) return _plotFromRow(rows.first);
+    if (listBedNames().contains(trimmed)) {
+      return GardenPlot(name: trimmed);
+    }
+    return null;
+  }
+
+  /// Evaluates crop rotation history and botanical family break rules for [plotName].
+  PlotRotationAssessment evaluatePlotRotation(
+    String plotName, {
+    VegetableEntry? candidateCrop,
+    DateTime? referenceTime,
+  }) {
+    _checkNotClosed();
+    final batches = listPlantingBatches(bedName: plotName);
+    return PlotRotationAssessment.evaluate(
+      plotName: plotName.trim(),
+      batchesInPlot: batches,
+      candidateCrop: candidateCrop,
+      referenceTime: referenceTime,
+    );
+  }
+
+  GardenPlot _plotFromRow(Row row) {
+    final typeName = row['plot_type'] as String? ?? 'openBed';
+    GardenPlotType plotType = GardenPlotType.openBed;
+    for (final candidate in GardenPlotType.values) {
+      if (candidate.name == typeName) {
+        plotType = candidate;
+        break;
+      }
+    }
+    final prepMs = row['last_prep_timestamp_ms'] as int?;
+    return GardenPlot(
+      name: row['plot_name'] as String,
+      areaName: row['area_name'] as String? ?? '',
+      plotType: plotType,
+      dimensions: row['dimensions'] as String? ?? '',
+      notes: row['notes'] as String? ?? '',
+      lastSoilPrepSummary: row['last_prep_summary'] as String?,
+      lastSoilPrepTimestamp: prepMs != null
+          ? DateTime.fromMillisecondsSinceEpoch(prepMs, isUtc: true).toLocal()
+          : null,
+      updatedHlc: row['updated_hlc'] as String?,
+      deletedHlc: row['deleted_hlc'] as String?,
+    );
   }
 
   /// Queries the cross-month planting index in `garden_meta.sqlite` without opening monthly shards.
   List<PlantingBatchSummary> listPlantingBatches({
     String? cropId,
+    String? bedName,
     bool onlyActiveInGround = false,
   }) {
     _checkNotClosed();
-    final activeClause = onlyActiveInGround
-        ? 'AND harvested_by_entry_id IS NULL'
-        : '';
-    final ResultSet rows;
-    if (cropId != null && cropId.trim().isNotEmpty) {
-      rows = _metaDb.select(
-        '''
-        SELECT * FROM planting_index
-        WHERE (deleted_hlc IS NULL OR deleted_hlc < updated_hlc)
-          $activeClause
-          AND crop_id = ?
-        ORDER BY timestamp_ms DESC
-        ''',
-        [cropId.trim()],
-      );
-    } else {
-      rows = _metaDb.select('''
-        SELECT * FROM planting_index
-        WHERE (deleted_hlc IS NULL OR deleted_hlc < updated_hlc)
-          $activeClause
-        ORDER BY timestamp_ms DESC
-        ''');
+    final clauses = <String>[
+      '(deleted_hlc IS NULL OR deleted_hlc < updated_hlc)',
+    ];
+    final args = <Object?>[];
+    if (onlyActiveInGround) {
+      clauses.add('harvested_by_entry_id IS NULL');
     }
+    if (cropId != null && cropId.trim().isNotEmpty) {
+      clauses.add('crop_id = ?');
+      args.add(cropId.trim());
+    }
+    if (bedName != null && bedName.trim().isNotEmpty) {
+      clauses.add('bed_name = ?');
+      args.add(bedName.trim());
+    }
+    final rows = _metaDb.select('''
+      SELECT * FROM planting_index
+      WHERE ${clauses.join(' AND ')}
+      ORDER BY timestamp_ms DESC
+      ''', args);
     return [for (final row in rows) _plantingSummaryFromRow(row)];
   }
 
@@ -459,6 +645,7 @@ final class ShardedSqliteJournalStore {
           cropId: row['crop_id'] as String?,
           targetQuality: quality,
           note: row['note'] as String? ?? '',
+          bedName: row['bed_name'] as String?,
         ),
       );
     }
@@ -469,17 +656,21 @@ final class ShardedSqliteJournalStore {
   void upsertQueuedTask(QueuedGardenTask task, {String? hlcOverride}) {
     _checkNotClosed();
     final hlc = hlcOverride ?? _nextHlc().toCanonicalString();
+    if (task.bedName != null && task.bedName!.trim().isNotEmpty) {
+      addBedName(task.bedName!, hlcOverride: hlc);
+    }
     _metaDb.execute(
       '''
       INSERT INTO garden_task_queue (
-        task_id, action, crop_id, target_quality, note,
+        task_id, action, crop_id, target_quality, note, bed_name,
         updated_hlc, completed_by_entry_id, deleted_hlc
-      ) VALUES (?, ?, ?, ?, ?, ?, NULL, NULL)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL)
       ON CONFLICT(task_id) DO UPDATE SET
         action = excluded.action,
         crop_id = excluded.crop_id,
         target_quality = excluded.target_quality,
         note = excluded.note,
+        bed_name = excluded.bed_name,
         updated_hlc = excluded.updated_hlc,
         completed_by_entry_id = NULL,
         deleted_hlc = NULL
@@ -491,6 +682,7 @@ final class ShardedSqliteJournalStore {
         task.cropId,
         task.targetQuality.name,
         task.note,
+        task.bedName,
         hlc,
       ],
     );
@@ -531,7 +723,11 @@ final class ShardedSqliteJournalStore {
       final cropMatches =
           task.cropId == entry.cropId ||
           (task.cropId == null && task.targetQuality == entry.quality);
-      if (cropMatches) {
+      final bedMatches =
+          task.bedName == null ||
+          entry.bedName == null ||
+          task.bedName == entry.bedName;
+      if (cropMatches && bedMatches) {
         removeQueuedTask(
           task.id,
           completedByEntryId: entry.id,
@@ -807,7 +1003,28 @@ final class ShardedSqliteJournalStore {
     }
 
     if (entry.bedName != null && entry.bedName!.trim().isNotEmpty) {
-      addBedName(entry.bedName!, hlcOverride: hlc);
+      final trimmedBed = entry.bedName!.trim();
+      addBedName(trimmedBed, hlcOverride: hlc);
+      final isSoilPrep =
+          entry.action == FieldJournalAction.sprayPreparation ||
+          entry.action == FieldJournalAction.compostAndCare ||
+          entry.action == FieldJournalAction.cultivateSoil ||
+          entry.crop?.category == PlantCategory.greenManure;
+      if (isSoilPrep) {
+        final prepLabel = entry.prepCode ?? entry.title;
+        final prepMs = entry.timestamp.toUtc().millisecondsSinceEpoch;
+        _metaDb.execute(
+          '''
+          UPDATE garden_plots
+          SET last_prep_summary = ?,
+              last_prep_timestamp_ms = ?,
+              updated_hlc = ?
+          WHERE plot_name = ?
+            AND (last_prep_timestamp_ms IS NULL OR last_prep_timestamp_ms <= ?)
+          ''',
+          [prepLabel, prepMs, hlc, trimmedBed, prepMs],
+        );
+      }
     }
 
     final saved = getEntry(entry.id, shardKey: shardKey) ?? entry;
@@ -1837,6 +2054,32 @@ final class ShardedSqliteJournalStore {
           WHERE excluded.updated_hlc > main.garden_beds.updated_hlc
         ''');
 
+        final remotePlotsTable = _metaDb.select(
+          "SELECT name FROM remote_meta.sqlite_master WHERE type='table' AND name='garden_plots'",
+        );
+        if (remotePlotsTable.isNotEmpty) {
+          _metaDb.execute('''
+            INSERT INTO main.garden_plots (
+              plot_name, area_name, plot_type, dimensions, notes,
+              last_prep_summary, last_prep_timestamp_ms, updated_hlc, deleted_hlc
+            )
+            SELECT
+              plot_name, area_name, plot_type, dimensions, notes,
+              last_prep_summary, last_prep_timestamp_ms, updated_hlc, deleted_hlc
+            FROM remote_meta.garden_plots WHERE true
+            ON CONFLICT(plot_name) DO UPDATE SET
+              area_name = excluded.area_name,
+              plot_type = excluded.plot_type,
+              dimensions = excluded.dimensions,
+              notes = excluded.notes,
+              last_prep_summary = COALESCE(excluded.last_prep_summary, main.garden_plots.last_prep_summary),
+              last_prep_timestamp_ms = COALESCE(excluded.last_prep_timestamp_ms, main.garden_plots.last_prep_timestamp_ms),
+              updated_hlc = excluded.updated_hlc,
+              deleted_hlc = excluded.deleted_hlc
+            WHERE excluded.updated_hlc > main.garden_plots.updated_hlc
+          ''');
+        }
+
         final remotePlantingCols = _metaDb.select(
           'PRAGMA remote_meta.table_info(planting_index)',
         );
@@ -1876,13 +2119,20 @@ final class ShardedSqliteJournalStore {
           "SELECT name FROM remote_meta.sqlite_master WHERE type='table' AND name='garden_task_queue'",
         );
         if (remoteTaskTable.isNotEmpty) {
+          final remoteTaskCols = _metaDb.select(
+            'PRAGMA remote_meta.table_info(garden_task_queue)',
+          );
+          final hasTaskBedCol = remoteTaskCols.any(
+            (col) => col['name'] == 'bed_name',
+          );
+          final taskBedExpr = hasTaskBedCol ? 'bed_name' : 'NULL';
           _metaDb.execute('''
             INSERT INTO main.garden_task_queue (
-              task_id, action, crop_id, target_quality, note,
+              task_id, action, crop_id, target_quality, note, bed_name,
               updated_hlc, completed_by_entry_id, deleted_hlc
             )
             SELECT
-              task_id, action, crop_id, target_quality, note,
+              task_id, action, crop_id, target_quality, note, $taskBedExpr,
               updated_hlc, completed_by_entry_id, deleted_hlc
             FROM remote_meta.garden_task_queue WHERE true
             ON CONFLICT(task_id) DO UPDATE SET
@@ -1890,6 +2140,7 @@ final class ShardedSqliteJournalStore {
               crop_id = excluded.crop_id,
               target_quality = excluded.target_quality,
               note = excluded.note,
+              bed_name = excluded.bed_name,
               updated_hlc = excluded.updated_hlc,
               completed_by_entry_id = excluded.completed_by_entry_id,
               deleted_hlc = excluded.deleted_hlc
@@ -1996,6 +2247,14 @@ final class ShardedSqliteJournalStore {
         'B:${r['bed_name']}:${r['updated_hlc']}:${r['deleted_hlc'] ?? ''}',
       );
     }
+    final plots = _metaDb.select(
+      'SELECT plot_name, area_name, plot_type, dimensions, notes, last_prep_summary, last_prep_timestamp_ms, updated_hlc, deleted_hlc FROM garden_plots ORDER BY plot_name ASC',
+    );
+    for (final r in plots) {
+      buffer.writeln(
+        'G:${r['plot_name']}:${r['area_name']}:${r['plot_type']}:${r['dimensions']}:${r['notes']}:${r['last_prep_summary'] ?? ''}:${r['last_prep_timestamp_ms'] ?? ''}:${r['updated_hlc']}:${r['deleted_hlc'] ?? ''}',
+      );
+    }
     final plantings = _metaDb.select(
       'SELECT entry_id, shard_key, updated_hlc, harvested_by_entry_id, deleted_hlc FROM planting_index ORDER BY entry_id ASC',
     );
@@ -2005,11 +2264,11 @@ final class ShardedSqliteJournalStore {
       );
     }
     final tasks = _metaDb.select(
-      'SELECT task_id, action, crop_id, target_quality, updated_hlc, completed_by_entry_id, deleted_hlc FROM garden_task_queue ORDER BY task_id ASC',
+      'SELECT task_id, action, crop_id, target_quality, bed_name, updated_hlc, completed_by_entry_id, deleted_hlc FROM garden_task_queue ORDER BY task_id ASC',
     );
     for (final r in tasks) {
       buffer.writeln(
-        'T:${r['task_id']}:${r['action']}:${r['crop_id'] ?? ''}:${r['target_quality']}:${r['updated_hlc']}:${r['completed_by_entry_id'] ?? ''}:${r['deleted_hlc'] ?? ''}',
+        'T:${r['task_id']}:${r['action']}:${r['crop_id'] ?? ''}:${r['target_quality']}:${r['bed_name'] ?? ''}:${r['updated_hlc']}:${r['completed_by_entry_id'] ?? ''}:${r['deleted_hlc'] ?? ''}',
       );
     }
     final digest = sha256.convert(utf8.encode(buffer.toString())).toString();
