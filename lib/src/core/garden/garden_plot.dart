@@ -797,8 +797,11 @@ final class PlotRotationAssessment {
       }
     } else if (isStaggered) {
       final maturity = CropMaturityProfile.forCrop(candidateCrop);
+      final intervalDays = maturity.seasonalStaggeredIntervalDays(
+        (referenceTime ?? DateTime.now()).month,
+      );
       guidance =
-          'Hold-såning (Staggered Sowing): Sowing a follow-up batch of ${candidateCrop.nameEn} in $plotName (~every ${maturity.staggeredIntervalDays} days) extends continuous harvest within the season.';
+          'Hold-såning (Staggered Sowing): Sowing a follow-up batch of ${candidateCrop.nameEn} in $plotName (~every $intervalDays days) extends continuous harvest within the season.';
     } else if (sameCropStationaryMatch != null) {
       if (_isTomato(candidateCrop)) {
         guidance =
@@ -831,19 +834,23 @@ final class PlotRotationAssessment {
 }
 
 /// Agronomic maturity, bed-occupancy duration, and staggered-sowing (*Hold-såning*)
-/// profile for a [VegetableEntry].
+/// profile for a [VegetableEntry], with Nordic seasonal adjustments for daylength,
+/// propagation temperature, and overwintering across the *Persephone period*.
 final class CropMaturityProfile {
-  /// Estimated days the crop occupies the bed from sowing/transplanting until clearing.
+  /// Baseline days the crop occupies the bed in mid-spring (April/May) from
+  /// sowing/transplanting until clearing.
   final int estimatedDaysInGround;
 
-  /// Typical indoor/module nursery lead time in days before outdoor transplanting (`0` if direct-sown only).
+  /// Baseline indoor/module nursery lead time in days in mid-spring (April/May)
+  /// before outdoor transplanting (`0` if direct-sown only).
   final int moduleLeadTimeDays;
 
   /// Whether this crop is suitable for staggered interval sowings (*Hold-såning*)
   /// in the same bed within a single season.
   final bool supportsStaggeredSowing;
 
-  /// Recommended interval in days between staggered sowings when [supportsStaggeredSowing] is `true`.
+  /// Baseline recommended interval in days between staggered sowings when
+  /// [supportsStaggeredSowing] is `true`.
   final int staggeredIntervalDays;
 
   /// Creates an immutable [CropMaturityProfile].
@@ -853,6 +860,74 @@ final class CropMaturityProfile {
     this.supportsStaggeredSowing = false,
     this.staggeredIntervalDays = 14,
   });
+
+  /// Returns the season-adjusted indoor/module nursery lead time in days when
+  /// sown in [propagationMonth] (`1` = January .. `12` = December).
+  ///
+  /// Accounts for the Nordic 55°N daylength and propagation temperature curve:
+  /// - **Jan–Feb (`1.55×`)**: Low light near the *Persephone period* slows seedling root fill.
+  /// - **Mar (`1.35×`)**: Cool early-spring glasshouse/windowsill propagation (~4–6 weeks).
+  /// - **Apr (`1.05×`) / May (`0.90×`)**: Standard spring nursery baseline (~3–4 weeks).
+  /// - **Jun–Jul (`0.70×`)**: Peak 17h daylight and 18–22 °C warmth; module plugs are ready in 14–20 days.
+  /// - **Aug (`0.85×`)**: Warm soil with shortening late-summer days.
+  /// - **Sep (`1.15×`) / Oct–Dec (`1.45×`)**: Rapidly shortening autumn daylight.
+  int seasonalModuleLeadTimeDays(int propagationMonth) {
+    if (moduleLeadTimeDays <= 0) return 0;
+    final m = propagationMonth.clamp(1, 12);
+    final factor = switch (m) {
+      1 || 2 => 1.55,
+      3 => 1.35,
+      4 => 1.05,
+      5 => 0.90,
+      6 || 7 => 0.70,
+      8 => 0.85,
+      9 => 1.15,
+      _ => 1.45,
+    };
+    return (moduleLeadTimeDays * factor).round().clamp(10, 75);
+  }
+
+  /// Returns the season-adjusted staggered sowing (*Hold-såning*) interval in days
+  /// for [sowingMonth].
+  int seasonalStaggeredIntervalDays(int sowingMonth) {
+    if (!supportsStaggeredSowing) return staggeredIntervalDays;
+    final m = sowingMonth.clamp(1, 12);
+    final factor = switch (m) {
+      <= 3 => 1.25,
+      4 || 5 => 1.0,
+      6 || 7 => 0.85,
+      8 => 1.15,
+      _ => 1.30,
+    };
+    return (staggeredIntervalDays * factor).round().clamp(10, 35);
+  }
+
+  /// Returns the season-adjusted days in the ground for a within-season crop
+  /// planted in [plantingMonth], accounting for faster midsummer growth and slower
+  /// early-spring / autumn maturity.
+  int seasonalDaysInGround(
+    int plantingMonth, {
+    FieldJournalAction action = FieldJournalAction.sowSeeds,
+  }) {
+    final m = plantingMonth.clamp(1, 12);
+    final seasonFactor = switch (m) {
+      <= 3 => 1.20,
+      4 => 1.05,
+      5 => 0.95,
+      6 || 7 => 0.82,
+      8 => 1.05,
+      _ => 1.25,
+    };
+    final scaledGroundDays = (estimatedDaysInGround * seasonFactor).round();
+    if (action == FieldJournalAction.transplant && moduleLeadTimeDays > 0) {
+      // Seedlings were raised in modules for roughly the preceding month's lead time.
+      final priorMonth = m == 1 ? 12 : m - 1;
+      final nurseryCredit = (seasonalModuleLeadTimeDays(priorMonth) * 0.55)
+          .round();
+      return (scaledGroundDays - nurseryCredit).clamp(20, 365);
+    }
+    return scaledGroundDays.clamp(20, 365);
+  }
 
   /// Derives a [CropMaturityProfile] for [crop].
   static CropMaturityProfile forCrop(VegetableEntry crop) {
@@ -867,9 +942,21 @@ final class CropMaturityProfile {
     final id = crop.id;
     final hasIndoorStart =
         crop.indoorSowingMonths.isNotEmpty && crop.transplantMonths.isNotEmpty;
-    final defaultLeadTime = hasIndoorStart ? 28 : 0;
+    final isLongNurseryCrop = const {
+      'tomato',
+      'cherry_tomato',
+      'pepper',
+      'chili_pepper',
+      'aubergine',
+      'celeriac',
+      'celery',
+      'leek',
+      'onion',
+      'shallot',
+    }.contains(id);
+    final defaultLeadTime = hasIndoorStart ? (isLongNurseryCrop ? 35 : 28) : 0;
 
-    // 1. Fast catch-crops (30–50 days) with 14-day staggered Hold-såning
+    // 1. Fast catch-crops (30–50 days baseline) with 14-day staggered Hold-såning
     if (const {
       'radish',
       'spinach',
@@ -892,7 +979,7 @@ final class CropMaturityProfile {
       );
     }
 
-    // 2. Medium-short crops (55–75 days) with 14–21 day staggered sowing
+    // 2. Medium-short crops (55–75 days baseline) with 21-day staggered sowing
     if (const {
       'turnip',
       'kohlrabi',
@@ -914,7 +1001,7 @@ final class CropMaturityProfile {
       );
     }
 
-    // 3. Medium-season maincrops (75–95 days)
+    // 3. Medium-season maincrops (75–95 days baseline)
     if (const {
       'pointed_cabbage',
       'broccoli',
@@ -934,7 +1021,7 @@ final class CropMaturityProfile {
       );
     }
 
-    // 4. Long-season & overwintering maincrops (110–150 days)
+    // 4. Long-season & overwintering maincrops (115 days baseline)
     return CropMaturityProfile(
       estimatedDaysInGround: 115,
       moduleLeadTimeDays: defaultLeadTime,
@@ -942,21 +1029,104 @@ final class CropMaturityProfile {
     );
   }
 
-  /// Estimates the date when [batch] will finish harvesting and release the plot.
+  /// Whether [crop] planted in [plantingMonth] overwinters through the Nordic
+  /// *Persephone period* (<10h daylight from Nov–Feb) and clears the plot in spring/summer
+  /// of the following year.
+  static bool isOverwinteringPlanting(VegetableEntry crop, int plantingMonth) {
+    if (plantingMonth < 8 || plantingMonth > 11) return false;
+    final id = crop.id;
+    // Autumn-planted alliums (autumn garlic, overwintering onion/shallot sets)
+    if (const {
+          'autumn_garlic',
+          'garlic',
+          'autumn_onion',
+          'onion',
+          'shallot',
+        }.contains(id) &&
+        plantingMonth >= 8) {
+      return true;
+    }
+    // Overwintering green manures & cover crops sown Aug–Nov
+    if (crop.category == PlantCategory.greenManure &&
+        const {
+          'winter_rye',
+          'hairy_vetch',
+          'crimson_clover',
+          'winter_field_bean',
+        }.contains(id)) {
+      return true;
+    }
+    // Hardy overwintering brassicas & leeks planted Aug–Oct
+    if (const {
+      'kale',
+      'brussels_sprouts',
+      'savoy_cabbage',
+      'purple_sprouting_broccoli',
+      'leek',
+    }.contains(id)) {
+      return true;
+    }
+    // Hardy winter salads & autumn broad beans sown Sep–Nov
+    if (plantingMonth >= 9 &&
+        const {
+          'lambs_lettuce',
+          'winter_purslane',
+          'spinach',
+          'swiss_chard',
+          'broad_bean',
+        }.contains(id)) {
+      return true;
+    }
+    // Structural check: planted in Aug–Nov while harvest window is in spring/summer (Jan–Jul)
+    if (crop.harvestMonths.isNotEmpty &&
+        crop.harvestMonths.any((m) => m >= 1 && m <= 6) &&
+        !crop.harvestMonths.any((m) => m > plantingMonth && m <= 11)) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Estimates the date when [batch] will finish harvesting and release the plot,
+  /// accounting for seasonal growth speed and *Persephone period* overwintering.
   static DateTime estimateClearingDate(PlantingBatchSummary batch) {
     final crop = batch.crop;
+    final plantedAt = batch.timestamp;
     if (crop == null) {
-      return batch.timestamp.add(const Duration(days: 75));
+      return plantedAt.add(const Duration(days: 75));
     }
+
+    if (isOverwinteringPlanting(crop, plantedAt.month)) {
+      final nextYear = plantedAt.year + 1;
+      if (const {
+        'autumn_garlic',
+        'garlic',
+        'autumn_onion',
+        'onion',
+        'shallot',
+      }.contains(crop.id)) {
+        return DateTime.utc(nextYear, 7, 10, 12);
+      }
+      if (crop.id == 'broad_bean') {
+        return DateTime.utc(nextYear, 6, 15, 12);
+      }
+      if (crop.category == PlantCategory.greenManure ||
+          const {
+            'lambs_lettuce',
+            'winter_purslane',
+            'spinach',
+          }.contains(crop.id)) {
+        return DateTime.utc(nextYear, 4, 10, 12);
+      }
+      // Hardy overwintering brassicas and leeks clear around mid/late April.
+      return DateTime.utc(nextYear, 4, 20, 12);
+    }
+
     final profile = forCrop(crop);
-    // Transplanting starts with seedlings already raised for moduleLeadTimeDays.
-    final effectiveDays =
-        batch.action == FieldJournalAction.transplant &&
-            profile.moduleLeadTimeDays > 0
-        ? (profile.estimatedDaysInGround - (profile.moduleLeadTimeDays ~/ 2))
-              .clamp(25, 365)
-        : profile.estimatedDaysInGround;
-    return batch.timestamp.add(Duration(days: effectiveDays));
+    final effectiveDays = profile.seasonalDaysInGround(
+      plantedAt.month,
+      action: batch.action,
+    );
+    return plantedAt.add(Duration(days: effectiveDays));
   }
 }
 
@@ -995,6 +1165,10 @@ final class PlotSuccessionCandidate {
   /// Date when the plot is expected to be ready for this crop.
   final DateTime targetPlotDate;
 
+  /// Season-adjusted indoor/module nursery lead time in days when [stage] is
+  /// [SuccessionStage.startInModulesNow] (`null` for direct sowings or immediate transplants).
+  final int? nurseryLeadDays;
+
   /// Human-readable explanation of why this succession crop fits the plot now.
   final String reason;
 
@@ -1004,6 +1178,7 @@ final class PlotSuccessionCandidate {
     required this.stage,
     required this.taskAction,
     required this.targetPlotDate,
+    this.nurseryLeadDays,
     required this.reason,
   });
 
@@ -1012,7 +1187,9 @@ final class PlotSuccessionCandidate {
     SuccessionStage.staggeredNextBatch =>
       '${stage.glyph} Hold-såning: ${crop.nameEn}',
     SuccessionStage.startInModulesNow =>
-      '${stage.glyph} Start in Modules: ${crop.nameEn}',
+      nurseryLeadDays != null
+          ? '${stage.glyph} Start in Modules (~${nurseryLeadDays}d): ${crop.nameEn}'
+          : '${stage.glyph} Start in Modules: ${crop.nameEn}',
     SuccessionStage.directRelayNow =>
       '${stage.glyph} ${taskAction == TaskActionType.transplant ? "Transplant" : "Sow"}: ${crop.nameEn}',
   };
@@ -1112,9 +1289,10 @@ final class PlotSuccessionPlan {
     for (final a in active) {
       final name = a.crop?.nameEn ?? a.title;
       final clearDate = CropMaturityProfile.estimateClearingDate(a);
-      stages.add(
-        '🌱 $name (${_monthShort[a.timestamp.month]}→~${_monthShort[clearDate.month]})',
-      );
+      final clearLabel = clearDate.year > a.timestamp.year
+          ? '${_monthShort[clearDate.month]} \'${clearDate.year % 100}'
+          : _monthShort[clearDate.month];
+      stages.add('🌱 $name (${_monthShort[a.timestamp.month]}→~$clearLabel)');
     }
 
     final baseRotation = PlotRotationAssessment.evaluate(
@@ -1133,9 +1311,10 @@ final class PlotSuccessionPlan {
       final maturity = CropMaturityProfile.forCrop(crop);
       if (maturity.supportsStaggeredSowing &&
           crop.sowingMonths.contains(referenceTime.month)) {
-        final nextSowDate = batch.timestamp.add(
-          Duration(days: maturity.staggeredIntervalDays),
+        final intervalDays = maturity.seasonalStaggeredIntervalDays(
+          referenceTime.month,
         );
+        final nextSowDate = batch.timestamp.add(Duration(days: intervalDays));
         candidates.add(
           PlotSuccessionCandidate(
             crop: crop,
@@ -1145,13 +1324,14 @@ final class PlotSuccessionPlan {
                 ? nextSowDate
                 : referenceTime,
             reason:
-                'Hold-såning: sow next staggered batch of ${crop.nameEn} in ${plot.name} (~${maturity.staggeredIntervalDays}d interval)',
+                'Hold-såning: sow next staggered batch of ${crop.nameEn} in ${plot.name} (~${intervalDays}d seasonal interval)',
           ),
         );
       }
     }
 
-    // 2. If plot has active crops clearing within 45 days, find module-start relay crops
+    // 2. If plot has active crops clearing soon, find module-start relay crops
+    //    whose seasonal nursery lead time matches daysUntilClear,
     //    OR if plot is already open/clearing now, find direct relay crops.
     final daysUntilClear = availableDate.difference(referenceTime).inDays;
     final targetMonth = availableDate.month;
@@ -1180,10 +1360,19 @@ final class PlotSuccessionPlan {
       );
       if (assessment.hasFamilyConflict) continue;
 
+      final cropMaturity = CropMaturityProfile.forCrop(crop);
+      final seasonalLeadDays = cropMaturity.seasonalModuleLeadTimeDays(
+        currentMonth,
+      );
+
       PlotSuccessionCandidate? candidate;
-      if (active.isNotEmpty && daysUntilClear > 7 && daysUntilClear <= 45) {
-        // Plot is occupied now but clearing soon -> look for crops to start in modules now
-        // for transplanting when the bed clears, or direct-sow at clearing time.
+      if (active.isNotEmpty &&
+          seasonalLeadDays > 0 &&
+          daysUntilClear > 7 &&
+          daysUntilClear >= (seasonalLeadDays - 14).clamp(7, 60) &&
+          daysUntilClear <= seasonalLeadDays + 16) {
+        // Plot is occupied now and clearing right around when seedlings started
+        // in modules this month will be ready to transplant out.
         if (monthMatchesWithProtection(crop.transplantMonths, targetMonth) &&
             (crop.indoorSowingMonths.contains(currentMonth) ||
                 crop.sowingMonths.contains(currentMonth))) {
@@ -1192,8 +1381,9 @@ final class PlotSuccessionPlan {
             stage: SuccessionStage.startInModulesNow,
             taskAction: TaskActionType.sowIndoor,
             targetPlotDate: availableDate,
+            nurseryLeadDays: seasonalLeadDays,
             reason:
-                'Start ${crop.nameEn} in modules now to transplant into ${plot.name} when bed clears (~${_monthShort[targetMonth]})',
+                'Start ${crop.nameEn} in modules now (~${seasonalLeadDays}d nursery in ${_monthShort[currentMonth]}) to transplant into ${plot.name} when bed clears (~${_monthShort[targetMonth]})',
           );
         }
       } else if (active.isEmpty || daysUntilClear <= 7) {
@@ -1230,7 +1420,13 @@ final class PlotSuccessionPlan {
       if (currentMonth >= 8 && crop.category == PlantCategory.greenManure) {
         score += 25;
       }
-      if (candidate.stage == SuccessionStage.startInModulesNow) score += 15;
+      if (candidate.stage == SuccessionStage.startInModulesNow) {
+        score += 15;
+        // Bonus when the crop's seasonal module lead time closely matches daysUntilClear.
+        if ((daysUntilClear - seasonalLeadDays).abs() <= 7) {
+          score += 10;
+        }
+      }
       scoredRelay.add((score, candidate));
     }
 

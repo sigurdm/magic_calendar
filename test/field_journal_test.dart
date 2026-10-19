@@ -1427,13 +1427,28 @@ void main() {
       final kale = VegetableDatabase.findById('kale')!;
       final carrot = VegetableDatabase.findById('carrot')!;
 
-      // 1. Check maturity profiles
+      // 1. Check maturity profiles and seasonal nursery / in-ground scaling
       final radishProfile = CropMaturityProfile.forCrop(radish);
       expect(radishProfile.estimatedDaysInGround, 32);
       expect(radishProfile.supportsStaggeredSowing, isTrue);
+      // Radish matures faster in June/July (~26d) than in March (~38d)
+      expect(
+        radishProfile.seasonalDaysInGround(7),
+        lessThan(radishProfile.seasonalDaysInGround(3)),
+      );
 
       final kaleProfile = CropMaturityProfile.forCrop(kale);
       expect(kaleProfile.moduleLeadTimeDays, greaterThan(0));
+      // Module nursery time is shorter in June/July (~20d) than in March (~38d)
+      expect(
+        kaleProfile.seasonalModuleLeadTimeDays(6),
+        lessThan(kaleProfile.seasonalModuleLeadTimeDays(3)),
+      );
+
+      // Overwintering garlic planted in October clears in July of next year (Persephone period)
+      final garlic = VegetableDatabase.findById('autumn_garlic')!;
+      expect(CropMaturityProfile.isOverwinteringPlanting(garlic, 10), isTrue);
+      expect(CropMaturityProfile.isOverwinteringPlanting(radish, 5), isFalse);
 
       // 2. Log spring radish sowing in April 2026
       final aprilSow = DateTime.utc(2026, 4, 10, 9);
