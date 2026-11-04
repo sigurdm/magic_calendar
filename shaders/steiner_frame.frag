@@ -53,28 +53,26 @@ float fbm(vec2 p) {
 
 // Continuous, mathematically smooth distance to the organic outer Goetheanum contour.
 // Evaluated analytically: ZERO line segments, ZERO polygonal vertices, 100% C1 smooth.
-float distToOuter(vec2 p) {
+float distToOuterWithBreath(vec2 p, vec2 breathXY, float archMod, float bottomMod) {
   vec2 c = p - vec2(0.500, 0.500);
-
-  // Subtle organic respiration / metamorphosis of the outer Goetheanum silhouette
-  float breathY = sin(uTime * 0.35) * 0.005 + sin(uTime * 0.22) * 0.002;
-  float breathX = cos(uTime * 0.32) * 0.004 + cos(uTime * 0.50) * 0.002;
-  float archMod = sin(uTime * 0.35) * 0.003;
-  float bottomMod = sin(uTime * 0.30) * 0.0025;
 
   // Wonky Steiner outer silhouette:
   // Top rail: asymmetrical crown leaning right (apex around c.x = +0.18, y = 0.015)
-  float topCrown = (0.040 + archMod) * (1.0 - pow(clamp((c.x - 0.18) / 0.48, -1.0, 1.0), 2.0));
+  float topCrownNorm = clamp((c.x - 0.18) / 0.48, -1.0, 1.0);
+  float topCrown = (0.040 + archMod) * (1.0 - topCrownNorm * topCrownNorm);
 
   // Right flank: living S-curve swelling outward at the lower third (c.y ~ +0.24)
-  float rightSwell = 0.024 * exp(-pow((c.y - 0.24) / 0.16, 2.0));
+  float rightSwellArg = (c.y - 0.24) / 0.16;
+  float rightSwell = 0.024 * exp(-(rightSwellArg * rightSwellArg));
 
   // Bottom rail: undulating wave lifting center-right (c.x ~ +0.15) and dipping deep on the left (c.x ~ -0.40) into the architectural foot
-  float bottomWave = -(0.030 + bottomMod) * (1.0 - pow(clamp((c.x - 0.15) / 0.50, -1.0, 1.0), 2.0))
+  float bottomNorm = clamp((c.x - 0.15) / 0.50, -1.0, 1.0);
+  float bottomWave = -(0.030 + bottomMod) * (1.0 - bottomNorm * bottomNorm)
                      + 0.048 * smoothstep(-0.15, -0.42, c.x) * smoothstep(-0.10, 0.40, c.y);
 
   // Left flank: organic curve sweeping inward at mid-height
-  float leftBow = 0.012 * (1.0 - clamp(c.y / 0.48, -1.0, 1.0) * clamp(c.y / 0.48, -1.0, 1.0)) * smoothstep(0.0, 0.25, -c.x);
+  float leftNorm = clamp(c.y / 0.48, -1.0, 1.0);
+  float leftBow = 0.012 * (1.0 - leftNorm * leftNorm) * smoothstep(0.0, 0.25, -c.x);
 
   vec2 q = c;
   q.x -= rightSwell;
@@ -87,7 +85,7 @@ float distToOuter(vec2 p) {
   }
 
   // Generous half-size encompassing the entire wonky frame (up to bounds ~ 0.01..0.99)
-  vec2 halfSize = vec2(0.490 + breathX, 0.490 + breathY);
+  vec2 halfSize = vec2(0.490, 0.490) + breathXY;
   float radius = 0.045;
   vec2 d = abs(q) - halfSize + radius;
   float extDist = length(max(d, 0.0));
@@ -103,10 +101,12 @@ float distToInner(vec2 p) {
 
   // Inner window cutout matching the wonky Steiner opening
   // Top lintel arch
-  float archLift = 0.025 * (1.0 - pow(clamp((c.x - 0.10) / 0.40, -1.0, 1.0), 2.0));
+  float archNorm = clamp((c.x - 0.10) / 0.40, -1.0, 1.0);
+  float archLift = 0.025 * (1.0 - archNorm * archNorm);
 
   // Bottom cutout wave: dips toward bottom-left echoing the outer foot
-  float bottomInnerWave = -0.025 * (1.0 - pow(clamp(c.x / 0.40, -1.0, 1.0), 2.0))
+  float bottomInnerNorm = clamp(c.x / 0.40, -1.0, 1.0);
+  float bottomInnerWave = -0.025 * (1.0 - bottomInnerNorm * bottomInnerNorm)
                           - 0.035 * smoothstep(0.10, -0.35, c.x);
 
   vec2 q = c;
@@ -126,13 +126,9 @@ float distToInner(vec2 p) {
   return extDist + intDist - radius;
 }
 
-// Faceted Architectural Heightfield
-// Models sculpted planar facets like Steiner's carved wood/plaster:
-// The rails have a continuous 3D crowned cross-section with chiseled facets,
-// sloping from the outer edge up to a ridge crest, then sloping down into the window cavity.
-float getFacetedHeight(vec2 p) {
-  float dOut = max(distToOuter(p), 0.0);
-  float dIn = max(distToInner(p), 0.0);
+float evalFacetedHeightFromDists(float rawDOut, float rawDIn) {
+  float dOut = max(rawDOut, 0.0);
+  float dIn = max(rawDIn, 0.0);
   float totalDist = dOut + dIn;
   if (totalDist < 0.001) return 0.0;
 
@@ -163,26 +159,47 @@ float getFacetedHeight(vec2 p) {
   return facetShape * 0.52 + gouge;
 }
 
+// Faceted Architectural Heightfield
+// Models sculpted planar facets like Steiner's carved wood/plaster:
+// The rails have a continuous 3D crowned cross-section with chiseled facets,
+// sloping from the outer edge up to a ridge crest, then sloping down into the window cavity.
+float getFacetedHeight(vec2 p, vec2 breathXY, float archMod, float bottomMod) {
+  return evalFacetedHeightFromDists(
+    distToOuterWithBreath(p, breathXY, archMod, bottomMod),
+    distToInner(p)
+  );
+}
+
 void main() {
   vec2 fragCoord = FlutterFragCoord().xy;
   vec2 uv = fragCoord / uResolution;
 
+  // Precompute breathing parameters once per fragment
+  float sinT035 = sin(uTime * 0.35);
+  vec2 breathXY = vec2(
+    cos(uTime * 0.32) * 0.004 + cos(uTime * 0.50) * 0.002,
+    sinT035 * 0.005 + sin(uTime * 0.22) * 0.002
+  );
+  float archMod = sinT035 * 0.003;
+  float bottomMod = sin(uTime * 0.30) * 0.0025;
+
   // Continuous boundary distances for 3D bevel and lighting
-  float dOut = distToOuter(uv);
+  float dOut = distToOuterWithBreath(uv, breathXY, archMod, bottomMod);
   float dIn = distToInner(uv);
 
   // 1. Faceted Surface Normals & Creases
-  vec2 eps = vec2(0.004, 0.0);
-  float hR = getFacetedHeight(uv + eps.xy);
-  float hL = getFacetedHeight(uv - eps.xy);
-  float hD = getFacetedHeight(uv + eps.yx);
-  float hU = getFacetedHeight(uv - eps.yx);
-  float crest = getFacetedHeight(uv);
-
-  // Physical 3D normal vector with deep relief:
-  // Nx < 0 on left outer slope, Nx > 0 on right outer slope.
-  // Ny < 0 on top outer slope, Ny > 0 on bottom outer slope.
-  vec3 normal = normalize(vec3((hL - hR) * 12.0, (hU - hD) * 12.0, 0.46));
+  float crest = evalFacetedHeightFromDists(dOut, dIn);
+  vec3 normal;
+  if (dIn < -0.005 || dOut < -0.005) {
+    normal = vec3(0.0, 0.0, 1.0);
+  } else {
+    vec2 eps = vec2(0.004, 0.0);
+    float hR = getFacetedHeight(uv + eps.xy, breathXY, archMod, bottomMod);
+    float hL = getFacetedHeight(uv - eps.xy, breathXY, archMod, bottomMod);
+    float hD = getFacetedHeight(uv + eps.yx, breathXY, archMod, bottomMod);
+    float hU = getFacetedHeight(uv - eps.yx, breathXY, archMod, bottomMod);
+    normal = normalize(vec3((hL - hR) * 12.0, (hU - hD) * 12.0, 0.46));
+  }
 
   // 2. Facet Creases & Capillary Pooling Lines
   float innerCreaseDist = abs(dIn - 0.034);

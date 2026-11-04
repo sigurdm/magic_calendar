@@ -58,12 +58,27 @@ final class DiurnalRhythmInfo {
     DateTime? sunset,
     required DateTime solarNoon,
   }) {
-    final effectiveSunrise =
-        sunrise ?? solarNoon.subtract(const Duration(hours: 6));
-    final effectiveSunset = sunset ?? solarNoon.add(const Duration(hours: 6));
+    final DateTime effectiveNoon;
+    if (sunrise == null &&
+        sunset == null &&
+        solarNoon.isAtSameMomentAs(time) &&
+        (time.hour != 12 || time.minute != 0 || time.second != 0)) {
+      effectiveNoon = time.isUtc
+          ? DateTime.utc(time.year, time.month, time.day, 12)
+          : DateTime(time.year, time.month, time.day, 12);
+    } else {
+      effectiveNoon = solarNoon;
+    }
 
-    final noonStillnessStart = solarNoon.subtract(const Duration(minutes: 45));
-    final noonStillnessEnd = solarNoon.add(const Duration(minutes: 45));
+    final effectiveSunrise =
+        sunrise ?? effectiveNoon.subtract(const Duration(hours: 6));
+    final effectiveSunset =
+        sunset ?? effectiveNoon.add(const Duration(hours: 6));
+
+    final noonStillnessStart = effectiveNoon.subtract(
+      const Duration(minutes: 45),
+    );
+    final noonStillnessEnd = effectiveNoon.add(const Duration(minutes: 45));
 
     final DiurnalPhase phase;
     if (time.isBefore(effectiveSunrise)) {
@@ -95,7 +110,7 @@ final class DiurnalRhythmInfo {
           ],
           sunrise: sunrise,
           sunset: sunset,
-          solarNoon: solarNoon,
+          solarNoon: effectiveNoon,
         );
 
       case DiurnalPhase.solarNoonStillness:
@@ -115,7 +130,7 @@ final class DiurnalRhythmInfo {
           ],
           sunrise: sunrise,
           sunset: sunset,
-          solarNoon: solarNoon,
+          solarNoon: effectiveNoon,
         );
 
       case DiurnalPhase.eveningInhalation:
@@ -135,7 +150,7 @@ final class DiurnalRhythmInfo {
           ],
           sunrise: sunrise,
           sunset: sunset,
-          solarNoon: solarNoon,
+          solarNoon: effectiveNoon,
         );
 
       case DiurnalPhase.nightRest:
@@ -153,7 +168,7 @@ final class DiurnalRhythmInfo {
           ],
           sunrise: sunrise,
           sunset: sunset,
-          solarNoon: solarNoon,
+          solarNoon: effectiveNoon,
         );
     }
   }

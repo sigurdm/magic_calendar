@@ -15,11 +15,14 @@ library;
 /// northern-hemisphere month with the equivalent season.
 ///
 /// January (deep southern summer) maps to July, December maps to June, and so
-/// on. [month] is 1-based and the result is 1-based.
+/// on. [month] must be between 1 and 12 (inclusive) and the result is 1-based.
 ///
 /// Use this when only the season matters. When you need a full date, use
 /// [toNorthernSeasonEquivalent], which also carries the year correctly.
-int southernHemisphereMonth(int month) => ((month + 5) % 12) + 1;
+int southernHemisphereMonth(int month) {
+  RangeError.checkValueInInterval(month, 1, 12, 'month');
+  return ((month + 5) % 12) + 1;
+}
 
 /// Maps [date] onto the northern-hemisphere date with the equivalent season.
 ///
@@ -40,6 +43,18 @@ DateTime toNorthernSeasonEquivalent(DateTime date, {required bool isNorthern}) {
   }
   // `DateTime` normalises a month index greater than 12 into the next year,
   // which is exactly the roll-over we want.
+  if (date.isUtc) {
+    return DateTime.utc(
+      date.year,
+      date.month + 6,
+      date.day,
+      date.hour,
+      date.minute,
+      date.second,
+      date.millisecond,
+      date.microsecond,
+    );
+  }
   return DateTime(
     date.year,
     date.month + 6,
@@ -52,6 +67,8 @@ DateTime toNorthernSeasonEquivalent(DateTime date, {required bool isNorthern}) {
   );
 }
 
+final Map<int, DateTime> _easterCache = <int, DateTime>{};
+
 /// Returns the date of Easter Sunday in [year] in the Gregorian calendar.
 ///
 /// Easter is a moveable feast falling between 22 March and 25 April, so it
@@ -61,6 +78,12 @@ DateTime toNorthernSeasonEquivalent(DateTime date, {required bool isNorthern}) {
 ///
 /// The returned value is a local [DateTime] at midnight.
 DateTime gregorianEaster(int year) {
+  if (_easterCache[year] case final cached?) {
+    return cached;
+  }
+  if (_easterCache.length >= 256) {
+    _easterCache.clear();
+  }
   final a = year % 19;
   final b = year ~/ 100;
   final c = year % 100;
@@ -75,5 +98,5 @@ DateTime gregorianEaster(int year) {
   final m = (a + 11 * h + 22 * l) ~/ 451;
   final month = (h + l - 7 * m + 114) ~/ 31;
   final day = ((h + l - 7 * m + 114) % 31) + 1;
-  return DateTime(year, month, day);
+  return _easterCache[year] = DateTime(year, month, day);
 }

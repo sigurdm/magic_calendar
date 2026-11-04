@@ -70,18 +70,30 @@ final class GardenInviteLink {
     // 1. Check for magiccalendar://join-garden URI (even if embedded in a multi-line message)
     final magicUriMatch = RegExp(r'magiccalendar://join-garden\?[^\s]+')
         .firstMatch(trimmed);
-    final candidateUriStr = magicUriMatch?.group(0) ?? trimmed;
+    final rawCandidate = magicUriMatch?.group(0) ?? trimmed;
+    final candidateUriStr = rawCandidate.replaceAll(
+      RegExp(r'''[),.;'">\]]+$'''),
+      '',
+    );
     final parsedUri = Uri.tryParse(candidateUriStr);
     if (parsedUri != null &&
         parsedUri.scheme == 'magiccalendar' &&
         parsedUri.host == 'join-garden') {
-      final folderId = parsedUri.queryParameters['driveFolderId']?.trim();
-      final name = parsedUri.queryParameters['name']?.trim();
-      if (folderId != null && _validDriveIdPattern.hasMatch(folderId)) {
-        return GardenInviteLink(
-          driveFolderId: folderId,
-          gardenName: (name != null && name.isNotEmpty) ? name : null,
-        );
+      Map<String, String>? queryParams;
+      try {
+        queryParams = parsedUri.queryParameters;
+      } on FormatException {
+        queryParams = null;
+      }
+      if (queryParams != null) {
+        final folderId = queryParams['driveFolderId']?.trim();
+        final name = queryParams['name']?.trim();
+        if (folderId != null && _validDriveIdPattern.hasMatch(folderId)) {
+          return GardenInviteLink(
+            driveFolderId: folderId,
+            gardenName: (name != null && name.isNotEmpty) ? name : null,
+          );
+        }
       }
     }
 
@@ -101,6 +113,20 @@ final class GardenInviteLink {
 
     return null;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GardenInviteLink &&
+          driveFolderId == other.driveFolderId &&
+          gardenName == other.gardenName;
+
+  @override
+  int get hashCode => Object.hash(driveFolderId, gardenName);
+
+  @override
+  String toString() =>
+      'GardenInviteLink(driveFolderId: $driveFolderId, gardenName: $gardenName)';
 }
 
 /// Formats [FieldJournalEntry] records and [GardenPlot] succession/rotation plans
@@ -325,25 +351,65 @@ final class GardenSharedNoteBundle {
     final plotsRaw = json['plots'];
     final entriesRaw = json['entries'];
 
+    DateTime exportedAt = DateTime.now().toUtc();
+    if (exportedAtRaw != null) {
+      if (exportedAtRaw is! String) {
+        throw FormatException(
+          'GardenSharedNoteBundle exportedAt must be an ISO-8601 string',
+          exportedAtRaw,
+        );
+      }
+      final parsedExportedAt = DateTime.tryParse(exportedAtRaw);
+      if (parsedExportedAt == null) {
+        throw FormatException(
+          'Invalid GardenSharedNoteBundle exportedAt timestamp',
+          exportedAtRaw,
+        );
+      }
+      exportedAt = parsedExportedAt.toUtc();
+    }
+
     final parsedPlots = <GardenPlot>[];
-    if (plotsRaw is List) {
+    if (plotsRaw != null) {
+      if (plotsRaw is! List) {
+        throw FormatException(
+          'GardenSharedNoteBundle plots must be a JSON list',
+          plotsRaw,
+        );
+      }
       for (final item in plotsRaw) {
         if (item is Map<String, Object?>) {
           parsedPlots.add(GardenPlot.fromJson(item));
         } else if (item is Map) {
           parsedPlots.add(GardenPlot.fromJson(Map<String, Object?>.from(item)));
+        } else {
+          throw FormatException(
+            'GardenSharedNoteBundle plot item must be a JSON object',
+            item,
+          );
         }
       }
     }
 
     final parsedEntries = <FieldJournalEntry>[];
-    if (entriesRaw is List) {
+    if (entriesRaw != null) {
+      if (entriesRaw is! List) {
+        throw FormatException(
+          'GardenSharedNoteBundle entries must be a JSON list',
+          entriesRaw,
+        );
+      }
       for (final item in entriesRaw) {
         if (item is Map<String, Object?>) {
           parsedEntries.add(FieldJournalEntry.fromJson(item));
         } else if (item is Map) {
           parsedEntries.add(
             FieldJournalEntry.fromJson(Map<String, Object?>.from(item)),
+          );
+        } else {
+          throw FormatException(
+            'GardenSharedNoteBundle entry item must be a JSON object',
+            item,
           );
         }
       }
@@ -356,9 +422,7 @@ final class GardenSharedNoteBundle {
       exportedBy: exportedBy is String && exportedBy.trim().isNotEmpty
           ? exportedBy.trim()
           : 'Co-Gardener',
-      exportedAt: exportedAtRaw is String
-          ? (DateTime.tryParse(exportedAtRaw) ?? DateTime.now().toUtc())
-          : DateTime.now().toUtc(),
+      exportedAt: exportedAt,
       plots: parsedPlots,
       entries: parsedEntries,
     );

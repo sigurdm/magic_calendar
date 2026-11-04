@@ -242,7 +242,10 @@ final class JournalAttachment {
   }
 
   /// Whether this attachment has been soft-deleted via an HLC tombstone.
-  bool get isDeleted => deletedHlc != null && deletedHlc!.isNotEmpty;
+  bool get isDeleted =>
+      deletedHlc != null &&
+      deletedHlc!.isNotEmpty &&
+      (updatedHlc.isEmpty || deletedHlc!.compareTo(updatedHlc) >= 0);
 
   /// Canonical MIME type (`'image/jpeg'`, `'image/png'`, `'image/webp'`).
   String get mimeType => format.mimeType;
@@ -314,7 +317,9 @@ final class JournalAttachment {
       );
     }
     final parsedTimestamp = DateTime.tryParse(timestampRaw);
-    if (parsedTimestamp == null) {
+    if (parsedTimestamp == null ||
+        parsedTimestamp.toUtc().year < 1 ||
+        parsedTimestamp.toUtc().year > 9999) {
       throw FormatException('Invalid timestamp', timestampRaw);
     }
 
@@ -619,7 +624,10 @@ final class JournalNote {
   }
 
   /// Whether this note has been soft-deleted via a tombstone.
-  bool get isDeleted => deletedHlc != null && deletedHlc!.isNotEmpty;
+  bool get isDeleted =>
+      deletedHlc != null &&
+      deletedHlc!.isNotEmpty &&
+      (updatedHlc.isEmpty || deletedHlc!.compareTo(updatedHlc) >= 0);
 
   /// Serializes this note to a JSON map.
   Map<String, Object?> toJson() => {
@@ -653,7 +661,9 @@ final class JournalNote {
       throw const FormatException('JournalNote requires an ISO-8601 timestamp');
     }
     final parsedTimestamp = DateTime.tryParse(timestampRaw);
-    if (parsedTimestamp == null) {
+    if (parsedTimestamp == null ||
+        parsedTimestamp.toUtc().year < 1 ||
+        parsedTimestamp.toUtc().year > 9999) {
       throw FormatException('Invalid JournalNote timestamp', timestampRaw);
     }
 
@@ -863,9 +873,14 @@ final class PlantingBatchSummary {
   bool get isHarvested =>
       harvestedByEntryId != null && harvestedByEntryId!.isNotEmpty;
 
+  /// Whether this planting batch has been soft-deleted via an HLC tombstone.
+  bool get isDeleted =>
+      deletedHlc != null &&
+      deletedHlc!.isNotEmpty &&
+      (updatedHlc.isEmpty || deletedHlc!.compareTo(updatedHlc) >= 0);
+
   /// Whether this planting batch is currently active in the ground (not harvested and not deleted).
-  bool get isActiveInGround =>
-      !isHarvested && (deletedHlc == null || deletedHlc!.isEmpty);
+  bool get isActiveInGround => !isHarvested && !isDeleted;
 
   /// Number of whole days elapsed between this planting and [laterTime].
   int daysElapsedAt(DateTime laterTime) =>
@@ -880,6 +895,39 @@ final class PlantingBatchSummary {
         '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')}';
     return '$title$bedPart ($ymd · $cosmicSummary)';
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlantingBatchSummary &&
+          entryId == other.entryId &&
+          shardKey == other.shardKey &&
+          timestamp == other.timestamp &&
+          action == other.action &&
+          title == other.title &&
+          cropId == other.cropId &&
+          bedName == other.bedName &&
+          quality == other.quality &&
+          cosmicSummary == other.cosmicSummary &&
+          updatedHlc == other.updatedHlc &&
+          harvestedByEntryId == other.harvestedByEntryId &&
+          deletedHlc == other.deletedHlc;
+
+  @override
+  int get hashCode => Object.hash(
+    entryId,
+    shardKey,
+    timestamp,
+    action,
+    title,
+    cropId,
+    bedName,
+    quality,
+    cosmicSummary,
+    updatedHlc,
+    harvestedByEntryId,
+    deletedHlc,
+  );
 }
 
 /// Immutable snapshot of the astronomical/biodynamic [CalendarInfo] at the moment a field action was logged.
@@ -1027,6 +1075,10 @@ final class FieldJournalCosmicSnapshot {
         ? json['moonConstellation'] as String
         : '';
     final illumRaw = json['moonIllumination'];
+    if (illumRaw != null &&
+        (illumRaw is! num || !illumRaw.toDouble().isFinite)) {
+      throw FormatException('Invalid moonIllumination', illumRaw);
+    }
     final moonIllumination = illumRaw is num
         ? illumRaw.toDouble().clamp(0.0, 1.0)
         : 0.5;
@@ -1101,7 +1153,8 @@ final class FieldJournalWeatherSnapshot {
 
   /// Creates a [FieldJournalWeatherSnapshot].
   ///
-  /// The [precipitationMm] and [windSpeedMs] must be non-negative.
+  /// The [precipitationMm] and [windSpeedMs] must be non-negative, [cloudCoverPercent]
+  /// must be between `0.0` and `100.0`, and any temperature values must be finite.
   FieldJournalWeatherSnapshot({
     this.temperatureCelsius,
     this.soilTemperatureCelsius,
@@ -1110,6 +1163,20 @@ final class FieldJournalWeatherSnapshot {
     this.cloudCoverPercent = 0.0,
     this.soilMoistureLabel,
   }) {
+    if (temperatureCelsius != null && !temperatureCelsius!.isFinite) {
+      throw ArgumentError.value(
+        temperatureCelsius,
+        'temperatureCelsius',
+        'Must be finite',
+      );
+    }
+    if (soilTemperatureCelsius != null && !soilTemperatureCelsius!.isFinite) {
+      throw ArgumentError.value(
+        soilTemperatureCelsius,
+        'soilTemperatureCelsius',
+        'Must be finite',
+      );
+    }
     if (!precipitationMm.isFinite || precipitationMm < 0.0) {
       throw ArgumentError.value(
         precipitationMm,
@@ -1124,6 +1191,15 @@ final class FieldJournalWeatherSnapshot {
         'Must be non-negative',
       );
     }
+    if (!cloudCoverPercent.isFinite ||
+        cloudCoverPercent < 0.0 ||
+        cloudCoverPercent > 100.0) {
+      throw ArgumentError.value(
+        cloudCoverPercent,
+        'cloudCoverPercent',
+        'Must be between 0.0 and 100.0',
+      );
+    }
   }
 
   /// Captures a [FieldJournalWeatherSnapshot] from a [WeatherDataPoint] and optional [horizon].
@@ -1131,12 +1207,22 @@ final class FieldJournalWeatherSnapshot {
     WeatherDataPoint point, {
     MultiHorizonWeatherAnalysis? horizon,
   }) {
+    final temp = point.temperature;
+    final soilTemp = horizon?.estimatedSoilTemperatureCelsius;
     return FieldJournalWeatherSnapshot(
-      temperatureCelsius: point.temperature,
-      soilTemperatureCelsius: horizon?.estimatedSoilTemperatureCelsius,
-      precipitationMm: point.precipitation.clamp(0.0, double.infinity),
-      windSpeedMs: point.windSpeed.clamp(0.0, double.infinity),
-      cloudCoverPercent: point.cloudCover.clamp(0.0, 100.0),
+      temperatureCelsius: temp != null && temp.isFinite ? temp : null,
+      soilTemperatureCelsius: soilTemp != null && soilTemp.isFinite
+          ? soilTemp
+          : null,
+      precipitationMm: point.precipitation.isFinite
+          ? point.precipitation.clamp(0.0, double.infinity)
+          : 0.0,
+      windSpeedMs: point.windSpeed.isFinite
+          ? point.windSpeed.clamp(0.0, double.infinity)
+          : 0.0,
+      cloudCoverPercent: point.cloudCover.isFinite
+          ? point.cloudCover.clamp(0.0, 100.0)
+          : 0.0,
       soilMoistureLabel: horizon?.soilMoisture.shortLabel,
     );
   }
@@ -1171,6 +1257,8 @@ final class FieldJournalWeatherSnapshot {
   };
 
   /// Deserializes a [FieldJournalWeatherSnapshot] from [json].
+  ///
+  /// Throws a [FormatException] if numeric fields contain non-finite values.
   factory FieldJournalWeatherSnapshot.fromJson(Map<String, Object?> json) {
     final tempRaw = json['temperatureCelsius'];
     final soilTempRaw = json['soilTemperatureCelsius'];
@@ -1178,6 +1266,25 @@ final class FieldJournalWeatherSnapshot {
     final windRaw = json['windSpeedMs'];
     final cloudRaw = json['cloudCoverPercent'];
     final moistureRaw = json['soilMoistureLabel'];
+
+    if (tempRaw != null && (tempRaw is! num || !tempRaw.toDouble().isFinite)) {
+      throw FormatException('Invalid temperatureCelsius', tempRaw);
+    }
+    if (soilTempRaw != null &&
+        (soilTempRaw is! num || !soilTempRaw.toDouble().isFinite)) {
+      throw FormatException('Invalid soilTemperatureCelsius', soilTempRaw);
+    }
+    if (precipRaw != null &&
+        (precipRaw is! num || !precipRaw.toDouble().isFinite)) {
+      throw FormatException('Invalid precipitationMm', precipRaw);
+    }
+    if (windRaw != null && (windRaw is! num || !windRaw.toDouble().isFinite)) {
+      throw FormatException('Invalid windSpeedMs', windRaw);
+    }
+    if (cloudRaw != null &&
+        (cloudRaw is! num || !cloudRaw.toDouble().isFinite)) {
+      throw FormatException('Invalid cloudCoverPercent', cloudRaw);
+    }
 
     return FieldJournalWeatherSnapshot(
       temperatureCelsius: tempRaw is num ? tempRaw.toDouble() : null,
@@ -1287,7 +1394,33 @@ final class FieldJournalEntry {
   final String updatedHlc;
 
   /// Optional HLC tombstone if this entry was deleted.
+  /// Tombstone HLC string when soft-deleted (`null` when active).
   final String? deletedHlc;
+
+  static int _nextAutoIdSeq = 0;
+
+  /// Generates a unique entry identifier for a newly logged [FieldJournalEntry]
+  /// at [timestamp], incorporating a monotonic sequence suffix so multiple
+  /// entries logged at the same selected timeline timestamp never collide.
+  static String generateEntryId({
+    required DateTime timestamp,
+    required FieldJournalAction action,
+    String? cropId,
+    String? prepCode,
+    required PlantQuality quality,
+  }) {
+    _nextAutoIdSeq = (_nextAutoIdSeq + 1) & 0x7fffffff;
+    final rawSubject = (cropId != null && cropId.trim().isNotEmpty)
+        ? cropId.trim()
+        : (prepCode != null && prepCode.trim().isNotEmpty)
+        ? prepCode.trim()
+        : quality.name;
+    final sanitizedSubject = rawSubject.replaceAll(
+      RegExp(r'[^a-zA-Z0-9_-]'),
+      '_',
+    );
+    return 'journal_${timestamp.millisecondsSinceEpoch}_${action.name}_${sanitizedSubject}_$_nextAutoIdSeq';
+  }
 
   /// Creates a [FieldJournalEntry].
   ///
@@ -1300,10 +1433,10 @@ final class FieldJournalEntry {
     required this.title,
     required this.quality,
     required this.cosmicSnapshot,
-    this.cropId,
-    this.prepCode,
-    this.bedName,
-    this.parentEntryId,
+    String? cropId,
+    String? prepCode,
+    String? bedName,
+    String? parentEntryId,
     this.authorId = 'local',
     this.authorName = 'Gardener',
     this.weatherSnapshot,
@@ -1315,7 +1448,19 @@ final class FieldJournalEntry {
     Iterable<JournalAttachment> attachments = const [],
     String? updatedHlc,
     this.deletedHlc,
-  }) : noteThread = List<JournalNote>.unmodifiable(noteThread),
+  }) : cropId = (cropId == null || cropId.trim().isEmpty)
+           ? null
+           : cropId.trim(),
+       prepCode = (prepCode == null || prepCode.trim().isEmpty)
+           ? null
+           : prepCode.trim(),
+       bedName = (bedName == null || bedName.trim().isEmpty)
+           ? null
+           : bedName.trim(),
+       parentEntryId = (parentEntryId == null || parentEntryId.trim().isEmpty)
+           ? null
+           : parentEntryId.trim(),
+       noteThread = List<JournalNote>.unmodifiable(noteThread),
        attachments = List<JournalAttachment>.unmodifiable(attachments),
        updatedHlc =
            updatedHlc ??
@@ -1335,8 +1480,17 @@ final class FieldJournalEntry {
   }
 
   /// Computes the canonical monthly SQLite shard key (`YYYY-MM` in UTC) for [time].
+  ///
+  /// The UTC year of [time] must be between `1` and `9999`.
   static String shardKeyFor(DateTime time) {
     final utc = time.toUtc();
+    if (utc.year < 1 || utc.year > 9999) {
+      throw ArgumentError.value(
+        time,
+        'time',
+        'Must have a UTC year between 1 and 9999',
+      );
+    }
     return '${utc.year.toString().padLeft(4, '0')}-${utc.month.toString().padLeft(2, '0')}';
   }
 
@@ -1367,31 +1521,51 @@ final class FieldJournalEntry {
     Iterable<JournalAttachment> attachments = const [],
     String? updatedHlc,
   }) {
-    final crop = cropId != null ? VegetableDatabase.findById(cropId) : null;
-    final effectiveQuality = quality ?? crop?.quality ?? calendarInfo.quality;
+    final normalizedCropId = (cropId == null || cropId.trim().isEmpty)
+        ? null
+        : cropId.trim();
+    final normalizedPrepCode = (prepCode == null || prepCode.trim().isEmpty)
+        ? null
+        : prepCode.trim();
+    final crop = normalizedCropId != null
+        ? VegetableDatabase.findById(normalizedCropId)
+        : null;
+    final explicitQuality = (quality == null || quality == PlantQuality.none)
+        ? null
+        : quality;
+    final effectiveQuality =
+        explicitQuality ??
+        crop?.quality ??
+        (calendarInfo.quality != PlantQuality.none
+            ? calendarInfo.quality
+            : (quality ?? PlantQuality.root));
     final resolvedTitle = (title != null && title.trim().isNotEmpty)
         ? title.trim()
         : _buildDefaultTitle(
             action: action,
             crop: crop,
-            prepCode: prepCode,
+            prepCode: normalizedPrepCode,
             quality: effectiveQuality,
           );
     final resolvedId = (id != null && id.trim().isNotEmpty)
         ? id.trim()
-        : 'journal_${timestamp.millisecondsSinceEpoch}_${action.name}_${cropId ?? prepCode ?? effectiveQuality.name}';
+        : generateEntryId(
+            timestamp: timestamp,
+            action: action,
+            cropId: normalizedCropId,
+            prepCode: normalizedPrepCode,
+            quality: effectiveQuality,
+          );
 
     return FieldJournalEntry(
       id: resolvedId,
       timestamp: timestamp,
       action: action,
       title: resolvedTitle,
-      cropId: cropId,
-      prepCode: prepCode,
-      bedName: bedName?.trim().isEmpty == true ? null : bedName?.trim(),
-      parentEntryId: parentEntryId?.trim().isEmpty == true
-          ? null
-          : parentEntryId?.trim(),
+      cropId: normalizedCropId,
+      prepCode: normalizedPrepCode,
+      bedName: bedName,
+      parentEntryId: parentEntryId,
       quality: effectiveQuality,
       authorId: authorId,
       authorName: authorName,
@@ -1428,7 +1602,10 @@ final class FieldJournalEntry {
   }
 
   /// Whether this entry has been soft-deleted via an HLC tombstone.
-  bool get isDeleted => deletedHlc != null && deletedHlc!.isNotEmpty;
+  bool get isDeleted =>
+      deletedHlc != null &&
+      deletedHlc!.isNotEmpty &&
+      (updatedHlc.isEmpty || deletedHlc!.compareTo(updatedHlc) >= 0);
 
   /// Resolved [VegetableEntry] from [VegetableDatabase], if [cropId] is set.
   VegetableEntry? get crop =>
@@ -1459,6 +1636,41 @@ final class FieldJournalEntry {
           (note.body.trim().isNotEmpty || note.outcomeRating != null))
         note,
   ];
+
+  /// The entry's primary initial field note body without multi-author thread
+  /// synthesis prefixes, suitable for pre-populating an edit form.
+  String get editableFieldNote {
+    final fieldNotes = activeNotes
+        .where((n) => n.kind != JournalNoteKind.outcome && n.body.isNotEmpty)
+        .toList(growable: false);
+    if (fieldNotes.isEmpty) return notes;
+    for (final note in fieldNotes) {
+      if (note.id.startsWith('note_init_') ||
+          note.kind == JournalNoteKind.fieldNote) {
+        return note.body;
+      }
+    }
+    return fieldNotes.length == 1 ? fieldNotes.first.body : notes;
+  }
+
+  /// The entry's primary outcome note body without multi-author thread
+  /// synthesis prefixes, suitable for pre-populating an edit form.
+  String get editableOutcomeNote {
+    final outcomeNotes = activeNotes
+        .where(
+          (n) =>
+              (n.kind == JournalNoteKind.outcome || n.outcomeRating != null) &&
+              n.body.isNotEmpty,
+        )
+        .toList(growable: false);
+    if (outcomeNotes.isEmpty) return outcomeNote;
+    for (int i = outcomeNotes.length - 1; i >= 0; i--) {
+      if (outcomeNotes[i].id.startsWith('note_outcome_')) {
+        return outcomeNotes[i].body;
+      }
+    }
+    return outcomeNotes.length == 1 ? outcomeNotes.first.body : outcomeNote;
+  }
 
   /// Active (non-deleted) photo attachments on this entry, ordered chronologically.
   List<JournalAttachment> get activeAttachments => [
@@ -1654,7 +1866,9 @@ final class FieldJournalEntry {
       );
     }
     final parsedTimestamp = DateTime.tryParse(timestampRaw);
-    if (parsedTimestamp == null) {
+    if (parsedTimestamp == null ||
+        parsedTimestamp.toUtc().year < 1 ||
+        parsedTimestamp.toUtc().year > 9999) {
       throw FormatException('Invalid timestamp', timestampRaw);
     }
     if (actionRaw is! String) {
@@ -1688,22 +1902,26 @@ final class FieldJournalEntry {
       throw FormatException('Unknown PlantQuality', qualityRaw);
     }
 
-    if (cosmicRaw is! Map<String, Object?>) {
+    if (cosmicRaw is! Map) {
       throw const FormatException(
         'FieldJournalEntry requires a cosmicSnapshot map',
       );
     }
-    final cosmicSnapshot = FieldJournalCosmicSnapshot.fromJson(cosmicRaw);
+    final cosmicSnapshot = FieldJournalCosmicSnapshot.fromJson(
+      Map<String, Object?>.from(cosmicRaw),
+    );
 
     FieldJournalWeatherSnapshot? weatherSnapshot;
-    if (json['weatherSnapshot'] case final Map<String, Object?> weatherRaw) {
-      weatherSnapshot = FieldJournalWeatherSnapshot.fromJson(weatherRaw);
+    if (json['weatherSnapshot'] case final Map<Object?, Object?> weatherRaw) {
+      weatherSnapshot = FieldJournalWeatherSnapshot.fromJson(
+        Map<String, Object?>.from(weatherRaw),
+      );
     }
 
     SavedLocation? location;
-    if (json['location'] case final Map<String, Object?> locRaw) {
+    if (json['location'] case final Map<Object?, Object?> locRaw) {
       try {
-        location = SavedLocation.fromJson(locRaw);
+        location = SavedLocation.fromJson(Map<String, Object?>.from(locRaw));
       } on FormatException {
         location = null;
       }
@@ -1726,9 +1944,11 @@ final class FieldJournalEntry {
     final parsedThread = <JournalNote>[];
     if (json['noteThread'] case final List<Object?> rawThread) {
       for (final item in rawThread) {
-        if (item is Map<String, Object?>) {
+        if (item is Map) {
           try {
-            parsedThread.add(JournalNote.fromJson(item));
+            parsedThread.add(
+              JournalNote.fromJson(Map<String, Object?>.from(item)),
+            );
           } on FormatException {
             // Skip malformed note item.
           }
@@ -1739,9 +1959,11 @@ final class FieldJournalEntry {
     final parsedAttachments = <JournalAttachment>[];
     if (json['attachments'] case final List<Object?> rawAttachments) {
       for (final item in rawAttachments) {
-        if (item is Map<String, Object?>) {
+        if (item is Map) {
           try {
-            parsedAttachments.add(JournalAttachment.fromJson(item));
+            parsedAttachments.add(
+              JournalAttachment.fromJson(Map<String, Object?>.from(item)),
+            );
           } on FormatException {
             // Skip malformed attachment item.
           }
@@ -1810,7 +2032,8 @@ final class FieldJournalEntry {
           outcomeNote == other.outcomeNote &&
           outcomeRating == other.outcomeRating &&
           listEquals(noteThread, other.noteThread) &&
-          listEquals(attachments, other.attachments);
+          listEquals(attachments, other.attachments) &&
+          deletedHlc == other.deletedHlc;
 
   @override
   int get hashCode => Object.hash(
@@ -1833,5 +2056,6 @@ final class FieldJournalEntry {
     outcomeRating,
     Object.hashAll(noteThread),
     Object.hashAll(attachments),
+    deletedHlc,
   );
 }

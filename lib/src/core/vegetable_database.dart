@@ -438,14 +438,16 @@ final class VegetableEntry {
   /// All distinct [PlantQuality] values applicable to this plant
   /// (primary [quality] first, followed by any secondary organ qualities).
   List<PlantQuality> get allQualities {
-    if (secondaryOrganRules.isEmpty) return [quality];
+    if (secondaryOrganRules.isEmpty) {
+      return List<PlantQuality>.unmodifiable(<PlantQuality>[quality]);
+    }
     final result = <PlantQuality>[quality];
     for (final rule in secondaryOrganRules) {
       if (!result.contains(rule.quality)) {
         result.add(rule.quality);
       }
     }
-    return result;
+    return List<PlantQuality>.unmodifiable(result);
   }
 
   /// Whether this plant can be cultivated or harvested for more than one plant organ.
@@ -656,7 +658,11 @@ final class VegetableDatabase {
     List<VegetableEntry>? sourceList,
   }) {
     final list = sourceList ?? allEntries;
-    if (quality == PlantQuality.none) return list;
-    return list.where((v) => v.quality == quality).toList();
+    if (quality == PlantQuality.none) {
+      return identical(list, allEntries)
+          ? allEntries
+          : List<VegetableEntry>.unmodifiable(list);
+    }
+    return list.where((v) => v.quality == quality).toList(growable: false);
   }
 }

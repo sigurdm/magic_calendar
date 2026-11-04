@@ -6,8 +6,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/models/models.dart';
+import '../../services/ephemeris_service.dart';
 import '../../services/garden_service.dart';
 import '../theme/goethean_palette.dart';
+import '../views/bed_succession_planner_page.dart';
 import 'field_journal_sheet.dart';
 import 'organic_vessel_container.dart';
 
@@ -69,6 +71,9 @@ final class FieldJournalCard extends StatefulWidget {
   /// Optional mobile OAuth2 access token provider for Google Drive sync.
   final GoogleDriveAccessTokenProvider? googleDriveTokenProvider;
 
+  /// Optional ephemeris service for snapping planned bed succession crops to optimal Maria Thun windows.
+  final EphemerisService? ephemeris;
+
   /// Creates an immutable [FieldJournalCard].
   const FieldJournalCard({
     super.key,
@@ -79,6 +84,7 @@ final class FieldJournalCard extends StatefulWidget {
     this.weatherNotifier,
     this.onShareText,
     this.googleDriveTokenProvider,
+    this.ephemeris,
   });
 
   @override
@@ -86,12 +92,45 @@ final class FieldJournalCard extends StatefulWidget {
 }
 
 final class _FieldJournalCardState extends State<FieldJournalCard> {
+  static final DateFormat _entryDateFmt = DateFormat(
+    'EEE, MMM d, yyyy • HH:mm',
+  );
+  static final DateFormat _shortDateFmt = DateFormat('MMM d');
+
   FieldJournalFilter _selectedFilter = FieldJournalFilter.all;
   String? _selectedBedFilter;
   String? _selectedShardFilter;
   String _searchQuery = '';
   bool _showAll = false;
   late final TextEditingController _searchController;
+
+  // Memoized derived state to eliminate redundant plot evaluations, batch scans,
+  // and entry filtering across rebuilds when underlying data hasn't changed.
+  GardenProfile? _cachedProfile;
+  int? _cachedOpenShardsCount;
+  int? _cachedDayBucket;
+  List<String> _cachedKnownBeds = const <String>[];
+  List<GardenPlot> _cachedKnownPlots = const <GardenPlot>[];
+  List<String> _cachedKnownShards = const <String>[];
+  List<PlantingBatchSummary> _cachedActiveBatches =
+      const <PlantingBatchSummary>[];
+  int _cachedPflanzzeitCount = 0;
+  double? _cachedAvgRating;
+  Map<String, PlotRotationAssessment> _cachedPlotRotations =
+      const <String, PlotRotationAssessment>{};
+  Map<String, PlotSuccessionPlan> _cachedPlotSuccessions =
+      const <String, PlotSuccessionPlan>{};
+  Map<String, List<PlantingBatchSummary>> _cachedPlotActiveBatches =
+      const <String, List<PlantingBatchSummary>>{};
+  Map<String, List<QueuedGardenTask>> _cachedPlotTasks =
+      const <String, List<QueuedGardenTask>>{};
+  Map<String, List<FieldJournalEntry>> _cachedChildrenByParentId =
+      const <String, List<FieldJournalEntry>>{};
+  Map<String, PlantingBatchSummary> _cachedBatchesByEntryId =
+      const <String, PlantingBatchSummary>{};
+
+  String? _cachedFilterKey;
+  List<FieldJournalEntry> _cachedFilteredEntries = const <FieldJournalEntry>[];
 
   @override
   void initState() {
@@ -103,6 +142,128 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _ensureDerivedJournalCache(GardenProfile profile, int? openShardsCount) {
+    final dayBucket = DateTime.utc(
+      widget.selectedDate.year,
+      widget.selectedDate.month,
+      widget.selectedDate.day,
+    ).millisecondsSinceEpoch;
+    final currentBeds = widget.gardenController.listBedNames();
+    final currentPlots = widget.gardenController.listPlots();
+    final currentShards = widget.gardenController.listKnownShardKeys();
+
+    final baseChanged =
+        !identical(_cachedProfile, profile) ||
+        _cachedOpenShardsCount != openShardsCount ||
+        _cachedDayBucket != dayBucket ||
+        !identical(_cachedKnownBeds, currentBeds) ||
+        !identical(_cachedKnownPlots, currentPlots) ||
+        !identical(_cachedKnownShards, currentShards);
+
+    if (baseChanged) {
+      _cachedProfile = profile;
+      _cachedOpenShardsCount = openShardsCount;
+      _cachedDayBucket = dayBucket;
+      _cachedFilterKey = null;
+
+      final allEntries = profile.journalEntries;
+      _cachedKnownBeds = currentBeds;
+      _cachedKnownPlots = currentPlots;
+      _cachedKnownShards = currentShards;
+      if (_selectedBedFilter != null &&
+          !currentBeds.any(
+            (b) => b.toLowerCase() == _selectedBedFilter!.toLowerCase(),
+          )) {
+        _selectedBedFilter = null;
+      }
+      if (_selectedShardFilter != null &&
+          !currentShards.contains(_selectedShardFilter)) {
+        _selectedShardFilter = null;
+      }
+      _cachedActiveBatches = widget.gardenController.listPlantingBatches(
+        onlyActiveInGround: true,
+      );
+      final allBatches = widget.gardenController.listPlantingBatches(
+        onlyActiveInGround: false,
+      );
+      _cachedBatchesByEntryId = <String, PlantingBatchSummary>{
+        for (final b in allBatches) b.entryId: b,
+      };
+
+      var pflanzzeit = 0;
+      var ratingSum = 0;
+      var ratingCount = 0;
+      final childrenMap = <String, List<FieldJournalEntry>>{};
+      for (final e in allEntries) {
+        if (e.cosmicSnapshot.isMoonDescending) {
+          pflanzzeit++;
+        }
+        final rating = e.effectiveOutcomeRating;
+        if (rating != null) {
+          ratingSum += rating;
+          ratingCount++;
+        }
+        final parentId = e.parentEntryId;
+        if (parentId != null && !e.isDeleted) {
+          (childrenMap[parentId] ??= <FieldJournalEntry>[]).add(e);
+        }
+      }
+      for (final list in childrenMap.values) {
+        if (list.length > 1) {
+          list.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+        }
+      }
+      _cachedPflanzzeitCount = pflanzzeit;
+      _cachedAvgRating = ratingCount == 0 ? null : ratingSum / ratingCount;
+      _cachedChildrenByParentId = childrenMap;
+
+      if (_cachedKnownPlots.isEmpty) {
+        _cachedPlotRotations = const <String, PlotRotationAssessment>{};
+        _cachedPlotSuccessions = const <String, PlotSuccessionPlan>{};
+        _cachedPlotActiveBatches = const <String, List<PlantingBatchSummary>>{};
+        _cachedPlotTasks = const <String, List<QueuedGardenTask>>{};
+      } else {
+        final rotations = <String, PlotRotationAssessment>{};
+        final successions = <String, PlotSuccessionPlan>{};
+        final plotBatches = <String, List<PlantingBatchSummary>>{};
+        final plotTasks = <String, List<QueuedGardenTask>>{};
+        final taskQueue = profile.taskQueue;
+
+        for (final plot in _cachedKnownPlots) {
+          final name = plot.name;
+          plotBatches[name] = _cachedActiveBatches
+              .where((b) => b.bedName == name)
+              .toList(growable: false);
+          plotTasks[name] = taskQueue
+              .where((t) => t.bedName == name)
+              .toList(growable: false);
+          rotations[name] = widget.gardenController.evaluatePlotRotation(
+            name,
+            referenceTime: widget.selectedDate,
+          );
+          successions[name] = widget.gardenController.buildPlotSuccessionPlan(
+            name,
+            referenceTime: widget.selectedDate,
+          );
+        }
+        _cachedPlotRotations = rotations;
+        _cachedPlotSuccessions = successions;
+        _cachedPlotActiveBatches = plotBatches;
+        _cachedPlotTasks = plotTasks;
+      }
+    }
+
+    final filterKey =
+        '$_searchQuery|${_selectedFilter.name}|${_selectedBedFilter ?? ""}|${_selectedShardFilter ?? ""}';
+    if (_cachedFilterKey != filterKey) {
+      _cachedFilterKey = filterKey;
+      final baseEntries = _searchQuery.trim().isEmpty
+          ? profile.journalEntries
+          : widget.gardenController.searchJournalEntries(_searchQuery);
+      _cachedFilteredEntries = _filterEntries(baseEntries);
+    }
   }
 
   List<FieldJournalEntry> _filterEntries(List<FieldJournalEntry> entries) {
@@ -189,6 +350,7 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
           ],
         ),
       );
+      if (!mounted) return;
       if (confirmed == true && noteController.text.trim().isNotEmpty) {
         final author = authorController.text.trim();
         if (author.isNotEmpty) {
@@ -261,7 +423,8 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'By ${attachment.authorName} • ${attachment.remoteBlobName.substring(0, 22)}…',
+                  'By ${attachment.authorName} • '
+                  '${attachment.remoteBlobName.length > 22 ? "${attachment.remoteBlobName.substring(0, 22)}…" : attachment.remoteBlobName}',
                   key: ValueKey('photo_viewer_meta_${attachment.id}'),
                   style: GoogleFonts.outfit(
                     fontSize: 11.5,
@@ -517,12 +680,14 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                                   await driveTransport.shareFolderWithEmail(
                                     emailAddress: email,
                                   );
+                                  if (!dialogContext.mounted) return;
                                   setDialogState(() {
                                     statusFeedback =
                                         'Granted Google Drive write access to $email';
                                     inviteEmailCtrl.clear();
                                   });
                                 } catch (e) {
+                                  if (!dialogContext.mounted) return;
                                   setDialogState(() {
                                     statusFeedback = 'Drive share failed: $e';
                                   });
@@ -620,12 +785,14 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                               try {
                                 final imported = await widget.gardenController
                                     .importSharedNoteBundle(raw);
+                                if (!dialogContext.mounted) return;
                                 setDialogState(() {
                                   statusFeedback =
                                       'Merged ${imported.entries.length} note(s) & ${imported.plots.length} plot(s) from ${imported.exportedBy}';
                                   importBundleCtrl.clear();
                                 });
                               } catch (e) {
+                                if (!dialogContext.mounted) return;
                                 setDialogState(() {
                                   statusFeedback = 'Bundle import failed: $e';
                                 });
@@ -686,10 +853,17 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                           gardenName: gardenNameCtrl.text.trim(),
                         );
                       } else if (endpoint.startsWith('https://')) {
+                        final parsedUri = Uri.tryParse(endpoint);
+                        if (parsedUri == null || !parsedUri.hasAuthority) {
+                          if (dialogContext.mounted) {
+                            setDialogState(() {
+                              statusFeedback = 'Invalid WebDAV URL: $endpoint';
+                            });
+                          }
+                          return;
+                        }
                         widget.gardenController.setSyncTransport(
-                          WebDavGardenSyncTransport(
-                            baseUri: Uri.parse(endpoint),
-                          ),
+                          WebDavGardenSyncTransport(baseUri: parsedUri),
                         );
                       } else {
                         widget.gardenController.setSyncTransport(
@@ -854,6 +1028,26 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
               ),
             ),
             actions: [
+              if (existing != null)
+                TextButton(
+                  key: const ValueKey('plot_dialog_delete_button'),
+                  onPressed: () {
+                    widget.gardenController.deletePlot(existing.name);
+                    if (mounted &&
+                        _selectedBedFilter != null &&
+                        _selectedBedFilter!.toLowerCase() ==
+                            existing.name.toLowerCase()) {
+                      setState(() {
+                        _selectedBedFilter = null;
+                      });
+                    }
+                    Navigator.of(dialogContext).pop(false);
+                  },
+                  child: const Text(
+                    'Delete Plot',
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
+                ),
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),
                 child: const Text('Cancel'),
@@ -868,16 +1062,20 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
         ),
       );
 
-      if (confirmed == true && nameCtrl.text.trim().isNotEmpty) {
+      if (!mounted) return;
+      final trimmedName = nameCtrl.text.trim();
+      if (confirmed == true && trimmedName.isNotEmpty) {
+        final matchedExisting =
+            existing ?? widget.gardenController.findPlot(trimmedName);
         widget.gardenController.upsertPlot(
           GardenPlot(
-            name: nameCtrl.text.trim(),
+            name: matchedExisting?.name ?? trimmedName,
             areaName: areaCtrl.text.trim(),
             plotType: selectedType,
             dimensions: dimCtrl.text.trim(),
             notes: notesCtrl.text.trim(),
-            lastSoilPrepSummary: existing?.lastSoilPrepSummary,
-            lastSoilPrepTimestamp: existing?.lastSoilPrepTimestamp,
+            lastSoilPrepSummary: matchedExisting?.lastSoilPrepSummary,
+            lastSoilPrepTimestamp: matchedExisting?.lastSoilPrepTimestamp,
           ),
         );
       }
@@ -895,36 +1093,23 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
       listenable: widget.gardenController,
       builder: (context, _) {
         final profile = widget.gardenController.value;
+        final openShardsCount =
+            widget.gardenController.journalStore?.openShardCount;
+        _ensureDerivedJournalCache(profile, openShardsCount);
+
         final allEntries = profile.journalEntries;
-        final baseEntries = _searchQuery.trim().isEmpty
-            ? allEntries
-            : widget.gardenController.searchJournalEntries(_searchQuery);
-        final knownBeds = widget.gardenController.listBedNames();
-        final knownPlots = widget.gardenController.listPlots();
-        final knownShards = widget.gardenController.listKnownShardKeys();
-        final activeBatches = widget.gardenController.listPlantingBatches(
-          onlyActiveInGround: true,
-        );
-        final filtered = _filterEntries(baseEntries);
+        final knownBeds = _cachedKnownBeds;
+        final knownPlots = _cachedKnownPlots;
+        final knownShards = _cachedKnownShards;
+        final activeBatches = _cachedActiveBatches;
+        final filtered = _cachedFilteredEntries;
         final visible = _showAll
             ? filtered
             : filtered.take(5).toList(growable: false);
         const accentColor = GoetheanPalette.aspectGold;
 
-        final pflanzzeitCount = allEntries
-            .where((e) => e.cosmicSnapshot.isMoonDescending)
-            .length;
-        final ratedEntries = allEntries
-            .where((e) => e.effectiveOutcomeRating != null)
-            .toList(growable: false);
-        final avgRating = ratedEntries.isEmpty
-            ? null
-            : ratedEntries
-                      .map((e) => e.effectiveOutcomeRating!)
-                      .reduce((a, b) => a + b) /
-                  ratedEntries.length;
-        final openShardsCount =
-            widget.gardenController.journalStore?.openShardCount;
+        final pflanzzeitCount = _cachedPflanzzeitCount;
+        final avgRating = _cachedAvgRating;
 
         return OrganicVesselContainer(
           accentColor: accentColor,
@@ -1102,6 +1287,54 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                       ),
                     ),
                   ),
+                  OutlinedButton.icon(
+                    key: const ValueKey(
+                      'field_journal_toggle_succession_planner',
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFF6ECD8),
+                      backgroundColor: GoetheanPalette.leafWater.withValues(
+                        alpha: 0.18,
+                      ),
+                      side: BorderSide(
+                        color: GoetheanPalette.aspectGold.withValues(
+                          alpha: 0.55,
+                        ),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: () {
+                      BedSuccessionPlannerPage.open(
+                        context,
+                        gardenController: widget.gardenController,
+                        selectedDate: widget.selectedDate,
+                        info: widget.info,
+                        ephemeris: widget.ephemeris,
+                        weatherNotifier: widget.weatherNotifier,
+                        onTimeJump: widget.onTimeJump,
+                        latitude: profile.activeLocation.latitude,
+                        longitude: profile.activeLocation.longitude,
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.open_in_full_outlined,
+                      size: 14,
+                      color: GoetheanPalette.aspectGold,
+                    ),
+                    label: Text(
+                      'Bed Succession Planner',
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                   if (allEntries.isNotEmpty) ...[
                     _buildSummaryChip(
                       'Pflanzzeit: $pflanzzeitCount/${allEntries.length}',
@@ -1118,17 +1351,21 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
               const SizedBox(height: 14),
 
               if (knownPlots.isNotEmpty) ...[
-                _buildPlotsOverviewSection(
-                  context,
-                  knownPlots,
-                  activeBatches,
-                  profile.taskQueue,
+                RepaintBoundary(
+                  child: _buildPlotsOverviewSection(
+                    context,
+                    knownPlots,
+                    activeBatches,
+                    profile.taskQueue,
+                  ),
                 ),
                 const SizedBox(height: 14),
               ],
 
               if (activeBatches.isNotEmpty) ...[
-                _buildActivePlantingsSection(context, activeBatches),
+                RepaintBoundary(
+                  child: _buildActivePlantingsSection(context, activeBatches),
+                ),
                 const SizedBox(height: 14),
               ],
 
@@ -1498,18 +1735,25 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
           for (final plot in plots)
             Builder(
               builder: (context) {
-                final plotActive = activeBatches
-                    .where((b) => b.bedName == plot.name)
-                    .toList(growable: false);
-                final plotTasks = taskQueue
-                    .where((t) => t.bedName == plot.name)
-                    .toList(growable: false);
-                final rotation = widget.gardenController.evaluatePlotRotation(
-                  plot.name,
-                  referenceTime: widget.selectedDate,
-                );
-                final successionPlan = widget.gardenController
-                    .buildPlotSuccessionPlan(
+                final plotActive =
+                    _cachedPlotActiveBatches[plot.name] ??
+                    activeBatches
+                        .where((b) => b.bedName == plot.name)
+                        .toList(growable: false);
+                final plotTasks =
+                    _cachedPlotTasks[plot.name] ??
+                    taskQueue
+                        .where((t) => t.bedName == plot.name)
+                        .toList(growable: false);
+                final rotation =
+                    _cachedPlotRotations[plot.name] ??
+                    widget.gardenController.evaluatePlotRotation(
+                      plot.name,
+                      referenceTime: widget.selectedDate,
+                    );
+                final successionPlan =
+                    _cachedPlotSuccessions[plot.name] ??
+                    widget.gardenController.buildPlotSuccessionPlan(
                       plot.name,
                       referenceTime: widget.selectedDate,
                     );
@@ -1663,7 +1907,7 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                             const SizedBox(height: 4),
                             for (final task in plotTasks)
                               Text(
-                                '📋 Planned: ${task.action.displayName} · ${task.targetLabel}',
+                                '📋 Planned: ${task.summaryLabel}',
                                 style: GoogleFonts.outfit(
                                   fontSize: 11,
                                   color: const Color(0xFF6EE7B7),
@@ -2107,15 +2351,13 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
     final entryColor = entry.quality == PlantQuality.none
         ? GoetheanPalette.aspectGold
         : GoetheanPalette.getColor(entry.quality);
-    final dateFmt = DateFormat('EEE, MMM d, yyyy • HH:mm');
-    final linkedParent = widget.gardenController.findPlantingBatch(
-      entry.parentEntryId,
-    );
+    final dateFmt = _entryDateFmt;
+    final linkedParent = entry.parentEntryId == null
+        ? null
+        : (_cachedBatchesByEntryId[entry.parentEntryId!] ??
+              widget.gardenController.findPlantingBatch(entry.parentEntryId));
     final childEntries =
-        allEntries
-            .where((e) => e.parentEntryId == entry.id && !e.isDeleted)
-            .toList()
-          ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+        _cachedChildrenByParentId[entry.id] ?? const <FieldJournalEntry>[];
     final activeNotes = entry.activeNotes;
 
     return Padding(
@@ -2359,7 +2601,7 @@ final class _FieldJournalCardState extends State<FieldJournalCard> {
                       [
                         '${entry.action.timelineGlyph} ${entry.action.shortLabel}',
                         for (final child in childEntries)
-                          '${child.action.timelineGlyph} ${child.action.shortLabel} (${DateFormat("MMM d").format(child.timestamp)})',
+                          '${child.action.timelineGlyph} ${child.action.shortLabel} (${_shortDateFmt.format(child.timestamp)})',
                       ].join(' → '),
                       style: GoogleFonts.outfit(
                         fontSize: 11,

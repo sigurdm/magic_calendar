@@ -4,6 +4,7 @@ import '../models/models.dart';
 import '../task_window_planner.dart';
 import '../vegetable_database.dart';
 import 'field_journal_entry.dart';
+import 'garden_plot.dart';
 
 /// A named geographic coordinate saved in the user's garden profile.
 final class SavedLocation {
@@ -171,7 +172,8 @@ final class SavedLocation {
       'SavedLocation(name: "$name", lat: $latitude, lon: $longitude)';
 }
 
-/// A pending garden task queued in the user's personal garden wishlist.
+/// A pending garden task queued in the user's personal garden wishlist or
+/// placed in time on a specific bed for succession planning.
 final class QueuedGardenTask {
   /// Unique identifier for this queued task.
   final String id;
@@ -191,6 +193,15 @@ final class QueuedGardenTask {
   /// Optional target garden plot or bed name (e.g. `'Bed 1'`, `'Greenhouse'`).
   final String? bedName;
 
+  /// Optional planned start date when placed in time on a bed in the succession planner.
+  final DateTime? plannedStartDate;
+
+  /// Optional explicit planned clearing/end date on the bed.
+  ///
+  /// When `null` and [plannedStartDate] is set, [effectiveEndDate] is derived
+  /// automatically from [CropMaturityProfile.estimateClearingDateForCrop].
+  final DateTime? plannedEndDate;
+
   /// Creates a [QueuedGardenTask].
   ///
   /// It is an error if [id] is empty or if [targetQuality] is [PlantQuality.none].
@@ -201,6 +212,8 @@ final class QueuedGardenTask {
     this.cropId,
     this.note = '',
     String? bedName,
+    this.plannedStartDate,
+    this.plannedEndDate,
   }) : bedName = bedName != null && bedName.trim().isNotEmpty
            ? bedName.trim()
            : null {
@@ -217,16 +230,22 @@ final class QueuedGardenTask {
   }
 
   /// Deterministic canonical ID for an [action], optional [cropId], [targetQuality],
-  /// and optional [bedName].
+  /// optional [bedName], and optional [plannedStartDate].
   static String canonicalIdFor({
     required TaskActionType action,
     String? cropId,
     required PlantQuality targetQuality,
     String? bedName,
+    DateTime? plannedStartDate,
   }) {
     final base = '${action.name}:${cropId ?? "any"}:${targetQuality.name}';
     final trimmedBed = bedName?.trim() ?? '';
-    return trimmedBed.isEmpty ? base : '$base:$trimmedBed';
+    final withBed = trimmedBed.isEmpty ? base : '$base:$trimmedBed';
+    if (plannedStartDate == null) return withBed;
+    final utc = plannedStartDate.toUtc();
+    final dayTag =
+        '${utc.year}-${utc.month.toString().padLeft(2, "0")}-${utc.day.toString().padLeft(2, "0")}';
+    return '$withBed:$dayTag';
   }
 
   /// Resolves the associated [VegetableEntry] from [VegetableDatabase], if any.
@@ -237,9 +256,94 @@ final class QueuedGardenTask {
   String get targetLabel =>
       crop?.localizedDisplayName ?? 'Any ${targetQuality.displayName} Plant';
 
-  /// Concise summary combining [action], [targetLabel], and optional [bedName].
-  String get summaryLabel =>
-      '${action.displayName} · $targetLabel${bedName != null ? " ($bedName)" : ""}';
+  /// Effective bed clearing date when [plannedStartDate] is set.
+  DateTime? get effectiveEndDate {
+    if (plannedEndDate != null) return plannedEndDate;
+    final start = plannedStartDate;
+    if (start == null) return null;
+    return CropMaturityProfile.estimateClearingDateForCrop(
+      crop: crop,
+      plantedAt: start,
+      isTransplant: action == TaskActionType.transplant,
+    );
+  }
+
+  /// Estimated indoor module nursery start date when this task is a planned
+  /// [TaskActionType.transplant] of a crop with module lead time.
+  DateTime? get indoorNurseryStartDate {
+    final start = plannedStartDate;
+    final resolvedCrop = crop;
+    if (start == null ||
+        resolvedCrop == null ||
+        action != TaskActionType.transplant) {
+      return null;
+    }
+    final leadDays = CropMaturityProfile.forCrop(resolvedCrop)
+        .seasonalModuleLeadTimeDays(start.month);
+    if (leadDays <= 0) return null;
+    return start.subtract(Duration(days: leadDays));
+  }
+
+  /// Estimated days the crop occupies the bed when [plannedStartDate] is set.
+  int? get estimatedDaysInBed {
+    final start = plannedStartDate;
+    final end = effectiveEndDate;
+    if (start == null || end == null) return null;
+    return end.difference(start).inDays.clamp(1, 366);
+  }
+
+  /// Concise summary combining [action], [targetLabel], optional [bedName], and optional planned dates.
+  String get summaryLabel {
+    final bedPart = bedName != null ? ' ($bedName)' : '';
+    final start = plannedStartDate;
+    if (start == null) {
+      return '${action.displayName} · $targetLabel$bedPart';
+    }
+    const months = [
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final end = effectiveEndDate;
+    final datePart = end != null
+        ? ' • ${months[start.month]} ${start.day}→${months[end.month]} ${end.day}'
+        : ' • ${months[start.month]} ${start.day}';
+    return '${action.displayName} · $targetLabel$bedPart$datePart';
+  }
+
+  /// Returns a copy of this task with updated fields.
+  QueuedGardenTask copyWith({
+    String? id,
+    TaskActionType? action,
+    String? cropId,
+    PlantQuality? targetQuality,
+    String? note,
+    String? bedName,
+    DateTime? plannedStartDate,
+    DateTime? plannedEndDate,
+    bool clearPlannedEndDate = false,
+  }) => QueuedGardenTask(
+    id: id ?? this.id,
+    action: action ?? this.action,
+    cropId: cropId ?? this.cropId,
+    targetQuality: targetQuality ?? this.targetQuality,
+    note: note ?? this.note,
+    bedName: bedName ?? this.bedName,
+    plannedStartDate: plannedStartDate ?? this.plannedStartDate,
+    plannedEndDate: clearPlannedEndDate
+        ? null
+        : (plannedEndDate ?? this.plannedEndDate),
+  );
 
   /// Whether this queued task matches the given selection parameters.
   bool matchesSelection({
@@ -250,12 +354,12 @@ final class QueuedGardenTask {
   }) {
     final normalizedSelectedBed =
         selectedBedName != null && selectedBedName.trim().isNotEmpty
-        ? selectedBedName.trim()
+        ? selectedBedName.trim().toLowerCase()
         : null;
     return action == selectedAction &&
         cropId == selectedCropId &&
         targetQuality == selectedQuality &&
-        bedName == normalizedSelectedBed;
+        bedName?.toLowerCase() == normalizedSelectedBed;
   }
 
   /// Serializes this queued task to a JSON map.
@@ -266,6 +370,10 @@ final class QueuedGardenTask {
     'targetQuality': targetQuality.name,
     if (note.isNotEmpty) 'note': note,
     if (bedName != null) 'bedName': bedName,
+    if (plannedStartDate != null)
+      'plannedStartDate': plannedStartDate!.toUtc().toIso8601String(),
+    if (plannedEndDate != null)
+      'plannedEndDate': plannedEndDate!.toUtc().toIso8601String(),
   };
 
   /// Deserializes a [QueuedGardenTask] from [json].
@@ -278,6 +386,8 @@ final class QueuedGardenTask {
     final qualityRaw = json['targetQuality'];
     final noteRaw = json['note'];
     final bedNameRaw = json['bedName'];
+    final plannedStartRaw = json['plannedStartDate'];
+    final plannedEndRaw = json['plannedEndDate'];
 
     if (idRaw is! String || idRaw.trim().isEmpty) {
       throw const FormatException('QueuedGardenTask requires a non-empty id');
@@ -322,6 +432,12 @@ final class QueuedGardenTask {
       bedName: bedNameRaw is String && bedNameRaw.trim().isNotEmpty
           ? bedNameRaw.trim()
           : null,
+      plannedStartDate: plannedStartRaw is String
+          ? DateTime.tryParse(plannedStartRaw)?.toLocal()
+          : null,
+      plannedEndDate: plannedEndRaw is String
+          ? DateTime.tryParse(plannedEndRaw)?.toLocal()
+          : null,
     );
   }
 
@@ -334,11 +450,21 @@ final class QueuedGardenTask {
           cropId == other.cropId &&
           targetQuality == other.targetQuality &&
           note == other.note &&
-          bedName == other.bedName;
+          bedName == other.bedName &&
+          plannedStartDate == other.plannedStartDate &&
+          plannedEndDate == other.plannedEndDate;
 
   @override
-  int get hashCode =>
-      Object.hash(id, action, cropId, targetQuality, note, bedName);
+  int get hashCode => Object.hash(
+    id,
+    action,
+    cropId,
+    targetQuality,
+    note,
+    bedName,
+    plannedStartDate,
+    plannedEndDate,
+  );
 }
 
 /// Immutable user garden profile storing saved locations, starred crops, and queued tasks.
@@ -361,6 +487,9 @@ final class GardenProfile {
   /// Comparative biodynamic field journal entries (sorted newest-first by timestamp).
   final List<FieldJournalEntry> journalEntries;
 
+  /// Persisted garden plots/beds when running without a separate SQLite metadata store.
+  final List<GardenPlot> plots;
+
   /// Creates a [GardenProfile] with defensive copies of all collections.
   GardenProfile({
     this.activeLocation = SavedLocation.defaultLocation,
@@ -368,12 +497,14 @@ final class GardenProfile {
     Iterable<String> starredCropIds = const [],
     Iterable<QueuedGardenTask> taskQueue = const [],
     Iterable<FieldJournalEntry> journalEntries = const [],
+    Iterable<GardenPlot> plots = const [],
   }) : savedLocations = List<SavedLocation>.unmodifiable(savedLocations),
        starredCropIds = Set<String>.unmodifiable(starredCropIds),
        taskQueue = List<QueuedGardenTask>.unmodifiable(taskQueue),
        journalEntries = List<FieldJournalEntry>.unmodifiable(
          _sortEntriesNewestFirst(journalEntries),
-       );
+       ),
+       plots = List<GardenPlot>.unmodifiable(plots);
 
   static List<FieldJournalEntry> _sortEntriesNewestFirst(
     Iterable<FieldJournalEntry> entries,
@@ -443,6 +574,7 @@ final class GardenProfile {
       starredCropIds: starredCropIds,
       taskQueue: taskQueue,
       journalEntries: journalEntries,
+      plots: plots,
     );
   }
 
@@ -458,6 +590,7 @@ final class GardenProfile {
       starredCropIds: starredCropIds,
       taskQueue: taskQueue,
       journalEntries: journalEntries,
+      plots: plots,
     );
   }
 
@@ -476,6 +609,7 @@ final class GardenProfile {
       starredCropIds: updated,
       taskQueue: taskQueue,
       journalEntries: journalEntries,
+      plots: plots,
     );
   }
 
@@ -492,6 +626,7 @@ final class GardenProfile {
       starredCropIds: starredCropIds,
       taskQueue: updated,
       journalEntries: journalEntries,
+      plots: plots,
     );
   }
 
@@ -503,6 +638,7 @@ final class GardenProfile {
       starredCropIds: starredCropIds,
       taskQueue: taskQueue.where((t) => t.id != taskId),
       journalEntries: journalEntries,
+      plots: plots,
     );
   }
 
@@ -519,6 +655,7 @@ final class GardenProfile {
       starredCropIds: starredCropIds,
       taskQueue: taskQueue,
       journalEntries: updated,
+      plots: plots,
     );
   }
 
@@ -530,6 +667,19 @@ final class GardenProfile {
       starredCropIds: starredCropIds,
       taskQueue: taskQueue,
       journalEntries: journalEntries.where((e) => e.id != entryId),
+      plots: plots,
+    );
+  }
+
+  /// Returns a copy with [updatedPlots] replacing [plots].
+  GardenProfile withPlots(Iterable<GardenPlot> updatedPlots) {
+    return GardenProfile(
+      activeLocation: activeLocation,
+      savedLocations: savedLocations,
+      starredCropIds: starredCropIds,
+      taskQueue: taskQueue,
+      journalEntries: journalEntries,
+      plots: updatedPlots,
     );
   }
 
@@ -541,6 +691,7 @@ final class GardenProfile {
     'starredCropIds': starredCropIds.toList(growable: false),
     'taskQueue': [for (final task in taskQueue) task.toJson()],
     'journalEntries': [for (final entry in journalEntries) entry.toJson()],
+    if (plots.isNotEmpty) 'plots': [for (final plot in plots) plot.toJson()],
   };
 
   /// Deserializes a [GardenProfile] from [json].
@@ -555,16 +706,26 @@ final class GardenProfile {
     }
 
     final activeRaw = json['activeLocation'];
-    if (activeRaw is! Map<String, Object?>) {
+    if (activeRaw is! Map) {
       throw const FormatException('GardenProfile requires an activeLocation');
     }
-    final activeLocation = SavedLocation.fromJson(activeRaw);
+    final activeLocation = SavedLocation.fromJson(
+      activeRaw is Map<String, Object?>
+          ? activeRaw
+          : Map<String, Object?>.from(activeRaw),
+    );
 
     final savedLocations = <SavedLocation>[];
     if (json['savedLocations'] case final List<Object?> rawSaved) {
       for (final item in rawSaved) {
-        if (item is Map<String, Object?>) {
-          savedLocations.add(SavedLocation.fromJson(item));
+        if (item is Map) {
+          savedLocations.add(
+            SavedLocation.fromJson(
+              item is Map<String, Object?>
+                  ? item
+                  : Map<String, Object?>.from(item),
+            ),
+          );
         }
       }
     }
@@ -581,9 +742,15 @@ final class GardenProfile {
     final taskQueue = <QueuedGardenTask>[];
     if (json['taskQueue'] case final List<Object?> rawTasks) {
       for (final item in rawTasks) {
-        if (item is Map<String, Object?>) {
+        if (item is Map) {
           try {
-            taskQueue.add(QueuedGardenTask.fromJson(item));
+            taskQueue.add(
+              QueuedGardenTask.fromJson(
+                item is Map<String, Object?>
+                    ? item
+                    : Map<String, Object?>.from(item),
+              ),
+            );
           } on FormatException {
             // Skip individual malformed tasks rather than losing the whole profile.
           }
@@ -594,11 +761,36 @@ final class GardenProfile {
     final journalEntries = <FieldJournalEntry>[];
     if (json['journalEntries'] case final List<Object?> rawEntries) {
       for (final item in rawEntries) {
-        if (item is Map<String, Object?>) {
+        if (item is Map) {
           try {
-            journalEntries.add(FieldJournalEntry.fromJson(item));
+            journalEntries.add(
+              FieldJournalEntry.fromJson(
+                item is Map<String, Object?>
+                    ? item
+                    : Map<String, Object?>.from(item),
+              ),
+            );
           } on FormatException {
             // Skip individual malformed journal entries rather than losing the whole profile.
+          }
+        }
+      }
+    }
+
+    final plots = <GardenPlot>[];
+    if (json['plots'] case final List<Object?> rawPlots) {
+      for (final item in rawPlots) {
+        if (item is Map) {
+          try {
+            plots.add(
+              GardenPlot.fromJson(
+                item is Map<String, Object?>
+                    ? item
+                    : Map<String, Object?>.from(item),
+              ),
+            );
+          } on FormatException {
+            // Skip individual malformed plots rather than losing the whole profile.
           }
         }
       }
@@ -610,6 +802,7 @@ final class GardenProfile {
       starredCropIds: starredCropIds,
       taskQueue: taskQueue,
       journalEntries: journalEntries,
+      plots: plots,
     );
   }
 
@@ -621,7 +814,8 @@ final class GardenProfile {
           listEquals(savedLocations, other.savedLocations) &&
           setEquals(starredCropIds, other.starredCropIds) &&
           listEquals(taskQueue, other.taskQueue) &&
-          listEquals(journalEntries, other.journalEntries);
+          listEquals(journalEntries, other.journalEntries) &&
+          listEquals(plots, other.plots);
 
   @override
   int get hashCode => Object.hash(
@@ -630,5 +824,6 @@ final class GardenProfile {
     Object.hashAll(starredCropIds),
     Object.hashAll(taskQueue),
     Object.hashAll(journalEntries),
+    Object.hashAll(plots),
   );
 }

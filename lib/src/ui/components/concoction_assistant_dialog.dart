@@ -37,6 +37,11 @@ final class _ConcoctionAssistantDialogState
   UnitSystem _unitSystem = UnitSystem.metric;
   double _areaValue = 100.0; // 100 sqm or 1000 sq ft
 
+  String? _cachedRecipeId;
+  double? _cachedAreaValue;
+  UnitSystem? _cachedUnitSystem;
+  ConcoctionDosage? _cachedDosage;
+
   final TextEditingController _areaController = TextEditingController(
     text: '100',
   );
@@ -51,23 +56,53 @@ final class _ConcoctionAssistantDialogState
   }
 
   @override
+  void didUpdateWidget(covariant ConcoctionAssistantDialog oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialRecipeId != oldWidget.initialRecipeId &&
+        widget.initialRecipeId != null) {
+      _selectedRecipe = ConcoctionCatalog.recipes.firstWhere(
+        (r) => r.id == widget.initialRecipeId,
+        orElse: () => _selectedRecipe,
+      );
+    }
+  }
+
+  @override
   void dispose() {
     _areaController.dispose();
     super.dispose();
   }
 
+  ConcoctionDosage _resolveDosage() {
+    if (_cachedDosage != null &&
+        _cachedRecipeId == _selectedRecipe.id &&
+        _cachedAreaValue == _areaValue &&
+        _cachedUnitSystem == _unitSystem) {
+      return _cachedDosage!;
+    }
+    final dosage = _selectedRecipe.calculateDosage(_areaValue, _unitSystem);
+    _cachedRecipeId = _selectedRecipe.id;
+    _cachedAreaValue = _areaValue;
+    _cachedUnitSystem = _unitSystem;
+    _cachedDosage = dosage;
+    return dosage;
+  }
+
   void _onAreaChanged(String text) {
-    final parsed = double.tryParse(text);
-    if (parsed != null && parsed > 0) {
-      setState(() {
-        _areaValue = parsed;
-      });
+    final parsed = double.tryParse(text.trim());
+    if (parsed != null && parsed.isFinite && parsed > 0) {
+      final clamped = parsed.clamp(0.01, 1000000.0);
+      if (clamped != _areaValue) {
+        setState(() {
+          _areaValue = clamped;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final dosage = _selectedRecipe.calculateDosage(_areaValue, _unitSystem);
+    final dosage = _resolveDosage();
     final herbDisplay = dosage.herbDisplay;
     final waterDisplay = dosage.waterDisplay;
     final totalDisplay = dosage.totalDilutedDisplay;

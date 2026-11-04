@@ -51,6 +51,9 @@ final class TransitionEnvelope {
     if (normLon < 0) {
       normLon += 360.0;
     }
+    if (normLon >= 360.0 || normLon == -0.0) {
+      normLon = 0.0;
+    }
 
     for (int i = 0; i < boundaries.length; i++) {
       final prevBoundary = boundaries[i];

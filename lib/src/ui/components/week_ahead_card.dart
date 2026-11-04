@@ -82,6 +82,11 @@ final class WeekAheadCard extends StatefulWidget {
 }
 
 final class _WeekAheadCardState extends State<WeekAheadCard> {
+  static final DateFormat _dayFormat = DateFormat('EEE');
+  static final DateFormat _dateFormat = DateFormat('MMM d');
+  static final DateFormat _windowDateFormat = DateFormat('EEE, MMM d • HH:mm');
+  static final DateFormat _timeFormat = DateFormat('HH:mm');
+
   WeekAheadFilter _selectedFilter = WeekAheadFilter.all;
   bool _showAllWindows = false;
 
@@ -89,25 +94,34 @@ final class _WeekAheadCardState extends State<WeekAheadCard> {
   String? _cachedKey;
 
   WeekAheadDigest _resolveDigest(List<WeatherDataPoint>? forecast) {
-    final hourBucket = DateTime(
+    final sixHourSlot = (widget.selectedDate.hour ~/ 6) * 6;
+    final coarseBucket = DateTime(
       widget.selectedDate.year,
       widget.selectedDate.month,
       widget.selectedDate.day,
-      widget.selectedDate.hour,
+      sixHourSlot,
     );
+    final forecastId = forecast == null ? 0 : identityHashCode(forecast);
+    final firstMs = (forecast != null && forecast.isNotEmpty)
+        ? forecast.first.time.millisecondsSinceEpoch
+        : 0;
+    final lastMs = (forecast != null && forecast.isNotEmpty)
+        ? forecast.last.time.millisecondsSinceEpoch
+        : 0;
     final key =
-        '${hourBucket.millisecondsSinceEpoch}|'
+        '${coarseBucket.millisecondsSinceEpoch}|'
+        '${identityHashCode(widget.ephemeris)}|'
         '${widget.latitude.toStringAsFixed(2)}|'
         '${widget.longitude.toStringAsFixed(2)}|'
-        '${widget.seasons.runtimeType}:${widget.seasons?.shortLabel ?? ""}|'
-        '${forecast?.length ?? 0}';
+        '${widget.seasons.runtimeType}:${widget.seasons?.shortLabel ?? ""}:${identityHashCode(widget.seasons?.localProfile)}|'
+        '$forecastId:${forecast?.length ?? 0}:$firstMs:$lastMs';
 
     if (_cachedKey == key && _cachedDigest != null) {
       return _cachedDigest!;
     }
 
     final digest = WeekAheadPlanner.buildDigest(
-      startTime: widget.selectedDate,
+      startTime: coarseBucket,
       ephemeris: widget.ephemeris,
       weatherForecast: forecast,
       latitude: widget.latitude,
@@ -278,16 +292,18 @@ final class _WeekAheadCardState extends State<WeekAheadCard> {
             ),
           ),
           const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (int i = 0; i < digest.dailyBriefs.length; i++)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: _buildDayPill(digest.dailyBriefs[i], index: i),
-                  ),
-              ],
+          RepaintBoundary(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (int i = 0; i < digest.dailyBriefs.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: _buildDayPill(digest.dailyBriefs[i], index: i),
+                    ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -383,8 +399,8 @@ final class _WeekAheadCardState extends State<WeekAheadCard> {
   }
 
   Widget _buildDayPill(DailyBiodynamicBrief day, {required int index}) {
-    final dayFormat = DateFormat('EEE');
-    final dateFormat = DateFormat('MMM d');
+    final dayFormat = _dayFormat;
+    final dateFormat = _dateFormat;
     final qualityColor = day.isAllDayGray
         ? Colors.grey
         : GoetheanPalette.getColor(day.dominantQuality);
@@ -495,8 +511,8 @@ final class _WeekAheadCardState extends State<WeekAheadCard> {
   ) {
     final qualityColor = GoetheanPalette.getColor(window.quality);
     final weatherColor = _weatherStatusColor(window.weatherStatus);
-    final dateFormat = DateFormat('EEE, MMM d • HH:mm');
-    final timeFormat = DateFormat('HH:mm');
+    final dateFormat = _windowDateFormat;
+    final timeFormat = _timeFormat;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),

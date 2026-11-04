@@ -10,7 +10,7 @@ import '../theme/goethean_palette.dart';
 import 'organic_vessel_container.dart';
 
 /// Widget displaying planetary positions across the zodiac ribbon.
-final class PlanetaryRibbon extends StatelessWidget {
+final class PlanetaryRibbon extends StatefulWidget {
   /// Notifier for currently selected date/time.
   final ValueListenable<DateTime> timeNotifier;
 
@@ -29,39 +29,101 @@ final class PlanetaryRibbon extends StatelessWidget {
   });
 
   @override
+  State<PlanetaryRibbon> createState() => _PlanetaryRibbonState();
+}
+
+final class _PlanetaryRibbonState extends State<PlanetaryRibbon> {
+  int? _lastBucket;
+  List<PlanetInfo> _planets = const [];
+  double _centerLongitude = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.timeNotifier.addListener(_onTimeChanged);
+    _computeForTime(widget.timeNotifier.value, notify: false);
+  }
+
+  @override
+  void didUpdateWidget(covariant PlanetaryRibbon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.timeNotifier != widget.timeNotifier) {
+      oldWidget.timeNotifier.removeListener(_onTimeChanged);
+      widget.timeNotifier.addListener(_onTimeChanged);
+    }
+    if (oldWidget.ephemeris != widget.ephemeris ||
+        oldWidget.timeNotifier != widget.timeNotifier) {
+      _lastBucket = null;
+      _computeForTime(widget.timeNotifier.value, notify: false);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.timeNotifier.removeListener(_onTimeChanged);
+    super.dispose();
+  }
+
+  void _onTimeChanged() {
+    _computeForTime(widget.timeNotifier.value, notify: true);
+  }
+
+  void _computeForTime(DateTime time, {required bool notify}) {
+    // Quantize to 5-minute buckets so sub-pixel pan deltas do not
+    // recompute planetary positions or rebuild/repaint the 12 zodiac bands.
+    final bucket = time.millisecondsSinceEpoch ~/ 300000;
+    if (_lastBucket == bucket && _planets.isNotEmpty) {
+      return;
+    }
+    _lastBucket = bucket;
+    final quantizedTime = DateTime.fromMillisecondsSinceEpoch(
+      bucket * 300000,
+      isUtc: time.isUtc,
+    );
+    final planets = widget.ephemeris.getPlanets(quantizedTime);
+    double moonLon = 0.0;
+    for (final p in planets) {
+      if (p.name == 'Moon') {
+        moonLon = p.longitude;
+        break;
+      }
+    }
+    final quantizedCenterLon = (moonLon * 20.0).round() / 20.0;
+    if (notify && mounted) {
+      setState(() {
+        _planets = planets;
+        _centerLongitude = quantizedCenterLon;
+      });
+    } else {
+      _planets = planets;
+      _centerLongitude = quantizedCenterLon;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final safeHeight = widget.height.isFinite && widget.height > 0
+        ? widget.height
+        : 0.0;
     return RepaintBoundary(
-      child: ValueListenableBuilder<DateTime>(
-        valueListenable: timeNotifier,
-        builder: (context, time, _) {
-          final planets = ephemeris.getPlanets(time);
-          final moon = planets.firstWhere(
-            (p) => p.name == 'Moon',
-            orElse: () => PlanetInfo(name: 'Moon', longitude: 0),
-          );
-
-          final painterWidget = CustomPaint(
-            size: Size(double.infinity, height),
-            painter: RibbonPainter(
-              planets: planets,
-              centerLongitude: moon.longitude,
-            ),
-          );
-
-          return SizedBox(
-            height: height + 8,
-            width: double.infinity,
-            child: OrganicVesselContainer.inset(
-              padding: const EdgeInsets.all(4),
-              accentColor: GoetheanPalette.aspectGold,
-              seed: 4.2,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: painterWidget,
+      child: SizedBox(
+        height: safeHeight + 8,
+        width: double.infinity,
+        child: OrganicVesselContainer.inset(
+          padding: const EdgeInsets.all(4),
+          accentColor: GoetheanPalette.aspectGold,
+          seed: 4.2,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: CustomPaint(
+              size: Size(double.infinity, safeHeight),
+              painter: RibbonPainter(
+                planets: _planets,
+                centerLongitude: _centerLongitude,
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
@@ -81,6 +143,35 @@ final class RibbonPainter extends CustomPainter {
   /// Whether to use the Goethean nature palette for zodiac elements.
   final bool warmPalette;
 
+  static final Map<(String, bool, bool), TextPainter> _zodiacPainterCache = {};
+  static final Map<(String, bool), TextPainter> _planetSymbolPainterCache = {};
+  static final Map<Color, Paint> _planetHaloPaintCache = {};
+  static final Map<Color, Paint> _planetFillPaintCache = {};
+  static final Map<(Color, double), Paint> _flatBandPaintCache = {};
+
+  static final Paint _eclipticWavePaint = Paint()
+    ..color = GoetheanPalette.aspectGold.withValues(alpha: 0.26)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.4;
+
+  static final Paint _refLineOrganicPaint = Paint()
+    ..color = GoetheanPalette.aspectGold.withValues(alpha: 0.35)
+    ..strokeWidth = 1.4;
+
+  static final Paint _refLineFlatPaint = Paint()
+    ..color = Colors.white12
+    ..strokeWidth = 1.0;
+
+  static const Map<String, double> _planetYOffsets = {
+    'Sun': 0.0,
+    'Moon': -15.0,
+    'Mercury': 15.0,
+    'Venus': -10.0,
+    'Mars': 10.0,
+    'Jupiter': -5.0,
+    'Saturn': 5.0,
+  };
+
   /// Creates a [RibbonPainter].
   const RibbonPainter({
     required this.planets,
@@ -89,15 +180,77 @@ final class RibbonPainter extends CustomPainter {
     this.warmPalette = true,
   });
 
+  static TextPainter _getZodiacPainter(
+    String label,
+    bool warmOrOrganic,
+    bool organicFlow,
+  ) {
+    final key = (label, warmOrOrganic, organicFlow);
+    if (_zodiacPainterCache[key] case final cached?) {
+      return cached;
+    }
+    final tp = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: TextStyle(
+          fontFamily: 'Outfit',
+          color: warmOrOrganic
+              ? const Color(0xFFE8DCC8).withValues(alpha: 0.45)
+              : Colors.white24,
+          fontSize: 9,
+          letterSpacing: organicFlow ? 0.8 : 0.0,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: ui.TextDirection.ltr,
+    )..layout();
+    _zodiacPainterCache[key] = tp;
+    return tp;
+  }
+
+  static TextPainter _getPlanetSymbolPainter(
+    String symbol,
+    bool warmOrOrganic,
+  ) {
+    final key = (symbol, warmOrOrganic);
+    if (_planetSymbolPainterCache[key] case final cached?) {
+      return cached;
+    }
+    final tp = TextPainter(
+      text: TextSpan(
+        text: symbol,
+        style: TextStyle(
+          color: warmOrOrganic ? const Color(0xFFF6ECD8) : Colors.white,
+          fontSize: 16,
+          fontFamilyFallback: const [
+            'DejaVu Sans',
+            'Symbola',
+            'Noto Sans Symbols',
+          ],
+        ),
+      ),
+      textDirection: ui.TextDirection.ltr,
+    )..layout();
+    _planetSymbolPainterCache[key] = tp;
+    return tp;
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
-    if (size.width <= 0) {
+    if (size.width <= 0 ||
+        size.height <= 0 ||
+        !size.width.isFinite ||
+        !size.height.isFinite) {
       return;
     }
 
     const double visibleRange = 360.0;
     final double degreeWidth = size.width / visibleRange;
-    final double startLon = centerLongitude - 180.0;
+    final double safeCenterLon = centerLongitude.isFinite
+        ? centerLongitude
+        : 0.0;
+    final double startLon = safeCenterLon - 180.0;
+    final bool warmOrOrganic = organicFlow || warmPalette;
 
     double getX(double lon) {
       double relativeLon = (lon - startLon) % 360.0;
@@ -120,9 +273,10 @@ final class RibbonPainter extends CustomPainter {
 
       Paint buildBandPaint(double left, double width) {
         if (!organicFlow || width <= 4) {
-          return Paint()
+          final flatKey = (baseColor, alpha);
+          return _flatBandPaintCache[flatKey] ??= (Paint()
             ..color = baseColor.withValues(alpha: alpha)
-            ..style = PaintingStyle.fill;
+            ..style = PaintingStyle.fill);
         }
         final rect = Rect.fromLTWH(left, 0, width, size.height);
         return Paint()
@@ -162,22 +316,12 @@ final class RibbonPainter extends CustomPainter {
       }
 
       if (blockWidth * degreeWidth > 15) {
-        final textPainter = TextPainter(
-          text: TextSpan(
-            text: boundary.name.substring(0, 3).toUpperCase(),
-            style: TextStyle(
-              fontFamily: 'Outfit',
-              color: organicFlow || warmPalette
-                  ? const Color(0xFFE8DCC8).withValues(alpha: 0.45)
-                  : Colors.white24,
-              fontSize: 9,
-              letterSpacing: organicFlow ? 0.8 : 0.0,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          textDirection: ui.TextDirection.ltr,
+        final label = boundary.name.substring(0, 3).toUpperCase();
+        final textPainter = _getZodiacPainter(
+          label,
+          warmOrOrganic,
+          organicFlow,
         );
-        textPainter.layout();
 
         double labelX = x1 + (blockWidth * degreeWidth - textPainter.width) / 2;
         labelX = labelX % size.width;
@@ -201,83 +345,48 @@ final class RibbonPainter extends CustomPainter {
           eclipticPath.lineTo(x, y);
         }
       }
-      canvas.drawPath(
-        eclipticPath,
-        Paint()
-          ..color = GoetheanPalette.aspectGold.withValues(alpha: 0.26)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.4,
-      );
+      canvas.drawPath(eclipticPath, _eclipticWavePaint);
     }
 
-    final offsets = {
-      'Sun': 0.0,
-      'Moon': -15.0,
-      'Mercury': 15.0,
-      'Venus': -10.0,
-      'Mars': 10.0,
-      'Jupiter': -5.0,
-      'Saturn': 5.0,
-    };
-
-    for (var planet in planets) {
+    for (final planet in planets) {
+      if (!planet.longitude.isFinite) {
+        continue;
+      }
       final x = getX(planet.longitude);
 
       if (x < -20 || x > size.width + 20) {
         continue;
       }
 
-      final yOffset = offsets[planet.name] ?? 0.0;
+      final yOffset = _planetYOffsets[planet.name] ?? 0.0;
       final y = size.height / 2 + yOffset;
       final pColor = _getPlanetColor(planet.name);
 
       if (organicFlow) {
         // Soft watercolor halo around each planet orb
-        canvas.drawCircle(
-          Offset(x, y),
-          8.5,
-          Paint()
-            ..color = pColor.withValues(alpha: 0.35)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0),
-        );
+        final haloPaint = _planetHaloPaintCache[pColor] ??= (Paint()
+          ..color = pColor.withValues(alpha: 0.35)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0));
+        canvas.drawCircle(Offset(x, y), 8.5, haloPaint);
       }
 
-      final paint = Paint()
+      final fillPaint = _planetFillPaintCache[pColor] ??= (Paint()
         ..color = pColor
-        ..style = PaintingStyle.fill;
+        ..style = PaintingStyle.fill);
 
-      canvas.drawCircle(Offset(x, y), organicFlow ? 4.5 : 4.0, paint);
+      canvas.drawCircle(Offset(x, y), organicFlow ? 4.5 : 4.0, fillPaint);
 
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: _getPlanetSymbol(planet.name),
-          style: TextStyle(
-            color: organicFlow || warmPalette
-                ? const Color(0xFFF6ECD8)
-                : Colors.white,
-            fontSize: 16,
-            fontFamilyFallback: const [
-              'DejaVu Sans',
-              'Symbola',
-              'Noto Sans Symbols',
-            ],
-          ),
-        ),
-        textDirection: ui.TextDirection.ltr,
+      final textPainter = _getPlanetSymbolPainter(
+        _getPlanetSymbol(planet.name),
+        warmOrOrganic,
       );
-      textPainter.layout();
       textPainter.paint(canvas, Offset(x - textPainter.width / 2, y - 22));
     }
 
-    final refPaint = Paint()
-      ..color = organicFlow
-          ? GoetheanPalette.aspectGold.withValues(alpha: 0.35)
-          : Colors.white12
-      ..strokeWidth = organicFlow ? 1.4 : 1.0;
     canvas.drawLine(
       Offset(size.width / 2, 0),
       Offset(size.width / 2, size.height),
-      refPaint,
+      organicFlow ? _refLineOrganicPaint : _refLineFlatPaint,
     );
   }
 
@@ -352,11 +461,24 @@ final class RibbonPainter extends CustomPainter {
     }
   }
 
+  static bool _samePlanets(List<PlanetInfo> a, List<PlanetInfo> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      final pa = a[i];
+      final pb = b[i];
+      if (pa.name != pb.name || (pa.longitude - pb.longitude).abs() > 0.02) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   @override
   bool shouldRepaint(covariant RibbonPainter oldDelegate) {
-    return oldDelegate.centerLongitude != centerLongitude ||
-        oldDelegate.planets != planets ||
+    return (oldDelegate.centerLongitude - centerLongitude).abs() > 0.01 ||
         oldDelegate.organicFlow != organicFlow ||
-        oldDelegate.warmPalette != warmPalette;
+        oldDelegate.warmPalette != warmPalette ||
+        !_samePlanets(oldDelegate.planets, planets);
   }
 }

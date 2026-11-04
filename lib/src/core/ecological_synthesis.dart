@@ -1,3 +1,6 @@
+import 'dart:collection';
+
+import 'climate/climate_profile.dart';
 import 'climate/season_alignment.dart';
 import 'models/models.dart';
 
@@ -134,6 +137,159 @@ abstract final class EcologicalSynthesis {
   /// Philosophical motto banner header.
   static const String bannerMotto = 'The Stars Incline, They Do Not Compel';
 
+  static const int _maxCacheEntries = 512;
+
+  static final Expando<
+    (int, WeatherDataPoint, WeatherDataPoint, WeatherDataPoint, bool)
+  >
+  _sortedSeriesCache =
+      Expando<
+        (int, WeatherDataPoint, WeatherDataPoint, WeatherDataPoint, bool)
+      >('EcologicalSynthesisSortedSeries');
+
+  static final LinkedHashMap<Object, MultiHorizonWeatherAnalysis>
+  _horizonCache = LinkedHashMap<Object, MultiHorizonWeatherAnalysis>();
+
+  static final LinkedHashMap<Object, EcologicalSynthesisResult>
+  _synthesisCache = LinkedHashMap<Object, EcologicalSynthesisResult>();
+
+  static Object _seriesFingerprint(List<WeatherDataPoint> points) {
+    final len = points.length;
+    if (len == 0) return 0;
+    if (len <= 32) return Object.hashAll(points);
+    return (
+      len,
+      points.first,
+      points.last,
+      points[len >>> 1],
+      points[len >>> 2],
+      points[(len * 3) >>> 2],
+    );
+  }
+
+  static bool _isSortedList(List<WeatherDataPoint> points) {
+    final len = points.length;
+    if (len <= 1) return true;
+    if (len <= 32) {
+      for (int i = 1; i < len; i++) {
+        if (points[i].time.isBefore(points[i - 1].time)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    final first = points.first;
+    final last = points.last;
+    final mid = points[len >>> 1];
+    if (_sortedSeriesCache[points] case final cached?
+        when cached.$1 == len &&
+            cached.$2 == first &&
+            cached.$3 == last &&
+            cached.$4 == mid) {
+      return cached.$5;
+    }
+    bool sorted = true;
+    for (int i = 1; i < len; i++) {
+      if (points[i].time.isBefore(points[i - 1].time)) {
+        sorted = false;
+        break;
+      }
+    }
+    _sortedSeriesCache[points] = (len, first, last, mid, sorted);
+    return sorted;
+  }
+
+  /// Slices [points] to the window `[start, end]` inclusive in $O(\log N)$ time
+  /// when [points] is sorted chronologically.
+  static Iterable<WeatherDataPoint> _sliceHorizonWindow(
+    List<WeatherDataPoint> points,
+    DateTime start,
+    DateTime end,
+  ) {
+    if (points.isEmpty || !_isSortedList(points)) {
+      return points;
+    }
+    final startMs = start.millisecondsSinceEpoch;
+    final endMs = end.millisecondsSinceEpoch;
+
+    int low = 0;
+    int high = points.length;
+    while (low < high) {
+      final mid = (low + high) >>> 1;
+      if (points[mid].time.millisecondsSinceEpoch < startMs) {
+        low = mid + 1;
+      } else {
+        high = mid;
+      }
+    }
+    final firstIdx = low;
+
+    low = firstIdx;
+    high = points.length;
+    while (low < high) {
+      final mid = (low + high) >>> 1;
+      if (points[mid].time.millisecondsSinceEpoch <= endMs) {
+        low = mid + 1;
+      } else {
+        high = mid;
+      }
+    }
+    return points.getRange(firstIdx, low);
+  }
+
+  /// Resolves a [MultiHorizonWeatherAnalysis] for [referenceTime] using bounded
+  /// LRU memoization and $O(\log N)$ binary search slicing when [weatherSeries]
+  /// is a chronologically sorted [List].
+  static MultiHorizonWeatherAnalysis? resolveHorizon({
+    required DateTime referenceTime,
+    Iterable<WeatherDataPoint>? weatherSeries,
+    WeatherDataPoint? currentWeather,
+    ClimateProfile? localProfile,
+  }) {
+    if (currentWeather == null && weatherSeries == null) {
+      return null;
+    }
+    if (weatherSeries is List<WeatherDataPoint>) {
+      final key = (
+        identityHashCode(weatherSeries),
+        _seriesFingerprint(weatherSeries),
+        referenceTime.millisecondsSinceEpoch,
+        referenceTime.isUtc,
+        currentWeather,
+        identityHashCode(localProfile),
+      );
+      final cached = _horizonCache.remove(key);
+      if (cached != null) {
+        _horizonCache[key] = cached;
+        return cached;
+      }
+
+      final sliced = _sliceHorizonWindow(
+        weatherSeries,
+        referenceTime.subtract(const Duration(hours: 72)),
+        referenceTime.add(const Duration(hours: 48)),
+      );
+      final computed = MultiHorizonWeatherAnalysis.analyze(
+        referenceTime: referenceTime,
+        weatherSeries: sliced,
+        currentWeather: currentWeather,
+        localProfile: localProfile,
+      );
+      if (_horizonCache.length >= _maxCacheEntries) {
+        _horizonCache.remove(_horizonCache.keys.first);
+      }
+      _horizonCache[key] = computed;
+      return computed;
+    }
+
+    return MultiHorizonWeatherAnalysis.analyze(
+      referenceTime: referenceTime,
+      weatherSeries: weatherSeries,
+      currentWeather: currentWeather,
+      localProfile: localProfile,
+    );
+  }
+
   /// Synthesizes [calendarInfo] with instantaneous [weather] and optional
   /// 72h-past / 48h-future [weatherSeries] (or precomputed [horizon]) at [time] and [latitude].
   static EcologicalSynthesisResult synthesize({
@@ -147,14 +303,12 @@ abstract final class EcologicalSynthesis {
   }) {
     final effectiveHorizon =
         horizon ??
-        ((weather != null || weatherSeries != null)
-            ? MultiHorizonWeatherAnalysis.analyze(
-                referenceTime: time,
-                weatherSeries: weatherSeries,
-                currentWeather: weather,
-                localProfile: seasons?.localProfile,
-              )
-            : null);
+        resolveHorizon(
+          referenceTime: time,
+          weatherSeries: weatherSeries,
+          currentWeather: weather,
+          localProfile: seasons?.localProfile,
+        );
 
     final effectiveWeather = weather ?? effectiveHorizon?.currentPoint;
     if (effectiveWeather == null &&
@@ -165,6 +319,24 @@ abstract final class EcologicalSynthesis {
         bannerSubtitle: 'Awaiting terrestrial weather data. Observe physical soil moisture and local conditions.',
         hasConflicts: false,
       );
+    }
+
+    final alignment = seasons ?? HemisphereSeasonAlignment(latitude: latitude);
+    final referenceMonth = alignment.referenceMonth(time);
+    final cacheKey = (
+      calendarInfo.quality,
+      calendarInfo.isGrayDay,
+      calendarInfo.isMoonAscending,
+      calendarInfo.moonPhase.isWaxing,
+      effectiveWeather,
+      effectiveHorizon,
+      referenceMonth,
+      alignment.transferability,
+    );
+    final cachedResult = _synthesisCache.remove(cacheKey);
+    if (cachedResult != null) {
+      _synthesisCache[cacheKey] = cachedResult;
+      return cachedResult;
     }
 
     final alerts = <EcologicalAlert>[];
@@ -281,9 +453,6 @@ abstract final class EcologicalSynthesis {
         effectiveHorizon.hasUpcomingFrost48h;
 
     if (isInstantFrost || isLookaheadFrost) {
-      final alignment =
-          seasons ?? HemisphereSeasonAlignment(latitude: latitude);
-      final referenceMonth = alignment.referenceMonth(time);
       final isSpring =
           alignment.transferability !=
               CalendarTransferability.doesNotTransfer &&
@@ -345,12 +514,17 @@ abstract final class EcologicalSynthesis {
       subtitle = 'Minor microclimate adjustments recommended. Adapt preparations and sowings accordingly.';
     }
 
-    return EcologicalSynthesisResult(
-      alerts: alerts,
+    final result = EcologicalSynthesisResult(
+      alerts: List<EcologicalAlert>.unmodifiable(alerts),
       bannerTitle: bannerMotto,
       bannerSubtitle: subtitle,
       hasConflicts: hasConflicts,
       horizon: effectiveHorizon,
     );
+    if (_synthesisCache.length >= _maxCacheEntries) {
+      _synthesisCache.remove(_synthesisCache.keys.first);
+    }
+    _synthesisCache[cacheKey] = result;
+    return result;
   }
 }

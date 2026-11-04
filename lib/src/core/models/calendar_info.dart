@@ -64,16 +64,18 @@ final class CalendarInfo {
     this.isApogee = false,
     this.isMoonSaturnOpposition = false,
     this.isEclipse = false,
-    this.activeAspects = const [],
+    List<PlanetaryAspect> activeAspects = const [],
     required this.message,
     required this.sapFlow,
     bool? isMoonAscending,
     required this.vitality,
     required this.moonPhase,
-    required this.planets,
+    required List<PlanetInfo> planets,
     this.diurnalRhythm,
     this.transitionEnvelope,
-  }) : isMoonAscending =
+  }) : activeAspects = List.unmodifiable(activeAspects),
+       planets = List.unmodifiable(planets),
+       isMoonAscending =
            isMoonAscending ??
            (sapFlow.contains('Ascending') || !sapFlow.contains('Descending'));
 }

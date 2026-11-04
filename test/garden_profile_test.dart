@@ -167,6 +167,13 @@ void main() {
           cropId: 'carrot',
           targetQuality: PlantQuality.root,
         );
+        controller1.upsertPlot(
+          GardenPlot(
+            name: 'South Greenhouse',
+            areaName: 'Orchard',
+            plotType: GardenPlotType.greenhouse,
+          ),
+        );
 
         // Load a second controller from the same file on disk
         final controller2 = await GardenProfileController.load(store: store);
@@ -177,6 +184,11 @@ void main() {
         );
         expect(controller2.value.taskQueue, hasLength(1));
         expect(controller2.value.taskQueue.first.cropId, 'carrot');
+        expect(controller2.findPlot('South Greenhouse'), isNotNull);
+        expect(
+          controller2.findPlot('South Greenhouse')!.plotType,
+          GardenPlotType.greenhouse,
+        );
 
         controller1.dispose();
         controller2.dispose();

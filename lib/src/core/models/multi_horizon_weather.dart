@@ -414,4 +414,49 @@ final class MultiHorizonWeatherAnalysis {
       lookaheadPointCount: lookaheadCount,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MultiHorizonWeatherAnalysis &&
+          runtimeType == other.runtimeType &&
+          referenceTime.isAtSameMomentAs(other.referenceTime) &&
+          currentPoint == other.currentPoint &&
+          precipitationLast24h == other.precipitationLast24h &&
+          precipitationLast48h == other.precipitationLast48h &&
+          precipitationLast72h == other.precipitationLast72h &&
+          antecedentPrecipitationIndex == other.antecedentPrecipitationIndex &&
+          soilMoisture == other.soilMoisture &&
+          estimatedSoilTemperatureCelsius ==
+              other.estimatedSoilTemperatureCelsius &&
+          precipitationNext6h == other.precipitationNext6h &&
+          precipitationNext24h == other.precipitationNext24h &&
+          precipitationNext48h == other.precipitationNext48h &&
+          maxWindSpeedNext6h == other.maxWindSpeedNext6h &&
+          minTemperatureNext24h == other.minTemperatureNext24h &&
+          minTemperatureNext48h == other.minTemperatureNext48h &&
+          maxTemperatureNext24h == other.maxTemperatureNext24h &&
+          antecedentPointCount == other.antecedentPointCount &&
+          lookaheadPointCount == other.lookaheadPointCount;
+
+  @override
+  int get hashCode => Object.hash(
+    referenceTime.millisecondsSinceEpoch,
+    currentPoint,
+    precipitationLast24h,
+    precipitationLast48h,
+    precipitationLast72h,
+    antecedentPrecipitationIndex,
+    soilMoisture,
+    estimatedSoilTemperatureCelsius,
+    precipitationNext6h,
+    precipitationNext24h,
+    precipitationNext48h,
+    maxWindSpeedNext6h,
+    minTemperatureNext24h,
+    minTemperatureNext48h,
+    maxTemperatureNext24h,
+    antecedentPointCount,
+    lookaheadPointCount,
+  );
 }

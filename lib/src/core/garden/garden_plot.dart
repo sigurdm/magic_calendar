@@ -4,6 +4,7 @@ import '../models/models.dart';
 import '../task_window_planner.dart';
 import '../vegetable_database.dart';
 import 'field_journal_entry.dart';
+import 'garden_profile.dart';
 
 /// Physical environment and structure of a [GardenPlot].
 enum GardenPlotType {
@@ -383,7 +384,10 @@ final class GardenPlot {
   /// Whether this plot has been soft-deleted.
   bool get isDeleted =>
       deletedHlc != null &&
-      (updatedHlc == null || deletedHlc!.compareTo(updatedHlc!) >= 0);
+      deletedHlc!.isNotEmpty &&
+      (updatedHlc == null ||
+          updatedHlc!.isEmpty ||
+          deletedHlc!.compareTo(updatedHlc!) >= 0);
 
   /// Display title combining [areaName] and [name] when [areaName] is present.
   String get displayTitle =>
@@ -688,7 +692,7 @@ final class PlotRotationAssessment {
     DateTime? referenceTime,
   }) {
     final sortedChronological =
-        batchesInPlot.where((b) => b.deletedHlc == null).toList(growable: false)
+        batchesInPlot.where((b) => !b.isDeleted).toList(growable: false)
           ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
     final trail = <String>[];
@@ -747,20 +751,23 @@ final class PlotRotationAssessment {
 
     final candidateFamily = BotanicalFamily.forCrop(candidateCrop);
     final (sensitivity, minBreakYears) = classifyCrop(candidateCrop);
-    final targetYear = (referenceTime ?? DateTime.now()).year;
+    final effectiveRefTime = referenceTime ?? DateTime.now();
+    final targetYear = effectiveRefTime.year;
+    final maxBreakWindow = minBreakYears > 3 ? minBreakYears : 3;
 
     PlantingBatchSummary? conflict;
     PlantingBatchSummary? sameCropStationaryMatch;
     int? yearsElapsed;
 
     for (final batch in sortedChronological.reversed) {
+      if (batch.timestamp.year > targetYear) continue;
       final prevCrop = batch.crop;
       if (prevCrop == null) continue;
       final prevFamily = BotanicalFamily.forCrop(prevCrop);
       if (prevFamily != candidateFamily) continue;
 
-      final yearDiff = (targetYear - batch.timestamp.year).abs();
-      if (yearDiff >= 3) continue;
+      final yearDiff = targetYear - batch.timestamp.year;
+      if (yearDiff >= maxBreakWindow) continue;
 
       // Special case: Tomatoes (Solanum lycopersicum)
       if (_isTomato(candidateCrop)) {
@@ -793,12 +800,22 @@ final class PlotRotationAssessment {
         break;
       }
 
-      // Within the same growing season (yearDiff == 0):
+      // Within the same growing season (yearDiff == 0) or across the Dec -> Jan
+      // New Year boundary within <= 60 days:
       // Distinguish staggered interval sowings (Hold-såning of the same short/medium
       // crop, e.g. a second sowing of carrot, spinach, radish, beetroot, or bush beans)
       // from back-to-back relay cropping of different species in a strict family
       // (e.g. Spring Radish followed by Winter Kale).
-      if (yearDiff == 0) {
+      final daysDelta = effectiveRefTime
+          .difference(batch.timestamp)
+          .inDays
+          .abs();
+      final isCrossYearStaggered =
+          yearDiff == 1 &&
+          daysDelta <= 60 &&
+          prevCrop.id == candidateCrop.id &&
+          CropMaturityProfile.forCrop(candidateCrop).supportsStaggeredSowing;
+      if (yearDiff == 0 || isCrossYearStaggered) {
         final maturity = CropMaturityProfile.forCrop(candidateCrop);
         if (prevCrop.id == candidateCrop.id &&
             maturity.supportsStaggeredSowing) {
@@ -909,12 +926,16 @@ final class CropMaturityProfile {
   /// [supportsStaggeredSowing] is `true`.
   final int staggeredIntervalDays;
 
+  /// Whether this crop is a multi-year perennial occupying the bed across seasons.
+  final bool isPerennial;
+
   /// Creates an immutable [CropMaturityProfile].
   const CropMaturityProfile({
     required this.estimatedDaysInGround,
     this.moduleLeadTimeDays = 0,
     this.supportsStaggeredSowing = false,
     this.staggeredIntervalDays = 14,
+    this.isPerennial = false,
   });
 
   /// Returns the season-adjusted indoor/module nursery lead time in days when
@@ -989,9 +1010,10 @@ final class CropMaturityProfile {
   static CropMaturityProfile forCrop(VegetableEntry crop) {
     if (crop.lifeCycle == PlantLifeCycle.perennial) {
       return const CropMaturityProfile(
-        estimatedDaysInGround: 365,
+        estimatedDaysInGround: 365 * 3,
         moduleLeadTimeDays: 0,
         supportsStaggeredSowing: false,
+        isPerennial: true,
       );
     }
 
@@ -1089,7 +1111,7 @@ final class CropMaturityProfile {
   /// *Persephone period* (<10h daylight from Nov–Feb) and clears the plot in spring/summer
   /// of the following year.
   static bool isOverwinteringPlanting(VegetableEntry crop, int plantingMonth) {
-    if (plantingMonth < 8 || plantingMonth > 11) return false;
+    if (plantingMonth < 8 || plantingMonth > 12) return false;
     final id = crop.id;
     // Autumn-planted alliums (autumn garlic, overwintering onion/shallot sets)
     if (const {
@@ -1102,7 +1124,7 @@ final class CropMaturityProfile {
         plantingMonth >= 8) {
       return true;
     }
-    // Overwintering green manures & cover crops sown Aug–Nov
+    // Overwintering green manures & cover crops sown Aug–Dec
     if (crop.category == PlantCategory.greenManure &&
         const {
           'winter_rye',
@@ -1122,7 +1144,7 @@ final class CropMaturityProfile {
     }.contains(id)) {
       return true;
     }
-    // Hardy winter salads & autumn broad beans sown Sep–Nov
+    // Hardy winter salads & autumn broad beans sown Sep–Dec
     if (plantingMonth >= 9 &&
         const {
           'lambs_lettuce',
@@ -1133,22 +1155,34 @@ final class CropMaturityProfile {
         }.contains(id)) {
       return true;
     }
-    // Structural check: planted in Aug–Nov while harvest window is in spring/summer (Jan–Jul)
+    // Structural check: planted in Aug–Dec while harvest window is in spring/summer (Jan–Jun)
     if (crop.harvestMonths.isNotEmpty &&
         crop.harvestMonths.any((m) => m >= 1 && m <= 6) &&
-        !crop.harvestMonths.any((m) => m > plantingMonth && m <= 11)) {
+        !crop.harvestMonths.any((m) => m > plantingMonth && m <= 12)) {
       return true;
     }
     return false;
   }
 
-  /// Estimates the date when [batch] will finish harvesting and release the plot,
-  /// accounting for seasonal growth speed and *Persephone period* overwintering.
-  static DateTime estimateClearingDate(PlantingBatchSummary batch) {
-    final crop = batch.crop;
-    final plantedAt = batch.timestamp;
+  /// Estimates the date when [crop] planted at [plantedAt] will finish harvesting
+  /// and release the plot, accounting for seasonal growth speed, transplant nursery
+  /// credit, and *Persephone period* overwintering.
+  static DateTime estimateClearingDateForCrop({
+    required VegetableEntry? crop,
+    required DateTime plantedAt,
+    bool isTransplant = false,
+  }) {
     if (crop == null) {
       return plantedAt.add(const Duration(days: 75));
+    }
+
+    if (crop.lifeCycle == PlantLifeCycle.perennial) {
+      return DateTime.utc(
+        plantedAt.year + 3,
+        plantedAt.month,
+        plantedAt.day,
+        12,
+      );
     }
 
     if (isOverwinteringPlanting(crop, plantedAt.month)) {
@@ -1180,10 +1214,21 @@ final class CropMaturityProfile {
     final profile = forCrop(crop);
     final effectiveDays = profile.seasonalDaysInGround(
       plantedAt.month,
-      action: batch.action,
+      action: isTransplant
+          ? FieldJournalAction.transplant
+          : FieldJournalAction.sowSeeds,
     );
     return plantedAt.add(Duration(days: effectiveDays));
   }
+
+  /// Estimates the date when [batch] will finish harvesting and release the plot,
+  /// accounting for seasonal growth speed and *Persephone period* overwintering.
+  static DateTime estimateClearingDate(PlantingBatchSummary batch) =>
+      estimateClearingDateForCrop(
+        crop: batch.crop,
+        plantedAt: batch.timestamp,
+        isTransplant: batch.action == FieldJournalAction.transplant,
+      );
 }
 
 /// How a [PlotSuccessionCandidate] fits into a plot's current season timeline.
@@ -1307,16 +1352,28 @@ final class PlotSuccessionPlan {
   factory PlotSuccessionPlan.build({
     required GardenPlot plot,
     required Iterable<PlantingBatchSummary> batchesInPlot,
+    Iterable<QueuedGardenTask> tasksInPlot = const <QueuedGardenTask>[],
     required DateTime referenceTime,
     Set<String> starredCropIds = const <String>{},
   }) {
     final validBatches =
-        batchesInPlot.where((b) => b.deletedHlc == null).toList(growable: false)
+        batchesInPlot.where((b) => !b.isDeleted).toList(growable: false)
           ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    final plannedTasks =
+        tasksInPlot
+            .where((t) => t.plannedStartDate != null)
+            .toList(growable: false)
+          ..sort((a, b) => a.plannedStartDate!.compareTo(b.plannedStartDate!));
 
     final currentYear = referenceTime.year;
     final harvestedThisYear = validBatches
-        .where((b) => b.timestamp.year == currentYear && b.isHarvested)
+        .where(
+          (b) =>
+              b.isHarvested &&
+              (b.timestamp.year == currentYear ||
+                  CropMaturityProfile.estimateClearingDate(b).year ==
+                      currentYear),
+        )
         .toList(growable: false);
     final active = validBatches
         .where((b) => b.isActiveInGround)
@@ -1324,15 +1381,16 @@ final class PlotSuccessionPlan {
 
     // Compute when the plot (or a relay slot in the plot) will clear.
     DateTime availableDate = referenceTime;
-    if (active.isNotEmpty) {
-      final clearingDates =
-          active
-              .map(CropMaturityProfile.estimateClearingDate)
-              .toList(growable: false)
-            ..sort();
-      // Earliest clearing batch frees the first relay slot in the bed.
-      if (clearingDates.first.isAfter(referenceTime)) {
-        availableDate = clearingDates.first;
+    final clearingDates = <DateTime>[
+      ...active.map(CropMaturityProfile.estimateClearingDate),
+      for (final task in plannedTasks)
+        if (!task.plannedStartDate!.isAfter(referenceTime))
+          ?task.effectiveEndDate,
+    ]..sort();
+    for (final clearDate in clearingDates) {
+      if (clearDate.isAfter(referenceTime)) {
+        availableDate = clearDate;
+        break;
       }
     }
 
@@ -1349,6 +1407,15 @@ final class PlotSuccessionPlan {
           ? '${_monthShort[clearDate.month]} \'${clearDate.year % 100}'
           : _monthShort[clearDate.month];
       stages.add('🌱 $name (${_monthShort[a.timestamp.month]}→~$clearLabel)');
+    }
+    for (final t in plannedTasks) {
+      final start = t.plannedStartDate!;
+      final end = t.effectiveEndDate ?? start.add(const Duration(days: 60));
+      final name = t.crop?.nameEn ?? t.targetLabel;
+      final endLabel = end.year > start.year
+          ? '${_monthShort[end.month]} \'${end.year % 100}'
+          : _monthShort[end.month];
+      stages.add('📅 $name (${_monthShort[start.month]}→~$endLabel)');
     }
 
     final baseRotation = PlotRotationAssessment.evaluate(
@@ -1500,6 +1567,543 @@ final class PlotSuccessionPlan {
       estimatedAvailableDate: availableDate,
       candidates: candidates,
       seasonPipelineSummary: stages.join(' → '),
+    );
+  }
+}
+
+/// Lifecycle stage of a [BedTimelineSpan] on a [GardenPlot]'s succession timeline.
+enum BedTimelineSpanKind {
+  /// A batch that has already been harvested.
+  harvested(label: 'Harvested', glyph: '✓'),
+
+  /// A batch currently growing in the ground.
+  activeInGround(label: 'In Ground', glyph: '🌱'),
+
+  /// A future or scheduled succession planting placed on the bed.
+  planned(label: 'Planned', glyph: '📅');
+
+  /// Display label.
+  final String label;
+
+  /// Compact status glyph.
+  final String glyph;
+
+  const BedTimelineSpanKind({required this.label, required this.glyph});
+}
+
+/// A single time-bounded occupancy bar on a [GardenPlot] timeline.
+final class BedTimelineSpan {
+  /// Unique span identifier (`entryId` for batches, `task.id` for planned tasks).
+  final String id;
+
+  /// Name of the plot/bed this span belongs to.
+  final String bedName;
+
+  /// Lifecycle state of this span (`harvested`, `activeInGround`, or `planned`).
+  final BedTimelineSpanKind kind;
+
+  /// Associated [VegetableEntry], if known.
+  final VegetableEntry? crop;
+
+  /// Display title of the crop or planting.
+  final String title;
+
+  /// Biodynamic organ quality of this planting.
+  final PlantQuality quality;
+
+  /// Date when the crop enters the bed (sowing or transplanting date).
+  final DateTime startDate;
+
+  /// Date when the crop finishes harvesting and releases the bed.
+  final DateTime endDate;
+
+  /// Optional indoor module propagation start date preceding [startDate]
+  /// (when transplanted from nursery modules).
+  final DateTime? indoorStartDate;
+
+  /// Non-overlapping vertical sub-lane index (`0, 1, ...`) within the bed row.
+  final int laneIndex;
+
+  /// Backing [PlantingBatchSummary] when [kind] is `harvested` or `activeInGround`.
+  final PlantingBatchSummary? batch;
+
+  /// Backing [QueuedGardenTask] when [kind] is `planned`.
+  final QueuedGardenTask? plannedTask;
+
+  /// Creates an immutable [BedTimelineSpan].
+  const BedTimelineSpan({
+    required this.id,
+    required this.bedName,
+    required this.kind,
+    this.crop,
+    required this.title,
+    required this.quality,
+    required this.startDate,
+    required this.endDate,
+    this.indoorStartDate,
+    this.laneIndex = 0,
+    this.batch,
+    this.plannedTask,
+  });
+
+  /// Total days the crop occupies the bed.
+  int get daysInBed => endDate.difference(startDate).inDays.clamp(1, 366);
+
+  /// Indoor module nursery lead time in days before [startDate], if any.
+  int? get nurseryLeadDays => indoorStartDate != null
+      ? startDate.difference(indoorStartDate!).inDays.clamp(1, 120)
+      : null;
+
+  /// Whether `[otherStart, otherEnd]` overlaps this span's in-bed occupancy `[startDate, endDate]`.
+  bool overlapsRange(DateTime otherStart, DateTime otherEnd) =>
+      startDate.isBefore(otherEnd) && endDate.isAfter(otherStart);
+
+  /// Returns a copy of this span assigned to [laneIndex].
+  BedTimelineSpan withLane(int laneIndex) => BedTimelineSpan(
+    id: id,
+    bedName: bedName,
+    kind: kind,
+    crop: crop,
+    title: title,
+    quality: quality,
+    startDate: startDate,
+    endDate: endDate,
+    indoorStartDate: indoorStartDate,
+    laneIndex: laneIndex,
+    batch: batch,
+    plannedTask: plannedTask,
+  );
+}
+
+/// Outcome classification when evaluating a drag-and-drop crop placement on a bed at a target date.
+enum BedPlacementStatus {
+  /// Clean placement or relay with no overlap, rotation, or seasonal conflicts.
+  cleanRelay(label: 'Clean Relay & Rotation OK', glyph: '✓'),
+
+  /// Valid within-season staggered sowing (*Hold-såning*) of the same crop.
+  staggeredHoldSaaning(label: 'Hold-såning (Staggered Sowing)', glyph: '🔁'),
+
+  /// Target date overlaps another crop occupying the bed.
+  bedOverlapWarning(label: 'Overlaps Bed Occupancy', glyph: '⚠️'),
+
+  /// Violates a strict or moderate botanical family crop-rotation break rule.
+  familyRotationConflict(label: 'Crop Rotation Alert', glyph: '⛔'),
+
+  /// Target month is outside the crop's normal outdoor sowing/transplant season.
+  outOfSeasonWarning(label: 'Outside Prime Season', glyph: '❄️');
+
+  /// Short status label.
+  final String label;
+
+  /// Status badge glyph.
+  final String glyph;
+
+  const BedPlacementStatus({required this.label, required this.glyph});
+}
+
+/// Real-time evaluation of placing or dragging a [VegetableEntry] onto a [GardenPlot]
+/// at a specific [startDate].
+final class BedPlacementEvaluation {
+  /// Target plot.
+  final GardenPlot plot;
+
+  /// Crop being placed.
+  final VegetableEntry crop;
+
+  /// Resolved planting action (`sowOutdoor` or `transplant`).
+  final TaskActionType action;
+
+  /// Target date when the crop enters the bed.
+  final DateTime startDate;
+
+  /// Estimated date when the crop clears the bed.
+  final DateTime endDate;
+
+  /// Optional indoor module propagation start date before [startDate].
+  final DateTime? indoorStartDate;
+
+  /// Primary status of this placement.
+  final BedPlacementStatus status;
+
+  /// Crop rotation assessment at [startDate] (accounting for both logged batches and earlier planned tasks).
+  final PlotRotationAssessment rotationAssessment;
+
+  /// Existing spans on [plot] that overlap `[startDate, endDate]`.
+  final List<BedTimelineSpan> overlappingSpans;
+
+  /// Suggested relay handover date immediately after the blocking crop clears, if any.
+  final DateTime? suggestedRelayDate;
+
+  /// Whether [startDate.month] is within the crop's sowing/transplant season for [plot].
+  final bool isInSeason;
+
+  /// Concise one-line headline suitable for live drag preview banners.
+  final String headline;
+
+  /// Detailed guidance or warning message.
+  final String detailMessage;
+
+  /// Creates an immutable [BedPlacementEvaluation].
+  BedPlacementEvaluation({
+    required this.plot,
+    required this.crop,
+    required this.action,
+    required this.startDate,
+    required this.endDate,
+    this.indoorStartDate,
+    required this.status,
+    required this.rotationAssessment,
+    Iterable<BedTimelineSpan> overlappingSpans = const [],
+    this.suggestedRelayDate,
+    required this.isInSeason,
+    required this.headline,
+    required this.detailMessage,
+  }) : overlappingSpans = List<BedTimelineSpan>.unmodifiable(overlappingSpans);
+
+  /// Days the crop occupies the bed.
+  int get daysInBed => endDate.difference(startDate).inDays.clamp(1, 366);
+
+  /// Nursery module lead days before [startDate], if any.
+  int? get nurseryLeadDays => indoorStartDate != null
+      ? startDate.difference(indoorStartDate!).inDays.clamp(1, 120)
+      : null;
+}
+
+/// Builds lane-assigned [BedTimelineSpan]s and evaluates drag-and-drop crop placements
+/// on a [GardenPlot].
+abstract final class BedSuccessionAdvisor {
+  static const List<String> _monthShort = [
+    '',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  /// Resolves the default [TaskActionType] (`sowOutdoor` vs `transplant`) when
+  /// placing [crop] onto [plot] in [month].
+  static TaskActionType resolveActionForCrop({
+    required VegetableEntry crop,
+    required int month,
+    TaskActionType? preferredAction,
+  }) {
+    if (preferredAction == TaskActionType.transplant ||
+        preferredAction == TaskActionType.sowOutdoor ||
+        preferredAction == TaskActionType.sowIndoor) {
+      return preferredAction!;
+    }
+    final m = month.clamp(1, 12);
+    if (crop.transplantMonths.contains(m) && !crop.sowingMonths.contains(m)) {
+      return TaskActionType.transplant;
+    }
+    if (crop.sowingMonths.isEmpty && crop.transplantMonths.isNotEmpty) {
+      return TaskActionType.transplant;
+    }
+    return TaskActionType.sowOutdoor;
+  }
+
+  /// Builds all time-bounded [BedTimelineSpan]s (harvested, active in ground, and planned)
+  /// for [plotName], assigning non-overlapping `laneIndex` values for clean visual stacking.
+  static List<BedTimelineSpan> buildSpansForPlot({
+    required String plotName,
+    required Iterable<PlantingBatchSummary> batchesInPlot,
+    required Iterable<QueuedGardenTask> tasksInPlot,
+    Map<String, DateTime>? harvestTimestampsByParentId,
+  }) {
+    final trimmed = plotName.trim();
+    final lower = trimmed.toLowerCase();
+    final rawSpans = <BedTimelineSpan>[];
+
+    for (final batch in batchesInPlot) {
+      if (batch.isDeleted) continue;
+      if (batch.bedName != null &&
+          batch.bedName!.trim().toLowerCase() != lower) {
+        continue;
+      }
+      final estimatedClear = CropMaturityProfile.estimateClearingDate(batch);
+      DateTime endDate = estimatedClear;
+      if (batch.isHarvested) {
+        final actualHarvest = harvestTimestampsByParentId?[batch.entryId];
+        if (actualHarvest != null && actualHarvest.isAfter(batch.timestamp)) {
+          endDate = actualHarvest;
+        }
+      }
+      if (!endDate.isAfter(batch.timestamp)) {
+        endDate = batch.timestamp.add(const Duration(days: 14));
+      }
+      DateTime? indoorStart;
+      if (batch.action == FieldJournalAction.transplant && batch.crop != null) {
+        final lead = CropMaturityProfile.forCrop(batch.crop!)
+            .seasonalModuleLeadTimeDays(batch.timestamp.month);
+        if (lead > 0) {
+          indoorStart = batch.timestamp.subtract(Duration(days: lead));
+        }
+      }
+      rawSpans.add(
+        BedTimelineSpan(
+          id: batch.entryId,
+          bedName: trimmed,
+          kind: batch.isHarvested
+              ? BedTimelineSpanKind.harvested
+              : BedTimelineSpanKind.activeInGround,
+          crop: batch.crop,
+          title: batch.crop?.nameEn ?? batch.title,
+          quality: batch.quality,
+          startDate: batch.timestamp,
+          endDate: endDate,
+          indoorStartDate: indoorStart,
+          batch: batch,
+        ),
+      );
+    }
+
+    for (final task in tasksInPlot) {
+      final start = task.plannedStartDate;
+      if (start == null) continue;
+      if (task.bedName != null && task.bedName!.trim().toLowerCase() != lower) {
+        continue;
+      }
+      final end = task.effectiveEndDate ?? start.add(const Duration(days: 60));
+      final clampedEnd = end.isAfter(start)
+          ? end
+          : start.add(const Duration(days: 14));
+      rawSpans.add(
+        BedTimelineSpan(
+          id: task.id,
+          bedName: trimmed,
+          kind: BedTimelineSpanKind.planned,
+          crop: task.crop,
+          title: task.crop?.nameEn ?? task.targetLabel,
+          quality: task.targetQuality,
+          startDate: start,
+          endDate: clampedEnd,
+          indoorStartDate: task.indoorNurseryStartDate,
+          plannedTask: task,
+        ),
+      );
+    }
+
+    rawSpans.sort((a, b) {
+      final startCmp = a.startDate.compareTo(b.startDate);
+      if (startCmp != 0) return startCmp;
+      return a.endDate.compareTo(b.endDate);
+    });
+
+    // Assign greedy non-overlapping lane indices.
+    final laneEndDates = <DateTime>[];
+    final assigned = <BedTimelineSpan>[];
+    for (final span in rawSpans) {
+      int chosenLane = -1;
+      for (int i = 0; i < laneEndDates.length; i++) {
+        if (!laneEndDates[i].isAfter(span.startDate)) {
+          chosenLane = i;
+          laneEndDates[i] = span.endDate;
+          break;
+        }
+      }
+      if (chosenLane < 0) {
+        chosenLane = laneEndDates.length;
+        laneEndDates.add(span.endDate);
+      }
+      assigned.add(span.withLane(chosenLane));
+    }
+    return List<BedTimelineSpan>.unmodifiable(assigned);
+  }
+
+  /// Evaluates placing or moving [crop] onto [plot] at [targetDate].
+  static BedPlacementEvaluation evaluatePlacement({
+    required GardenPlot plot,
+    required VegetableEntry crop,
+    required DateTime targetDate,
+    required Iterable<PlantingBatchSummary> batchesInPlot,
+    required Iterable<QueuedGardenTask> tasksInPlot,
+    TaskActionType? preferredAction,
+    String? movingTaskId,
+  }) {
+    final normalizedStart = DateTime(
+      targetDate.year,
+      targetDate.month,
+      targetDate.day,
+      12,
+    );
+    final action = resolveActionForCrop(
+      crop: crop,
+      month: normalizedStart.month,
+      preferredAction: preferredAction,
+    );
+    final isTransplant = action == TaskActionType.transplant;
+    final endDate = CropMaturityProfile.estimateClearingDateForCrop(
+      crop: crop,
+      plantedAt: normalizedStart,
+      isTransplant: isTransplant,
+    );
+    final maturity = CropMaturityProfile.forCrop(crop);
+    final leadDays = isTransplant
+        ? maturity.seasonalModuleLeadTimeDays(normalizedStart.month)
+        : 0;
+    final indoorStartDate = leadDays > 0
+        ? normalizedStart.subtract(Duration(days: leadDays))
+        : null;
+
+    final otherTasks = tasksInPlot
+        .where((t) => t.id != movingTaskId)
+        .toList(growable: false);
+    final existingSpans = buildSpansForPlot(
+      plotName: plot.name,
+      batchesInPlot: batchesInPlot,
+      tasksInPlot: otherTasks,
+    );
+
+    // Find overlapping non-harvested (or same-season) spans.
+    final overlapping = <BedTimelineSpan>[];
+    DateTime? latestOverlapEnd;
+    for (final span in existingSpans) {
+      if (span.kind == BedTimelineSpanKind.harvested &&
+          !span.endDate.isAfter(normalizedStart)) {
+        continue;
+      }
+      if (span.overlapsRange(normalizedStart, endDate)) {
+        overlapping.add(span);
+        if (latestOverlapEnd == null ||
+            span.endDate.isAfter(latestOverlapEnd)) {
+          latestOverlapEnd = span.endDate;
+        }
+      }
+    }
+
+    // Build combined batch history (logged batches + earlier planned tasks) for rotation assessment.
+    final syntheticBatches = <PlantingBatchSummary>[
+      ...batchesInPlot.where((b) => !b.isDeleted),
+      for (final t in otherTasks)
+        if (t.plannedStartDate != null &&
+            t.cropId != null &&
+            !t.plannedStartDate!.isAfter(endDate))
+          PlantingBatchSummary(
+            entryId: 'planned_${t.id}',
+            shardKey:
+                '${t.plannedStartDate!.year}-${t.plannedStartDate!.month.toString().padLeft(2, "0")}',
+            timestamp: t.plannedStartDate!,
+            action: t.action == TaskActionType.transplant
+                ? FieldJournalAction.transplant
+                : FieldJournalAction.sowSeeds,
+            title: t.targetLabel,
+            cropId: t.cropId,
+            bedName: plot.name,
+            quality: t.targetQuality,
+            cosmicSummary: 'Planned',
+            updatedHlc: '',
+            harvestedByEntryId:
+                (t.effectiveEndDate != null &&
+                    !t.effectiveEndDate!.isAfter(normalizedStart))
+                ? 'cleared_before_drop'
+                : null,
+          ),
+    ];
+
+    final rotation = PlotRotationAssessment.evaluate(
+      plotName: plot.name,
+      batchesInPlot: syntheticBatches,
+      candidateCrop: crop,
+      referenceTime: normalizedStart,
+    );
+
+    // Check seasonal suitability (with ±1 month protected environment extension).
+    bool monthMatches(List<int> allowedMonths, int m) {
+      if (allowedMonths.isEmpty) return true;
+      if (allowedMonths.contains(m)) return true;
+      if (!plot.plotType.isProtectedEnvironment) return false;
+      final prev = m == 1 ? 12 : m - 1;
+      final next = m == 12 ? 1 : m + 1;
+      return allowedMonths.contains(prev) || allowedMonths.contains(next);
+    }
+
+    final targetMonths = isTransplant
+        ? (crop.transplantMonths.isNotEmpty
+              ? crop.transplantMonths
+              : crop.sowingMonths)
+        : (crop.sowingMonths.isNotEmpty
+              ? crop.sowingMonths
+              : crop.transplantMonths);
+    final isInSeason = monthMatches(targetMonths, normalizedStart.month);
+
+    final isHoldSaaningOverlap =
+        overlapping.isNotEmpty &&
+        maturity.supportsStaggeredSowing &&
+        overlapping.every((s) => s.crop?.id == crop.id);
+
+    final startLabel =
+        '${_monthShort[normalizedStart.month]} ${normalizedStart.day}';
+    final endLabel = endDate.year > normalizedStart.year
+        ? '${_monthShort[endDate.month]} ${endDate.day} \'${endDate.year % 100}'
+        : '${_monthShort[endDate.month]} ${endDate.day}';
+    final daysInBed = endDate.difference(normalizedStart).inDays.clamp(1, 366);
+    final nurseryNote = indoorStartDate != null
+        ? ' (🪴 start modules ${_monthShort[indoorStartDate.month]} ${indoorStartDate.day}, ~${leadDays}d lead)'
+        : '';
+
+    BedPlacementStatus status;
+    String headline;
+    String detail;
+
+    if (rotation.hasFamilyConflict) {
+      status = BedPlacementStatus.familyRotationConflict;
+      headline =
+          '⛔ Rotation Alert on ${plot.name}: ${crop.nameEn} ($startLabel → $endLabel)';
+      detail = rotation.conflictWarning ?? rotation.rotationGuidance;
+    } else if (overlapping.isNotEmpty && !isHoldSaaningOverlap) {
+      status = BedPlacementStatus.bedOverlapWarning;
+      final blockerNames = overlapping.map((s) => s.title).toSet().join(', ');
+      final clearStr = latestOverlapEnd != null
+          ? '${_monthShort[latestOverlapEnd.month]} ${latestOverlapEnd.day}'
+          : endLabel;
+      headline = '⚠️ Overlaps $blockerNames in ${plot.name} until $clearStr';
+      detail =
+          'Bed occupied until $clearStr. Drop after $clearStr or tap "Snap to Relay ($clearStr)"$nurseryNote.';
+    } else if (isHoldSaaningOverlap || rotation.isStaggeredSameSeasonSowing) {
+      status = BedPlacementStatus.staggeredHoldSaaning;
+      final interval = maturity.seasonalStaggeredIntervalDays(
+        normalizedStart.month,
+      );
+      headline =
+          '🔁 Hold-såning: ${crop.nameEn} in ${plot.name} ($startLabel → $endLabel, ~${daysInBed}d)';
+      detail =
+          'Staggered sowing (~${interval}d interval) for continuous ${crop.nameEn} harvest$nurseryNote.';
+    } else if (!isInSeason) {
+      status = BedPlacementStatus.outOfSeasonWarning;
+      headline =
+          '❄️ Outside prime season: ${crop.nameEn} on $startLabel → $endLabel (~${daysInBed}d)';
+      detail =
+          '${crop.nameEn} is normally ${isTransplant ? "transplanted" : "sown"} in ${targetMonths.map((m) => _monthShort[m]).join(", ")}${plot.plotType.isProtectedEnvironment ? " (±1m in ${plot.plotType.displayName})" : ""}.';
+    } else {
+      status = BedPlacementStatus.cleanRelay;
+      final actionVerb = isTransplant ? 'Transplant' : 'Sow';
+      headline =
+          '✓ $actionVerb ${crop.nameEn} in ${plot.name}: $startLabel → $endLabel (~${daysInBed}d)';
+      detail = '${rotation.rotationGuidance}$nurseryNote';
+    }
+
+    return BedPlacementEvaluation(
+      plot: plot,
+      crop: crop,
+      action: action,
+      startDate: normalizedStart,
+      endDate: endDate,
+      indoorStartDate: indoorStartDate,
+      status: status,
+      rotationAssessment: rotation,
+      overlappingSpans: overlapping,
+      suggestedRelayDate: latestOverlapEnd,
+      isInSeason: isInSeason,
+      headline: headline,
+      detailMessage: detail,
     );
   }
 }

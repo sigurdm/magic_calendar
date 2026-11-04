@@ -74,28 +74,70 @@ final class IcsExportSheet extends StatefulWidget {
 }
 
 final class _IcsExportSheetState extends State<IcsExportSheet> {
+  static final DateFormat _fileDateFormat = DateFormat('yyyy-MM-dd');
+  static final DateFormat _eventDateFormat = DateFormat('EEE, MMM d • HH:mm');
+  static final DateFormat _eventTimeFormat = DateFormat('HH:mm');
+
   bool _includeStirringEvent = true;
   bool _showRawIcsPreview = false;
   bool _copiedToClipboard = false;
   String? _savedFilePath;
   String? _errorMessage;
 
-  bool get _anyEventHasStirring =>
-      widget.events.any((event) => event.hasStirringWindow);
+  String? _cachedIcsPayload;
+  bool? _cachedPayloadStirring;
+  String? _cachedSuggestedFileName;
+  late bool _anyEventHasStirring;
 
-  String get _icsPayload => IcsCalendarExporter.formatCalendar(
-    widget.events,
-    calendarName: widget.title,
-    includeStirringEvents: _includeStirringEvent,
-  );
+  @override
+  void initState() {
+    super.initState();
+    _anyEventHasStirring = widget.events.any(
+      (event) => event.hasStirringWindow,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant IcsExportSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.events, widget.events) ||
+        oldWidget.title != widget.title) {
+      _cachedIcsPayload = null;
+      _cachedSuggestedFileName = null;
+      _copiedToClipboard = false;
+      _savedFilePath = null;
+      _errorMessage = null;
+      _anyEventHasStirring = widget.events.any(
+        (event) => event.hasStirringWindow,
+      );
+    }
+  }
+
+  String get _icsPayload {
+    if (_cachedIcsPayload != null &&
+        _cachedPayloadStirring == _includeStirringEvent) {
+      return _cachedIcsPayload!;
+    }
+    final formatted = IcsCalendarExporter.formatCalendar(
+      widget.events,
+      calendarName: widget.title,
+      includeStirringEvents: _includeStirringEvent,
+    );
+    _cachedIcsPayload = formatted;
+    _cachedPayloadStirring = _includeStirringEvent;
+    return formatted;
+  }
 
   String get _suggestedFileName {
+    if (_cachedSuggestedFileName != null) {
+      return _cachedSuggestedFileName!;
+    }
     if (widget.events.length == 1) {
-      return widget.events.first.suggestedFileName;
+      return _cachedSuggestedFileName = widget.events.first.suggestedFileName;
     }
     final firstStart = widget.events.first.start;
-    final datePart = DateFormat('yyyy-MM-dd').format(firstStart);
-    return 'magic-calendar-week-ahead-$datePart.ics';
+    final datePart = _fileDateFormat.format(firstStart);
+    return _cachedSuggestedFileName = 'magic-calendar-week-ahead-$datePart.ics';
   }
 
   Future<void> _handleCopyIcs() async {
@@ -129,8 +171,8 @@ final class _IcsExportSheetState extends State<IcsExportSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('EEE, MMM d • HH:mm');
-    final timeFormat = DateFormat('HH:mm');
+    final dateFormat = _eventDateFormat;
+    final timeFormat = _eventTimeFormat;
     const accentColor = GoetheanPalette.aspectGold;
 
     return SafeArea(

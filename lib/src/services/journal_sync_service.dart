@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
@@ -7,7 +6,13 @@ import 'package:path/path.dart' as p;
 
 import '../core/garden/field_journal_entry.dart';
 import '../core/garden/garden_note_share.dart';
-import 'journal_sqlite_store.dart';
+import 'journal_sqlite_store_stub.dart'
+    if (dart.library.io) 'journal_sqlite_store.dart';
+import 'journal_sync_io_stub.dart' if (dart.library.io) 'journal_sync_io.dart';
+
+export 'journal_sync_io_stub.dart'
+    if (dart.library.io) 'journal_sync_io.dart'
+    show DirectoryGardenSyncTransport, HttpException;
 
 /// Provider-agnostic cloud or shared-folder blob transport for syncing
 /// content-addressed monthly SQLite shards (`shards/YYYY-MM.<digest>.sqlite`)
@@ -27,6 +32,9 @@ abstract interface class GardenSyncTransport {
 
   /// Deletes [name] if present (best-effort garbage collection of merged ancestors).
   Future<void> delete(String name);
+
+  /// Releases any underlying HTTP clients or file resources.
+  void close() {}
 }
 
 final RegExp _validBlobPathPattern = RegExp(
@@ -92,113 +100,9 @@ final class InMemoryGardenSyncTransport implements GardenSyncTransport {
     _validateBlobName(name);
     _objects.remove(name);
   }
-}
-
-/// File-system directory implementation of [GardenSyncTransport].
-///
-/// Works with any locally mounted or OS-synced shared folder (iCloud Drive,
-/// Google Drive Desktop, Syncthing, Dropbox, Nextcloud folder, or Android SAF).
-final class DirectoryGardenSyncTransport implements GardenSyncTransport {
-  /// Canonicalized root directory of the shared garden folder.
-  final Directory directory;
-
-  /// Creates a [DirectoryGardenSyncTransport] rooted at [directoryPath].
-  DirectoryGardenSyncTransport(String directoryPath)
-    : directory = Directory(p.canonicalize(directoryPath));
 
   @override
-  String get displayName => 'Shared Folder (${p.basename(directory.path)})';
-
-  File _resolveSafeFile(String name) {
-    _validateBlobName(name);
-    final parts = name.split('/');
-    final safeParts = [for (final part in parts) p.basename(part)];
-    final resolved = p.canonicalize(p.joinAll([directory.path, ...safeParts]));
-    final rootPrefix = '${directory.path}${p.separator}';
-    if (!resolved.startsWith(rootPrefix)) {
-      throw ArgumentError.value(
-        name,
-        'name',
-        'Must stay within root directory',
-      );
-    }
-    return File(resolved);
-  }
-
-  @override
-  Future<List<String>> list(String prefix) async {
-    if (!await directory.exists()) return const [];
-    final results = <String>[];
-
-    if (prefix.startsWith('meta')) {
-      await for (final entity in directory.list(followLinks: false)) {
-        if (entity is! File) continue;
-        final name = p.basename(entity.path);
-        if (name.startsWith(prefix) && _validBlobPathPattern.hasMatch(name)) {
-          results.add(name);
-        }
-      }
-    }
-
-    if (prefix.isEmpty || prefix.startsWith('shards')) {
-      final shardsDir = Directory(p.join(directory.path, 'shards'));
-      if (await shardsDir.exists()) {
-        await for (final entity in shardsDir.list(followLinks: false)) {
-          if (entity is! File) continue;
-          final rel = 'shards/${p.basename(entity.path)}';
-          if (rel.startsWith(prefix) && _validBlobPathPattern.hasMatch(rel)) {
-            results.add(rel);
-          }
-        }
-      }
-    }
-
-    if (prefix.isEmpty || prefix.startsWith('media')) {
-      final mediaDir = Directory(p.join(directory.path, 'media'));
-      if (await mediaDir.exists()) {
-        await for (final entity in mediaDir.list(followLinks: false)) {
-          if (entity is! File) continue;
-          final rel = 'media/${p.basename(entity.path)}';
-          if (rel.startsWith(prefix) && _validBlobPathPattern.hasMatch(rel)) {
-            results.add(rel);
-          }
-        }
-      }
-    }
-
-    results.sort();
-    return results;
-  }
-
-  @override
-  Future<Uint8List?> getBytes(String name) async {
-    final file = _resolveSafeFile(name);
-    if (!await file.exists()) return null;
-    return await file.readAsBytes();
-  }
-
-  @override
-  Future<void> putBytes(String name, Uint8List bytes) async {
-    final file = _resolveSafeFile(name);
-    await file.parent.create(recursive: true);
-    final tempFile = File(
-      '${file.path}.${DateTime.now().microsecondsSinceEpoch}.tmp',
-    );
-    await tempFile.writeAsBytes(bytes, flush: true);
-    await tempFile.rename(file.path);
-  }
-
-  @override
-  Future<void> delete(String name) async {
-    final file = _resolveSafeFile(name);
-    if (await file.exists()) {
-      try {
-        await file.delete();
-      } catch (_) {
-        // Best-effort garbage collection.
-      }
-    }
-  }
+  void close() {}
 }
 
 /// WebDAV / HTTP REST implementation of [GardenSyncTransport].
@@ -213,6 +117,7 @@ final class WebDavGardenSyncTransport implements GardenSyncTransport {
   final String? authorizationHeader;
 
   final http.Client _client;
+  final bool _ownsClient;
 
   /// Creates a [WebDavGardenSyncTransport].
   ///
@@ -221,7 +126,8 @@ final class WebDavGardenSyncTransport implements GardenSyncTransport {
     required this.baseUri,
     this.authorizationHeader,
     http.Client? client,
-  }) : _client = client ?? http.Client() {
+  }) : _client = client ?? http.Client(),
+       _ownsClient = client == null {
     final isLocalhost =
         baseUri.host == 'localhost' || baseUri.host == '127.0.0.1';
     if (baseUri.scheme != 'https' &&
@@ -338,6 +244,13 @@ final class WebDavGardenSyncTransport implements GardenSyncTransport {
     final uri = _resolveObjectUri(name);
     await _client.delete(uri, headers: _headers());
   }
+
+  @override
+  void close() {
+    if (_ownsClient) {
+      _client.close();
+    }
+  }
 }
 
 /// Callback that returns a valid OAuth 2.0 Bearer access token for the
@@ -381,6 +294,10 @@ final class GoogleDriveGardenSyncTransport implements GardenSyncTransport {
   static const String _folderMimeType = 'application/vnd.google-apps.folder';
 
   static final RegExp _driveIdPattern = RegExp(r'^[A-Za-z0-9_-]{6,128}$');
+  static final RegExp _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+
+  static String _escapeDriveQueryValue(String value) =>
+      value.replaceAll(r'\', r'\\').replaceAll("'", r"\'");
 
   /// Google Drive folder ID hosting the shared garden (`meta.*.sqlite`, `shards/`, `media/`).
   final String rootFolderId;
@@ -398,6 +315,7 @@ final class GoogleDriveGardenSyncTransport implements GardenSyncTransport {
   final Uri uploadBaseUri;
 
   final http.Client _client;
+  final bool _ownsClient;
   final Map<String, String> _subfolderIdCache = {};
   final Map<String, String> _blobFileIdCache = {};
 
@@ -416,7 +334,8 @@ final class GoogleDriveGardenSyncTransport implements GardenSyncTransport {
        uploadBaseUri =
            uploadBaseUri ??
            Uri.parse('https://www.googleapis.com/upload/drive/v3'),
-       _client = client ?? http.Client() {
+       _client = client ?? http.Client(),
+       _ownsClient = client == null {
     if (!_driveIdPattern.hasMatch(rootFolderId)) {
       throw ArgumentError.value(
         rootFolderId,
@@ -458,62 +377,69 @@ final class GoogleDriveGardenSyncTransport implements GardenSyncTransport {
         ? gardenName.trim()
         : 'Shared Biodynamic Garden';
     final base = apiBaseUri ?? Uri.parse('https://www.googleapis.com/drive/v3');
+    final ownsClient = client == null;
     final httpClient = client ?? http.Client();
-    final token = (await tokenProvider()).trim();
-    if (token.isEmpty) {
-      throw StateError(
-        'GoogleDriveAccessTokenProvider returned an empty token',
+    try {
+      final token = (await tokenProvider()).trim();
+      if (token.isEmpty) {
+        throw StateError(
+          'GoogleDriveAccessTokenProvider returned an empty token',
+        );
+      }
+
+      final uri = base.replace(
+        path: '${base.path}/files',
+        queryParameters: const <String, String>{
+          'fields': 'id,name,webViewLink',
+          'supportsAllDrives': 'true',
+        },
       );
-    }
 
-    final uri = base.replace(
-      path: '${base.path}/files',
-      queryParameters: const <String, String>{
-        'fields': 'id,name,webViewLink',
-        'supportsAllDrives': 'true',
-      },
-    );
-
-    final resp = await httpClient.post(
-      uri,
-      headers: <String, String>{
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-      body: jsonEncode(<String, Object?>{
-        'name': trimmedName,
-        'mimeType': _folderMimeType,
-      }),
-    );
-
-    if (resp.statusCode < 200 || resp.statusCode >= 300) {
-      throw HttpException(
-        'Google Drive folder creation failed with status ${resp.statusCode}',
-        uri: uri,
+      final resp = await httpClient.post(
+        uri,
+        headers: <String, String>{
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+        body: jsonEncode(<String, Object?>{
+          'name': trimmedName,
+          'mimeType': _folderMimeType,
+        }),
       );
-    }
 
-    final decoded = jsonDecode(resp.body);
-    if (decoded is! Map) {
-      throw const FormatException('Invalid Google Drive folder response');
-    }
-    final id = decoded['id'];
-    if (id is! String || id.isEmpty) {
-      throw const FormatException('Google Drive folder response missing id');
-    }
-    final name = decoded['name'] is String
-        ? decoded['name'] as String
-        : trimmedName;
-    final webLinkRaw = decoded['webViewLink'];
-    final webUri = (webLinkRaw is String && Uri.tryParse(webLinkRaw) != null)
-        ? Uri.parse(webLinkRaw)
-        : Uri.https('drive.google.com', '/drive/folders/$id');
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        throw HttpException(
+          'Google Drive folder creation failed with status ${resp.statusCode}',
+          uri: uri,
+        );
+      }
 
-    return GoogleDriveGardenFolderInfo(
-      folderId: id,
-      name: name,
-      webViewLink: webUri,
-    );
+      final decoded = jsonDecode(resp.body);
+      if (decoded is! Map) {
+        throw const FormatException('Invalid Google Drive folder response');
+      }
+      final id = decoded['id'];
+      if (id is! String || id.isEmpty) {
+        throw const FormatException('Google Drive folder response missing id');
+      }
+      final name = decoded['name'] is String
+          ? decoded['name'] as String
+          : trimmedName;
+      final webLinkRaw = decoded['webViewLink'];
+      final webUri = (webLinkRaw is String && Uri.tryParse(webLinkRaw) != null)
+          ? Uri.parse(webLinkRaw)
+          : Uri.https('drive.google.com', '/drive/folders/$id');
+
+      return GoogleDriveGardenFolderInfo(
+        folderId: id,
+        name: name,
+        webViewLink: webUri,
+      );
+    } finally {
+      if (ownsClient) {
+        httpClient.close();
+      }
+    }
   }
 
   /// Grants [emailAddress] access (`'writer'` or `'reader'`) to [rootFolderId]
@@ -524,7 +450,7 @@ final class GoogleDriveGardenSyncTransport implements GardenSyncTransport {
     bool sendNotificationEmail = true,
   }) async {
     final trimmedEmail = emailAddress.trim();
-    if (!trimmedEmail.contains('@') || trimmedEmail.length < 5) {
+    if (!_emailPattern.hasMatch(trimmedEmail) || trimmedEmail.length < 5) {
       throw ArgumentError.value(
         emailAddress,
         'emailAddress',
@@ -575,8 +501,10 @@ final class GoogleDriveGardenSyncTransport implements GardenSyncTransport {
       return cachedId;
     }
 
+    final safeRootId = _escapeDriveQueryValue(rootFolderId);
+    final safeSubfolderName = _escapeDriveQueryValue(subfolderName);
     final query =
-        "'$rootFolderId' in parents and name = '$subfolderName' and mimeType = '$_folderMimeType' and trashed = false";
+        "'$safeRootId' in parents and name = '$safeSubfolderName' and mimeType = '$_folderMimeType' and trashed = false";
     final listUri = apiBaseUri.replace(
       path: '${apiBaseUri.path}/files',
       queryParameters: <String, String>{
@@ -650,12 +578,13 @@ final class GoogleDriveGardenSyncTransport implements GardenSyncTransport {
   ) async {
     final results = <(String id, String name)>[];
     String? pageToken;
+    final safeFolderId = _escapeDriveQueryValue(folderId);
 
     do {
       final uri = apiBaseUri.replace(
         path: '${apiBaseUri.path}/files',
         queryParameters: <String, String>{
-          'q': "'$folderId' in parents and trashed = false",
+          'q': "'$safeFolderId' in parents and trashed = false",
           'fields': 'nextPageToken,files(id,name)',
           'pageSize': '200',
           'includeItemsFromAllDrives': 'true',
@@ -883,6 +812,13 @@ final class GoogleDriveGardenSyncTransport implements GardenSyncTransport {
       );
     }
   }
+
+  @override
+  void close() {
+    if (_ownsClient) {
+      _client.close();
+    }
+  }
 }
 
 /// Summary report of a completed [GardenSyncEngine.sync] pass.
@@ -1058,16 +994,7 @@ final class GardenSyncEngine {
       if (store.isBlobMerged(blob)) continue;
       final bytes = await transport.getBytes(blob);
       if (bytes == null) continue;
-      final tmpFile = File(
-        p.join(store.rootDirectory.path, 'sync_remote_${p.basename(blob)}'),
-      );
-      try {
-        await tmpFile.writeAsBytes(bytes, flush: true);
-        store.mergeRemoteMetaFile(tmpFile.path);
-        store.markBlobMerged(blob);
-      } finally {
-        if (await tmpFile.exists()) await tmpFile.delete();
-      }
+      await mergeRemoteMetaBytesToStore(store, blob, bytes);
     }
 
     final localDigest = store.computeMetaDigest();
@@ -1110,20 +1037,14 @@ final class GardenSyncEngine {
 
       final bytes = await transport.getBytes(blob);
       if (bytes == null) continue;
-      final tmpFile = File(
-        p.join(
-          store.rootDirectory.path,
-          'sync_remote_${shardKey}_$remoteDigest.sqlite',
-        ),
+      await mergeRemoteShardBytesToStore(
+        store,
+        shardKey,
+        remoteDigest,
+        blob,
+        bytes,
       );
-      try {
-        await tmpFile.writeAsBytes(bytes, flush: true);
-        store.mergeRemoteShardFile(shardKey, tmpFile.path);
-        store.markBlobMerged(blob);
-        mergedAny = true;
-      } finally {
-        if (await tmpFile.exists()) await tmpFile.delete();
-      }
+      mergedAny = true;
     }
 
     if (!store.hasLocalShard(shardKey)) {

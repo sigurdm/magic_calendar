@@ -72,6 +72,11 @@ final class TaskPlannerCard extends StatefulWidget {
 }
 
 final class _TaskPlannerCardState extends State<TaskPlannerCard> {
+  static final DateFormat _windowDateFmt = DateFormat('EEE, MMM d • HH:mm');
+  static final DateFormat _peakDateFmt = DateFormat("EEE, MMM d 'at' HH:mm");
+  static final DateFormat _shortDayFmt = DateFormat('MMM d');
+  static final DateFormat _monthYearFmt = DateFormat('MMM yyyy');
+
   late TaskActionType _selectedAction;
   VegetableEntry? _selectedCrop;
   late PlantQuality _selectedQuality;
@@ -85,6 +90,17 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
   // Cached window search result to avoid redundant ephemeris scans across rebuilds.
   TaskWindowSearchResult? _cachedResult;
   String? _cachedKey;
+  String? _cachedQueueBaseKey;
+  final Map<String, TaskWindow?> _cachedQueueNextWindows = {};
+
+  String? _cachedCropListKey;
+  List<VegetableEntry> _cachedMatchingCrops = const <VegetableEntry>[];
+
+  GardenProfile? _cachedPlotProfile;
+  int? _cachedPlotShardCount;
+  List<GardenPlot> _cachedKnownPlots = const <GardenPlot>[];
+  String? _cachedRotationKey;
+  PlotRotationAssessment? _cachedPlotRotation;
 
   @override
   void initState() {
@@ -107,6 +123,10 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
         widget.initialCrop != oldWidget.initialCrop) {
       _selectedCrop = widget.initialCrop;
       _selectedQuality = widget.initialCrop!.quality;
+    } else if (widget.initialQuality != null &&
+        widget.initialQuality != oldWidget.initialQuality &&
+        widget.initialCrop == null) {
+      _selectedQuality = widget.initialQuality!;
     }
   }
 
@@ -135,12 +155,20 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
       widget.selectedDate.day,
       widget.selectedDate.hour,
     );
+    final forecastId = forecast == null ? 0 : identityHashCode(forecast);
+    final firstMs = (forecast != null && forecast.isNotEmpty)
+        ? forecast.first.time.millisecondsSinceEpoch
+        : 0;
+    final lastMs = (forecast != null && forecast.isNotEmpty)
+        ? forecast.last.time.millisecondsSinceEpoch
+        : 0;
     final key =
         '${hourBucket.millisecondsSinceEpoch}|${_selectedAction.name}|'
         '${_selectedQuality.name}|${_selectedCrop?.id ?? "none"}|'
+        '${identityHashCode(widget.ephemeris)}|'
         '${widget.latitude.toStringAsFixed(2)}|${widget.longitude.toStringAsFixed(2)}|'
-        '${widget.seasons.runtimeType}:${widget.seasons?.shortLabel ?? ""}|'
-        '${forecast?.length ?? 0}';
+        '${widget.seasons.runtimeType}:${widget.seasons?.shortLabel ?? ""}:${identityHashCode(widget.seasons?.localProfile)}|'
+        '$forecastId:${forecast?.length ?? 0}:$firstMs:$lastMs';
 
     if (_cachedKey == key && _cachedResult != null) {
       return _cachedResult!;
@@ -205,7 +233,30 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
     List<WeatherDataPoint>? forecast,
   ) {
     if (!profile.hasQueuedTasks) return const SizedBox.shrink();
-    final dateFmt = DateFormat('EEE, MMM d • HH:mm');
+    final dateFmt = _windowDateFmt;
+    final hourBucket = DateTime(
+      widget.selectedDate.year,
+      widget.selectedDate.month,
+      widget.selectedDate.day,
+      widget.selectedDate.hour,
+    );
+    final forecastId = forecast == null ? 0 : identityHashCode(forecast);
+    final firstMs = (forecast != null && forecast.isNotEmpty)
+        ? forecast.first.time.millisecondsSinceEpoch
+        : 0;
+    final lastMs = (forecast != null && forecast.isNotEmpty)
+        ? forecast.last.time.millisecondsSinceEpoch
+        : 0;
+    final queueBaseKey =
+        '${hourBucket.millisecondsSinceEpoch}|'
+        '${identityHashCode(widget.ephemeris)}|'
+        '${widget.latitude.toStringAsFixed(2)}|${widget.longitude.toStringAsFixed(2)}|'
+        '${widget.seasons.runtimeType}:${widget.seasons?.shortLabel ?? ""}:${identityHashCode(widget.seasons?.localProfile)}|'
+        '$forecastId:${forecast?.length ?? 0}:$firstMs:$lastMs';
+    if (_cachedQueueBaseKey != queueBaseKey) {
+      _cachedQueueBaseKey = queueBaseKey;
+      _cachedQueueNextWindows.clear();
+    }
 
     return Column(
       key: const ValueKey('active_task_queue_section'),
@@ -230,20 +281,32 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
                   selectedCropId: _selectedCrop?.id,
                   selectedQuality: _selectedQuality,
                 );
-                final taskSearch = TaskWindowPlanner.findUpcomingWindows(
-                  action: task.action,
-                  targetQuality: task.targetQuality,
-                  crop: task.crop,
-                  startTime: widget.selectedDate,
-                  ephemeris: widget.ephemeris,
-                  weatherForecast: forecast,
-                  latitude: widget.latitude,
-                  longitude: widget.longitude,
-                  seasons: widget.seasons,
-                  searchDays: 14,
-                  maxWindows: 1,
-                );
-                final nextWindow = taskSearch.windows.firstOrNull;
+                final taskCacheKey =
+                    '${task.id}|${task.action.name}|${task.cropId ?? ""}|${task.targetQuality.name}|${task.plannedStartDate?.millisecondsSinceEpoch ?? 0}';
+                if (!_cachedQueueNextWindows.containsKey(taskCacheKey)) {
+                  final plannedStart = task.plannedStartDate;
+                  final searchAnchor =
+                      (plannedStart != null &&
+                          plannedStart.isAfter(widget.selectedDate))
+                      ? plannedStart.subtract(const Duration(days: 2))
+                      : widget.selectedDate;
+                  final taskSearch = TaskWindowPlanner.findUpcomingWindows(
+                    action: task.action,
+                    targetQuality: task.targetQuality,
+                    crop: task.crop,
+                    startTime: searchAnchor,
+                    ephemeris: widget.ephemeris,
+                    weatherForecast: forecast,
+                    latitude: widget.latitude,
+                    longitude: widget.longitude,
+                    seasons: widget.seasons,
+                    searchDays: 14,
+                    maxWindows: 1,
+                  );
+                  _cachedQueueNextWindows[taskCacheKey] =
+                      taskSearch.windows.firstOrNull;
+                }
+                final nextWindow = _cachedQueueNextWindows[taskCacheKey];
 
                 return Container(
                   key: ValueKey('queued_task_${task.id}'),
@@ -268,6 +331,9 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
                         _selectedCrop = task.crop;
                         _selectedQuality = task.targetQuality;
                       });
+                      if (task.plannedStartDate case final plannedDate?) {
+                        widget.onTimeJump(plannedDate);
+                      }
                     },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -344,17 +410,15 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
     );
   }
 
-  Widget _buildContent(BuildContext context, List<WeatherDataPoint>? forecast) {
-    final result = _resolveSearchResult(forecast);
-    final accentColor = GoetheanPalette.getColor(result.targetQuality);
-    final gardenProfile = widget.gardenController?.value;
-    final starredIds = gardenProfile?.starredCropIds ?? const <String>{};
-    final filteredWindows = _onlyOptimal
-        ? result.windows
-              .where((w) => w.suitability == TaskSuitability.optimal)
-              .toList(growable: false)
-        : result.windows;
-
+  List<VegetableEntry> _resolveMatchingCrops(Set<String> starredIds) {
+    final key =
+        '$_searchQuery|$_onlyStarredCrops|${_selectedQuality.name}|'
+        '${_selectedCategory?.name ?? ""}|${_selectedCrop?.id ?? ""}|'
+        '${identityHashCode(starredIds)}:${starredIds.length}';
+    if (_cachedCropListKey == key) {
+      return _cachedMatchingCrops;
+    }
+    _cachedCropListKey = key;
     final baseSearchedCrops = VegetableDatabase.search(
       _searchQuery,
       quality: (_onlyStarredCrops || _searchQuery.trim().isNotEmpty)
@@ -370,12 +434,25 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
             ...baseSearchedCrops.where((c) => starredIds.contains(c.id)),
             ...baseSearchedCrops.where((c) => !starredIds.contains(c.id)),
           ];
-    final matchingCrops = <VegetableEntry>[
+    return _cachedMatchingCrops = <VegetableEntry>[
       if (_selectedCrop != null &&
           !searchedCrops.any((c) => c.id == _selectedCrop!.id))
         _selectedCrop!,
       ...searchedCrops,
     ];
+  }
+
+  Widget _buildContent(BuildContext context, List<WeatherDataPoint>? forecast) {
+    final result = _resolveSearchResult(forecast);
+    final accentColor = GoetheanPalette.getColor(result.targetQuality);
+    final gardenProfile = widget.gardenController?.value;
+    final starredIds = gardenProfile?.starredCropIds ?? const <String>{};
+    final filteredWindows = _onlyOptimal
+        ? result.windows
+              .where((w) => w.suitability == TaskSuitability.optimal)
+              .toList(growable: false)
+        : result.windows;
+    final matchingCrops = _resolveMatchingCrops(starredIds);
 
     return OrganicVesselContainer(
       accentColor: accentColor,
@@ -1213,7 +1290,7 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
                             color: Color(0xFFF59E0B),
                           ),
                           label: Text(
-                            'Jump to ${DateFormat('MMM yyyy').format(result.nextSeasonalStartDate!)}',
+                            'Jump to ${_monthYearFmt.format(result.nextSeasonalStartDate!)}',
                             style: GoogleFonts.outfit(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w700,
@@ -1308,7 +1385,22 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
             const SizedBox(height: 12),
             Builder(
               builder: (context) {
-                final knownPlots = widget.gardenController!.listPlots();
+                final shardCount =
+                    widget.gardenController!.journalStore?.openShardCount;
+                final currentPlots = widget.gardenController!.listPlots();
+                if (!identical(_cachedPlotProfile, gardenProfile) ||
+                    _cachedPlotShardCount != shardCount ||
+                    !identical(_cachedKnownPlots, currentPlots)) {
+                  _cachedPlotProfile = gardenProfile;
+                  _cachedPlotShardCount = shardCount;
+                  _cachedKnownPlots = currentPlots;
+                  _cachedRotationKey = null;
+                  if (_selectedPlotName != null &&
+                      !currentPlots.any((p) => p.name == _selectedPlotName)) {
+                    _selectedPlotName = null;
+                  }
+                }
+                final knownPlots = _cachedKnownPlots;
                 final isQueued =
                     gardenProfile?.isTaskQueued(
                       action: _selectedAction,
@@ -1323,14 +1415,26 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
                 final plotSuffix = _selectedPlotName != null
                     ? ' (${_selectedPlotName!})'
                     : '';
-                final plotRotation =
-                    (_selectedPlotName != null && _selectedCrop != null)
-                    ? widget.gardenController!.evaluatePlotRotation(
-                        _selectedPlotName!,
-                        candidateCrop: _selectedCrop,
-                        referenceTime: widget.selectedDate,
-                      )
-                    : null;
+                PlotRotationAssessment? plotRotation;
+                if (_selectedPlotName != null && _selectedCrop != null) {
+                  final dayBucket = DateTime.utc(
+                    widget.selectedDate.year,
+                    widget.selectedDate.month,
+                    widget.selectedDate.day,
+                  ).millisecondsSinceEpoch;
+                  final rotKey =
+                      '$_selectedPlotName|${_selectedCrop!.id}|$dayBucket';
+                  if (_cachedRotationKey != rotKey) {
+                    _cachedRotationKey = rotKey;
+                    _cachedPlotRotation = widget.gardenController!
+                        .evaluatePlotRotation(
+                          _selectedPlotName!,
+                          candidateCrop: _selectedCrop,
+                          referenceTime: widget.selectedDate,
+                        );
+                  }
+                  plotRotation = _cachedPlotRotation;
+                }
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1504,7 +1608,7 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
-                'UPCOMING WINDOWS (NEXT 30 DAYS FROM ${DateFormat('MMM d').format(widget.selectedDate).toUpperCase()})',
+                'UPCOMING WINDOWS (NEXT 30 DAYS FROM ${_shortDayFmt.format(widget.selectedDate).toUpperCase()})',
                 style: GoogleFonts.outfit(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -1594,18 +1698,20 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
               ),
             )
           else
-            Column(
-              children: [
-                for (int index = 0; index < filteredWindows.length; index++)
-                  _buildWindowTile(
-                    context,
-                    filteredWindows[index],
-                    accentColor,
-                    result: result,
-                    index: index,
-                    showSeasonBadge: result.seasonalMonths.isNotEmpty,
-                  ),
-              ],
+            RepaintBoundary(
+              child: Column(
+                children: [
+                  for (int index = 0; index < filteredWindows.length; index++)
+                    _buildWindowTile(
+                      context,
+                      filteredWindows[index],
+                      accentColor,
+                      result: result,
+                      index: index,
+                      showSeasonBadge: result.seasonalMonths.isNotEmpty,
+                    ),
+                ],
+              ),
             ),
         ],
       ),
@@ -1711,8 +1817,8 @@ final class _TaskPlannerCardState extends State<TaskPlannerCard> {
     final seasonBadgeColor = window.isInSeason
         ? const Color(0xFF10B981)
         : const Color(0xFFF59E0B);
-    final dateFmt = DateFormat('EEE, MMM d • HH:mm');
-    final peakFmt = DateFormat('EEE, MMM d \'at\' HH:mm');
+    final dateFmt = _windowDateFmt;
+    final peakFmt = _peakDateFmt;
     final hours = window.duration.inHours;
 
     return Padding(

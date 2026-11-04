@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -10,6 +9,8 @@ import '../../core/models/models.dart';
 import '../../core/vegetable_database.dart';
 import '../../services/garden_service.dart';
 import '../theme/goethean_palette.dart';
+import 'local_photo_reader_stub.dart'
+    if (dart.library.io) 'local_photo_reader_io.dart';
 import 'organic_vessel_container.dart';
 
 /// A raw photo and optional thumbnail/caption selected in [FieldJournalSheet].
@@ -177,7 +178,7 @@ final class FieldJournalSheet extends StatefulWidget {
         initialPrepCode: existingEntry?.prepCode ?? initialPrepCode,
         initialQuality: existingEntry?.quality ?? initialQuality,
         initialTitle: existingEntry?.title ?? initialTitle,
-        initialNotes: existingEntry?.notes ?? initialNotes,
+        initialNotes: existingEntry?.editableFieldNote ?? initialNotes,
         initialBedName: existingEntry?.bedName ?? initialBedName,
         initialParentEntryId:
             existingEntry?.parentEntryId ?? initialParentEntryId,
@@ -192,6 +193,8 @@ final class FieldJournalSheet extends StatefulWidget {
 }
 
 final class _FieldJournalSheetState extends State<FieldJournalSheet> {
+  static final DateFormat _dateFmt = DateFormat('EEE, MMM d, yyyy • HH:mm');
+
   late FieldJournalAction _action;
   VegetableEntry? _crop;
   String? _prepCode;
@@ -205,24 +208,68 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
   String _cropSearchQuery = '';
   int? _outcomeRating;
   bool _titleManuallyEdited = false;
+  bool _isSaving = false;
   final List<PickedJournalPhoto> _stagedPhotos = <PickedJournalPhoto>[];
   String? _photoErrorMessage;
+
+  CalendarInfo? _cachedCalendarInfo;
+  FieldJournalCosmicSnapshot? _cachedCosmic;
+  WeatherDataPoint? _cachedWeatherPoint;
+  MultiHorizonWeatherAnalysis? _cachedHorizon;
+  FieldJournalWeatherSnapshot? _cachedWeatherSnap;
+
+  GardenProfile? _cachedProfileForBeds;
+  int? _cachedShardCountForBeds;
+  List<GardenPlot>? _cachedPlotsForBeds;
+  List<String>? _cachedKnownBeds;
+
+  GardenProfile? _cachedProfileForBatches;
+  int? _cachedShardCountForBatches;
+  String? _cachedBatchCropId;
+  List<PlantingBatchSummary>? _cachedCandidateBatches;
+
+  Set<String>? _cachedStarredIdsForCrops;
+  int? _cachedStarredIdsCount;
+  String? _cachedCropIdForCandidates;
+  PlantQuality? _cachedQualityForCandidates;
+  String? _cachedSearchQueryForCandidates;
+  List<VegetableEntry>? _cachedCandidateCrops;
+
+  GardenProfile? _cachedProfileForRotation;
+  int? _cachedShardCountForRotation;
+  List<GardenPlot>? _cachedPlotsForRotation;
+  DateTime? _cachedTimestampForRotation;
+  String? _cachedRotationPlotName;
+  String? _cachedRotationCropId;
+  PlotRotationAssessment? _cachedPlotRotation;
+  GardenPlot? _cachedPlotMeta;
+
+  GardenProfile? _cachedProfileForSuccession;
+  int? _cachedShardCountForSuccession;
+  List<GardenPlot>? _cachedPlotsForSuccession;
+  DateTime? _cachedTimestampForSuccession;
+  String? _cachedSuccessionPlotName;
+  PlotSuccessionPlan? _cachedSuccessionPlan;
+
+  static PlantQuality? _nonEmptyQuality(PlantQuality? q) =>
+      (q == null || q == PlantQuality.none) ? null : q;
 
   @override
   void initState() {
     super.initState();
     _action = widget.initialAction;
-    _crop = widget.initialCrop;
-    _prepCode = widget.initialPrepCode;
+    _crop = _action.supportsCropSelection ? widget.initialCrop : null;
+    _prepCode =
+        widget.initialPrepCode ??
+        (_action == FieldJournalAction.sprayPreparation ? 'BD 500' : null);
     _parentEntryId =
         widget.existingEntry?.parentEntryId ?? widget.initialParentEntryId;
     _quality =
-        widget.initialQuality ??
-        _crop?.quality ??
-        (widget.calendarInfo.quality == PlantQuality.none
-            ? PlantQuality.root
-            : widget.calendarInfo.quality);
-    _outcomeRating = widget.existingEntry?.outcomeRating;
+        _nonEmptyQuality(widget.initialQuality) ??
+        _nonEmptyQuality(_crop?.quality) ??
+        _nonEmptyQuality(widget.calendarInfo.quality) ??
+        PlantQuality.root;
+    _outcomeRating = widget.existingEntry?.effectiveOutcomeRating;
 
     final defaultTitle =
         widget.initialTitle ??
@@ -235,7 +282,7 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
     );
     _notesController = TextEditingController(text: widget.initialNotes);
     _outcomeController = TextEditingController(
-      text: widget.existingEntry?.outcomeNote ?? '',
+      text: widget.existingEntry?.editableOutcomeNote ?? '',
     );
     _cropSearchController = TextEditingController();
   }
@@ -283,9 +330,13 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
       final PickedJournalPhoto? picked;
       if (widget.onPickPhoto != null) {
         picked = await widget.onPickPhoto!(context);
+      } else if (supportsBrowserPhotoFilePicker) {
+        final bytes = await pickBrowserPhotoBytes();
+        picked = bytes == null ? null : PickedJournalPhoto(fullBytes: bytes);
       } else {
         picked = await _promptForLocalPhotoFile();
       }
+      if (!mounted) return;
       if (picked == null) return;
       // Validate format and 10 MB limit immediately.
       if (picked.fullBytes.isEmpty ||
@@ -399,11 +450,7 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
         ),
       );
       if (confirmed != true || pathCtrl.text.trim().isEmpty) return null;
-      final file = File(pathCtrl.text.trim());
-      if (!await file.exists()) {
-        throw const FormatException('Selected image file does not exist');
-      }
-      final bytes = await file.readAsBytes();
+      final bytes = await readLocalPhotoFileBytes(pathCtrl.text.trim());
       return PickedJournalPhoto(
         fullBytes: bytes,
         caption: captionCtrl.text.trim(),
@@ -415,107 +462,229 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
   }
 
   Future<void> _save() async {
-    final existing = widget.existingEntry;
-    final cosmicSnapshot =
-        existing?.cosmicSnapshot ??
-        FieldJournalCosmicSnapshot.fromCalendarInfo(widget.calendarInfo);
-    final weatherSnapshot =
-        existing?.weatherSnapshot ??
-        (widget.weather != null
-            ? FieldJournalWeatherSnapshot.fromWeather(
-                widget.weather!,
-                horizon: widget.horizon,
-              )
-            : null);
+    if (_isSaving) return;
+    _isSaving = true;
+    try {
+      final existing = widget.existingEntry;
+      final cosmicSnapshot =
+          existing?.cosmicSnapshot ??
+          FieldJournalCosmicSnapshot.fromCalendarInfo(widget.calendarInfo);
+      final weatherSnapshot =
+          existing?.weatherSnapshot ??
+          (widget.weather != null
+              ? FieldJournalWeatherSnapshot.fromWeather(
+                  widget.weather!,
+                  horizon: widget.horizon,
+                )
+              : null);
 
-    final rawTitle = _titleController.text.trim();
-    final resolvedTitle = rawTitle.isNotEmpty
-        ? rawTitle
-        : _computeAutoTitle(_action, _crop, _prepCode, _quality);
-    final rawBed = _bedController.text.trim();
-    final entryId =
-        existing?.id ??
-        'journal_${widget.timestamp.millisecondsSinceEpoch}_${_action.name}_${_crop?.id ?? _prepCode ?? _quality.name}';
-    final authorId = existing?.authorId ?? widget.gardenController.localActorId;
-    final authorName =
-        existing?.authorName ?? widget.gardenController.localAuthorName;
-
-    final mergedAttachments = <JournalAttachment>[
-      ...(existing?.attachments ?? const <JournalAttachment>[]),
-    ];
-    final fullBytesByAttachmentId = <String, Uint8List>{};
-    for (int i = 0; i < _stagedPhotos.length; i++) {
-      final staged = _stagedPhotos[i];
-      final attachment = JournalAttachment.fromRawBytes(
-        entryId: entryId,
-        fullBytes: staged.fullBytes,
-        thumbnailBytes: staged.thumbnailBytes,
-        width: staged.width,
-        height: staged.height,
-        caption: staged.caption,
-        authorId: widget.gardenController.localActorId,
-        authorName: widget.gardenController.localAuthorName,
-        timestamp: DateTime.now().add(Duration(microseconds: i)),
-      );
-      mergedAttachments.add(attachment);
-      fullBytesByAttachmentId[attachment.id] = staged.fullBytes;
-    }
-
-    final entry = FieldJournalEntry(
-      id: entryId,
-      timestamp: widget.timestamp,
-      action: _action,
-      title: resolvedTitle,
-      cropId: _crop?.id,
-      prepCode: _prepCode,
-      bedName: rawBed.isEmpty ? null : rawBed,
-      parentEntryId: _parentEntryId,
-      quality: _quality,
-      authorId: authorId,
-      authorName: authorName,
-      cosmicSnapshot: cosmicSnapshot,
-      weatherSnapshot: weatherSnapshot,
-      location:
-          existing?.location ?? widget.gardenController.value.activeLocation,
-      notes: _notesController.text.trim(),
-      outcomeNote: _outcomeController.text.trim(),
-      outcomeRating: _outcomeRating,
-      noteThread: existing?.noteThread ?? const [],
-      attachments: mergedAttachments,
-    );
-
-    await widget.gardenController.addJournalEntry(
-      entry,
-      fullMediaBytesByAttachmentId: fullBytesByAttachmentId.isEmpty
+      final rawTitle = _titleController.text.trim();
+      final resolvedTitle = rawTitle.isNotEmpty
+          ? rawTitle
+          : _computeAutoTitle(_action, _crop, _prepCode, _quality);
+      final rawBed = _bedController.text.trim();
+      final existingPlot = rawBed.isEmpty
           ? null
-          : fullBytesByAttachmentId,
+          : widget.gardenController.findPlot(rawBed);
+      final canonicalBed =
+          existingPlot?.name ?? (rawBed.isEmpty ? null : rawBed);
+      final entryId =
+          existing?.id ??
+          FieldJournalEntry.generateEntryId(
+            timestamp: widget.timestamp,
+            action: _action,
+            cropId: _crop?.id,
+            prepCode: _prepCode,
+            quality: _quality,
+          );
+      final authorId =
+          existing?.authorId ?? widget.gardenController.localActorId;
+      final authorName =
+          existing?.authorName ?? widget.gardenController.localAuthorName;
+
+      final mergedAttachments = <JournalAttachment>[
+        ...(existing?.attachments ?? const <JournalAttachment>[]),
+      ];
+      final fullBytesByAttachmentId = <String, Uint8List>{};
+      for (int i = 0; i < _stagedPhotos.length; i++) {
+        final staged = _stagedPhotos[i];
+        final attachment = JournalAttachment.fromRawBytes(
+          entryId: entryId,
+          fullBytes: staged.fullBytes,
+          thumbnailBytes: staged.thumbnailBytes,
+          width: staged.width,
+          height: staged.height,
+          caption: staged.caption,
+          authorId: widget.gardenController.localActorId,
+          authorName: widget.gardenController.localAuthorName,
+          timestamp: DateTime.now().add(Duration(microseconds: i)),
+        );
+        mergedAttachments.add(attachment);
+        fullBytesByAttachmentId[attachment.id] = staged.fullBytes;
+      }
+
+      final entry = FieldJournalEntry(
+        id: entryId,
+        timestamp: widget.timestamp,
+        action: _action,
+        title: resolvedTitle,
+        cropId: _crop?.id,
+        prepCode: _prepCode,
+        bedName: canonicalBed,
+        parentEntryId: _parentEntryId,
+        quality: _quality,
+        authorId: authorId,
+        authorName: authorName,
+        cosmicSnapshot: cosmicSnapshot,
+        weatherSnapshot: weatherSnapshot,
+        location:
+            existing?.location ?? widget.gardenController.value.activeLocation,
+        notes: _notesController.text.trim(),
+        outcomeNote: _outcomeController.text.trim(),
+        outcomeRating: _outcomeRating,
+        noteThread: existing?.noteThread ?? const [],
+        attachments: mergedAttachments,
+      );
+
+      await widget.gardenController.addJournalEntry(
+        entry,
+        fullMediaBytesByAttachmentId: fullBytesByAttachmentId.isEmpty
+            ? null
+            : fullBytesByAttachmentId,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop(entry);
+    } finally {
+      _isSaving = false;
+    }
+  }
+
+  FieldJournalCosmicSnapshot _resolveCosmicSnapshot() {
+    if (widget.existingEntry != null) {
+      return widget.existingEntry!.cosmicSnapshot;
+    }
+    if (_cachedCosmic != null && _cachedCalendarInfo == widget.calendarInfo) {
+      return _cachedCosmic!;
+    }
+    _cachedCalendarInfo = widget.calendarInfo;
+    return _cachedCosmic = FieldJournalCosmicSnapshot.fromCalendarInfo(
+      widget.calendarInfo,
     );
-    if (!mounted) return;
-    Navigator.of(context).pop(entry);
+  }
+
+  FieldJournalWeatherSnapshot? _resolveWeatherSnapshot() {
+    if (widget.existingEntry != null) {
+      return widget.existingEntry!.weatherSnapshot;
+    }
+    if (widget.weather == null) return null;
+    if (_cachedWeatherSnap != null &&
+        identical(_cachedWeatherPoint, widget.weather) &&
+        identical(_cachedHorizon, widget.horizon)) {
+      return _cachedWeatherSnap;
+    }
+    _cachedWeatherPoint = widget.weather;
+    _cachedHorizon = widget.horizon;
+    return _cachedWeatherSnap = FieldJournalWeatherSnapshot.fromWeather(
+      widget.weather!,
+      horizon: widget.horizon,
+    );
+  }
+
+  List<String> _resolveKnownBeds() {
+    final profile = widget.gardenController.value;
+    final shardCount = widget.gardenController.journalStore?.openShardCount;
+    final currentPlots = widget.gardenController.listPlots();
+    if (_cachedKnownBeds != null &&
+        identical(_cachedProfileForBeds, profile) &&
+        _cachedShardCountForBeds == shardCount &&
+        identical(_cachedPlotsForBeds, currentPlots)) {
+      return _cachedKnownBeds!;
+    }
+    _cachedProfileForBeds = profile;
+    _cachedShardCountForBeds = shardCount;
+    _cachedPlotsForBeds = currentPlots;
+    return _cachedKnownBeds = widget.gardenController.listBedNames();
+  }
+
+  List<PlantingBatchSummary> _resolveCandidateBatches() {
+    final profile = widget.gardenController.value;
+    final shardCount = widget.gardenController.journalStore?.openShardCount;
+    final cropId = _crop?.id;
+    if (_cachedCandidateBatches != null &&
+        identical(_cachedProfileForBatches, profile) &&
+        _cachedShardCountForBatches == shardCount &&
+        _cachedBatchCropId == cropId) {
+      return _cachedCandidateBatches!;
+    }
+    _cachedProfileForBatches = profile;
+    _cachedShardCountForBatches = shardCount;
+    _cachedBatchCropId = cropId;
+    return _cachedCandidateBatches = widget.gardenController
+        .listPlantingBatches(cropId: cropId)
+        .where((b) => b.entryId != widget.existingEntry?.id)
+        .take(6)
+        .toList(growable: false);
+  }
+
+  (GardenPlot?, PlotRotationAssessment) _resolvePlotRotation(String plotName) {
+    final profile = widget.gardenController.value;
+    final shardCount = widget.gardenController.journalStore?.openShardCount;
+    final currentPlots = widget.gardenController.listPlots();
+    final cropId = _crop?.id;
+    if (_cachedPlotRotation != null &&
+        identical(_cachedProfileForRotation, profile) &&
+        _cachedShardCountForRotation == shardCount &&
+        identical(_cachedPlotsForRotation, currentPlots) &&
+        _cachedTimestampForRotation == widget.timestamp &&
+        _cachedRotationPlotName == plotName &&
+        _cachedRotationCropId == cropId) {
+      return (_cachedPlotMeta, _cachedPlotRotation!);
+    }
+    _cachedProfileForRotation = profile;
+    _cachedShardCountForRotation = shardCount;
+    _cachedPlotsForRotation = currentPlots;
+    _cachedTimestampForRotation = widget.timestamp;
+    _cachedRotationPlotName = plotName;
+    _cachedRotationCropId = cropId;
+    _cachedPlotMeta = widget.gardenController.findPlot(plotName);
+    _cachedPlotRotation = widget.gardenController.evaluatePlotRotation(
+      plotName,
+      candidateCrop: _crop,
+      referenceTime: widget.timestamp,
+    );
+    return (_cachedPlotMeta, _cachedPlotRotation!);
+  }
+
+  PlotSuccessionPlan _resolvePlotSuccessionPlan(String plotName) {
+    final profile = widget.gardenController.value;
+    final shardCount = widget.gardenController.journalStore?.openShardCount;
+    final currentPlots = widget.gardenController.listPlots();
+    if (_cachedSuccessionPlan != null &&
+        identical(_cachedProfileForSuccession, profile) &&
+        _cachedShardCountForSuccession == shardCount &&
+        identical(_cachedPlotsForSuccession, currentPlots) &&
+        _cachedTimestampForSuccession == widget.timestamp &&
+        _cachedSuccessionPlotName == plotName) {
+      return _cachedSuccessionPlan!;
+    }
+    _cachedProfileForSuccession = profile;
+    _cachedShardCountForSuccession = shardCount;
+    _cachedPlotsForSuccession = currentPlots;
+    _cachedTimestampForSuccession = widget.timestamp;
+    _cachedSuccessionPlotName = plotName;
+    return _cachedSuccessionPlan = widget.gardenController
+        .buildPlotSuccessionPlan(plotName, referenceTime: widget.timestamp);
   }
 
   @override
   Widget build(BuildContext context) {
     final accentColor = GoetheanPalette.getColor(_quality);
-    final cosmic =
-        widget.existingEntry?.cosmicSnapshot ??
-        FieldJournalCosmicSnapshot.fromCalendarInfo(widget.calendarInfo);
-    final weatherSnap =
-        widget.existingEntry?.weatherSnapshot ??
-        (widget.weather != null
-            ? FieldJournalWeatherSnapshot.fromWeather(
-                widget.weather!,
-                horizon: widget.horizon,
-              )
-            : null);
-    final dateFmt = DateFormat('EEE, MMM d, yyyy • HH:mm');
+    final cosmic = _resolveCosmicSnapshot();
+    final weatherSnap = _resolveWeatherSnapshot();
+    final dateFmt = _dateFmt;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final knownBeds = widget.gardenController.listBedNames();
-    final candidateBatches = widget.gardenController
-        .listPlantingBatches(cropId: _crop?.id)
-        .where((b) => b.entryId != widget.existingEntry?.id)
-        .take(6)
-        .toList(growable: false);
+    final knownBeds = _resolveKnownBeds();
+    final candidateBatches = _resolveCandidateBatches();
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
@@ -704,6 +873,9 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
                                       } else if (candidate !=
                                           FieldJournalAction.sprayPreparation) {
                                         _prepCode = null;
+                                      }
+                                      if (!candidate.supportsCropSelection) {
+                                        _crop = null;
                                       }
                                       _syncAutoTitle();
                                     });
@@ -1047,15 +1219,9 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
                           Builder(
                             builder: (context) {
                               final plotName = _bedController.text.trim();
-                              final plotMeta = widget.gardenController.findPlot(
+                              final (plotMeta, rotation) = _resolvePlotRotation(
                                 plotName,
                               );
-                              final rotation = widget.gardenController
-                                  .evaluatePlotRotation(
-                                    plotName,
-                                    candidateCrop: _crop,
-                                    referenceTime: widget.timestamp,
-                                  );
                               final hasWarning = rotation.hasFamilyConflict;
                               final bannerColor = hasWarning
                                   ? const Color(0xFFF59E0B)
@@ -1138,10 +1304,9 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
                                       const SizedBox(height: 6),
                                       Builder(
                                         builder: (context) {
-                                          final plan = widget.gardenController
-                                              .buildPlotSuccessionPlan(
+                                          final plan =
+                                              _resolvePlotSuccessionPlan(
                                                 plotName,
-                                                referenceTime: widget.timestamp,
                                               );
                                           if (plan.candidates.isEmpty) {
                                             return const SizedBox.shrink();
@@ -1542,6 +1707,21 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
 
   List<VegetableEntry> _candidateCrops() {
     final starredIds = widget.gardenController.value.starredCropIds;
+    final cropId = _crop?.id;
+    if (_cachedCandidateCrops != null &&
+        identical(_cachedStarredIdsForCrops, starredIds) &&
+        _cachedStarredIdsCount == starredIds.length &&
+        _cachedCropIdForCandidates == cropId &&
+        _cachedQualityForCandidates == _quality &&
+        _cachedSearchQueryForCandidates == _cropSearchQuery) {
+      return _cachedCandidateCrops!;
+    }
+    _cachedStarredIdsForCrops = starredIds;
+    _cachedStarredIdsCount = starredIds.length;
+    _cachedCropIdForCandidates = cropId;
+    _cachedQualityForCandidates = _quality;
+    _cachedSearchQueryForCandidates = _cropSearchQuery;
+
     final seen = <String>{};
     final results = <VegetableEntry>[];
 
@@ -1556,7 +1736,7 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
       for (final match in VegetableDatabase.search(_cropSearchQuery).take(10)) {
         addUnique(match);
       }
-      return results;
+      return _cachedCandidateCrops = results;
     }
 
     for (final id in starredIds) {
@@ -1568,7 +1748,7 @@ final class _FieldJournalSheetState extends State<FieldJournalSheet> {
       addUnique(v);
       if (results.length >= 10) break;
     }
-    return results;
+    return _cachedCandidateCrops = results;
   }
 
   InputDecoration _inputDecoration({

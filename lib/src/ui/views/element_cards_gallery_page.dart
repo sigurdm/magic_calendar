@@ -119,8 +119,6 @@ final class _ElementCardsGalleryPageState
       ),
     ];
 
-    String elementMessage(PlantQuality q) => '';
-
     return Scaffold(
       backgroundColor: const Color(0xFF14141E),
       appBar: AppBar(
@@ -292,8 +290,16 @@ final class _ElementCardsGalleryPageState
                 const padH = 16.0;
                 const gap = 16.0;
 
-                final availH = constraints.maxHeight - padV * 2;
-                final availW = constraints.maxWidth - padH * 2;
+                final availH =
+                    (constraints.maxHeight.isFinite
+                        ? constraints.maxHeight
+                        : 800.0) -
+                    padV * 2;
+                final availW =
+                    (constraints.maxWidth.isFinite
+                        ? constraints.maxWidth
+                        : 800.0) -
+                    padH * 2;
                 final hasCaptions =
                     _mode == GalleryDisplayMode.textureComparison ||
                     _mode == GalleryDisplayMode.diurnalSunCycle;
@@ -310,7 +316,7 @@ final class _ElementCardsGalleryPageState
 
                 final infoForElement = _buildInfo(
                   quality: _comparisonElement,
-                  message: elementMessage(_comparisonElement),
+                  message: '',
                 );
 
                 Widget buildCardItem(int index) {

@@ -7,13 +7,15 @@ import '../core/garden/garden.dart';
 import '../core/models/models.dart';
 import '../core/task_window_planner.dart';
 import '../core/vegetable_database.dart';
-import 'journal_sqlite_store.dart';
+import 'journal_sqlite_store_stub.dart'
+    if (dart.library.io) 'journal_sqlite_store.dart';
 import 'journal_sync_service.dart';
 
 export '../core/garden/garden.dart';
 export 'garden_profile_store_stub.dart'
     if (dart.library.io) 'garden_profile_store_io.dart';
-export 'journal_sqlite_store.dart';
+export 'journal_sqlite_store_stub.dart'
+    if (dart.library.io) 'journal_sqlite_store.dart';
 export 'journal_sync_service.dart';
 
 /// Persistent or in-memory store for the user's [GardenProfile].
@@ -56,8 +58,54 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
   GardenSyncTransport? _syncTransport;
   GardenSyncReport? _lastSyncReport;
   bool _isSyncing = false;
+  Future<GardenSyncReport?>? _inFlightSync;
+  bool _isDisposed = false;
   DateTime? _loadedWindowStart;
   DateTime? _loadedWindowEnd;
+  int _dataVersion = 0;
+
+  /// Whether this controller has been disposed.
+  bool get isDisposed => _isDisposed;
+
+  @override
+  void notifyListeners() {
+    if (_isDisposed) return;
+    super.notifyListeners();
+  }
+
+  @override
+  set value(GardenProfile newValue) {
+    if (_isDisposed) return;
+    super.value = newValue;
+  }
+
+  int _cachedPlotsVersion = -1;
+  List<GardenPlot>? _cachedPlots;
+
+  int _cachedBedNamesVersion = -1;
+  List<String>? _cachedBedNames;
+
+  int _cachedShardKeysVersion = -1;
+  List<String>? _cachedShardKeys;
+
+  int _cachedBatchesVersion = -1;
+  final Map<(String?, String?, bool), List<PlantingBatchSummary>>
+  _cachedBatches = {};
+
+  int _cachedPlotSynthesisVersion = -1;
+  final Map<(String, String?, int), PlotRotationAssessment> _cachedRotations =
+      {};
+  final Map<(String, int), PlotSuccessionPlan> _cachedSuccessionPlans = {};
+
+  void _invalidateDerivedCaches() {
+    _dataVersion++;
+    _cachedPlots = null;
+    _cachedBedNames = null;
+    _cachedShardKeys = null;
+    _cachedBatches.clear();
+    _cachedRotations.clear();
+    _cachedSuccessionPlans.clear();
+  }
 
   /// Creates a [GardenProfileController] initialized with [initialProfile].
   GardenProfileController({
@@ -71,6 +119,9 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
     if (sqlStore != null && !sqlStore.isClosed) {
       // Seed any entries or queued tasks passed in initialProfile into SQLite shards, then load initial window.
       if (initialProfile != null) {
+        for (final plot in initialProfile.plots) {
+          sqlStore.upsertPlot(plot);
+        }
         for (final task in initialProfile.taskQueue) {
           sqlStore.upsertQueuedTask(task);
         }
@@ -79,6 +130,10 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
         }
       }
       _refreshEntriesFromSqlite();
+    } else if (initialProfile != null) {
+      for (final plot in initialProfile.plots) {
+        _inMemoryPlots[plot.name] = plot;
+      }
     }
   }
 
@@ -126,6 +181,7 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
   }
 
   void _refreshEntriesFromSqlite({DateTime? windowStart, DateTime? windowEnd}) {
+    if (_isDisposed) return;
     final sqlStore = journalStore;
     if (sqlStore == null || sqlStore.isClosed) return;
 
@@ -146,6 +202,7 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
       for (final e in recent) e.id: e,
     };
     final syncedQueue = sqlStore.listQueuedTasks();
+    _invalidateDerivedCaches();
     value = GardenProfile(
       activeLocation: value.activeLocation,
       savedLocations: value.savedLocations,
@@ -158,14 +215,22 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
   /// Ensures monthly SQLite shards overlapping `[start, end]` are loaded into
   /// the active memory window (and lazily hydrated from [syncTransport] if needed).
   Future<void> ensureWindowLoaded(DateTime start, DateTime end) async {
+    if (_isDisposed) return;
     final sqlStore = journalStore;
     if (sqlStore == null || sqlStore.isClosed) return;
 
     final minTime = start.isBefore(end) ? start : end;
     final maxTime = start.isBefore(end) ? end : start;
 
+    final alreadyCovered =
+        _loadedWindowStart != null &&
+        _loadedWindowEnd != null &&
+        !minTime.isBefore(_loadedWindowStart!) &&
+        !maxTime.isAfter(_loadedWindowEnd!);
+
+    bool hydratedAny = false;
     final transport = _syncTransport;
-    if (transport != null) {
+    if (transport != null && !alreadyCovered) {
       final unhydrated = sqlStore.listUnhydratedRemoteShardKeys().toSet();
       if (unhydrated.isNotEmpty) {
         final neededKeys = ShardedSqliteJournalStore.shardKeysInRange(
@@ -176,16 +241,29 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
         for (final key in neededKeys) {
           if (unhydrated.contains(key)) {
             await engine.hydrateShard(key);
+            if (_isDisposed || sqlStore.isClosed) return;
+            hydratedAny = true;
           }
         }
       }
     }
 
-    _refreshEntriesFromSqlite(windowStart: minTime, windowEnd: maxTime);
+    if (_isDisposed || sqlStore.isClosed) return;
+    if (alreadyCovered && !hydratedAny) {
+      return;
+    }
+
+    final expandedStart = minTime.subtract(const Duration(days: 30));
+    final expandedEnd = maxTime.add(const Duration(days: 30));
+    _refreshEntriesFromSqlite(
+      windowStart: expandedStart,
+      windowEnd: expandedEnd,
+    );
   }
 
   Future<void> _update(GardenProfile next, {bool persistProfile = true}) async {
-    if (next == value) return;
+    if (_isDisposed || next == value) return;
+    _invalidateDerivedCaches();
     value = next;
     if (!persistProfile) return;
     final backingStore = store;
@@ -202,7 +280,7 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
                 taskQueue: next.taskQueue,
                 journalEntries: const [],
               )
-            : next;
+            : next.withPlots(_inMemoryPlots.values);
         await backingStore.write(profileToWrite);
       } catch (_) {
         // Ignore persistence errors so UI state remains responsive.
@@ -322,30 +400,36 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
           }
         }
       }
+      if (entry.bedName != null && entry.bedName!.trim().isNotEmpty) {
+        _deletedPlotNames.remove(entry.bedName!.trim().toLowerCase());
+      }
       final saved = sqlStore.upsertEntry(entry);
       GardenProfile next = value.withJournalEntry(saved);
+      bool taskQueueChanged = false;
       for (final task in value.taskQueue) {
         final bedMatches =
             task.bedName == null ||
             saved.bedName == null ||
-            task.bedName == saved.bedName;
+            task.bedName!.toLowerCase() == saved.bedName!.toLowerCase();
         if (saved.action.fulfillsTaskAction(task.action) &&
             bedMatches &&
             (task.cropId == saved.cropId ||
                 (task.cropId == null && task.targetQuality == saved.quality))) {
           next = next.withoutQueuedTask(task.id);
+          taskQueueChanged = true;
         }
       }
-      await _update(next, persistProfile: false);
+      await _update(next, persistProfile: taskQueueChanged);
       return;
     }
 
+    _syncInMemoryPlotForEntry(entry);
     GardenProfile next = value.withJournalEntry(entry);
     for (final task in value.taskQueue) {
       final bedMatches =
           task.bedName == null ||
           entry.bedName == null ||
-          task.bedName == entry.bedName;
+          task.bedName!.toLowerCase() == entry.bedName!.toLowerCase();
       if (entry.action.fulfillsTaskAction(task.action) &&
           bedMatches &&
           (task.cropId == entry.cropId ||
@@ -354,6 +438,37 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
       }
     }
     await _update(next);
+  }
+
+  void _syncInMemoryPlotForEntry(FieldJournalEntry entry) {
+    final bed = entry.bedName?.trim();
+    if (bed == null || bed.isEmpty) return;
+    _deletedPlotNames.remove(bed.toLowerCase());
+    String canonicalKey = bed;
+    GardenPlot? existing;
+    for (final item in _inMemoryPlots.entries) {
+      if (item.key.toLowerCase() == bed.toLowerCase()) {
+        canonicalKey = item.key;
+        existing = item.value;
+        break;
+      }
+    }
+    final current = existing ?? GardenPlot(name: canonicalKey);
+    final isSoilPrep =
+        entry.action == FieldJournalAction.sprayPreparation ||
+        entry.action == FieldJournalAction.compostAndCare ||
+        entry.action == FieldJournalAction.cultivateSoil ||
+        entry.crop?.category == PlantCategory.greenManure;
+    if (isSoilPrep &&
+        (current.lastSoilPrepTimestamp == null ||
+            !entry.timestamp.isBefore(current.lastSoilPrepTimestamp!))) {
+      _inMemoryPlots[canonicalKey] = current.copyWith(
+        lastSoilPrepSummary: entry.prepCode ?? entry.title,
+        lastSoilPrepTimestamp: entry.timestamp,
+      );
+    } else if (existing == null) {
+      _inMemoryPlots[canonicalKey] = current;
+    }
   }
 
   /// Attaches a photo ([fullBytes] + optional [thumbnailBytes]) to [entryId]
@@ -505,37 +620,72 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
 
   /// Lists known bed/plot names across both `garden_meta.sqlite` and loaded entries.
   final Map<String, GardenPlot> _inMemoryPlots = <String, GardenPlot>{};
+  final Set<String> _deletedPlotNames = <String>{};
 
   /// Lists all known garden bed/plot names across the shared garden and local entries.
   List<String> listBedNames() {
-    final names = <String>{
-      if (journalStore != null && !journalStore!.isClosed)
-        ...journalStore!.listBedNames(),
-      ..._inMemoryPlots.keys,
-      for (final entry in value.journalEntries)
-        if (entry.bedName != null && entry.bedName!.trim().isNotEmpty)
-          entry.bedName!.trim(),
-    };
-    final sorted = names.toList()
+    if (_cachedBedNamesVersion == _dataVersion && _cachedBedNames != null) {
+      return _cachedBedNames!;
+    }
+    final byLower = <String, String>{};
+    void addName(String raw) {
+      final trimmed = raw.trim();
+      if (trimmed.isEmpty) return;
+      final lower = trimmed.toLowerCase();
+      if (_deletedPlotNames.contains(lower)) return;
+      byLower.putIfAbsent(lower, () => trimmed);
+    }
+
+    if (journalStore != null && !journalStore!.isClosed) {
+      for (final bed in journalStore!.listBedNames()) {
+        addName(bed);
+      }
+    }
+    for (final bed in _inMemoryPlots.keys) {
+      addName(bed);
+    }
+    for (final entry in value.journalEntries) {
+      if (entry.bedName != null) {
+        addName(entry.bedName!);
+      }
+    }
+    final sorted = byLower.values.toList()
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-    return sorted;
+    _cachedBedNamesVersion = _dataVersion;
+    return _cachedBedNames = List<String>.unmodifiable(sorted);
   }
 
   /// Lists all active [GardenPlot] definitions across the garden.
   List<GardenPlot> listPlots() {
+    if (_cachedPlotsVersion == _dataVersion && _cachedPlots != null) {
+      return _cachedPlots!;
+    }
     final sqlStore = journalStore;
-    final byName = <String, GardenPlot>{
-      if (sqlStore != null && !sqlStore.isClosed)
-        for (final plot in sqlStore.listPlots()) plot.name: plot,
-      ..._inMemoryPlots,
-    };
+    final byLowerName = <String, GardenPlot>{};
+    if (sqlStore != null && !sqlStore.isClosed) {
+      for (final plot in sqlStore.listPlots()) {
+        final lower = plot.name.toLowerCase();
+        if (!_deletedPlotNames.contains(lower)) {
+          byLowerName[lower] = plot;
+        }
+      }
+    }
+    for (final plot in _inMemoryPlots.values) {
+      final lower = plot.name.toLowerCase();
+      if (!_deletedPlotNames.contains(lower)) {
+        byLowerName[lower] = plot;
+      }
+    }
     for (final entry in value.journalEntries) {
       final bed = entry.bedName?.trim();
       if (bed != null && bed.isNotEmpty) {
-        byName.putIfAbsent(bed, () => GardenPlot(name: bed));
+        final lower = bed.toLowerCase();
+        if (!_deletedPlotNames.contains(lower)) {
+          byLowerName.putIfAbsent(lower, () => GardenPlot(name: bed));
+        }
       }
     }
-    final list = byName.values.toList(growable: false);
+    final list = byLowerName.values.toList(growable: false);
     list.sort((a, b) {
       final areaCmp = a.areaName.toLowerCase().compareTo(
         b.areaName.toLowerCase(),
@@ -543,45 +693,91 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
       if (areaCmp != 0) return areaCmp;
       return a.name.toLowerCase().compareTo(b.name.toLowerCase());
     });
-    return list;
+    _cachedPlotsVersion = _dataVersion;
+    return _cachedPlots = List<GardenPlot>.unmodifiable(list);
   }
 
-  /// Looks up a [GardenPlot] by [plotName].
+  /// Looks up a [GardenPlot] by [plotName] (case-insensitively).
   GardenPlot? findPlot(String? plotName) {
     if (plotName == null || plotName.trim().isEmpty) return null;
     final trimmed = plotName.trim();
+    final lower = trimmed.toLowerCase();
+    for (final plot in listPlots()) {
+      if (plot.name.toLowerCase() == lower) return plot;
+    }
     final sqlStore = journalStore;
     if (sqlStore != null && !sqlStore.isClosed) {
       final found = sqlStore.findPlot(trimmed);
       if (found != null) return found;
     }
-    return _inMemoryPlots[trimmed] ??
-        (listBedNames().contains(trimmed) ? GardenPlot(name: trimmed) : null);
+    for (final item in _inMemoryPlots.entries) {
+      if (item.key.toLowerCase() == lower) return item.value;
+    }
+    for (final bed in listBedNames()) {
+      if (bed.toLowerCase() == lower) return GardenPlot(name: bed);
+    }
+    return null;
   }
 
   /// Creates or updates a [GardenPlot] and notifies listeners.
   GardenPlot upsertPlot(GardenPlot plot) {
+    _deletedPlotNames.remove(plot.name.toLowerCase());
     final sqlStore = journalStore;
     if (sqlStore != null && !sqlStore.isClosed) {
       final saved = sqlStore.upsertPlot(plot);
+      _invalidateDerivedCaches();
       notifyListeners();
       return saved;
     }
-    _inMemoryPlots[plot.name] = plot;
+    String canonicalKey = plot.name;
+    GardenPlot? existing;
+    for (final item in _inMemoryPlots.entries) {
+      if (item.key.toLowerCase() == plot.name.toLowerCase()) {
+        canonicalKey = item.key;
+        existing = item.value;
+        break;
+      }
+    }
+    final merged = plot.copyWith(
+      name: canonicalKey,
+      lastSoilPrepSummary:
+          plot.lastSoilPrepSummary ?? existing?.lastSoilPrepSummary,
+      lastSoilPrepTimestamp:
+          plot.lastSoilPrepTimestamp ?? existing?.lastSoilPrepTimestamp,
+    );
+    _inMemoryPlots[canonicalKey] = merged;
+    _invalidateDerivedCaches();
     notifyListeners();
-    return plot;
+    _persistInMemoryPlots();
+    return merged;
   }
 
   /// Soft-deletes a [GardenPlot] by [plotName].
   void deletePlot(String plotName) {
     final trimmed = plotName.trim();
     if (trimmed.isEmpty) return;
+    final lower = trimmed.toLowerCase();
+    _deletedPlotNames.add(lower);
     final sqlStore = journalStore;
     if (sqlStore != null && !sqlStore.isClosed) {
       sqlStore.deletePlot(trimmed);
     }
-    _inMemoryPlots.remove(trimmed);
+    _inMemoryPlots.removeWhere((key, _) => key.toLowerCase() == lower);
+    _invalidateDerivedCaches();
     notifyListeners();
+    if (sqlStore == null || sqlStore.isClosed) {
+      _persistInMemoryPlots();
+    }
+  }
+
+  void _persistInMemoryPlots() {
+    final backingStore = store;
+    if (backingStore == null) return;
+    unawaited(
+      backingStore
+          .write(value.withPlots(_inMemoryPlots.values))
+          .catchError((_) {}),
+    );
   }
 
   /// Evaluates crop rotation history and botanical family break rules for [plotName].
@@ -590,20 +786,36 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
     VegetableEntry? candidateCrop,
     DateTime? referenceTime,
   }) {
+    final trimmed = plotName.trim();
+    final ref = referenceTime ?? DateTime.now();
+    final dayBucket = ref.year * 10000 + ref.month * 100 + ref.day;
+    if (_cachedPlotSynthesisVersion != _dataVersion) {
+      _cachedRotations.clear();
+      _cachedSuccessionPlans.clear();
+      _cachedPlotSynthesisVersion = _dataVersion;
+    }
+    final key = (trimmed, candidateCrop?.id, dayBucket);
+    if (_cachedRotations[key] case final cached?) {
+      return cached;
+    }
+
     final sqlStore = journalStore;
+    final PlotRotationAssessment result;
     if (sqlStore != null && !sqlStore.isClosed) {
-      return sqlStore.evaluatePlotRotation(
-        plotName,
+      result = sqlStore.evaluatePlotRotation(
+        trimmed,
+        candidateCrop: candidateCrop,
+        referenceTime: referenceTime,
+      );
+    } else {
+      result = PlotRotationAssessment.evaluate(
+        plotName: trimmed,
+        batchesInPlot: listPlantingBatches(bedName: trimmed),
         candidateCrop: candidateCrop,
         referenceTime: referenceTime,
       );
     }
-    return PlotRotationAssessment.evaluate(
-      plotName: plotName.trim(),
-      batchesInPlot: listPlantingBatches(bedName: plotName),
-      candidateCrop: candidateCrop,
-      referenceTime: referenceTime,
-    );
+    return _cachedRotations[key] = result;
   }
 
   /// Builds a within-season [PlotSuccessionPlan] for [plotName] at [referenceTime],
@@ -615,13 +827,160 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
     DateTime? referenceTime,
   }) {
     final trimmed = plotName.trim();
+    final ref = referenceTime ?? DateTime.now();
+    final dayBucket = ref.year * 10000 + ref.month * 100 + ref.day;
+    if (_cachedPlotSynthesisVersion != _dataVersion) {
+      _cachedRotations.clear();
+      _cachedSuccessionPlans.clear();
+      _cachedPlotSynthesisVersion = _dataVersion;
+    }
+    final key = (trimmed, dayBucket);
+    if (_cachedSuccessionPlans[key] case final cached?) {
+      return cached;
+    }
+
     final plot = findPlot(trimmed) ?? GardenPlot(name: trimmed);
     final batches = listPlantingBatches(bedName: trimmed);
-    return PlotSuccessionPlan.build(
+    final lower = trimmed.toLowerCase();
+    final tasks = value.taskQueue
+        .where((t) => t.bedName?.trim().toLowerCase() == lower)
+        .toList(growable: false);
+    final plan = PlotSuccessionPlan.build(
       plot: plot,
       batchesInPlot: batches,
-      referenceTime: referenceTime ?? DateTime.now(),
+      tasksInPlot: tasks,
+      referenceTime: ref,
       starredCropIds: value.starredCropIds,
+    );
+    return _cachedSuccessionPlans[key] = plan;
+  }
+
+  /// Places or moves a [crop] on [bedName] at [startDate] (and optional [endDate])
+  /// for succession planning.
+  ///
+  /// When [movingTaskId] is provided, updates that existing [QueuedGardenTask]
+  /// (preserving its ID when shifting dates or moving across beds).
+  Future<QueuedGardenTask> placeCropOnBed({
+    required String bedName,
+    required VegetableEntry crop,
+    required DateTime startDate,
+    DateTime? endDate,
+    TaskActionType? action,
+    PlantQuality? targetQuality,
+    String? movingTaskId,
+    String? note,
+  }) async {
+    final trimmedBed = bedName.trim();
+    if (trimmedBed.isEmpty) {
+      throw ArgumentError.value(bedName, 'bedName', 'Must not be empty');
+    }
+    if (findPlot(trimmedBed) == null) {
+      upsertPlot(GardenPlot(name: trimmedBed));
+    }
+    final normalizedStart = DateTime(
+      startDate.year,
+      startDate.month,
+      startDate.day,
+      12,
+    );
+    final resolvedAction = BedSuccessionAdvisor.resolveActionForCrop(
+      crop: crop,
+      month: normalizedStart.month,
+      preferredAction: action,
+    );
+    final resolvedEnd =
+        endDate ??
+        CropMaturityProfile.estimateClearingDateForCrop(
+          crop: crop,
+          plantedAt: normalizedStart,
+          isTransplant: resolvedAction == TaskActionType.transplant,
+        );
+
+    QueuedGardenTask? existingTask;
+    if (movingTaskId != null) {
+      for (final candidate in value.taskQueue) {
+        if (candidate.id == movingTaskId) {
+          existingTask = candidate;
+          break;
+        }
+      }
+    }
+
+    final resolvedQuality =
+        targetQuality ?? existingTask?.targetQuality ?? crop.quality;
+
+    final taskId =
+        existingTask?.id ??
+        QueuedGardenTask.canonicalIdFor(
+          action: resolvedAction,
+          cropId: crop.id,
+          targetQuality: resolvedQuality,
+          bedName: trimmedBed,
+          plannedStartDate: normalizedStart,
+        );
+
+    final updatedTask = QueuedGardenTask(
+      id: taskId,
+      action: resolvedAction,
+      cropId: crop.id,
+      targetQuality: resolvedQuality,
+      bedName: trimmedBed,
+      plannedStartDate: normalizedStart,
+      plannedEndDate: resolvedEnd,
+      note: note ?? existingTask?.note ?? '',
+    );
+    await addQueuedTask(updatedTask);
+    return updatedTask;
+  }
+
+  /// Builds all lane-assigned [BedTimelineSpan]s (harvested, active in ground,
+  /// and time-placed planned tasks) for [plotName].
+  List<BedTimelineSpan> buildBedTimelineSpans(String plotName) {
+    final trimmed = plotName.trim();
+    final lower = trimmed.toLowerCase();
+    final batches = listPlantingBatches(bedName: trimmed);
+    final tasks = value.taskQueue
+        .where((t) => t.bedName?.trim().toLowerCase() == lower)
+        .toList(growable: false);
+    final harvestTimesByParent = <String, DateTime>{
+      for (final e in value.journalEntries)
+        if (!e.isDeleted &&
+            e.action.isHarvestAction &&
+            e.parentEntryId != null &&
+            e.parentEntryId!.isNotEmpty)
+          e.parentEntryId!: e.timestamp,
+    };
+    return BedSuccessionAdvisor.buildSpansForPlot(
+      plotName: trimmed,
+      batchesInPlot: batches,
+      tasksInPlot: tasks,
+      harvestTimestampsByParentId: harvestTimesByParent,
+    );
+  }
+
+  /// Evaluates placing or moving [crop] onto [plotName] at [targetDate].
+  BedPlacementEvaluation evaluateBedPlacement({
+    required String plotName,
+    required VegetableEntry crop,
+    required DateTime targetDate,
+    TaskActionType? preferredAction,
+    String? movingTaskId,
+  }) {
+    final trimmed = plotName.trim();
+    final lower = trimmed.toLowerCase();
+    final plot = findPlot(trimmed) ?? GardenPlot(name: trimmed);
+    final batches = listPlantingBatches(bedName: trimmed);
+    final tasks = value.taskQueue
+        .where((t) => t.bedName?.trim().toLowerCase() == lower)
+        .toList(growable: false);
+    return BedSuccessionAdvisor.evaluatePlacement(
+      plot: plot,
+      crop: crop,
+      targetDate: targetDate,
+      batchesInPlot: batches,
+      tasksInPlot: tasks,
+      preferredAction: preferredAction,
+      movingTaskId: movingTaskId,
     );
   }
 
@@ -634,35 +993,51 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
     String? bedName,
     bool onlyActiveInGround = false,
   }) {
+    final normalizedBed = bedName != null && bedName.trim().isNotEmpty
+        ? bedName.trim()
+        : null;
+    if (_cachedBatchesVersion != _dataVersion) {
+      _cachedBatches.clear();
+      _cachedBatchesVersion = _dataVersion;
+    }
+    final cacheKey = (cropId, normalizedBed, onlyActiveInGround);
+    if (_cachedBatches[cacheKey] case final cached?) {
+      return cached;
+    }
+
     final sqlStore = journalStore;
     if (sqlStore != null && !sqlStore.isClosed) {
-      return sqlStore.listPlantingBatches(
-        cropId: cropId,
-        bedName: bedName,
-        onlyActiveInGround: onlyActiveInGround,
+      final res = List<PlantingBatchSummary>.unmodifiable(
+        sqlStore.listPlantingBatches(
+          cropId: cropId,
+          bedName: normalizedBed,
+          onlyActiveInGround: onlyActiveInGround,
+        ),
       );
+      return _cachedBatches[cacheKey] = res;
     }
     final harvestedParentIds = <String, String>{
       for (final e in value.journalEntries)
-        if (e.action.isHarvestAction &&
+        if (!e.isDeleted &&
+            e.action.isHarvestAction &&
             e.parentEntryId != null &&
             e.parentEntryId!.isNotEmpty)
           e.parentEntryId!: e.id,
     };
-    final normalizedBed = bedName != null && bedName.trim().isNotEmpty
-        ? bedName.trim()
-        : null;
-    return [
+    final res = List<PlantingBatchSummary>.unmodifiable([
       for (final entry in value.journalEntries)
-        if (entry.action.isPlantingBatch &&
+        if (!entry.isDeleted &&
+            entry.action.isPlantingBatch &&
             (cropId == null || entry.cropId == cropId) &&
-            (normalizedBed == null || entry.bedName == normalizedBed) &&
+            (normalizedBed == null ||
+                entry.bedName?.toLowerCase() == normalizedBed.toLowerCase()) &&
             (!onlyActiveInGround || !harvestedParentIds.containsKey(entry.id)))
           PlantingBatchSummary.fromEntry(
             entry,
             harvestedByEntryId: harvestedParentIds[entry.id],
           ),
-    ];
+    ]);
+    return _cachedBatches[cacheKey] = res;
   }
 
   /// Searches journal entries across all local monthly SQLite shards (or loaded entries).
@@ -697,6 +1072,9 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
   /// Lists all known monthly shard keys (`YYYY-MM`) across local disk and
   /// unhydrated cloud catalog, sorted newest-first.
   List<String> listKnownShardKeys() {
+    if (_cachedShardKeysVersion == _dataVersion && _cachedShardKeys != null) {
+      return _cachedShardKeys!;
+    }
     final keys = <String>{
       if (journalStore != null && !journalStore!.isClosed) ...[
         ...journalStore!.listLocalShardKeys(),
@@ -705,7 +1083,8 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
       for (final entry in value.journalEntries) entry.shardKey,
     };
     final sorted = keys.toList()..sort((a, b) => b.compareTo(a));
-    return sorted;
+    _cachedShardKeysVersion = _dataVersion;
+    return _cachedShardKeys = List<String>.unmodifiable(sorted);
   }
 
   /// Whether the monthly shard [shardKey] (`YYYY-MM`) is already downloaded on local disk.
@@ -805,6 +1184,7 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
   /// Throws a [FormatException] if [rawJson] is not a valid bundle.
   Future<GardenSharedNoteBundle> importSharedNoteBundle(String rawJson) async {
     final bundle = GardenSharedNoteBundle.fromJsonString(rawJson);
+    if (_isDisposed) return bundle;
 
     for (final plot in bundle.plots) {
       upsertPlot(plot);
@@ -813,6 +1193,9 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
     final sqlStore = journalStore;
     if (sqlStore != null && !sqlStore.isClosed) {
       for (final incoming in bundle.entries) {
+        if (incoming.bedName != null && incoming.bedName!.trim().isNotEmpty) {
+          _deletedPlotNames.remove(incoming.bedName!.trim().toLowerCase());
+        }
         sqlStore.upsertEntry(incoming);
       }
       _refreshEntriesFromSqlite();
@@ -821,6 +1204,7 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
 
     GardenProfile next = value;
     for (final incoming in bundle.entries) {
+      _syncInMemoryPlotForEntry(incoming);
       next = next.withJournalEntry(incoming);
     }
     await _update(next);
@@ -832,10 +1216,36 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
     DateTime? activeWindowStart,
     DateTime? activeWindowEnd,
     bool hydrateAllShards = false,
+  }) {
+    if (_isDisposed) return Future.value(null);
+    if (_inFlightSync case final existing?) {
+      return existing;
+    }
+    final future = _runSyncJournal(
+      activeWindowStart: activeWindowStart,
+      activeWindowEnd: activeWindowEnd,
+      hydrateAllShards: hydrateAllShards,
+    );
+    _inFlightSync = future;
+    future.whenComplete(() {
+      if (identical(_inFlightSync, future)) {
+        _inFlightSync = null;
+      }
+    });
+    return future;
+  }
+
+  Future<GardenSyncReport?> _runSyncJournal({
+    DateTime? activeWindowStart,
+    DateTime? activeWindowEnd,
+    bool hydrateAllShards = false,
   }) async {
     final sqlStore = journalStore;
     final transport = _syncTransport;
-    if (sqlStore == null || sqlStore.isClosed || transport == null) {
+    if (sqlStore == null ||
+        sqlStore.isClosed ||
+        transport == null ||
+        _isDisposed) {
       return null;
     }
     _isSyncing = true;
@@ -847,17 +1257,21 @@ final class GardenProfileController extends ValueNotifier<GardenProfile> {
         activeWindowEnd: activeWindowEnd ?? _loadedWindowEnd,
         hydrateAllShards: hydrateAllShards,
       );
+      if (_isDisposed) return report;
       _lastSyncReport = report;
       _refreshEntriesFromSqlite();
       return report;
     } finally {
       _isSyncing = false;
-      notifyListeners();
+      if (!_isDisposed) {
+        notifyListeners();
+      }
     }
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     journalStore?.close();
     super.dispose();
   }

@@ -23,24 +23,30 @@ Future<void> main() async {
     dmiService: DmiWeatherService(),
   );
 
+  const isWeb = bool.fromEnvironment('dart.library.js_interop');
   String? epheFilesPath;
   ClimateProfileStore? climateStore;
   GardenProfileStore? gardenStore;
   ShardedSqliteJournalStore? journalStore;
-  try {
-    final appSupportDir = await getApplicationSupportDirectory();
-    epheFilesPath = '${appSupportDir.path}/ephe_files';
-    climateStore = createFileClimateProfileStore(
-      '${appSupportDir.path}/climate_profiles',
-    );
-    gardenStore = createFileGardenProfileStore(
-      '${appSupportDir.path}/garden_profile.json',
-    );
-    journalStore = createShardedSqliteJournalStore(
-      '${appSupportDir.path}/journal',
-    );
-  } catch (_) {
-    // Fallback if path_provider fails in non-app environments
+  if (isWeb) {
+    climateStore = createFileClimateProfileStore('climate_profiles');
+    gardenStore = createFileGardenProfileStore('garden_profile.json');
+  } else {
+    try {
+      final appSupportDir = await getApplicationSupportDirectory();
+      epheFilesPath = '${appSupportDir.path}/ephe_files';
+      climateStore = createFileClimateProfileStore(
+        '${appSupportDir.path}/climate_profiles',
+      );
+      gardenStore = createFileGardenProfileStore(
+        '${appSupportDir.path}/garden_profile.json',
+      );
+      journalStore = createShardedSqliteJournalStore(
+        '${appSupportDir.path}/journal',
+      );
+    } catch (_) {
+      // Fallback if path_provider fails in non-app environments
+    }
   }
 
   final climateService = OpenMeteoClimateService(store: climateStore);
@@ -50,7 +56,9 @@ Future<void> main() async {
   );
 
   await Sweph.init(epheFilesPath: epheFilesPath);
-  await EphemerisWorker.init(epheFilesPath: epheFilesPath);
+  if (!isWeb) {
+    await EphemerisWorker.init(epheFilesPath: epheFilesPath);
+  }
 
   runApp(
     MyApp(

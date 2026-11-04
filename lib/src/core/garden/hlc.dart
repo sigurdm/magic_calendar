@@ -9,10 +9,25 @@ final class Hlc implements Comparable<Hlc> {
   /// Maximum logical counter value (`65535`, 4 hex digits).
   static const int maxCounter = 0xFFFF;
 
+  /// Maximum physical timestamp value (`999999999999999`, 15 decimal digits)
+  /// preserving fixed-width 15-digit ASCII lexicographical sort order.
+  static const int maxWallTimeMs = 999999999999999;
+
   static final RegExp _actorIdPattern = RegExp(r'^[A-Za-z0-9_.\-:]+$');
   static final RegExp _canonicalPattern = RegExp(
     r'^(\d{15})-([0-9a-fA-F]{4})-([A-Za-z0-9_.\-:]+)$',
   );
+
+  /// Sanitizes an arbitrary [rawActorId] into a valid non-empty HLC actor identifier.
+  static String sanitizeActorId(String rawActorId) {
+    final trimmed = rawActorId.trim();
+    if (trimmed.isEmpty) return 'local';
+    if (_actorIdPattern.hasMatch(trimmed)) return trimmed;
+    final sanitized = trimmed
+        .replaceAll(RegExp(r'[^A-Za-z0-9_.\-:]'), '_')
+        .replaceAll(RegExp(r'_+'), '_');
+    return sanitized.isEmpty ? 'local' : sanitized;
+  }
 
   /// Physical UTC timestamp in milliseconds since Unix epoch.
   final int wallTimeMs;
@@ -25,10 +40,10 @@ final class Hlc implements Comparable<Hlc> {
 
   /// Creates an [Hlc].
   ///
-  /// The [wallTimeMs] must be non-negative, [counter] must be in `0..65535`,
-  /// and [actorId] must be non-empty ASCII (`[A-Za-z0-9_.\-:]`).
+  /// The [wallTimeMs] must be in `0..maxWallTimeMs`, [counter] must be in
+  /// `0..65535`, and [actorId] must be non-empty ASCII (`[A-Za-z0-9_.\-:]`).
   Hlc({required this.wallTimeMs, this.counter = 0, required this.actorId}) {
-    RangeError.checkNotNegative(wallTimeMs, 'wallTimeMs');
+    RangeError.checkValueInInterval(wallTimeMs, 0, maxWallTimeMs, 'wallTimeMs');
     RangeError.checkValueInInterval(counter, 0, maxCounter, 'counter');
     if (actorId.isEmpty || !_actorIdPattern.hasMatch(actorId)) {
       throw ArgumentError.value(
@@ -46,7 +61,12 @@ final class Hlc implements Comparable<Hlc> {
     int counter = 0,
   }) {
     final ms = timestamp.toUtc().millisecondsSinceEpoch;
-    return Hlc(wallTimeMs: ms < 0 ? 0 : ms, counter: counter, actorId: actorId);
+    final clampedMs = ms < 0 ? 0 : (ms > maxWallTimeMs ? maxWallTimeMs : ms);
+    return Hlc(
+      wallTimeMs: clampedMs,
+      counter: counter,
+      actorId: sanitizeActorId(actorId),
+    );
   }
 
   /// Parses a canonical HLC string (`<15-digit-ms>-<4-hex-counter>-<actorId>`).
@@ -130,8 +150,12 @@ final class HlcClock {
   /// Creates an [HlcClock] for [actorId], optionally seeded with [initial].
   HlcClock({required this.actorId, Hlc? initial})
     : _last = initial ?? Hlc(wallTimeMs: 0, counter: 0, actorId: actorId) {
-    if (actorId.isEmpty) {
-      throw ArgumentError.value(actorId, 'actorId', 'Must not be empty');
+    if (actorId.isEmpty || !Hlc._actorIdPattern.hasMatch(actorId)) {
+      throw ArgumentError.value(
+        actorId,
+        'actorId',
+        'Must be non-empty alphanumeric/identifier characters',
+      );
     }
   }
 
@@ -143,13 +167,15 @@ final class HlcClock {
     final wallMs = (physicalNow ?? DateTime.now())
         .toUtc()
         .millisecondsSinceEpoch;
-    final clampedWallMs = wallMs < 0 ? 0 : wallMs;
+    final clampedWallMs = wallMs < 0
+        ? 0
+        : (wallMs > Hlc.maxWallTimeMs ? Hlc.maxWallTimeMs : wallMs);
     if (clampedWallMs > _last.wallTimeMs) {
       _last = Hlc(wallTimeMs: clampedWallMs, counter: 0, actorId: actorId);
     } else {
       final nextCounter = (_last.counter + 1).clamp(0, Hlc.maxCounter);
       final nextWall = _last.counter >= Hlc.maxCounter
-          ? _last.wallTimeMs + 1
+          ? (_last.wallTimeMs + 1).clamp(0, Hlc.maxWallTimeMs)
           : _last.wallTimeMs;
       _last = Hlc(
         wallTimeMs: nextWall,
@@ -165,7 +191,9 @@ final class HlcClock {
     final wallMs = (physicalNow ?? DateTime.now())
         .toUtc()
         .millisecondsSinceEpoch;
-    final clampedWallMs = wallMs < 0 ? 0 : wallMs;
+    final clampedWallMs = wallMs < 0
+        ? 0
+        : (wallMs > Hlc.maxWallTimeMs ? Hlc.maxWallTimeMs : wallMs);
 
     int maxWall = clampedWallMs;
     if (_last.wallTimeMs > maxWall) maxWall = _last.wallTimeMs;
@@ -186,7 +214,7 @@ final class HlcClock {
     }
 
     if (nextCounter > Hlc.maxCounter) {
-      maxWall += 1;
+      maxWall = (maxWall + 1).clamp(0, Hlc.maxWallTimeMs);
       nextCounter = 0;
     }
 

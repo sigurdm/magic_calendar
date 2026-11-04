@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'algorithm.dart' as algo;
 import 'climate/season_alignment.dart';
 import 'models/models.dart';
@@ -123,6 +125,12 @@ enum BiodynamicPrepType {
 /// Rating of current conditions for applying or preparing a preparation.
 enum PrepSuitabilityLevel { optimal, moderate, unfavorable }
 
+/// Alias for [PrepSuitability] used by UI spray evaluation caches.
+typedef BiodynamicSprayRecommendation = PrepSuitability;
+
+/// Alias for [BurialCycleProgress] used by UI seasonal burial caches.
+typedef CompostBurialProgress = BurialCycleProgress;
+
 /// Detailed evaluation result for a field spray.
 final class PrepSuitability {
   final PrepSuitabilityLevel level;
@@ -206,6 +214,30 @@ final class BurialCycleProgress {
 
 /// Utility for calculating biodynamic preparation timing and burial stages.
 abstract final class BiodynamicPrepEvaluator {
+  static const int _maxCacheEntries = 256;
+
+  static final LinkedHashMap<Object, PrepSuitability> _sprayCache =
+      LinkedHashMap<Object, PrepSuitability>();
+
+  static final Map<(BiodynamicPrepType, int, String), BurialStageInfo>
+  _burialStatusCache = <(BiodynamicPrepType, int, String), BurialStageInfo>{};
+
+  static final LinkedHashMap<(int, int, int), BurialCycleProgress>
+  _burialProgressCache = LinkedHashMap<(int, int, int), BurialCycleProgress>();
+
+  static final LinkedHashMap<Object, DateTime?> _optimalWindowCache =
+      LinkedHashMap<Object, DateTime?>();
+
+  static const PrepSuitability _compostPrepSuitability = PrepSuitability(
+    level: PrepSuitabilityLevel.unfavorable,
+    positiveFactors: [],
+    negativeFactors: [
+      'Compost preparations are inserted directly into compost piles.',
+    ],
+    weatherSuitable: false,
+    astronomicalSuitable: false,
+  );
+
   /// Evaluates the spray suitability for [prep] at [time] given [calendarInfo] and optional weather parameters.
   static PrepSuitability evaluateSpray({
     required BiodynamicPrepType prep,
@@ -219,15 +251,28 @@ abstract final class BiodynamicPrepEvaluator {
     MultiHorizonWeatherAnalysis? horizon,
   }) {
     if (prep.category != PrepCategory.fieldSpray) {
-      return const PrepSuitability(
-        level: PrepSuitabilityLevel.unfavorable,
-        positiveFactors: [],
-        negativeFactors: [
-          'Compost preparations are inserted directly into compost piles.',
-        ],
-        weatherSuitable: false,
-        astronomicalSuitable: false,
-      );
+      return _compostPrepSuitability;
+    }
+
+    final cacheKey = (
+      prep,
+      time.hour,
+      calendarInfo.quality,
+      calendarInfo.isGrayDay,
+      calendarInfo.isMoonDescending,
+      calendarInfo.isMoonAscending,
+      calendarInfo.moonPhase.isWaxing,
+      windSpeed,
+      precipitation,
+      cloudCover,
+      temperature,
+      humidity,
+      horizon,
+    );
+    final cached = _sprayCache.remove(cacheKey);
+    if (cached != null) {
+      _sprayCache[cacheKey] = cached;
+      return cached;
     }
 
     final positive = <String>[];
@@ -517,13 +562,18 @@ abstract final class BiodynamicPrepEvaluator {
       level = PrepSuitabilityLevel.unfavorable;
     }
 
-    return PrepSuitability(
+    final result = PrepSuitability(
       level: level,
-      positiveFactors: positive,
-      negativeFactors: negative,
+      positiveFactors: List<String>.unmodifiable(positive),
+      negativeFactors: List<String>.unmodifiable(negative),
       weatherSuitable: weatherOk,
       astronomicalSuitable: astroOk,
     );
+    if (_sprayCache.length >= _maxCacheEntries) {
+      _sprayCache.remove(_sprayCache.keys.first);
+    }
+    _sprayCache[cacheKey] = result;
+    return result;
   }
 
   /// Returns seasonal concoction, burial, and retrieval status for [prep] at [date] and [latitude].
@@ -539,7 +589,26 @@ abstract final class BiodynamicPrepEvaluator {
       anchor: SeasonalAnchor.dormancy,
     );
     final hemisphereText = alignment.label;
+    final key = (prep, month, hemisphereText);
+    if (_burialStatusCache[key] case final cached?) {
+      return cached;
+    }
+    final computed = _computeBurialStatus(
+      prep: prep,
+      month: month,
+      hemisphereText: hemisphereText,
+    );
+    if (_burialStatusCache.length >= _maxCacheEntries) {
+      _burialStatusCache.clear();
+    }
+    return _burialStatusCache[key] = computed;
+  }
 
+  static BurialStageInfo _computeBurialStatus({
+    required BiodynamicPrepType prep,
+    required int month,
+    required String hemisphereText,
+  }) {
     switch (prep) {
       case BiodynamicPrepType.bd500:
         if (month >= 9 && month <= 11) {
@@ -929,8 +998,28 @@ abstract final class BiodynamicPrepEvaluator {
       date,
       anchor: SeasonalAnchor.dormancy,
     );
+    final progressKey = (
+      effectiveDate.year,
+      effectiveDate.month,
+      effectiveDate.day,
+    );
+    final cachedProgress = _burialProgressCache.remove(progressKey);
+    if (cachedProgress != null) {
+      _burialProgressCache[progressKey] = cachedProgress;
+      return cachedProgress;
+    }
 
     final year = effectiveDate.year;
+    final effectiveDay = DateTime(
+      effectiveDate.year,
+      effectiveDate.month,
+      effectiveDate.day,
+    );
+    final effectiveUtcDay = DateTime.utc(
+      effectiveDate.year,
+      effectiveDate.month,
+      effectiveDate.day,
+    );
     final thisYearMichaelmas = DateTime(year, 9, 29);
     final thisYearEaster = gregorianEaster(year);
 
@@ -941,22 +1030,34 @@ abstract final class BiodynamicPrepEvaluator {
     DateTime michaelmas;
     DateTime easter;
 
-    if (effectiveDate.isBefore(thisYearEaster)) {
+    if (effectiveDay.isBefore(thisYearEaster)) {
       michaelmas = DateTime(year - 1, 9, 29);
       easter = thisYearEaster;
       isUnderground = true;
-      final totalDays = easter.difference(michaelmas).inDays;
-      final elapsed = effectiveDate.difference(michaelmas).inDays;
+      final michaelmasUtc = DateTime.utc(
+        michaelmas.year,
+        michaelmas.month,
+        michaelmas.day,
+      );
+      final easterUtc = DateTime.utc(easter.year, easter.month, easter.day);
+      final totalDays = easterUtc.difference(michaelmasUtc).inDays;
+      final elapsed = effectiveUtcDay.difference(michaelmasUtc).inDays;
       progress = (elapsed / totalDays).clamp(0.0, 1.0);
       seasonName = 'Winter Subterranean Ripening';
       stageDescription =
           'Preparations resting underground from Michaelmas (Sept 29) to Easter (${(progress * 100).round()}% through winter burial).';
-    } else if (effectiveDate.isBefore(thisYearMichaelmas)) {
+    } else if (effectiveDay.isBefore(thisYearMichaelmas)) {
       easter = thisYearEaster;
       michaelmas = thisYearMichaelmas;
       isUnderground = false;
-      final totalDays = michaelmas.difference(easter).inDays;
-      final elapsed = effectiveDate.difference(easter).inDays;
+      final easterUtc = DateTime.utc(easter.year, easter.month, easter.day);
+      final michaelmasUtc = DateTime.utc(
+        michaelmas.year,
+        michaelmas.month,
+        michaelmas.day,
+      );
+      final totalDays = michaelmasUtc.difference(easterUtc).inDays;
+      final elapsed = effectiveUtcDay.difference(easterUtc).inDays;
       progress = (elapsed / totalDays).clamp(0.0, 1.0);
       seasonName = 'Summer Compost & Maturation Season';
       stageDescription =
@@ -965,15 +1066,21 @@ abstract final class BiodynamicPrepEvaluator {
       michaelmas = thisYearMichaelmas;
       easter = gregorianEaster(year + 1);
       isUnderground = true;
-      final totalDays = easter.difference(michaelmas).inDays;
-      final elapsed = effectiveDate.difference(michaelmas).inDays;
+      final michaelmasUtc = DateTime.utc(
+        michaelmas.year,
+        michaelmas.month,
+        michaelmas.day,
+      );
+      final easterUtc = DateTime.utc(easter.year, easter.month, easter.day);
+      final totalDays = easterUtc.difference(michaelmasUtc).inDays;
+      final elapsed = effectiveUtcDay.difference(michaelmasUtc).inDays;
       progress = (elapsed / totalDays).clamp(0.0, 1.0);
       seasonName = 'Michaelmas Burial Window';
       stageDescription =
           'Preparations sheathed in organs and buried around Michaelmas (Sept 29) (${(progress * 100).round()}% into winter burial).';
     }
 
-    return BurialCycleProgress(
+    final result = BurialCycleProgress(
       seasonName: seasonName,
       stageDescription: stageDescription,
       progressFraction: progress,
@@ -981,7 +1088,21 @@ abstract final class BiodynamicPrepEvaluator {
       michaelmas: michaelmas,
       easter: easter,
     );
+    if (_burialProgressCache.length >= _maxCacheEntries) {
+      _burialProgressCache.remove(_burialProgressCache.keys.first);
+    }
+    _burialProgressCache[progressKey] = result;
+    return result;
   }
+
+  static bool _canHourBeOptimal(BiodynamicPrepType prep, int hour) =>
+      switch (prep) {
+        BiodynamicPrepType.bd500 ||
+        BiodynamicPrepType.cpp => hour >= 15 && hour <= 20,
+        BiodynamicPrepType.bd501 => hour >= 5 && hour <= 9,
+        BiodynamicPrepType.bd508 => hour >= 5 && hour <= 20,
+        _ => false,
+      };
 
   /// Searches forward or backward from [startTime] for the next/previous optimal spray window for [prep],
   /// skipping past any contiguous optimal window [startTime] is currently within.
@@ -992,8 +1113,27 @@ abstract final class BiodynamicPrepEvaluator {
     required bool searchForward,
     int maxDaysSearch = 60,
   }) {
-    if (prep.category != PrepCategory.fieldSpray) {
+    RangeError.checkNotNegative(maxDaysSearch, 'maxDaysSearch');
+    if (prep.category != PrepCategory.fieldSpray || maxDaysSearch == 0) {
       return null;
+    }
+
+    final locVersion = algo.ephemerisLocationVersion(ephemeris);
+    final windowKey = locVersion == null
+        ? null
+        : (
+            prep,
+            startTime.millisecondsSinceEpoch,
+            startTime.isUtc,
+            identityHashCode(ephemeris),
+            locVersion,
+            searchForward,
+            maxDaysSearch,
+          );
+    if (windowKey != null && _optimalWindowCache.containsKey(windowKey)) {
+      final cached = _optimalWindowCache.remove(windowKey);
+      _optimalWindowCache[windowKey] = cached;
+      return cached;
     }
 
     final step = searchForward
@@ -1004,36 +1144,28 @@ abstract final class BiodynamicPrepEvaluator {
       Duration(days: searchForward ? maxDaysSearch : -maxDaysSearch),
     );
 
-    // Evaluate initial suitability of startTime
-    final startInfo = algo.getCalendarInfo(
-      current,
-      ephemeris,
-      includePlanets: true,
-    );
-    final startSuitability = evaluateSpray(
-      prep: prep,
-      time: current,
-      calendarInfo: startInfo,
-    );
-    final bool startIsOptimal = _isOptimalWindow(startSuitability);
+    bool isOptimalAt(DateTime time) {
+      if (!_canHourBeOptimal(prep, time.hour)) {
+        return false;
+      }
+      final info = algo.getCalendarInfo(time, ephemeris, includePlanets: true);
+      final suitability = evaluateSpray(
+        prep: prep,
+        time: time,
+        calendarInfo: info,
+      );
+      return _isOptimalWindow(suitability);
+    }
+
+    final bool startIsOptimal = isOptimalAt(current);
 
     // If starting inside an optimal window, advance until exiting current contiguous window
     if (startIsOptimal) {
       while (searchForward ? current.isBefore(limit) : current.isAfter(limit)) {
         final nextTime = current.add(step);
-        final info = algo.getCalendarInfo(
-          nextTime,
-          ephemeris,
-          includePlanets: true,
-        );
-        final suitability = evaluateSpray(
-          prep: prep,
-          time: nextTime,
-          calendarInfo: info,
-        );
-
+        final nextIsOptimal = isOptimalAt(nextTime);
         current = nextTime;
-        if (!_isOptimalWindow(suitability)) {
+        if (!nextIsOptimal) {
           break;
         }
       }
@@ -1042,26 +1174,22 @@ abstract final class BiodynamicPrepEvaluator {
     }
 
     // Search for the next/previous distinct optimal window
+    DateTime? found;
     while (searchForward ? current.isBefore(limit) : current.isAfter(limit)) {
-      final info = algo.getCalendarInfo(
-        current,
-        ephemeris,
-        includePlanets: true,
-      );
-      final suitability = evaluateSpray(
-        prep: prep,
-        time: current,
-        calendarInfo: info,
-      );
-
-      if (_isOptimalWindow(suitability)) {
-        return current;
+      if (isOptimalAt(current)) {
+        found = current;
+        break;
       }
-
       current = current.add(step);
     }
 
-    return null;
+    if (windowKey != null) {
+      if (_optimalWindowCache.length >= _maxCacheEntries) {
+        _optimalWindowCache.remove(_optimalWindowCache.keys.first);
+      }
+      _optimalWindowCache[windowKey] = found;
+    }
+    return found;
   }
 
   static bool _isOptimalWindow(PrepSuitability suitability) {

@@ -42,12 +42,26 @@ final class ConstellationBoundary {
   bool containsLongitude(double longitude) {
     double norm = longitude % 360.0;
     if (norm < 0) norm += 360.0;
+    if (norm >= 360.0 || norm == -0.0) norm = 0.0;
     if (startDegree <= endDegree) {
       return norm >= startDegree && norm < endDegree;
     } else {
       return norm >= startDegree || norm < endDegree;
     }
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConstellationBoundary &&
+          runtimeType == other.runtimeType &&
+          name == other.name &&
+          startDegree == other.startDegree &&
+          endDegree == other.endDegree &&
+          element == other.element;
+
+  @override
+  int get hashCode => Object.hash(name, startDegree, endDegree, element);
 }
 
 /// Finds the [ConstellationBoundary] containing [longitude].
@@ -57,6 +71,7 @@ ConstellationBoundary? findBoundaryForLongitude(
 ]) {
   double norm = longitude % 360.0;
   if (norm < 0) norm += 360.0;
+  if (norm >= 360.0 || norm == -0.0) norm = 0.0;
   for (final b in boundaries) {
     if (b.containsLongitude(norm)) {
       return b;

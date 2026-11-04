@@ -58,9 +58,12 @@ final class YrNoWeatherService implements WeatherService {
   /// Duration for which cached forecast data remains valid.
   final Duration cacheTtl;
 
+  static const int _maxCacheEntries = 32;
+
   final http.Client _client;
   final OpenMeteoClient _openMeteoClient;
   final Map<String, _CachedForecast> _cache = {};
+  final Map<String, Future<List<WeatherDataPoint>>> _inFlight = {};
 
   YrNoWeatherService._({
     required this.userAgent,
@@ -90,8 +93,26 @@ final class YrNoWeatherService implements WeatherService {
     );
   }
 
+  static void _validateCoordinates(double lat, double lon) {
+    if (!lat.isFinite || lat < -90.0 || lat > 90.0) {
+      throw ArgumentError.value(
+        lat,
+        'lat',
+        'Must be a finite latitude between -90.0 and 90.0',
+      );
+    }
+    if (!lon.isFinite || lon < -180.0 || lon > 180.0) {
+      throw ArgumentError.value(
+        lon,
+        'lon',
+        'Must be a finite longitude between -180.0 and 180.0',
+      );
+    }
+  }
+
   @override
-  Future<List<WeatherDataPoint>> getForecast(double lat, double lon) async {
+  Future<List<WeatherDataPoint>> getForecast(double lat, double lon) {
+    _validateCoordinates(lat, lon);
     final formattedLat = lat.toStringAsFixed(4);
     final formattedLon = lon.toStringAsFixed(4);
     final cacheKey = '$formattedLat,$formattedLon';
@@ -99,26 +120,64 @@ final class YrNoWeatherService implements WeatherService {
     final cached = _cache[cacheKey];
     if (cached != null &&
         DateTime.now().difference(cached.timestamp) < cacheTtl) {
-      return cached.forecast;
+      return Future<List<WeatherDataPoint>>.value(cached.forecast);
     }
 
+    if (_inFlight[cacheKey] case final active?) {
+      return active;
+    }
+
+    final future = _fetchForecast(formattedLat, formattedLon, cacheKey)
+        .whenComplete(() {
+          _inFlight.remove(cacheKey);
+        });
+    _inFlight[cacheKey] = future;
+    return future;
+  }
+
+  Future<List<WeatherDataPoint>> _fetchForecast(
+    String formattedLat,
+    String formattedLon,
+    String cacheKey,
+  ) async {
     final url = Uri.parse(
       'https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=$formattedLat&lon=$formattedLon',
     );
 
+    const isWeb = bool.fromEnvironment('dart.library.js_interop');
     final response = await _client
-        .get(url, headers: {'User-Agent': userAgent})
+        .get(url, headers: isWeb ? null : {'User-Agent': userAgent})
         .timeout(const Duration(seconds: 10));
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final properties = data['properties'] as Map<String, dynamic>? ?? {};
-      final timeseries = (properties['timeseries'] as List?) ?? [];
-      final forecast = timeseries
-          .map(
-            (item) => WeatherDataPoint.fromJson(item as Map<String, dynamic>),
-          )
-          .toList();
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map) {
+        throw const FormatException('Expected a JSON object from MET Norway');
+      }
+      final properties = decoded['properties'];
+      if (properties is! Map) {
+        throw const FormatException(
+          'Expected a "properties" object in MET Norway response',
+        );
+      }
+      final timeseries = properties['timeseries'];
+      if (timeseries is! List) {
+        throw const FormatException(
+          'Expected a "timeseries" list in MET Norway response',
+        );
+      }
+      final forecast = List<WeatherDataPoint>.unmodifiable([
+        for (final item in timeseries)
+          if (item is Map<String, dynamic>)
+            WeatherDataPoint.fromJson(item)
+          else if (item is Map)
+            WeatherDataPoint.fromJson(Map<String, dynamic>.from(item))
+          else
+            throw FormatException('Invalid timeseries entry', item),
+      ]);
+      if (_cache.length >= _maxCacheEntries && !_cache.containsKey(cacheKey)) {
+        _cache.remove(_cache.keys.first);
+      }
       _cache[cacheKey] = _CachedForecast(
         timestamp: DateTime.now(),
         forecast: forecast,
@@ -136,11 +195,17 @@ final class YrNoWeatherService implements WeatherService {
     DateTime start,
     DateTime end,
   ) {
+    _validateCoordinates(lat, lon);
+    if (start.isAfter(end)) {
+      throw ArgumentError.value(start, 'start', 'Must not be after end ($end)');
+    }
     return _openMeteoClient.getHistoricalData(lat, lon, start, end);
   }
 
   @override
   void close() {
+    _cache.clear();
+    _inFlight.clear();
     _client.close();
     _openMeteoClient.close();
   }

@@ -80,8 +80,9 @@ final class DiurnalSolarLighting {
 
     if (isDay) {
       final totalMinutes = sunset.difference(sunrise).inMinutes;
+      final quantizedFromRise = (time.difference(sunrise).inMinutes ~/ 15) * 15;
       final progress = totalMinutes > 0
-          ? (time.difference(sunrise).inMinutes / totalMinutes).clamp(0.0, 1.0)
+          ? (quantizedFromRise / totalMinutes).clamp(0.0, 1.0)
           : 0.5;
 
       // Solar angle theta: -pi/2 at sunrise, 0.0 at noon, +pi/2 at sunset
@@ -96,9 +97,8 @@ final class DiurnalSolarLighting {
       final ly = len > 0 ? rawLy / len : -1.0;
       final lz = len > 0 ? rawLz / len : 0.5;
 
-      final minFromRise = time.difference(sunrise).inMinutes;
-      final minToSet = sunset.difference(time).inMinutes;
-      final minEdge = math.min(minFromRise, minToSet);
+      final minToSet = totalMinutes - quantizedFromRise;
+      final minEdge = math.min(quantizedFromRise, minToSet);
       final daylightFactor = (minEdge / 45.0).clamp(0.18, 1.0);
       final sunAltitude = math.cos(theta);
 
@@ -222,7 +222,7 @@ final class PlantQualityCard extends StatefulWidget {
 
   /// Whether the watercolor texture subtly mottles and breathes over time.
   ///
-  /// Defaults to `true`. When set to `false`, the texture remains static.
+  /// Defaults to `false` so the frame only repaints when [info] or [selectedTime] changes.
   final bool animate;
 
   /// The watercolor texture style variant.
@@ -243,7 +243,7 @@ final class PlantQualityCard extends StatefulWidget {
     super.key,
     required this.info,
     this.selectedTime,
-    this.animate = true,
+    this.animate = false,
     this.textureStyle = WatercolorTextureStyle.lazure,
     this.typographyStyle = CardTypographyStyle.dornachGaramond,
   });
@@ -255,7 +255,24 @@ final class PlantQualityCard extends StatefulWidget {
 final class _PlantQualityCardState extends State<PlantQualityCard>
     with SingleTickerProviderStateMixin {
   ui.FragmentProgram? _program;
+  ui.FragmentShader? _shader;
   late final AnimationController _animController;
+  late final DateTime _fallbackTime = DateTime.now();
+  double? _cachedPathWidth;
+  double? _cachedPathHeight;
+  Path? _cachedTextPath;
+
+  int? _cachedLightingBucket;
+  DiurnalRhythmInfo? _cachedDiurnalRhythm;
+  DiurnalSolarLighting? _cachedLighting;
+
+  CardTypographyStyle? _cachedTypographyStyle;
+  bool? _cachedIsNarrow;
+  int? _cachedBannerLength;
+  Color? _cachedInscriptionColor;
+  TextStyle? _cachedInscriptionStyle;
+  TextStyle? _cachedTitleStyle;
+  TextStyle? _cachedDescriptionStyle;
 
   @override
   void initState() {
@@ -282,6 +299,7 @@ final class _PlantQualityCardState extends State<PlantQualityCard>
   @override
   void dispose() {
     _animController.dispose();
+    _shader?.dispose();
     super.dispose();
   }
 
@@ -291,6 +309,7 @@ final class _PlantQualityCardState extends State<PlantQualityCard>
   void _initShader() async {
     if (_steinerFrameProgram != null) {
       _program = _steinerFrameProgram;
+      _shader ??= _program!.fragmentShader();
       if (mounted && widget.animate && !_isTestEnvironment) {
         _animController.repeat();
       }
@@ -300,6 +319,7 @@ final class _PlantQualityCardState extends State<PlantQualityCard>
     if (mounted && prog != null) {
       setState(() {
         _program = prog;
+        _shader ??= prog.fragmentShader();
       });
       if (widget.animate && !_isTestEnvironment) {
         _animController.repeat();
@@ -378,161 +398,229 @@ final class _PlantQualityCardState extends State<PlantQualityCard>
           final cardHeight = cardWidth * 1.05;
 
           // Curved text path running along the exact anatomical midline of the thick stone lintel
-          final textPath = Path()
-            ..moveTo(cardWidth * 0.16, cardHeight * 0.088)
-            ..cubicTo(
-              cardWidth * 0.38,
-              cardHeight * 0.055,
-              cardWidth * 0.65,
-              cardHeight * 0.046,
-              cardWidth * 0.85,
-              cardHeight * 0.082,
-            );
+          Path textPath;
+          if (_cachedTextPath != null &&
+              _cachedPathWidth == cardWidth &&
+              _cachedPathHeight == cardHeight) {
+            textPath = _cachedTextPath!;
+          } else {
+            textPath = Path()
+              ..moveTo(cardWidth * 0.16, cardHeight * 0.088)
+              ..cubicTo(
+                cardWidth * 0.38,
+                cardHeight * 0.055,
+                cardWidth * 0.65,
+                cardHeight * 0.046,
+                cardWidth * 0.85,
+                cardHeight * 0.082,
+              );
+            _cachedPathWidth = cardWidth;
+            _cachedPathHeight = cardHeight;
+            _cachedTextPath = textPath;
+          }
 
           final isNarrow = cardWidth < 340;
 
-          final selectedTime = widget.selectedTime ?? DateTime.now();
-          final lighting = DiurnalSolarLighting.compute(selectedTime, info);
+          final selectedTime = widget.selectedTime ?? _fallbackTime;
+          final diurnal = info.diurnalRhythm;
+          final effectiveNoon =
+              diurnal?.solarNoon ??
+              DateTime(
+                selectedTime.year,
+                selectedTime.month,
+                selectedTime.day,
+                12,
+                30,
+              );
+          final effectiveSunrise =
+              diurnal?.sunrise ??
+              effectiveNoon.subtract(const Duration(hours: 6, minutes: 15));
+          final effectiveSunset =
+              diurnal?.sunset ??
+              effectiveNoon.add(const Duration(hours: 7, minutes: 15));
+          final isDaytime =
+              selectedTime.isAfter(effectiveSunrise) &&
+              selectedTime.isBefore(effectiveSunset);
+          final lightingBucket = isDaytime
+              ? (selectedTime.difference(effectiveSunrise).inMinutes ~/ 15)
+              : -1;
+          final DiurnalSolarLighting lighting;
+          if (_cachedLighting != null &&
+              _cachedLightingBucket == lightingBucket &&
+              _cachedDiurnalRhythm == diurnal) {
+            lighting = _cachedLighting!;
+          } else {
+            lighting = DiurnalSolarLighting.compute(selectedTime, info);
+            _cachedLightingBucket = lightingBucket;
+            _cachedDiurnalRhythm = diurnal;
+            _cachedLighting = lighting;
+          }
 
-          final innerContent = SizedBox(
-            width: cardWidth,
-            height: cardHeight,
-            child: Stack(
-              children: [
-                // Inscription carved directly onto the thick upper stone lintel
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: cardHeight * 0.24,
-                  child: CurvedText(
-                    text: bannerText,
-                    path: textPath,
-                    style: _buildInscriptionStyle(
-                      isNarrow: isNarrow,
+          final inscriptionColor = _getInscriptionColor(
+            quality,
+            info.isSpecial,
+            info.isGrayDay,
+          );
+          if (_cachedTypographyStyle != widget.typographyStyle ||
+              _cachedIsNarrow != isNarrow ||
+              _cachedBannerLength != bannerText.length ||
+              _cachedInscriptionColor != inscriptionColor ||
+              _cachedInscriptionStyle == null ||
+              _cachedTitleStyle == null ||
+              _cachedDescriptionStyle == null) {
+            _cachedTypographyStyle = widget.typographyStyle;
+            _cachedIsNarrow = isNarrow;
+            _cachedBannerLength = bannerText.length;
+            _cachedInscriptionColor = inscriptionColor;
+            _cachedInscriptionStyle = _buildInscriptionStyle(
+              isNarrow: isNarrow,
+              text: bannerText,
+              color: inscriptionColor,
+            );
+            _cachedTitleStyle = _buildTitleStyle(isNarrow: isNarrow);
+            _cachedDescriptionStyle = _buildDescriptionStyle(
+              isNarrow: isNarrow,
+            );
+          }
+
+          final innerContent = RepaintBoundary(
+            child: SizedBox(
+              width: cardWidth,
+              height: cardHeight,
+              child: Stack(
+                children: [
+                  // Inscription carved directly onto the thick upper stone lintel
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: cardHeight * 0.24,
+                    child: CurvedText(
                       text: bannerText,
-                      color: _getInscriptionColor(
-                        quality,
-                        info.isSpecial,
-                        info.isGrayDay,
+                      path: textPath,
+                      style: _cachedInscriptionStyle!,
+                    ),
+                  ),
+                  // 1. Full-bleed artwork taking up the entire window opening underneath the text
+                  Positioned.fill(
+                    child: ClipPath(
+                      clipper: const SteinerInnerWindowClipper(),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Opacity(
+                            opacity: 0.28,
+                            child: Image.asset(
+                              _getQualityAssetPath(quality, info.isGrayDay),
+                              fit: BoxFit.cover,
+                              alignment: Alignment.center,
+                            ),
+                          ),
+                          // Soft vignette scrim to ensure supreme typographic legibility
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                center: Alignment.center,
+                                radius: 0.85,
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.20),
+                                  Colors.black.withValues(alpha: 0.04),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                ),
-                // 1. Full-bleed artwork taking up the entire window opening underneath the text
-                Positioned.fill(
-                  child: ClipPath(
-                    clipper: const SteinerInnerWindowClipper(),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Opacity(
-                          opacity: 0.28,
-                          child: Image.asset(
-                            _getQualityAssetPath(quality, info.isGrayDay),
-                            fit: BoxFit.cover,
-                            alignment: Alignment.center,
+                  // 2. Recessed inner window typography centered directly over the artwork
+                  Positioned(
+                    left: cardWidth * 0.12,
+                    right: cardWidth * 0.12,
+                    top: cardHeight * 0.14,
+                    bottom: cardHeight * 0.16,
+                    child: Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: cardWidth * 0.76,
                           ),
-                        ),
-                        // Soft vignette scrim to ensure supreme typographic legibility
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: RadialGradient(
-                              center: Alignment.center,
-                              radius: 0.85,
-                              colors: [
-                                Colors.black.withValues(alpha: 0.20),
-                                Colors.black.withValues(alpha: 0.04),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // 2. Recessed inner window typography centered directly over the artwork
-                Positioned(
-                  left: cardWidth * 0.12,
-                  right: cardWidth * 0.12,
-                  top: cardHeight * 0.14,
-                  bottom: cardHeight * 0.16,
-                  child: Center(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: cardWidth * 0.76),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              title.toUpperCase(),
-                              textAlign: TextAlign.center,
-                              style: _buildTitleStyle(isNarrow: isNarrow),
-                            ),
-                            if (desc.isNotEmpty) ...[
-                              const SizedBox(height: 8),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6.0,
-                                ),
-                                child: Text(
-                                  desc,
-                                  textAlign: TextAlign.center,
-                                  style: _buildDescriptionStyle(
-                                    isNarrow: isNarrow,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                title.toUpperCase(),
+                                textAlign: TextAlign.center,
+                                style: _cachedTitleStyle!,
+                              ),
+                              if (desc.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6.0,
+                                  ),
+                                  child: Text(
+                                    desc,
+                                    textAlign: TextAlign.center,
+                                    style: _cachedDescriptionStyle!,
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
 
           final livingBreath = widget.animate;
 
-          return AnimatedBuilder(
-            animation: _animController,
-            builder: (context, child) {
-              final timeSeconds =
-                  _animController.value * 60.0 + (livingBreath ? 13.5 : 0.0);
-              ui.FragmentShader? shader;
-              if (_program != null) {
-                shader = _program!.fragmentShader();
-                _configureShader(
-                  shader,
-                  cardWidth,
-                  cardHeight,
-                  quality,
-                  info,
-                  lighting,
-                  timeSeconds,
-                  widget.textureStyle,
-                );
-              }
+          return RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _animController,
+              builder: (context, child) {
+                final timeSeconds =
+                    _animController.value * 60.0 + (livingBreath ? 13.5 : 0.0);
+                ui.FragmentShader? shader = _shader;
+                if (shader == null && _program != null) {
+                  shader = _shader = _program!.fragmentShader();
+                }
+                if (shader != null) {
+                  _configureShader(
+                    shader,
+                    cardWidth,
+                    cardHeight,
+                    quality,
+                    info,
+                    lighting,
+                    timeSeconds,
+                    widget.textureStyle,
+                  );
+                }
 
-              return CustomPaint(
-                size: Size(cardWidth, cardHeight),
-                painter: SteinerFramePainter(
-                  quality: quality,
-                  elementColor: accentColor,
-                  isSpecial: info.isSpecial,
-                  isGrayDay: info.isGrayDay,
-                  shader: shader,
-                  lighting: lighting,
-                  time: timeSeconds,
-                ),
-                child: child,
-              );
-            },
-            child: innerContent,
+                return CustomPaint(
+                  size: Size(cardWidth, cardHeight),
+                  painter: SteinerFramePainter(
+                    quality: quality,
+                    elementColor: accentColor,
+                    isSpecial: info.isSpecial,
+                    isGrayDay: info.isGrayDay,
+                    shader: shader,
+                    lighting: lighting,
+                    time: timeSeconds,
+                    textureStyle: widget.textureStyle,
+                  ),
+                  child: child,
+                );
+              },
+              child: innerContent,
+            ),
           );
         },
       ),
@@ -1250,6 +1338,37 @@ final class SteinerFramePainter extends CustomPainter {
   /// Optional elapsed animation time in seconds driving fluid watercolor mottling.
   final double time;
 
+  /// Watercolor texture variant driving shader uniforms.
+  final WatercolorTextureStyle textureStyle;
+
+  static Size? _cachedPathSize;
+  static double? _cachedPathTime;
+  static Path? _cachedOuterPath;
+  static Path? _cachedInnerPath;
+  static Path? _cachedFramePath;
+  static Size? _cachedGrainSize;
+  static Path? _cachedShelfPath;
+  static Path? _cachedGrainLightPath;
+  static Path? _cachedGrainDarkPath;
+
+  static final Paint _dotPaintLight = Paint()..color = const Color(0x18FFFFFF);
+  static final Paint _dotPaintDark = Paint()..color = const Color(0x14000000);
+  static final Paint _innerArchGlowPaint = Paint()
+    ..color = Colors.black.withValues(alpha: 0.24)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 12.0
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+  static final Paint _creaseLightPaint = Paint()
+    ..color = const Color(0x50FFFFFF)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.5
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5);
+  static final Paint _creaseShadowPaint = Paint()
+    ..color = const Color(0x35000000)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.0
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
+
   /// Creates a [SteinerFramePainter].
   const SteinerFramePainter({
     required this.quality,
@@ -1259,6 +1378,7 @@ final class SteinerFramePainter extends CustomPainter {
     this.shader,
     this.lighting,
     this.time = 0.0,
+    this.textureStyle = WatercolorTextureStyle.lazure,
   });
 
   @override
@@ -1266,15 +1386,30 @@ final class SteinerFramePainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    final outerPath = SteinerWindowCardClipper.getOuterPath(size, time);
-    final innerPath = SteinerWindowCardClipper.getInnerClip(size);
-
-    // The entire frame is constructed as a SINGLE MANIFOLD POLYGON
-    final framePath = Path.combine(
-      PathOperation.difference,
-      outerPath,
-      innerPath,
-    );
+    final Path outerPath;
+    final Path innerPath;
+    final Path framePath;
+    if (_cachedPathSize == size &&
+        _cachedPathTime == time &&
+        _cachedOuterPath != null &&
+        _cachedInnerPath != null &&
+        _cachedFramePath != null) {
+      outerPath = _cachedOuterPath!;
+      innerPath = _cachedInnerPath!;
+      framePath = _cachedFramePath!;
+    } else {
+      outerPath = SteinerWindowCardClipper.getOuterPath(size, time);
+      innerPath = SteinerWindowCardClipper.getInnerClip(size);
+      framePath = Path()
+        ..fillType = PathFillType.evenOdd
+        ..addPath(outerPath, Offset.zero)
+        ..addPath(innerPath, Offset.zero);
+      _cachedPathSize = size;
+      _cachedPathTime = time;
+      _cachedOuterPath = outerPath;
+      _cachedInnerPath = innerPath;
+      _cachedFramePath = framePath;
+    }
 
     // 1. Dynamic physical drop shadow tracking the sun across the sky:
     // Morning (lx < 0): sun on left -> shadow casts to the RIGHT (dx > 0)
@@ -1451,12 +1586,7 @@ final class SteinerFramePainter extends CustomPainter {
     _paint3DVolumetricBevels(canvas, size);
 
     // Structure C: Soft ambient frame darkening approaching inner arch
-    final innerArchGlow = Paint()
-      ..color = Colors.black.withValues(alpha: 0.24)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 12.0
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-    canvas.drawPath(innerPath, innerArchGlow);
+    canvas.drawPath(innerPath, _innerArchGlowPaint);
 
     // Structure D: Mineral grain / watercolor paper tooth
     _paintMineralGrain(canvas, size);
@@ -1599,7 +1729,51 @@ final class SteinerFramePainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTWH(0, 0, w, h), wash3);
   }
 
+  static void _ensureStaticPathsForSize(Size size) {
+    if (_cachedGrainSize == size &&
+        _cachedShelfPath != null &&
+        _cachedGrainLightPath != null &&
+        _cachedGrainDarkPath != null) {
+      return;
+    }
+    final w = size.width;
+    final h = size.height;
+
+    _cachedShelfPath = Path()
+      ..moveTo(w * 0.15, h * 0.780)
+      ..cubicTo(w * 0.24, h * 0.840, w * 0.34, h * 0.852, w * 0.50, h * 0.862)
+      ..cubicTo(w * 0.66, h * 0.852, w * 0.76, h * 0.840, w * 0.85, h * 0.780)
+      ..cubicTo(w * 0.90, h * 0.860, w * 0.78, h * 0.940, w * 0.50, h * 0.984)
+      ..cubicTo(w * 0.22, h * 0.940, w * 0.10, h * 0.860, w * 0.15, h * 0.780)
+      ..close();
+
+    final lightPath = Path();
+    final darkPath = Path();
+    int seed = 1337;
+    int nextRand() {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      return seed;
+    }
+
+    for (int i = 0; i < 260; i++) {
+      final rx = (nextRand() % 1000) / 1000.0 * w;
+      final ry = (nextRand() % 1000) / 1000.0 * h;
+      final r = 0.5 + ((nextRand() % 100) / 100.0) * 1.0;
+      final isLight = (nextRand() % 2) == 0;
+      final rect = Rect.fromCircle(center: Offset(rx, ry), radius: r);
+      if (isLight) {
+        lightPath.addOval(rect);
+      } else {
+        darkPath.addOval(rect);
+      }
+    }
+    _cachedGrainSize = size;
+    _cachedGrainLightPath = lightPath;
+    _cachedGrainDarkPath = darkPath;
+  }
+
   void _paint3DVolumetricBevels(Canvas canvas, Size size) {
+    _ensureStaticPathsForSize(size);
     final w = size.width;
     final h = size.height;
     final lightX = lighting?.lx ?? -0.35;
@@ -1608,13 +1782,7 @@ final class SteinerFramePainter extends CustomPainter {
 
     // A. 3D UPWARD-FACING LUMINOUS BOTTOM SILL SHELF:
     final shelfColor = _getShelfHighlightColor(quality, isSpecial, isGrayDay);
-    final shelfPath = Path()
-      ..moveTo(w * 0.15, h * 0.780)
-      ..cubicTo(w * 0.24, h * 0.840, w * 0.34, h * 0.852, w * 0.50, h * 0.862)
-      ..cubicTo(w * 0.66, h * 0.852, w * 0.76, h * 0.840, w * 0.85, h * 0.780)
-      ..cubicTo(w * 0.90, h * 0.860, w * 0.78, h * 0.940, w * 0.50, h * 0.984)
-      ..cubicTo(w * 0.22, h * 0.940, w * 0.10, h * 0.860, w * 0.15, h * 0.780)
-      ..close();
+    final shelfPath = _cachedShelfPath!;
 
     final shelfBrightness = (-lightY).clamp(0.35, 1.0);
     final shelfGradient = Paint()
@@ -1636,17 +1804,8 @@ final class SteinerFramePainter extends CustomPainter {
     canvas.drawPath(shelfPath, shelfGradient);
 
     // B. SCULPTURAL CORNER FACET CREASES (soft-chiseled planes):
-    final creaseLight = Paint()
-      ..color = const Color(0x50FFFFFF)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5);
-
-    final creaseShadow = Paint()
-      ..color = const Color(0x35000000)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
+    final creaseLight = _creaseLightPaint;
+    final creaseShadow = _creaseShadowPaint;
 
     // Top-left corner facet: lit in morning, shaded in evening
     canvas.drawLine(
@@ -1688,30 +1847,9 @@ final class SteinerFramePainter extends CustomPainter {
   }
 
   void _paintMineralGrain(Canvas canvas, Size size) {
-    final dotPaintLight = Paint()..color = const Color(0x18FFFFFF);
-    final dotPaintDark = Paint()..color = const Color(0x14000000);
-
-    final w = size.width;
-    final h = size.height;
-
-    int seed = 1337;
-    int nextRand() {
-      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      return seed;
-    }
-
-    for (int i = 0; i < 260; i++) {
-      final rx = (nextRand() % 1000) / 1000.0 * w;
-      final ry = (nextRand() % 1000) / 1000.0 * h;
-      final r = 0.5 + ((nextRand() % 100) / 100.0) * 1.0;
-      final isLight = (nextRand() % 2) == 0;
-
-      canvas.drawCircle(
-        Offset(rx, ry),
-        r,
-        isLight ? dotPaintLight : dotPaintDark,
-      );
-    }
+    _ensureStaticPathsForSize(size);
+    canvas.drawPath(_cachedGrainLightPath!, _dotPaintLight);
+    canvas.drawPath(_cachedGrainDarkPath!, _dotPaintDark);
   }
 
   @override
@@ -1722,6 +1860,7 @@ final class SteinerFramePainter extends CustomPainter {
         oldDelegate.isGrayDay != isGrayDay ||
         oldDelegate.shader != shader ||
         oldDelegate.lighting != lighting ||
+        oldDelegate.textureStyle != textureStyle ||
         (shader != null && oldDelegate.time != time);
   }
 }

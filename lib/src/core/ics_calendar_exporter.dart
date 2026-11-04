@@ -110,7 +110,14 @@ final class CalendarExportEvent {
     if (!end.isAfter(start)) {
       throw ArgumentError.value(end, 'end', 'Must be after start');
     }
-    if (stirringDuration != null && stirringDuration!.inMinutes <= 0) {
+    if ((stirringStart != null) != (stirringDuration != null)) {
+      throw ArgumentError.value(
+        stirringDuration,
+        'stirringDuration',
+        'Must be provided together with stirringStart',
+      );
+    }
+    if (stirringDuration != null && stirringDuration! <= Duration.zero) {
       throw ArgumentError.value(
         stirringDuration,
         'stirringDuration',
@@ -126,7 +133,7 @@ final class CalendarExportEvent {
   bool get hasStirringWindow =>
       stirringStart != null &&
       stirringDuration != null &&
-      stirringDuration!.inMinutes > 0;
+      stirringDuration! > Duration.zero;
 
   /// End timestamp of the pre-spray stirring window, if present.
   DateTime? get stirringEnd =>
@@ -217,6 +224,14 @@ abstract final class IcsCalendarExporter {
     double? latitude,
     double? longitude,
   }) {
+    if (!window.end.isAfter(window.start)) {
+      throw ArgumentError.value(
+        window.end,
+        'window.end',
+        'Must be after window.start',
+      );
+    }
+
     final targetLabel = crop != null
         ? (organRule != null
               ? '${crop.localizedDisplayName} (${organRule.localizedLabel})'
@@ -228,6 +243,11 @@ abstract final class IcsCalendarExporter {
     DateTime blockStart = window.peakTime;
     if (blockStart.isBefore(window.start)) {
       blockStart = window.start;
+    } else if (!blockStart.isBefore(window.end)) {
+      final latestStart = window.end.subtract(const Duration(hours: 2));
+      blockStart = latestStart.isAfter(window.start)
+          ? latestStart
+          : window.start;
     }
     DateTime blockEnd = blockStart.add(const Duration(hours: 2));
     if (blockEnd.isAfter(window.end)) {
@@ -478,24 +498,25 @@ abstract final class IcsCalendarExporter {
         .replaceAll(';', r'\;')
         .replaceAll(',', r'\,')
         .replaceAll('\r\n', r'\n')
+        .replaceAll('\r', r'\n')
         .replaceAll('\n', r'\n');
   }
 
   /// Folds a single RFC 5545 content line so no line exceeds 75 UTF-8 octets.
   static String _foldContentLine(String line) {
-    final bytes = utf8.encode(line);
-    if (bytes.length <= 75) return line;
+    if (utf8.encode(line).length <= 75) return line;
 
     final buffer = StringBuffer();
     int currentLineBytes = 0;
     for (final rune in line.runes) {
-      final charText = String.fromCharCode(rune);
-      final charByteLength = utf8.encode(charText).length;
+      final charByteLength = rune <= 0x7F
+          ? 1
+          : (rune <= 0x7FF ? 2 : (rune <= 0xFFFF ? 3 : 4));
       if (currentLineBytes + charByteLength > 75) {
         buffer.write('\r\n ');
         currentLineBytes = 1;
       }
-      buffer.write(charText);
+      buffer.writeCharCode(rune);
       currentLineBytes += charByteLength;
     }
     return buffer.toString();

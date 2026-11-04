@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'algorithm.dart' as algo;
 import 'biodynamic_prep.dart';
 import 'climate/season_alignment.dart';
@@ -335,6 +337,45 @@ final class WeekAheadDigest {
 /// Synthesis engine computing the 7-day "Week Ahead" biodynamic + weather brief
 /// and preparation export events.
 abstract final class WeekAheadPlanner {
+  static const int _maxDigestCacheEntries = 64;
+
+  static final LinkedHashMap<Object, WeekAheadDigest> _digestCache =
+      LinkedHashMap<Object, WeekAheadDigest>();
+
+  static final Expando<
+    (int, WeatherDataPoint, WeatherDataPoint, WeatherDataPoint, bool)
+  >
+  _sortedWeatherCache =
+      Expando<
+        (int, WeatherDataPoint, WeatherDataPoint, WeatherDataPoint, bool)
+      >('WeekAheadPlannerSortedWeather');
+
+  static final Map<(PlantQuality, int), List<String>> _cropNamesCache =
+      <(PlantQuality, int), List<String>>{};
+
+  static Object _weatherCacheKey(List<WeatherDataPoint>? weatherForecast) {
+    if (weatherForecast == null || weatherForecast.isEmpty) {
+      return 0;
+    }
+    final len = weatherForecast.length;
+    if (len <= 32) {
+      return (
+        identityHashCode(weatherForecast),
+        len,
+        Object.hashAll(weatherForecast),
+      );
+    }
+    return (
+      identityHashCode(weatherForecast),
+      len,
+      weatherForecast.first,
+      weatherForecast.last,
+      weatherForecast[len >>> 1],
+      weatherForecast[len >>> 2],
+      weatherForecast[(len * 3) >>> 2],
+    );
+  }
+
   /// Builds a [WeekAheadDigest] over [days] starting from [startTime], ranking
   /// the best upcoming windows where cosmic quality, Moon declination
   /// (*Pflanzzeit*), diurnal breathing, and dry/calm forecast weather intersect.
@@ -359,8 +400,34 @@ abstract final class WeekAheadPlanner {
     );
 
     final alignment = seasons ?? HemisphereSeasonAlignment(latitude: latitude);
+    final locVersion = algo.ephemerisLocationVersion(ephemeris);
+    final cacheKey = locVersion == null
+        ? null
+        : (
+            startTime.millisecondsSinceEpoch,
+            startTime.isUtc,
+            identityHashCode(ephemeris),
+            locVersion,
+            _weatherCacheKey(weatherForecast),
+            (latitude * 1000).round(),
+            (longitude * 1000).round(),
+            identityHashCode(alignment.localProfile),
+            alignment.hasNorthernSeasons,
+            alignment.transferability,
+            alignment.shortLabel,
+            days,
+            maxRankedWindows,
+          );
+    if (cacheKey != null) {
+      final cachedDigest = _digestCache.remove(cacheKey);
+      if (cachedDigest != null) {
+        _digestCache[cacheKey] = cachedDigest;
+        return cachedDigest;
+      }
+    }
+
     final baseDay = DateTime(startTime.year, startTime.month, startTime.day);
-    final endLimit = baseDay.add(Duration(days: days));
+    final endLimit = DateTime(baseDay.year, baseDay.month, baseDay.day + days);
 
     final dailyBriefs = <DailyBiodynamicBrief>[];
     final candidateWindows = <_UnrankedWindowCandidate>[];
@@ -558,13 +625,20 @@ abstract final class WeekAheadPlanner {
       rankedWindows: rankedWindows,
     );
 
-    return WeekAheadDigest(
+    final digest = WeekAheadDigest(
       startDate: startTime,
       endDate: endLimit,
       dailyBriefs: dailyBriefs,
       rankedWindows: rankedWindows,
       headlineSummary: headlineSummary,
     );
+    if (cacheKey != null) {
+      if (_digestCache.length >= _maxDigestCacheEntries) {
+        _digestCache.remove(_digestCache.keys.first);
+      }
+      _digestCache[cacheKey] = digest;
+    }
+    return digest;
   }
 
   /// Builds a [CalendarExportEvent] for the active or next upcoming biodynamic
@@ -681,7 +755,12 @@ abstract final class WeekAheadPlanner {
         16,
       );
       if (!sprayStart.isAfter(selectedDate)) {
-        sprayStart = sprayStart.add(const Duration(days: 1));
+        sprayStart = DateTime(
+          selectedDate.year,
+          selectedDate.month,
+          selectedDate.day + 1,
+          16,
+        );
       }
     } else {
       sprayStart = DateTime(
@@ -691,7 +770,12 @@ abstract final class WeekAheadPlanner {
         6,
       );
       if (!sprayStart.isAfter(selectedDate)) {
-        sprayStart = sprayStart.add(const Duration(days: 1));
+        sprayStart = DateTime(
+          selectedDate.year,
+          selectedDate.month,
+          selectedDate.day + 1,
+          6,
+        );
       }
     }
     final sprayEnd = sprayStart.add(const Duration(hours: 3));
@@ -1114,6 +1198,38 @@ abstract final class WeekAheadPlanner {
     return score.clamp(0.0, 100.0);
   }
 
+  static bool _isSortedForecast(List<WeatherDataPoint> points) {
+    final len = points.length;
+    if (len <= 1) return true;
+    if (len <= 32) {
+      for (int i = 1; i < len; i++) {
+        if (points[i].time.isBefore(points[i - 1].time)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    final first = points.first;
+    final last = points.last;
+    final mid = points[len >>> 1];
+    if (_sortedWeatherCache[points] case final cached?
+        when cached.$1 == len &&
+            cached.$2 == first &&
+            cached.$3 == last &&
+            cached.$4 == mid) {
+      return cached.$5;
+    }
+    bool sorted = true;
+    for (int i = 1; i < len; i++) {
+      if (points[i].time.isBefore(points[i - 1].time)) {
+        sorted = false;
+        break;
+      }
+    }
+    _sortedWeatherCache[points] = (len, first, last, mid, sorted);
+    return sorted;
+  }
+
   static _WeatherSpanEvaluation _evaluateWeatherSpan({
     required DateTime start,
     required DateTime end,
@@ -1134,16 +1250,68 @@ abstract final class WeekAheadPlanner {
       );
     }
 
-    final matchingPoints = weatherForecast
-        .where((point) {
-          return !point.time.isBefore(
-                start.subtract(const Duration(hours: 1)),
-              ) &&
-              !point.time.isAfter(end.add(const Duration(hours: 1)));
-        })
-        .toList(growable: false);
+    final windowStartMs = start
+        .subtract(const Duration(hours: 1))
+        .millisecondsSinceEpoch;
+    final windowEndMs = end
+        .add(const Duration(hours: 1))
+        .millisecondsSinceEpoch;
 
-    if (matchingPoints.isEmpty) {
+    double? minTemp;
+    double? maxTemp;
+    double tempSum = 0.0;
+    int tempCount = 0;
+    double totalPrecip = 0.0;
+    double maxWind = 0.0;
+    int matchCount = 0;
+
+    if (_isSortedForecast(weatherForecast)) {
+      int low = 0;
+      int high = weatherForecast.length;
+      while (low < high) {
+        final mid = (low + high) >>> 1;
+        if (weatherForecast[mid].time.millisecondsSinceEpoch < windowStartMs) {
+          low = mid + 1;
+        } else {
+          high = mid;
+        }
+      }
+      for (int i = low; i < weatherForecast.length; i++) {
+        final point = weatherForecast[i];
+        if (point.time.millisecondsSinceEpoch > windowEndMs) {
+          break;
+        }
+        matchCount++;
+        if (point.temperature case final temperature?) {
+          if (minTemp == null || temperature < minTemp) minTemp = temperature;
+          if (maxTemp == null || temperature > maxTemp) maxTemp = temperature;
+          tempSum += temperature;
+          tempCount++;
+        }
+        totalPrecip += point.precipitation;
+        if (point.windSpeed > maxWind) {
+          maxWind = point.windSpeed;
+        }
+      }
+    } else {
+      for (final point in weatherForecast) {
+        final ms = point.time.millisecondsSinceEpoch;
+        if (ms < windowStartMs || ms > windowEndMs) continue;
+        matchCount++;
+        if (point.temperature case final temperature?) {
+          if (minTemp == null || temperature < minTemp) minTemp = temperature;
+          if (maxTemp == null || temperature > maxTemp) maxTemp = temperature;
+          tempSum += temperature;
+          tempCount++;
+        }
+        totalPrecip += point.precipitation;
+        if (point.windSpeed > maxWind) {
+          maxWind = point.windSpeed;
+        }
+      }
+    }
+
+    if (matchCount == 0) {
       return const _WeatherSpanEvaluation(
         status: WeatherIntersectionStatus.unverified,
         summary: 'Beyond hourly forecast horizon — observe local sky and soil moisture.',
@@ -1153,26 +1321,6 @@ abstract final class WeekAheadPlanner {
         totalPrecipitationMm: 0.0,
         maxWindSpeedMs: 0.0,
       );
-    }
-
-    double? minTemp;
-    double? maxTemp;
-    double tempSum = 0.0;
-    int tempCount = 0;
-    double totalPrecip = 0.0;
-    double maxWind = 0.0;
-
-    for (final point in matchingPoints) {
-      if (point.temperature case final temperature?) {
-        if (minTemp == null || temperature < minTemp) minTemp = temperature;
-        if (maxTemp == null || temperature > maxTemp) maxTemp = temperature;
-        tempSum += temperature;
-        tempCount++;
-      }
-      totalPrecip += point.precipitation;
-      if (point.windSpeed > maxWind) {
-        maxWind = point.windSpeed;
-      }
     }
 
     final meanTemp = tempCount > 0 ? tempSum / tempCount : null;
@@ -1254,6 +1402,10 @@ abstract final class WeekAheadPlanner {
     final referenceMonth = alignment
         .referenceMonth(date, anchor: SeasonalAnchor.thermal)
         .clamp(1, 12);
+    final key = (quality, referenceMonth);
+    if (_cropNamesCache[key] case final cached?) {
+      return cached;
+    }
     final seasonalMatches = VegetableDatabase.getVegetablesForMonth(
       referenceMonth,
       quality: quality,
@@ -1261,10 +1413,10 @@ abstract final class WeekAheadPlanner {
     final source = seasonalMatches.isNotEmpty
         ? seasonalMatches
         : VegetableDatabase.getVegetablesForQuality(quality);
-    return source
-        .take(4)
-        .map((crop) => crop.localizedDisplayName)
-        .toList(growable: false);
+    final result = List<String>.unmodifiable(
+      source.take(4).map((crop) => crop.localizedDisplayName),
+    );
+    return _cropNamesCache[key] = result;
   }
 
   static String _buildDailySummaryText({

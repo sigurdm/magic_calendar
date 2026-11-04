@@ -1,3 +1,6 @@
+import 'dart:collection';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 /// Widget that renders typography along an arbitrary 2D geometric [Path].
@@ -12,8 +15,9 @@ import 'package:flutter/material.dart';
 /// * [path] must contain at least one valid sub-path.
 ///
 /// Performance considerations:
-/// Rendering complexity is $O(N)$ where $N$ is the length of [text]. Tangent
-/// evaluations leverage [Path.computeMetrics], which caches arc-length data.
+/// Per-character [TextPainter] layouts and advance metrics are memoized in a
+/// bounded LRU cache keyed by `(text, style, textDirection)`, so cache hits
+/// perform zero [TextPainter.layout] passes during repaints.
 final class CurvedText extends StatelessWidget {
   /// The string to render along [path].
   final String text;
@@ -48,23 +52,98 @@ final class CurvedText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: CurvedTextPainter(
-        text: text,
-        path: path,
-        style: style,
-        startOffset: startOffset,
-        centerText: centerText,
+    return RepaintBoundary(
+      child: CustomPaint(
+        isComplex: true,
+        painter: CurvedTextPainter(
+          text: text,
+          path: path,
+          style: style,
+          startOffset: startOffset,
+          centerText: centerText,
+        ),
       ),
     );
   }
 }
 
+final class _CachedCurvedGlyphRun {
+  final List<TextPainter> painters;
+  final Float64List advances;
+  final double totalTextWidth;
+
+  const _CachedCurvedGlyphRun({
+    required this.painters,
+    required this.advances,
+    required this.totalTextWidth,
+  });
+}
+
 /// [CustomPainter] that calculates tangent angles along a [Path] to paint curved text.
 ///
-/// Performance: $O(N)$ layout and paint passes per repaint cycle, where $N$
-/// is character count.
+/// Performance: Glyph layouts are cached in a static LRU map so `paint()`
+/// performs zero [TextPainter.layout] calls on cache hits.
 final class CurvedTextPainter extends CustomPainter {
+  static const int _maxGlyphCacheEntries = 64;
+  static final LinkedHashMap<
+    (String, TextStyle, double, TextDirection),
+    _CachedCurvedGlyphRun
+  >
+  _glyphCache = LinkedHashMap();
+
+  /// Number of cached glyph runs currently stored in memory.
+  static int get cachedGlyphRunCount => _glyphCache.length;
+
+  /// Clears the static glyph layout cache.
+  static void clearCache() => _glyphCache.clear();
+
+  static _CachedCurvedGlyphRun _resolveGlyphRun(
+    String text,
+    TextStyle style,
+    TextDirection textDirection,
+  ) {
+    final rawSpacing = style.letterSpacing ?? 0.0;
+    final spacing = rawSpacing.isFinite ? rawSpacing : 0.0;
+    final styleWithoutSpacing = rawSpacing == 0.0
+        ? style
+        : style.copyWith(letterSpacing: 0.0);
+
+    final key = (text, styleWithoutSpacing, spacing, textDirection);
+    final existing = _glyphCache.remove(key);
+    if (existing != null) {
+      _glyphCache[key] = existing;
+      return existing;
+    }
+
+    final chars = text.characters.toList(growable: false);
+    final count = chars.length;
+    final painters = List<TextPainter>.generate(count, (i) {
+      return TextPainter(
+        text: TextSpan(text: chars[i], style: styleWithoutSpacing),
+        textDirection: textDirection,
+      )..layout();
+    }, growable: false);
+
+    final advances = Float64List(count);
+    double totalTextWidth = 0.0;
+    for (int i = 0; i < count; i++) {
+      final advance = painters[i].width + (i < count - 1 ? spacing : 0.0);
+      advances[i] = advance;
+      totalTextWidth += advance;
+    }
+
+    final created = _CachedCurvedGlyphRun(
+      painters: painters,
+      advances: advances,
+      totalTextWidth: totalTextWidth,
+    );
+    if (_glyphCache.length >= _maxGlyphCacheEntries) {
+      _glyphCache.remove(_glyphCache.keys.first);
+    }
+    _glyphCache[key] = created;
+    return created;
+  }
+
   /// Text to render.
   final String text;
 
@@ -91,47 +170,47 @@ final class CurvedTextPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (text.isEmpty) return;
-
-    final metrics = path.computeMetrics().toList();
-    if (metrics.isEmpty) return;
-
-    final metric = metrics.first;
-    if (metric.length <= 0) return;
-
-    final spacing = style.letterSpacing ?? 0.0;
-    final styleWithoutSpacing = style.copyWith(letterSpacing: 0.0);
-
-    final chars = text.characters.toList();
-    final painters = <TextPainter>[];
-    final advances = <double>[];
-    double totalTextWidth = 0.0;
-
-    for (int i = 0; i < chars.length; i++) {
-      final char = chars[i];
-      final painter = TextPainter(
-        text: TextSpan(text: char, style: styleWithoutSpacing),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      painters.add(painter);
-
-      final advance = painter.width + (i < chars.length - 1 ? spacing : 0.0);
-      advances.add(advance);
-      totalTextWidth += advance;
+    if (text.isEmpty ||
+        !size.width.isFinite ||
+        !size.height.isFinite ||
+        size.width < 0 ||
+        size.height < 0) {
+      return;
+    }
+    final fontSize = style.fontSize;
+    if (fontSize != null && (!fontSize.isFinite || fontSize <= 0)) {
+      return;
     }
 
-    double currentDistance = startOffset;
-    if (centerText && totalTextWidth < metric.length) {
-      currentDistance += (metric.length - totalTextWidth) / 2.0;
+    final metricsIterator = path.computeMetrics().iterator;
+    while (true) {
+      if (!metricsIterator.moveNext()) return;
+      final candidate = metricsIterator.current;
+      if (candidate.length > 0 && candidate.length.isFinite) {
+        break;
+      }
+    }
+    final metric = metricsIterator.current;
+    final metricLength = metric.length;
+
+    final glyphRun = _resolveGlyphRun(text, style, TextDirection.ltr);
+    final painters = glyphRun.painters;
+    final advances = glyphRun.advances;
+    final totalTextWidth = glyphRun.totalTextWidth;
+
+    double currentDistance = startOffset.isFinite ? startOffset : 0.0;
+    if (centerText && totalTextWidth < metricLength) {
+      currentDistance += (metricLength - totalTextWidth) / 2.0;
     }
 
-    for (int i = 0; i < chars.length; i++) {
+    final count = painters.length;
+    for (int i = 0; i < count; i++) {
       final painter = painters[i];
       final glyphWidth = painter.width;
       final advance = advances[i];
       final charCenterDistance = currentDistance + (glyphWidth / 2.0);
 
-      if (charCenterDistance > metric.length) break;
+      if (charCenterDistance > metricLength) break;
       if (charCenterDistance >= 0.0) {
         final tangent = metric.getTangentForOffset(charCenterDistance);
         if (tangent != null) {

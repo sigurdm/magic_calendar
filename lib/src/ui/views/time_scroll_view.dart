@@ -7,6 +7,7 @@ import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/garden/field_journal_entry.dart';
+import '../../core/garden/garden_profile.dart';
 import '../../services/ephemeris_service.dart';
 import '../../services/weather_service.dart';
 import '../painters/infinite_timeline_painter.dart';
@@ -55,6 +56,12 @@ final class TimeScrollView extends StatefulWidget {
   /// Optional callback invoked when the user taps a journal marker on the timeline.
   final ValueChanged<FieldJournalEntry>? onJournalEntryTapped;
 
+  /// Planned garden tasks rendered as dashed succession markers on the timeline.
+  final List<QueuedGardenTask> queuedTasks;
+
+  /// Optional callback invoked when the user taps a planned task marker on the timeline.
+  final ValueChanged<QueuedGardenTask>? onPlannedTaskTapped;
+
   /// Creates a [TimeScrollView].
   const TimeScrollView({
     super.key,
@@ -64,6 +71,8 @@ final class TimeScrollView extends StatefulWidget {
     this.onWeatherDataChanged,
     this.journalEntries = const [],
     this.onJournalEntryTapped,
+    this.queuedTasks = const [],
+    this.onPlannedTaskTapped,
     this.controller,
     this.latitude = 54.9037,
     this.longitude = 10.6074,
@@ -74,11 +83,14 @@ final class TimeScrollView extends StatefulWidget {
   State<TimeScrollView> createState() => _TimeScrollViewState();
 }
 
-class _TimeScrollViewState extends State<TimeScrollView>
+final class _TimeScrollViewState extends State<TimeScrollView>
     with SingleTickerProviderStateMixin {
   late DateTime _centerTime;
   late DateTime _baseTime;
   double _panOffset = 0.0;
+  late final ValueNotifier<double> _panOffsetNotifier = ValueNotifier<double>(
+    0.0,
+  );
   double _viewportWidth = 400.0;
   double _hourWidth = 400.0 / (7 * 24);
   final double _minHourWidth = 0.5;
@@ -94,6 +106,7 @@ class _TimeScrollViewState extends State<TimeScrollView>
 
   bool _isLoading = false;
   Timer? _updateTimer;
+  int _updateRequestId = 0;
 
   late AnimationController _momentumController;
   double _lastMomentumValue = 0.0;
@@ -105,16 +118,31 @@ class _TimeScrollViewState extends State<TimeScrollView>
   ui.Image? _noneImage;
   ui.Image? _grayDayImage;
 
+  InfiniteTimelinePainter? _cachedPainter;
+
   Future<void> _loadIcons() async {
-    _rootImage = await _loadAssetImage('assets/icons/root.png');
-    _leafImage = await _loadAssetImage('assets/icons/leaf.png');
-    _flowerImage = await _loadAssetImage('assets/icons/flower.png');
-    _fruitImage = await _loadAssetImage('assets/icons/fruit.png');
-    _noneImage = await _loadAssetImage('assets/icons/none.png');
-    _grayDayImage = await _loadAssetImage('assets/icons/gray_day.png');
-    if (mounted) {
-      setState(() {});
+    final images = await Future.wait<ui.Image>([
+      _loadAssetImage('assets/icons/root.png'),
+      _loadAssetImage('assets/icons/leaf.png'),
+      _loadAssetImage('assets/icons/flower.png'),
+      _loadAssetImage('assets/icons/fruit.png'),
+      _loadAssetImage('assets/icons/none.png'),
+      _loadAssetImage('assets/icons/gray_day.png'),
+    ]);
+    if (!mounted) {
+      for (final img in images) {
+        img.dispose();
+      }
+      return;
     }
+    _rootImage = images[0];
+    _leafImage = images[1];
+    _flowerImage = images[2];
+    _fruitImage = images[3];
+    _noneImage = images[4];
+    _grayDayImage = images[5];
+    _cachedPainter = null;
+    setState(() {});
   }
 
   Future<ui.Image> _loadAssetImage(String path) async {
@@ -147,31 +175,54 @@ class _TimeScrollViewState extends State<TimeScrollView>
     _applyPanDelta(delta);
   }
 
+  bool get _needsDataRefresh =>
+      _cachedStart == null ||
+      _cachedEnd == null ||
+      _centerTime.difference(_cachedStart!).inDays < 30 ||
+      _cachedEnd!.difference(_centerTime).inDays < 30;
+
   void _applyPanDelta(double dx) {
-    if (dx == 0) {
+    if (dx == 0 || !dx.isFinite || _hourWidth <= 0) {
       return;
     }
-    setState(() {
-      _panOffset += dx;
-      final secondsOffset = -_panOffset / _hourWidth * 3600.0;
-      _centerTime = _baseTime.add(Duration(seconds: secondsOffset.toInt()));
+    _panOffset += dx;
+    final secondsOffset = (-_panOffset / _hourWidth * 3600.0).toInt();
+    final nextCenterTime = _baseTime.add(Duration(seconds: secondsOffset));
+    final timeChanged = nextCenterTime != _centerTime;
+    _centerTime = nextCenterTime;
 
-      if (_panOffset.abs() > _viewportWidth / 2) {
+    if (_panOffset.abs() > _viewportWidth / 2) {
+      _cachedPainter = null;
+      setState(() {
         _baseTime = _centerTime;
         _panOffset = 0.0;
-      }
-    });
-    widget.onTimeSelected(_centerTime);
-    _scheduleUpdate();
+        _panOffsetNotifier.value = 0.0;
+      });
+    } else {
+      _panOffsetNotifier.value = _panOffset;
+    }
+    if (timeChanged) {
+      widget.onTimeSelected(_centerTime);
+      _scheduleUpdate();
+    }
   }
 
   void _scheduleUpdate({bool immediate = false}) {
-    _updateTimer?.cancel();
     if (immediate) {
+      _updateTimer?.cancel();
+      _updateTimer = null;
       _performUpdate();
-    } else {
-      _updateTimer = Timer(const Duration(milliseconds: 100), _performUpdate);
+      return;
     }
+    if (!_needsDataRefresh) {
+      if (_updateTimer != null) {
+        _updateTimer!.cancel();
+        _updateTimer = null;
+      }
+      return;
+    }
+    _updateTimer?.cancel();
+    _updateTimer = Timer(const Duration(milliseconds: 100), _performUpdate);
   }
 
   List<CalendarInterval> _mergeIntervals(
@@ -236,17 +287,19 @@ class _TimeScrollViewState extends State<TimeScrollView>
     if (_cachedStart == null ||
         _centerTime.difference(_cachedStart!).inDays < 30 ||
         _cachedEnd!.difference(_centerTime).inDays < 30) {
+      final requestId = ++_updateRequestId;
       if (_visibleIntervals.isEmpty) {
         setState(() => _isLoading = true);
       }
 
       final intervals = await widget.ephemeris.getIntervals(start, end);
-      if (!mounted) {
+      if (!mounted || requestId != _updateRequestId) {
         return;
       }
 
       final merged = _mergeIntervals(_visibleIntervals, intervals);
 
+      _cachedPainter = null;
       setState(() {
         _visibleIntervals = merged;
         _cachedStart = merged.isNotEmpty ? merged.first.start : start;
@@ -266,6 +319,9 @@ class _TimeScrollViewState extends State<TimeScrollView>
             start,
             histEnd,
           );
+          if (!mounted || requestId != _updateRequestId) {
+            return;
+          }
           combinedWeather.addAll(
             histWeather.where((p) => !p.time.isAfter(now)),
           );
@@ -274,12 +330,19 @@ class _TimeScrollViewState extends State<TimeScrollView>
         }
       }
 
+      if (!mounted || requestId != _updateRequestId) {
+        return;
+      }
+
       if (end.isAfter(now)) {
         try {
           final forecast = await widget.weatherService.getForecast(
             widget.latitude,
             widget.longitude,
           );
+          if (!mounted || requestId != _updateRequestId) {
+            return;
+          }
           combinedWeather.addAll(
             forecast.where((p) => p.time.isAfter(now) && p.time.isBefore(end)),
           );
@@ -290,7 +353,8 @@ class _TimeScrollViewState extends State<TimeScrollView>
 
       combinedWeather.sort((a, b) => a.time.compareTo(b.time));
 
-      if (mounted) {
+      if (mounted && requestId == _updateRequestId) {
+        _cachedPainter = null;
         setState(() {
           _weatherData = combinedWeather;
         });
@@ -306,8 +370,16 @@ class _TimeScrollViewState extends State<TimeScrollView>
       oldWidget.controller?._state = null;
       widget.controller?._state = this;
     }
-    if (widget.latitude != oldWidget.latitude ||
-        widget.longitude != oldWidget.longitude) {
+    _cachedPainter = null;
+    final ephemerisChanged = widget.ephemeris != oldWidget.ephemeris;
+    final locationChanged =
+        widget.latitude != oldWidget.latitude ||
+        widget.longitude != oldWidget.longitude;
+    final weatherChanged = widget.weatherService != oldWidget.weatherService;
+    if (ephemerisChanged || locationChanged) {
+      _visibleIntervals = [];
+    }
+    if (ephemerisChanged || locationChanged || weatherChanged) {
       _cachedStart = null;
       _cachedEnd = null;
       _scheduleUpdate(immediate: true);
@@ -316,10 +388,12 @@ class _TimeScrollViewState extends State<TimeScrollView>
 
   void _scrollToNow() {
     _momentumController.stop();
+    _cachedPainter = null;
     setState(() {
       _centerTime = DateTime.now();
       _baseTime = _centerTime;
       _panOffset = 0.0;
+      _panOffsetNotifier.value = 0.0;
     });
     widget.onTimeSelected(_centerTime);
     _scheduleUpdate(immediate: true);
@@ -330,18 +404,42 @@ class _TimeScrollViewState extends State<TimeScrollView>
       return;
     }
     _momentumController.stop();
+    _cachedPainter = null;
     setState(() {
       _centerTime = time;
       _baseTime = _centerTime;
       _panOffset = 0.0;
+      _panOffsetNotifier.value = 0.0;
     });
     _scheduleUpdate(immediate: true);
+  }
+
+  InfiniteTimelinePainter _resolvePainter() {
+    return _cachedPainter ??= InfiniteTimelinePainter(
+      centerTime: _baseTime,
+      hourWidth: _hourWidth,
+      intervals: _visibleIntervals,
+      weatherData: _weatherData,
+      journalEntries: widget.journalEntries,
+      queuedTasks: widget.queuedTasks,
+      ephemeris: widget.ephemeris,
+      latitude: widget.latitude,
+      longitude: widget.longitude,
+      showBiodynamicOverlay: widget.showBiodynamicOverlay,
+      rootImage: _rootImage,
+      leafImage: _leafImage,
+      flowerImage: _flowerImage,
+      fruitImage: _fruitImage,
+      noneImage: _noneImage,
+      grayDayImage: _grayDayImage,
+    );
   }
 
   @override
   void dispose() {
     _updateTimer?.cancel();
     _momentumController.dispose();
+    _panOffsetNotifier.dispose();
     widget.controller?._state = null;
     _rootImage?.dispose();
     _leafImage?.dispose();
@@ -356,16 +454,19 @@ class _TimeScrollViewState extends State<TimeScrollView>
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        _viewportWidth = constraints.maxWidth;
-        if (!_initialZoomSet && constraints.maxWidth > 0) {
+        final rawWidth = constraints.maxWidth;
+        _viewportWidth = rawWidth.isFinite && rawWidth > 0 ? rawWidth : 0.0;
+        if (!_initialZoomSet && _viewportWidth > 0) {
           _hourWidth = (_viewportWidth / (7 * 24)).clamp(
             _minHourWidth,
             _maxHourWidth,
           );
           _baseScaleHourWidth = _hourWidth;
           _initialZoomSet = true;
+          _cachedPainter = null;
         }
         final canvasWidth = _viewportWidth * 3;
+        final painter = _resolvePainter();
 
         return SizedBox(
           height: 200,
@@ -376,15 +477,21 @@ class _TimeScrollViewState extends State<TimeScrollView>
                   pointerSignal,
                   (PointerSignalEvent event) {
                     if (event is PointerScrollEvent) {
-                      setState(() {
-                        final zoomFactor = event.scrollDelta.dy > 0 ? 0.9 : 1.1;
-                        _hourWidth = (_hourWidth * zoomFactor).clamp(
-                          _minHourWidth,
-                          _maxHourWidth,
-                        );
-                        _baseTime = _centerTime;
-                        _panOffset = 0.0;
-                      });
+                      final zoomFactor = event.scrollDelta.dy > 0 ? 0.9 : 1.1;
+                      final nextHourWidth = (_hourWidth * zoomFactor).clamp(
+                        _minHourWidth,
+                        _maxHourWidth,
+                      );
+                      if ((nextHourWidth - _hourWidth).abs() > 1e-4 ||
+                          _panOffset != 0.0) {
+                        _cachedPainter = null;
+                        setState(() {
+                          _hourWidth = nextHourWidth;
+                          _baseTime = _centerTime;
+                          _panOffset = 0.0;
+                          _panOffsetNotifier.value = 0.0;
+                        });
+                      }
                     }
                   },
                 );
@@ -392,28 +499,46 @@ class _TimeScrollViewState extends State<TimeScrollView>
             },
             child: GestureDetector(
               onTapUp: (details) {
-                if (widget.journalEntries.isEmpty) return;
-                final painter = InfiniteTimelinePainter(
-                  centerTime: _baseTime,
-                  hourWidth: _hourWidth,
-                  intervals: _visibleIntervals,
-                  weatherData: _weatherData,
-                  journalEntries: widget.journalEntries,
-                  ephemeris: widget.ephemeris,
-                  latitude: widget.latitude,
-                  longitude: widget.longitude,
-                );
+                if (widget.journalEntries.isEmpty &&
+                    widget.queuedTasks.isEmpty) {
+                  return;
+                }
+                final dy = details.localPosition.dy;
+                final inHitBand =
+                    (dy >= 4.0 && dy <= 26.0) || (dy >= 128.0 && dy <= 178.0);
+                if (!inHitBand) {
+                  return;
+                }
+                final activePainter = _resolvePainter();
                 // The 3x-wide canvas is centered inside the viewport and translated by _panOffset.
                 final canvasX =
                     _viewportWidth + details.localPosition.dx - _panOffset;
-                final hit = painter.hitTestJournalEntry(
-                  Offset(canvasX, details.localPosition.dy),
-                  Size(canvasWidth, 200),
-                );
-                if (hit != null) {
-                  _scrollToTime(hit.timestamp);
-                  widget.onTimeSelected(hit.timestamp);
-                  widget.onJournalEntryTapped?.call(hit);
+                final tapOffset = Offset(canvasX, dy);
+                final hitSize = Size(canvasWidth, 200);
+                if (widget.journalEntries.isNotEmpty) {
+                  final hit = activePainter.hitTestJournalEntry(
+                    tapOffset,
+                    hitSize,
+                  );
+                  if (hit != null) {
+                    _scrollToTime(hit.timestamp);
+                    widget.onTimeSelected(hit.timestamp);
+                    widget.onJournalEntryTapped?.call(hit);
+                    return;
+                  }
+                }
+                if (widget.queuedTasks.isNotEmpty) {
+                  final plannedHit = activePainter.hitTestPlannedTask(
+                    tapOffset,
+                    hitSize,
+                  );
+                  if (plannedHit != null &&
+                      plannedHit.plannedStartDate != null) {
+                    final plannedTime = plannedHit.plannedStartDate!;
+                    _scrollToTime(plannedTime);
+                    widget.onTimeSelected(plannedTime);
+                    widget.onPlannedTaskTapped?.call(plannedHit);
+                  }
                 }
               },
               onScaleStart: (details) {
@@ -422,14 +547,18 @@ class _TimeScrollViewState extends State<TimeScrollView>
               },
               onScaleUpdate: (details) {
                 if (details.scale != 1.0) {
-                  setState(() {
-                    _hourWidth = (_baseScaleHourWidth * details.scale).clamp(
-                      _minHourWidth,
-                      _maxHourWidth,
-                    );
-                    _baseTime = _centerTime;
-                    _panOffset = 0.0;
-                  });
+                  final nextHourWidth = (_baseScaleHourWidth * details.scale)
+                      .clamp(_minHourWidth, _maxHourWidth);
+                  if ((nextHourWidth - _hourWidth).abs() > 1e-4 ||
+                      _panOffset != 0.0) {
+                    _cachedPainter = null;
+                    setState(() {
+                      _hourWidth = nextHourWidth;
+                      _baseTime = _centerTime;
+                      _panOffset = 0.0;
+                      _panOffsetNotifier.value = 0.0;
+                    });
+                  }
                 } else {
                   _applyPanDelta(details.focalPointDelta.dx);
                 }
@@ -450,32 +579,21 @@ class _TimeScrollViewState extends State<TimeScrollView>
                       const Center(child: CircularProgressIndicator()),
                     IgnorePointer(
                       child: ClipRect(
-                        child: Transform.translate(
-                          offset: Offset(_panOffset, 0),
+                        child: ValueListenableBuilder<double>(
+                          valueListenable: _panOffsetNotifier,
+                          builder: (context, panOffset, child) {
+                            return Transform.translate(
+                              offset: Offset(panOffset, 0),
+                              child: child,
+                            );
+                          },
                           child: OverflowBox(
                             maxWidth: canvasWidth,
                             minWidth: canvasWidth,
                             child: RepaintBoundary(
                               child: CustomPaint(
                                 size: Size(canvasWidth, 200),
-                                painter: InfiniteTimelinePainter(
-                                  centerTime: _baseTime,
-                                  hourWidth: _hourWidth,
-                                  intervals: _visibleIntervals,
-                                  weatherData: _weatherData,
-                                  journalEntries: widget.journalEntries,
-                                  ephemeris: widget.ephemeris,
-                                  latitude: widget.latitude,
-                                  longitude: widget.longitude,
-                                  showBiodynamicOverlay:
-                                      widget.showBiodynamicOverlay,
-                                  rootImage: _rootImage,
-                                  leafImage: _leafImage,
-                                  flowerImage: _flowerImage,
-                                  fruitImage: _fruitImage,
-                                  noneImage: _noneImage,
-                                  grayDayImage: _grayDayImage,
-                                ),
+                                painter: painter,
                               ),
                             ),
                           ),
@@ -483,13 +601,15 @@ class _TimeScrollViewState extends State<TimeScrollView>
                       ),
                     ),
                     const IgnorePointer(
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: SizedBox(
-                          width: 24,
-                          height: double.infinity,
-                          child: CustomPaint(
-                            painter: _OrganicPlumbNeedlePainter(),
+                      child: RepaintBoundary(
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: SizedBox(
+                            width: 24,
+                            height: double.infinity,
+                            child: CustomPaint(
+                              painter: _OrganicPlumbNeedlePainter(),
+                            ),
                           ),
                         ),
                       ),
@@ -509,32 +629,42 @@ class _TimeScrollViewState extends State<TimeScrollView>
 final class _OrganicPlumbNeedlePainter extends CustomPainter {
   const _OrganicPlumbNeedlePainter();
 
+  static final Paint _auraPaint = Paint()
+    ..color = GoetheanPalette.aspectGold.withValues(alpha: 0.36)
+    ..strokeWidth = 6.0
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5.0);
+
+  static Size? _cachedSize;
+  static Path? _cachedShaftPath;
+  static Paint? _cachedShaftPaint;
+  static Path? _cachedFinialPath;
+  static Paint? _cachedFinialPaint;
+
   @override
   void paint(Canvas canvas, Size size) {
+    if (size.width <= 0 ||
+        size.height <= 0 ||
+        !size.width.isFinite ||
+        !size.height.isFinite) {
+      return;
+    }
     final cx = size.width / 2;
 
-    // Soft warm sunbeam aura along the needle shaft
-    canvas.drawLine(
-      Offset(cx, 6),
-      Offset(cx, size.height - 4),
-      Paint()
-        ..color = GoetheanPalette.aspectGold.withValues(alpha: 0.36)
-        ..strokeWidth = 6.0
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5.0),
-    );
+    if (_cachedSize != size ||
+        _cachedShaftPath == null ||
+        _cachedShaftPaint == null ||
+        _cachedFinialPath == null ||
+        _cachedFinialPaint == null) {
+      _cachedSize = size;
+      _cachedShaftPath = Path()
+        ..moveTo(cx - 1.6, 12)
+        ..lineTo(cx + 1.6, 12)
+        ..lineTo(cx + 0.5, size.height - 8)
+        ..lineTo(cx, size.height)
+        ..lineTo(cx - 0.5, size.height - 8)
+        ..close();
 
-    // Tapered brass/gold needle shaft
-    final shaftPath = Path()
-      ..moveTo(cx - 1.6, 12)
-      ..lineTo(cx + 1.6, 12)
-      ..lineTo(cx + 0.5, size.height - 8)
-      ..lineTo(cx, size.height)
-      ..lineTo(cx - 0.5, size.height - 8)
-      ..close();
-
-    canvas.drawPath(
-      shaftPath,
-      Paint()
+      _cachedShaftPaint = Paint()
         ..shader = ui.Gradient.linear(
           const Offset(0, 0),
           Offset(0, size.height),
@@ -544,19 +674,15 @@ final class _OrganicPlumbNeedlePainter extends CustomPainter {
             const Color(0xFFC88A32),
           ],
           const [0.0, 0.45, 1.0],
-        ),
-    );
+        );
 
-    // Sculpted Goetheanum diamond-teardrop finial at the top crown
-    final finialPath = Path()
-      ..moveTo(cx, 0)
-      ..cubicTo(cx + 6.5, 3.5, cx + 5.5, 10.5, cx, 14.5)
-      ..cubicTo(cx - 5.5, 10.5, cx - 6.5, 3.5, cx, 0)
-      ..close();
+      _cachedFinialPath = Path()
+        ..moveTo(cx, 0)
+        ..cubicTo(cx + 6.5, 3.5, cx + 5.5, 10.5, cx, 14.5)
+        ..cubicTo(cx - 5.5, 10.5, cx - 6.5, 3.5, cx, 0)
+        ..close();
 
-    canvas.drawPath(
-      finialPath,
-      Paint()
+      _cachedFinialPaint = Paint()
         ..shader = ui.Gradient.radial(
           Offset(cx - 1.5, 5.0),
           8.0,
@@ -566,8 +692,17 @@ final class _OrganicPlumbNeedlePainter extends CustomPainter {
             const Color(0xFF9E6B24),
           ],
           const [0.0, 0.55, 1.0],
-        ),
-    );
+        );
+    }
+
+    // Soft warm sunbeam aura along the needle shaft
+    canvas.drawLine(Offset(cx, 6), Offset(cx, size.height - 4), _auraPaint);
+
+    // Tapered brass/gold needle shaft
+    canvas.drawPath(_cachedShaftPath!, _cachedShaftPaint!);
+
+    // Sculpted Goetheanum diamond-teardrop finial at the top crown
+    canvas.drawPath(_cachedFinialPath!, _cachedFinialPaint!);
   }
 
   @override

@@ -187,6 +187,8 @@ final class ShardedSqliteJournalStore {
         target_quality TEXT NOT NULL,
         note TEXT NOT NULL DEFAULT '',
         bed_name TEXT,
+        planned_start_ms INTEGER,
+        planned_end_ms INTEGER,
         updated_hlc TEXT NOT NULL,
         completed_by_entry_id TEXT,
         deleted_hlc TEXT
@@ -205,6 +207,8 @@ final class ShardedSqliteJournalStore {
     ''');
     _ensureColumnExists(db, 'planting_index', 'harvested_by_entry_id', 'TEXT');
     _ensureColumnExists(db, 'garden_task_queue', 'bed_name', 'TEXT');
+    _ensureColumnExists(db, 'garden_task_queue', 'planned_start_ms', 'INTEGER');
+    _ensureColumnExists(db, 'garden_task_queue', 'planned_end_ms', 'INTEGER');
   }
 
   static void _ensureColumnExists(
@@ -332,6 +336,22 @@ final class ShardedSqliteJournalStore {
     _writeConfig('last_hlc', next.toCanonicalString());
   }
 
+  T _runInTransaction<T>(Database db, T Function() action) {
+    db.execute('BEGIN IMMEDIATE');
+    try {
+      final result = action();
+      db.execute('COMMIT');
+      return result;
+    } catch (_) {
+      try {
+        db.execute('ROLLBACK');
+      } catch (_) {
+        // Ignore rollback failure if SQLite already rolled back the transaction.
+      }
+      rethrow;
+    }
+  }
+
   void _upsertLocalMemberRecord() {
     final hlc = _nextHlc().toCanonicalString();
     _metaDb.execute(
@@ -394,7 +414,10 @@ final class ShardedSqliteJournalStore {
     _checkNotClosed();
     final trimmed = bedName.trim();
     if (trimmed.isEmpty) return;
+    _observeHlcString(hlcOverride);
     final hlc = hlcOverride ?? _nextHlc().toCanonicalString();
+    final existing = findPlot(trimmed);
+    final canonicalName = existing?.name ?? trimmed;
     _metaDb.execute(
       '''
       INSERT INTO garden_beds (bed_name, updated_hlc, deleted_hlc)
@@ -404,7 +427,7 @@ final class ShardedSqliteJournalStore {
         deleted_hlc = NULL
       WHERE excluded.updated_hlc >= garden_beds.updated_hlc
       ''',
-      [trimmed, hlc],
+      [canonicalName, hlc],
     );
     _metaDb.execute(
       '''
@@ -420,14 +443,19 @@ final class ShardedSqliteJournalStore {
         END,
         deleted_hlc = NULL
       ''',
-      [trimmed, hlc],
+      [canonicalName, hlc],
     );
   }
 
   /// Creates or updates a structured [GardenPlot] in `garden_meta.sqlite`.
   GardenPlot upsertPlot(GardenPlot plot, {String? hlcOverride}) {
     _checkNotClosed();
+    _observeHlcString(hlcOverride);
+    _observeHlcString(plot.updatedHlc);
+    _observeHlcString(plot.deletedHlc);
     final hlc = hlcOverride ?? _nextHlc().toCanonicalString();
+    final existing = findPlot(plot.name);
+    final canonicalName = existing?.name ?? plot.name.trim();
     _metaDb.execute(
       '''
       INSERT INTO garden_beds (bed_name, updated_hlc, deleted_hlc)
@@ -437,7 +465,7 @@ final class ShardedSqliteJournalStore {
         deleted_hlc = NULL
       WHERE excluded.updated_hlc >= garden_beds.updated_hlc
       ''',
-      [plot.name, hlc],
+      [canonicalName, hlc],
     );
     _metaDb.execute(
       '''
@@ -457,7 +485,7 @@ final class ShardedSqliteJournalStore {
       WHERE excluded.updated_hlc >= garden_plots.updated_hlc
       ''',
       [
-        plot.name,
+        canonicalName,
         plot.areaName.trim(),
         plot.plotType.name,
         plot.dimensions.trim(),
@@ -467,7 +495,8 @@ final class ShardedSqliteJournalStore {
         hlc,
       ],
     );
-    return findPlot(plot.name) ?? plot.copyWith(updatedHlc: hlc);
+    return findPlot(canonicalName) ??
+        plot.copyWith(name: canonicalName, updatedHlc: hlc);
   }
 
   /// Soft-deletes a [GardenPlot] by [plotName] via an HLC tombstone.
@@ -475,12 +504,13 @@ final class ShardedSqliteJournalStore {
     _checkNotClosed();
     final trimmed = plotName.trim();
     if (trimmed.isEmpty) return;
+    _observeHlcString(hlcOverride);
     final hlc = hlcOverride ?? _nextHlc().toCanonicalString();
     _metaDb.execute(
       '''
       UPDATE garden_plots
       SET updated_hlc = ?, deleted_hlc = ?
-      WHERE plot_name = ?
+      WHERE plot_name = ? COLLATE NOCASE
       ''',
       [hlc, hlc, trimmed],
     );
@@ -488,7 +518,7 @@ final class ShardedSqliteJournalStore {
       '''
       UPDATE garden_beds
       SET updated_hlc = ?, deleted_hlc = ?
-      WHERE bed_name = ?
+      WHERE bed_name = ? COLLATE NOCASE
       ''',
       [hlc, hlc, trimmed],
     );
@@ -503,13 +533,17 @@ final class ShardedSqliteJournalStore {
       WHERE deleted_hlc IS NULL OR deleted_hlc < updated_hlc
       ORDER BY area_name COLLATE NOCASE ASC, plot_name COLLATE NOCASE ASC
     ''');
-    final byName = <String, GardenPlot>{
-      for (final row in rows) (row['plot_name'] as String): _plotFromRow(row),
+    final byLowerName = <String, GardenPlot>{
+      for (final row in rows)
+        (row['plot_name'] as String).toLowerCase(): _plotFromRow(row),
     };
     for (final bedName in listBedNames()) {
-      byName.putIfAbsent(bedName, () => GardenPlot(name: bedName));
+      byLowerName.putIfAbsent(
+        bedName.toLowerCase(),
+        () => GardenPlot(name: bedName),
+      );
     }
-    final list = byName.values.toList(growable: false);
+    final list = byLowerName.values.toList(growable: false);
     list.sort((a, b) {
       final areaCmp = a.areaName.toLowerCase().compareTo(
         b.areaName.toLowerCase(),
@@ -528,13 +562,16 @@ final class ShardedSqliteJournalStore {
     final rows = _metaDb.select(
       '''
       SELECT * FROM garden_plots
-      WHERE plot_name = ? AND (deleted_hlc IS NULL OR deleted_hlc < updated_hlc)
+      WHERE plot_name = ? COLLATE NOCASE
+        AND (deleted_hlc IS NULL OR deleted_hlc < updated_hlc)
       ''',
       [trimmed],
     );
     if (rows.isNotEmpty) return _plotFromRow(rows.first);
-    if (listBedNames().contains(trimmed)) {
-      return GardenPlot(name: trimmed);
+    for (final bed in listBedNames()) {
+      if (bed.toLowerCase() == trimmed.toLowerCase()) {
+        return GardenPlot(name: bed);
+      }
     }
     return null;
   }
@@ -599,7 +636,7 @@ final class ShardedSqliteJournalStore {
       args.add(cropId.trim());
     }
     if (bedName != null && bedName.trim().isNotEmpty) {
-      clauses.add('bed_name = ?');
+      clauses.add('bed_name = ? COLLATE NOCASE');
       args.add(bedName.trim());
     }
     final rows = _metaDb.select('''
@@ -638,6 +675,8 @@ final class ShardedSqliteJournalStore {
         }
       }
       if (action == null || quality == null) continue;
+      final plannedStartMs = row['planned_start_ms'] as int?;
+      final plannedEndMs = row['planned_end_ms'] as int?;
       tasks.add(
         QueuedGardenTask(
           id: row['task_id'] as String,
@@ -646,6 +685,18 @@ final class ShardedSqliteJournalStore {
           targetQuality: quality,
           note: row['note'] as String? ?? '',
           bedName: row['bed_name'] as String?,
+          plannedStartDate: plannedStartMs != null
+              ? DateTime.fromMillisecondsSinceEpoch(
+                  plannedStartMs,
+                  isUtc: true,
+                ).toLocal()
+              : null,
+          plannedEndDate: plannedEndMs != null
+              ? DateTime.fromMillisecondsSinceEpoch(
+                  plannedEndMs,
+                  isUtc: true,
+                ).toLocal()
+              : null,
         ),
       );
     }
@@ -655,6 +706,7 @@ final class ShardedSqliteJournalStore {
   /// Adds or updates [task] in `garden_meta.sqlite`'s shared CRDT task queue.
   void upsertQueuedTask(QueuedGardenTask task, {String? hlcOverride}) {
     _checkNotClosed();
+    _observeHlcString(hlcOverride);
     final hlc = hlcOverride ?? _nextHlc().toCanonicalString();
     if (task.bedName != null && task.bedName!.trim().isNotEmpty) {
       addBedName(task.bedName!, hlcOverride: hlc);
@@ -663,14 +715,17 @@ final class ShardedSqliteJournalStore {
       '''
       INSERT INTO garden_task_queue (
         task_id, action, crop_id, target_quality, note, bed_name,
+        planned_start_ms, planned_end_ms,
         updated_hlc, completed_by_entry_id, deleted_hlc
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)
       ON CONFLICT(task_id) DO UPDATE SET
         action = excluded.action,
         crop_id = excluded.crop_id,
         target_quality = excluded.target_quality,
         note = excluded.note,
         bed_name = excluded.bed_name,
+        planned_start_ms = excluded.planned_start_ms,
+        planned_end_ms = excluded.planned_end_ms,
         updated_hlc = excluded.updated_hlc,
         completed_by_entry_id = NULL,
         deleted_hlc = NULL
@@ -683,6 +738,8 @@ final class ShardedSqliteJournalStore {
         task.targetQuality.name,
         task.note,
         task.bedName,
+        task.plannedStartDate?.toUtc().millisecondsSinceEpoch,
+        task.plannedEndDate?.toUtc().millisecondsSinceEpoch,
         hlc,
       ],
     );
@@ -695,6 +752,7 @@ final class ShardedSqliteJournalStore {
     String? hlcOverride,
   }) {
     _checkNotClosed();
+    _observeHlcString(hlcOverride);
     final hlc = hlcOverride ?? _nextHlc().toCanonicalString();
     _metaDb.execute(
       '''
@@ -716,6 +774,7 @@ final class ShardedSqliteJournalStore {
     _checkNotClosed();
     final activeTasks = listQueuedTasks();
     if (activeTasks.isEmpty) return const [];
+    _observeHlcString(hlcOverride);
     final hlc = hlcOverride ?? _nextHlc().toCanonicalString();
     final completedIds = <String>[];
     for (final task in activeTasks) {
@@ -726,7 +785,7 @@ final class ShardedSqliteJournalStore {
       final bedMatches =
           task.bedName == null ||
           entry.bedName == null ||
-          task.bedName == entry.bedName;
+          task.bedName!.toLowerCase() == entry.bedName!.toLowerCase();
       if (cropMatches && bedMatches) {
         removeQueuedTask(
           task.id,
@@ -868,6 +927,16 @@ final class ShardedSqliteJournalStore {
   /// using per-field LWW CRDT tracking and append-only note rows.
   FieldJournalEntry upsertEntry(FieldJournalEntry entry) {
     _checkNotClosed();
+    _observeHlcString(entry.updatedHlc);
+    _observeHlcString(entry.deletedHlc);
+    for (final note in entry.noteThread) {
+      _observeHlcString(note.updatedHlc);
+      _observeHlcString(note.deletedHlc);
+    }
+    for (final att in entry.attachments) {
+      _observeHlcString(att.updatedHlc);
+      _observeHlcString(att.deletedHlc);
+    }
     final hlc = _nextHlc().toCanonicalString();
     final effectiveAuthorId = entry.authorId == 'local'
         ? _localActorId
@@ -879,50 +948,115 @@ final class ShardedSqliteJournalStore {
     final shardKey = entry.shardKey;
     final db = _openOrTouchShard(shardKey, createIfMissing: true);
 
-    final seededNotes = <JournalNote>[...entry.noteThread];
-    if (entry.notes.trim().isNotEmpty &&
-        !seededNotes.any(
+    final initNoteId = 'note_init_${entry.id}_$effectiveAuthorId';
+    final outcomeNoteId = 'note_outcome_${entry.id}_$effectiveAuthorId';
+    final activeFieldNotes = entry.noteThread
+        .where(
           (n) =>
-              n.kind == JournalNoteKind.fieldNote &&
-              n.body.trim() == entry.notes.trim(),
-        )) {
+              !n.isDeleted &&
+              n.kind != JournalNoteKind.outcome &&
+              n.body.trim().isNotEmpty,
+        )
+        .toList(growable: false);
+    final synthesizedFieldNotes = activeFieldNotes.length > 1
+        ? activeFieldNotes.map((n) => '${n.authorName}: ${n.body}').join('\n')
+        : null;
+    final isUneditedMultiAuthorFieldSynthesis =
+        synthesizedFieldNotes != null &&
+        entry.notes.trim() == synthesizedFieldNotes.trim();
+    final resolvedInitialNotes = isUneditedMultiAuthorFieldSynthesis
+        ? entry.editableFieldNote.trim()
+        : entry.notes.trim();
+
+    final activeOutcomeNotes = entry.noteThread
+        .where(
+          (n) =>
+              !n.isDeleted &&
+              (n.kind == JournalNoteKind.outcome || n.outcomeRating != null) &&
+              n.body.trim().isNotEmpty,
+        )
+        .toList(growable: false);
+    final synthesizedOutcomeNotes = activeOutcomeNotes.length > 1
+        ? activeOutcomeNotes.map((n) => '${n.authorName}: ${n.body}').join('\n')
+        : null;
+    final isUneditedMultiAuthorOutcomeSynthesis =
+        synthesizedOutcomeNotes != null &&
+        entry.outcomeNote.trim() == synthesizedOutcomeNotes.trim();
+    final resolvedOutcomeNote = isUneditedMultiAuthorOutcomeSynthesis
+        ? entry.editableOutcomeNote.trim()
+        : entry.outcomeNote.trim();
+
+    final seededNotes = <JournalNote>[
+      for (final existingNote in entry.noteThread)
+        if (existingNote.id != initNoteId && existingNote.id != outcomeNoteId)
+          existingNote,
+    ];
+    final existingInitNote = entry.noteThread
+        .where((n) => n.id == initNoteId)
+        .firstOrNull;
+    if (resolvedInitialNotes.isNotEmpty) {
       seededNotes.add(
         JournalNote(
-          id: 'note_init_${entry.id}_$effectiveAuthorId',
+          id: initNoteId,
           entryId: entry.id,
-          timestamp: entry.timestamp,
+          timestamp: existingInitNote?.timestamp ?? entry.timestamp,
           authorId: effectiveAuthorId,
           authorName: effectiveAuthorName,
           kind: JournalNoteKind.fieldNote,
-          body: entry.notes.trim(),
+          body: resolvedInitialNotes,
           updatedHlc: hlc,
         ),
       );
-    }
-    if ((entry.outcomeNote.trim().isNotEmpty || entry.outcomeRating != null) &&
-        !seededNotes.any(
-          (n) =>
-              n.kind == JournalNoteKind.outcome &&
-              n.body.trim() == entry.outcomeNote.trim() &&
-              n.outcomeRating == entry.outcomeRating,
-        )) {
+    } else if (existingInitNote != null) {
       seededNotes.add(
         JournalNote(
-          id: 'note_outcome_${entry.id}_$effectiveAuthorId',
+          id: initNoteId,
           entryId: entry.id,
-          timestamp: DateTime.now(),
+          timestamp: existingInitNote.timestamp,
           authorId: effectiveAuthorId,
           authorName: effectiveAuthorName,
-          kind: JournalNoteKind.outcome,
-          body: entry.outcomeNote.trim(),
-          outcomeRating: entry.outcomeRating,
+          kind: JournalNoteKind.fieldNote,
+          body: '',
           updatedHlc: hlc,
+          deletedHlc: hlc,
         ),
       );
     }
 
-    db.execute('BEGIN IMMEDIATE');
-    try {
+    final existingOutcomeNote = entry.noteThread
+        .where((n) => n.id == outcomeNoteId)
+        .firstOrNull;
+    if (resolvedOutcomeNote.isNotEmpty || entry.outcomeRating != null) {
+      seededNotes.add(
+        JournalNote(
+          id: outcomeNoteId,
+          entryId: entry.id,
+          timestamp: existingOutcomeNote?.timestamp ?? DateTime.now(),
+          authorId: effectiveAuthorId,
+          authorName: effectiveAuthorName,
+          kind: JournalNoteKind.outcome,
+          body: resolvedOutcomeNote,
+          outcomeRating: entry.outcomeRating,
+          updatedHlc: hlc,
+        ),
+      );
+    } else if (existingOutcomeNote != null) {
+      seededNotes.add(
+        JournalNote(
+          id: outcomeNoteId,
+          entryId: entry.id,
+          timestamp: existingOutcomeNote.timestamp,
+          authorId: effectiveAuthorId,
+          authorName: effectiveAuthorName,
+          kind: JournalNoteKind.outcome,
+          body: '',
+          updatedHlc: hlc,
+          deletedHlc: hlc,
+        ),
+      );
+    }
+
+    _runInTransaction(db, () {
       db.execute(
         '''
         INSERT INTO journal_entries (
@@ -964,8 +1098,8 @@ final class ShardedSqliteJournalStore {
               ? jsonEncode(entry.weatherSnapshot!.toJson())
               : null,
           entry.location != null ? jsonEncode(entry.location!.toJson()) : null,
-          entry.notes,
-          entry.outcomeNote,
+          resolvedInitialNotes,
+          resolvedOutcomeNote,
           entry.outcomeRating,
           hlc,
         ],
@@ -979,8 +1113,8 @@ final class ShardedSqliteJournalStore {
         'bed_name': entry.bedName,
         'parent_entry_id': entry.parentEntryId,
         'quality': entry.quality.name,
-        'initial_notes': entry.notes,
-        'outcome_note': entry.outcomeNote,
+        'initial_notes': resolvedInitialNotes,
+        'outcome_note': resolvedOutcomeNote,
         'outcome_rating': entry.outcomeRating,
         'deleted_hlc': null,
       };
@@ -995,12 +1129,7 @@ final class ShardedSqliteJournalStore {
       for (final attachment in entry.attachments) {
         _upsertAttachmentRow(db, attachment);
       }
-
-      db.execute('COMMIT');
-    } catch (_) {
-      db.execute('ROLLBACK');
-      rethrow;
-    }
+    });
 
     if (entry.bedName != null && entry.bedName!.trim().isNotEmpty) {
       final trimmedBed = entry.bedName!.trim();
@@ -1019,7 +1148,7 @@ final class ShardedSqliteJournalStore {
           SET last_prep_summary = ?,
               last_prep_timestamp_ms = ?,
               updated_hlc = ?
-          WHERE plot_name = ?
+          WHERE plot_name = ? COLLATE NOCASE
             AND (last_prep_timestamp_ms IS NULL OR last_prep_timestamp_ms <= ?)
           ''',
           [prepLabel, prepMs, hlc, trimmedBed, prepMs],
@@ -1242,15 +1371,10 @@ final class ShardedSqliteJournalStore {
     saveMediaBytesForAttachment(attachment, fullBytes);
 
     final db = _openOrTouchShard(resolvedShard, createIfMissing: false);
-    db.execute('BEGIN IMMEDIATE');
-    try {
+    _runInTransaction(db, () {
       _upsertAttachmentRow(db, attachment);
       _rematerializeEntryFromFieldLww(db, entryId);
-      db.execute('COMMIT');
-    } catch (_) {
-      db.execute('ROLLBACK');
-      rethrow;
-    }
+    });
 
     return getEntry(entryId, shardKey: resolvedShard);
   }
@@ -1262,7 +1386,7 @@ final class ShardedSqliteJournalStore {
     if (entry.action.isHarvestAction &&
         entry.parentEntryId != null &&
         entry.parentEntryId!.isNotEmpty &&
-        (entry.deletedHlc == null || entry.deletedHlc!.isEmpty)) {
+        !entry.isDeleted) {
       _metaDb.execute(
         '''
         UPDATE planting_index
@@ -1352,8 +1476,7 @@ final class ShardedSqliteJournalStore {
     );
 
     final db = _openOrTouchShard(resolvedShard, createIfMissing: false);
-    db.execute('BEGIN IMMEDIATE');
-    try {
+    _runInTransaction(db, () {
       _upsertNoteRow(db, note);
       if (kind == JournalNoteKind.outcome || outcomeRating != null) {
         if (body.trim().isNotEmpty) {
@@ -1364,11 +1487,7 @@ final class ShardedSqliteJournalStore {
         }
       }
       _rematerializeEntryFromFieldLww(db, entryId);
-      db.execute('COMMIT');
-    } catch (_) {
-      db.execute('ROLLBACK');
-      rethrow;
-    }
+    });
 
     return getEntry(entryId, shardKey: resolvedShard);
   }
@@ -1381,8 +1500,7 @@ final class ShardedSqliteJournalStore {
 
     final hlc = _nextHlc().toCanonicalString();
     final db = _openOrTouchShard(resolvedShard, createIfMissing: false);
-    db.execute('BEGIN IMMEDIATE');
-    try {
+    _runInTransaction(db, () {
       _upsertFieldLww(db, entryId, 'deleted_hlc', hlc, hlc);
       db.execute(
         '''
@@ -1392,17 +1510,22 @@ final class ShardedSqliteJournalStore {
         ''',
         [hlc, hlc, entryId],
       );
-      db.execute('COMMIT');
-    } catch (_) {
-      db.execute('ROLLBACK');
-      rethrow;
-    }
+    });
 
     _metaDb.execute(
       '''
       UPDATE planting_index
       SET deleted_hlc = ?, updated_hlc = ?
       WHERE entry_id = ?
+      ''',
+      [hlc, hlc, entryId],
+    );
+    _metaDb.execute(
+      '''
+      UPDATE planting_index
+      SET harvested_by_entry_id = NULL,
+          updated_hlc = CASE WHEN ? > updated_hlc THEN ? ELSE updated_hlc END
+      WHERE harvested_by_entry_id = ?
       ''',
       [hlc, hlc, entryId],
     );
@@ -1437,7 +1560,8 @@ final class ShardedSqliteJournalStore {
     final rows = db.select(
       '''
       SELECT * FROM journal_entries
-      WHERE entry_id = ? AND deleted_hlc IS NULL
+      WHERE entry_id = ?
+        AND (deleted_hlc IS NULL OR deleted_hlc < updated_hlc)
       ''',
       [entryId],
     );
@@ -1468,7 +1592,7 @@ final class ShardedSqliteJournalStore {
       final rows = db.select(
         '''
         SELECT * FROM journal_entries
-        WHERE deleted_hlc IS NULL
+        WHERE (deleted_hlc IS NULL OR deleted_hlc < updated_hlc)
           AND timestamp_ms >= ? AND timestamp_ms <= ?
         ORDER BY timestamp_ms DESC
         ''',
@@ -1510,7 +1634,8 @@ final class ShardedSqliteJournalStore {
         rows = db.select(
           '''
           SELECT * FROM journal_entries
-          WHERE deleted_hlc IS NULL AND timestamp_ms < ?
+          WHERE (deleted_hlc IS NULL OR deleted_hlc < updated_hlc)
+            AND timestamp_ms < ?
           ORDER BY timestamp_ms DESC
           LIMIT ?
           ''',
@@ -1520,7 +1645,7 @@ final class ShardedSqliteJournalStore {
         rows = db.select(
           '''
           SELECT * FROM journal_entries
-          WHERE deleted_hlc IS NULL
+          WHERE (deleted_hlc IS NULL OR deleted_hlc < updated_hlc)
           ORDER BY timestamp_ms DESC
           LIMIT ?
           ''',
@@ -1549,9 +1674,15 @@ final class ShardedSqliteJournalStore {
   /// entries matching [query] in title, crop, bed, notes, outcomes, or photo captions.
   List<FieldJournalEntry> searchEntries(String query, {int limit = 50}) {
     _checkNotClosed();
+    if (limit <= 0) return const [];
     final trimmed = query.trim();
     if (trimmed.isEmpty) return loadRecentPage(limit: limit);
-    final likePattern = '%${trimmed.toLowerCase()}%';
+    final escaped = trimmed
+        .toLowerCase()
+        .replaceAll(r'\', r'\\')
+        .replaceAll('%', r'\%')
+        .replaceAll('_', r'\_');
+    final likePattern = '%$escaped%';
     final results = <FieldJournalEntry>[];
 
     for (final key in listLocalShardKeys()) {
@@ -1559,22 +1690,24 @@ final class ShardedSqliteJournalStore {
       final remaining = limit - results.length;
       final db = _openOrTouchShard(key, createIfMissing: false);
       final rows = db.select(
-        '''
+        r'''
         SELECT DISTINCT e.* FROM journal_entries e
         LEFT JOIN journal_notes n
-          ON n.entry_id = e.entry_id AND n.deleted_hlc IS NULL
+          ON n.entry_id = e.entry_id
+          AND (n.deleted_hlc IS NULL OR n.deleted_hlc < n.updated_hlc)
         LEFT JOIN journal_attachments a
-          ON a.entry_id = e.entry_id AND a.deleted_hlc IS NULL
-        WHERE e.deleted_hlc IS NULL
+          ON a.entry_id = e.entry_id
+          AND (a.deleted_hlc IS NULL OR a.deleted_hlc < a.updated_hlc)
+        WHERE (e.deleted_hlc IS NULL OR e.deleted_hlc < e.updated_hlc)
           AND (
-            LOWER(e.title) LIKE ?
-            OR LOWER(COALESCE(e.crop_id, '')) LIKE ?
-            OR LOWER(COALESCE(e.bed_name, '')) LIKE ?
-            OR LOWER(COALESCE(e.prep_code, '')) LIKE ?
-            OR LOWER(e.initial_notes) LIKE ?
-            OR LOWER(e.outcome_note) LIKE ?
-            OR LOWER(COALESCE(n.body, '')) LIKE ?
-            OR LOWER(COALESCE(a.caption, '')) LIKE ?
+            LOWER(e.title) LIKE ? ESCAPE '\'
+            OR LOWER(COALESCE(e.crop_id, '')) LIKE ? ESCAPE '\'
+            OR LOWER(COALESCE(e.bed_name, '')) LIKE ? ESCAPE '\'
+            OR LOWER(COALESCE(e.prep_code, '')) LIKE ? ESCAPE '\'
+            OR LOWER(e.initial_notes) LIKE ? ESCAPE '\'
+            OR LOWER(e.outcome_note) LIKE ? ESCAPE '\'
+            OR LOWER(COALESCE(n.body, '')) LIKE ? ESCAPE '\'
+            OR LOWER(COALESCE(a.caption, '')) LIKE ? ESCAPE '\'
           )
         ORDER BY e.timestamp_ms DESC
         LIMIT ?
@@ -1618,7 +1751,7 @@ final class ShardedSqliteJournalStore {
     final rows = db.select('''
       SELECT * FROM journal_attachments
       WHERE entry_id IN ($placeholders)
-        AND deleted_hlc IS NULL
+        AND (deleted_hlc IS NULL OR deleted_hlc < updated_hlc)
       ORDER BY timestamp_ms ASC, updated_hlc ASC
       ''', entryIds);
     final grouped = <String, List<JournalAttachment>>{};
@@ -1667,7 +1800,7 @@ final class ShardedSqliteJournalStore {
     final rows = db.select('''
       SELECT * FROM journal_notes
       WHERE entry_id IN ($placeholders)
-        AND deleted_hlc IS NULL
+        AND (deleted_hlc IS NULL OR deleted_hlc < updated_hlc)
       ORDER BY timestamp_ms ASC, updated_hlc ASC
       ''', entryIds);
     final grouped = <String, List<JournalNote>>{};
@@ -1824,8 +1957,7 @@ final class ShardedSqliteJournalStore {
     }
 
     try {
-      db.execute('BEGIN IMMEDIATE');
-      try {
+      _runInTransaction(db, () {
         // 1. Insert any base entries missing locally.
         db.execute('''
           INSERT OR IGNORE INTO main.journal_entries (
@@ -1874,24 +2006,31 @@ final class ShardedSqliteJournalStore {
         ''');
 
         // 3b. Merge photo attachments (append-only union + per-attachment LWW).
-        db.execute('''
-          INSERT INTO main.journal_attachments (
-            attachment_id, entry_id, note_id, media_sha256, mime_type,
-            width, height, caption, author_id, author_name, timestamp_ms,
-            thumbnail_bytes, updated_hlc, deleted_hlc
-          )
-          SELECT
-            attachment_id, entry_id, note_id, media_sha256, mime_type,
-            width, height, caption, author_id, author_name, timestamp_ms,
-            thumbnail_bytes, updated_hlc, deleted_hlc
-          FROM remote.journal_attachments WHERE true
-          ON CONFLICT(attachment_id) DO UPDATE SET
-            caption = excluded.caption,
-            thumbnail_bytes = COALESCE(excluded.thumbnail_bytes, main.journal_attachments.thumbnail_bytes),
-            updated_hlc = excluded.updated_hlc,
-            deleted_hlc = excluded.deleted_hlc
-          WHERE excluded.updated_hlc > main.journal_attachments.updated_hlc
-        ''');
+        final hasAttachmentsTable = db
+            .select(
+              "SELECT name FROM remote.sqlite_master WHERE type='table' AND name='journal_attachments'",
+            )
+            .isNotEmpty;
+        if (hasAttachmentsTable) {
+          db.execute('''
+            INSERT INTO main.journal_attachments (
+              attachment_id, entry_id, note_id, media_sha256, mime_type,
+              width, height, caption, author_id, author_name, timestamp_ms,
+              thumbnail_bytes, updated_hlc, deleted_hlc
+            )
+            SELECT
+              attachment_id, entry_id, note_id, media_sha256, mime_type,
+              width, height, caption, author_id, author_name, timestamp_ms,
+              thumbnail_bytes, updated_hlc, deleted_hlc
+            FROM remote.journal_attachments WHERE true
+            ON CONFLICT(attachment_id) DO UPDATE SET
+              caption = excluded.caption,
+              thumbnail_bytes = COALESCE(excluded.thumbnail_bytes, main.journal_attachments.thumbnail_bytes),
+              updated_hlc = excluded.updated_hlc,
+              deleted_hlc = excluded.deleted_hlc
+            WHERE excluded.updated_hlc > main.journal_attachments.updated_hlc
+          ''');
+        }
 
         // 4. Rematerialize all entries in this shard from winning field LWW values.
         final entryIdsRows = db.select(
@@ -1909,22 +2048,25 @@ final class ShardedSqliteJournalStore {
             UNION ALL
             SELECT MAX(updated_hlc) AS hlc FROM main.journal_notes
             UNION ALL
+            SELECT MAX(deleted_hlc) AS hlc FROM main.journal_notes
+            UNION ALL
             SELECT MAX(updated_hlc) AS hlc FROM main.journal_attachments
             UNION ALL
+            SELECT MAX(deleted_hlc) AS hlc FROM main.journal_attachments
+            UNION ALL
             SELECT MAX(updated_hlc) AS hlc FROM main.journal_entries
+            UNION ALL
+            SELECT MAX(deleted_hlc) AS hlc FROM main.journal_entries
           )
         ''');
         if (maxHlcRows.isNotEmpty) {
           _observeHlcString(maxHlcRows.first['max_hlc'] as String?);
         }
-
-        db.execute('COMMIT');
-      } catch (_) {
-        db.execute('ROLLBACK');
-        rethrow;
-      }
+      });
     } finally {
-      db.execute('DETACH DATABASE remote');
+      try {
+        db.execute('DETACH DATABASE remote');
+      } catch (_) {}
     }
 
     // Update cross-month planting_index and beds in garden_meta.sqlite.
@@ -2031,8 +2173,7 @@ final class ShardedSqliteJournalStore {
     }
 
     try {
-      _metaDb.execute('BEGIN IMMEDIATE');
-      try {
+      _runInTransaction(_metaDb, () {
         _metaDb.execute('''
           INSERT INTO main.garden_members (actor_id, display_name, color_value, updated_hlc)
           SELECT actor_id, display_name, color_value, updated_hlc
@@ -2125,14 +2266,26 @@ final class ShardedSqliteJournalStore {
           final hasTaskBedCol = remoteTaskCols.any(
             (col) => col['name'] == 'bed_name',
           );
+          final hasPlannedStartCol = remoteTaskCols.any(
+            (col) => col['name'] == 'planned_start_ms',
+          );
+          final hasPlannedEndCol = remoteTaskCols.any(
+            (col) => col['name'] == 'planned_end_ms',
+          );
           final taskBedExpr = hasTaskBedCol ? 'bed_name' : 'NULL';
+          final plannedStartExpr = hasPlannedStartCol
+              ? 'planned_start_ms'
+              : 'NULL';
+          final plannedEndExpr = hasPlannedEndCol ? 'planned_end_ms' : 'NULL';
           _metaDb.execute('''
             INSERT INTO main.garden_task_queue (
               task_id, action, crop_id, target_quality, note, bed_name,
+              planned_start_ms, planned_end_ms,
               updated_hlc, completed_by_entry_id, deleted_hlc
             )
             SELECT
               task_id, action, crop_id, target_quality, note, $taskBedExpr,
+              $plannedStartExpr, $plannedEndExpr,
               updated_hlc, completed_by_entry_id, deleted_hlc
             FROM remote_meta.garden_task_queue WHERE true
             ON CONFLICT(task_id) DO UPDATE SET
@@ -2141,6 +2294,8 @@ final class ShardedSqliteJournalStore {
               target_quality = excluded.target_quality,
               note = excluded.note,
               bed_name = excluded.bed_name,
+              planned_start_ms = excluded.planned_start_ms,
+              planned_end_ms = excluded.planned_end_ms,
               updated_hlc = excluded.updated_hlc,
               completed_by_entry_id = excluded.completed_by_entry_id,
               deleted_hlc = excluded.deleted_hlc
@@ -2148,13 +2303,36 @@ final class ShardedSqliteJournalStore {
           ''');
         }
 
-        _metaDb.execute('COMMIT');
-      } catch (_) {
-        _metaDb.execute('ROLLBACK');
-        rethrow;
-      }
+        // Advance local HLC past the maximum remote HLC observed across meta tables.
+        final maxMetaHlcRows = _metaDb.select('''
+          SELECT MAX(hlc) AS max_hlc FROM (
+            SELECT MAX(updated_hlc) AS hlc FROM main.garden_members
+            UNION ALL
+            SELECT MAX(updated_hlc) AS hlc FROM main.garden_beds
+            UNION ALL
+            SELECT MAX(deleted_hlc) AS hlc FROM main.garden_beds
+            UNION ALL
+            SELECT MAX(updated_hlc) AS hlc FROM main.garden_plots
+            UNION ALL
+            SELECT MAX(deleted_hlc) AS hlc FROM main.garden_plots
+            UNION ALL
+            SELECT MAX(updated_hlc) AS hlc FROM main.planting_index
+            UNION ALL
+            SELECT MAX(deleted_hlc) AS hlc FROM main.planting_index
+            UNION ALL
+            SELECT MAX(updated_hlc) AS hlc FROM main.garden_task_queue
+            UNION ALL
+            SELECT MAX(deleted_hlc) AS hlc FROM main.garden_task_queue
+          )
+        ''');
+        if (maxMetaHlcRows.isNotEmpty) {
+          _observeHlcString(maxMetaHlcRows.first['max_hlc'] as String?);
+        }
+      });
     } finally {
-      _metaDb.execute('DETACH DATABASE remote_meta');
+      try {
+        _metaDb.execute('DETACH DATABASE remote_meta');
+      } catch (_) {}
     }
   }
 
@@ -2264,11 +2442,15 @@ final class ShardedSqliteJournalStore {
       );
     }
     final tasks = _metaDb.select(
-      'SELECT task_id, action, crop_id, target_quality, bed_name, updated_hlc, completed_by_entry_id, deleted_hlc FROM garden_task_queue ORDER BY task_id ASC',
+      'SELECT task_id, action, crop_id, target_quality, bed_name, planned_start_ms, planned_end_ms, updated_hlc, completed_by_entry_id, deleted_hlc FROM garden_task_queue ORDER BY task_id ASC',
     );
     for (final r in tasks) {
+      final timeSuffix =
+          (r['planned_start_ms'] != null || r['planned_end_ms'] != null)
+          ? ':${r['planned_start_ms'] ?? ''}:${r['planned_end_ms'] ?? ''}'
+          : '';
       buffer.writeln(
-        'T:${r['task_id']}:${r['action']}:${r['crop_id'] ?? ''}:${r['target_quality']}:${r['bed_name'] ?? ''}:${r['updated_hlc']}:${r['completed_by_entry_id'] ?? ''}:${r['deleted_hlc'] ?? ''}',
+        'T:${r['task_id']}:${r['action']}:${r['crop_id'] ?? ''}:${r['target_quality']}:${r['bed_name'] ?? ''}:${r['updated_hlc']}:${r['completed_by_entry_id'] ?? ''}:${r['deleted_hlc'] ?? ''}$timeSuffix',
       );
     }
     final digest = sha256.convert(utf8.encode(buffer.toString())).toString();
@@ -2348,8 +2530,7 @@ final class ShardedSqliteJournalStore {
   /// been downloaded yet (for lazy hydration when the user scrolls to that month).
   void updateRemoteShardCatalog(Map<String, List<String>> blobsByShardKey) {
     _checkNotClosed();
-    _metaDb.execute('BEGIN IMMEDIATE');
-    try {
+    _runInTransaction(_metaDb, () {
       _metaDb.execute('DELETE FROM remote_shard_catalog');
       final stmt = _metaDb.prepare(
         'INSERT OR IGNORE INTO remote_shard_catalog (shard_key, blob_name) VALUES (?, ?)',
@@ -2363,11 +2544,7 @@ final class ShardedSqliteJournalStore {
       } finally {
         stmt.dispose();
       }
-      _metaDb.execute('COMMIT');
-    } catch (_) {
-      _metaDb.execute('ROLLBACK');
-      rethrow;
-    }
+    });
   }
 
   /// Returns remote shard keys (`YYYY-MM`) known in the cloud catalog that have

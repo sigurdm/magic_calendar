@@ -48,18 +48,20 @@ final class _LocationPickerDialogState extends State<LocationPickerDialog> {
   @override
   void initState() {
     super.initState();
+    final safeInitialLat = widget.initialLatitude.isFinite
+        ? widget.initialLatitude.clamp(-90.0, 90.0)
+        : SavedLocation.defaultLocation.latitude;
+    final safeInitialLon = widget.initialLongitude.isFinite
+        ? widget.initialLongitude.clamp(-180.0, 180.0)
+        : SavedLocation.defaultLocation.longitude;
     final initialSaved = SavedLocation.validated(
-      latitude: widget.initialLatitude.clamp(-90.0, 90.0),
-      longitude: widget.initialLongitude.clamp(-180.0, 180.0),
+      latitude: safeInitialLat,
+      longitude: safeInitialLon,
       name: widget.initialName,
     );
     _nameController = TextEditingController(text: initialSaved.name);
-    _latController = TextEditingController(
-      text: widget.initialLatitude.toString(),
-    );
-    _lonController = TextEditingController(
-      text: widget.initialLongitude.toString(),
-    );
+    _latController = TextEditingController(text: safeInitialLat.toString());
+    _lonController = TextEditingController(text: safeInitialLon.toString());
   }
 
   @override
@@ -80,23 +82,27 @@ final class _LocationPickerDialogState extends State<LocationPickerDialog> {
   }
 
   void _save() {
-    final lat = double.tryParse(_latController.text);
-    final lon = double.tryParse(_lonController.text);
-    if (lat == null || lon == null) {
+    final lat = double.tryParse(_latController.text.trim());
+    final lon = double.tryParse(_lonController.text.trim());
+    if (lat == null || lon == null || !lat.isFinite || !lon.isFinite) {
       setState(() {
         _errorMessage =
             'Please enter valid decimal numbers for latitude and longitude.';
       });
       return;
     }
-    final clampedLat = lat.clamp(-90.0, 90.0);
-    final clampedLon = lon.clamp(-180.0, 180.0);
+    if (lat < -90.0 || lat > 90.0 || lon < -180.0 || lon > 180.0) {
+      setState(() {
+        _errorMessage = 'Latitude must be between -90 and 90, and longitude between -180 and 180.';
+      });
+      return;
+    }
     final saved = SavedLocation.validated(
-      latitude: clampedLat,
-      longitude: clampedLon,
+      latitude: lat,
+      longitude: lon,
       name: _nameController.text,
     );
-    widget.onLocationSaved?.call(clampedLat, clampedLon);
+    widget.onLocationSaved?.call(lat, lon);
     widget.onNamedLocationSaved?.call(saved);
     Navigator.pop(context);
   }
@@ -210,35 +216,37 @@ final class _LocationPickerDialogState extends State<LocationPickerDialog> {
               ),
             ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                _buildPresetChip(
-                  '🇩🇰 Denmark',
-                  54.9037,
-                  10.6074,
-                  name: 'Svendborg, Denmark',
-                ),
-                _buildPresetChip(
-                  '🇩🇪 Germany',
-                  50.1109,
-                  8.6821,
-                  name: 'Frankfurt, Germany',
-                ),
-                _buildPresetChip(
-                  '🇬🇧 UK',
-                  51.5074,
-                  -0.1278,
-                  name: 'London, UK',
-                ),
-                _buildPresetChip(
-                  '🇺🇸 USA',
-                  40.7128,
-                  -74.0060,
-                  name: 'New York, USA',
-                ),
-              ],
+            RepaintBoundary(
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  _buildPresetChip(
+                    '🇩🇰 Denmark',
+                    54.9037,
+                    10.6074,
+                    name: 'Svendborg, Denmark',
+                  ),
+                  _buildPresetChip(
+                    '🇩🇪 Germany',
+                    50.1109,
+                    8.6821,
+                    name: 'Frankfurt, Germany',
+                  ),
+                  _buildPresetChip(
+                    '🇬🇧 UK',
+                    51.5074,
+                    -0.1278,
+                    name: 'London, UK',
+                  ),
+                  _buildPresetChip(
+                    '🇺🇸 USA',
+                    40.7128,
+                    -74.0060,
+                    name: 'New York, USA',
+                  ),
+                ],
+              ),
             ),
           ],
         ),

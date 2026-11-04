@@ -1,9 +1,12 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 
 import 'algorithm.dart' as algo;
 import 'climate/climate_profile.dart';
 import 'climate/crop_climate_suitability.dart';
 import 'climate/season_alignment.dart';
+import 'ecological_synthesis.dart';
 import 'models/models.dart';
 import 'vegetable_database.dart';
 
@@ -398,6 +401,11 @@ final class TaskWindowSearchResult {
 /// Planner engine that searches forward in time for optimal biodynamic task windows
 /// according to Maria Thun's factor hierarchy.
 abstract final class TaskWindowPlanner {
+  static const int _maxSearchCacheEntries = 128;
+
+  static final LinkedHashMap<Object, TaskWindowSearchResult> _searchCache =
+      LinkedHashMap<Object, TaskWindowSearchResult>();
+
   /// Curated quick-select presets covering common garden, vineyard, orchard, and herb tasks.
   static const List<QuickTaskPreset> presets = [
     QuickTaskPreset(
@@ -451,6 +459,29 @@ abstract final class TaskWindowPlanner {
     ),
   ];
 
+  static Object _weatherCacheKey(List<WeatherDataPoint>? weatherForecast) {
+    if (weatherForecast == null || weatherForecast.isEmpty) {
+      return 0;
+    }
+    final len = weatherForecast.length;
+    if (len <= 32) {
+      return (
+        identityHashCode(weatherForecast),
+        len,
+        Object.hashAll(weatherForecast),
+      );
+    }
+    return (
+      identityHashCode(weatherForecast),
+      len,
+      weatherForecast.first,
+      weatherForecast.last,
+      weatherForecast[len >>> 1],
+      weatherForecast[len >>> 2],
+      weatherForecast[(len * 3) >>> 2],
+    );
+  }
+
   /// Searches forward from [startTime] over [searchDays] to find up to [maxWindows]
   /// optimal or favorable windows for [action] on [crop] or [targetQuality].
   ///
@@ -476,6 +507,43 @@ abstract final class TaskWindowPlanner {
     RangeError.checkValidRange(1, null, searchDays, 'searchDays');
     RangeError.checkValidRange(1, null, maxWindows, 'maxWindows');
 
+    final alignment = seasons ?? HemisphereSeasonAlignment(latitude: latitude);
+    final localProfile = alignment.localProfile;
+    final locVersion = algo.ephemerisLocationVersion(ephemeris);
+
+    final cacheKey = locVersion == null
+        ? null
+        : (
+            action,
+            targetQuality,
+            crop?.id,
+            organRule?.id,
+            organRule?.localizedLabel,
+            organRule?.quality,
+            Object.hashAll(organRule?.months ?? const <int>[]),
+            organRule?.noteEn,
+            startTime.millisecondsSinceEpoch,
+            startTime.isUtc,
+            identityHashCode(ephemeris),
+            locVersion,
+            _weatherCacheKey(weatherForecast),
+            (latitude * 1000).round(),
+            (longitude * 1000).round(),
+            identityHashCode(localProfile),
+            alignment.hasNorthernSeasons,
+            alignment.transferability,
+            alignment.shortLabel,
+            searchDays,
+            maxWindows,
+          );
+    if (cacheKey != null) {
+      final cachedResult = _searchCache.remove(cacheKey);
+      if (cachedResult != null) {
+        _searchCache[cacheKey] = cachedResult;
+        return cachedResult;
+      }
+    }
+
     final CropTaskSchedule? activeOrganRule =
         organRule ??
         (crop != null &&
@@ -495,8 +563,6 @@ abstract final class TaskWindowPlanner {
             ? PlantQuality.leaf
             : targetQuality);
 
-    final alignment = seasons ?? HemisphereSeasonAlignment(latitude: latitude);
-    final localProfile = alignment.localProfile;
     final cropClimate = (crop != null && localProfile != null)
         ? CropClimateEvaluation.evaluate(crop, localProfile)
         : null;
@@ -519,11 +585,14 @@ abstract final class TaskWindowPlanner {
       anchor: anchor,
     );
 
-    bool isDateInSeason(DateTime time) =>
-        rawSeasonalMonths.isEmpty ||
-        rawSeasonalMonths.contains(
-          alignment.referenceMonth(time, anchor: anchor),
-        );
+    final daySeasonCache = <(int, int, int), bool>{};
+    bool isDateInSeason(DateTime time) {
+      if (rawSeasonalMonths.isEmpty) return true;
+      final dayKey = (time.year, time.month, time.day);
+      return daySeasonCache[dayKey] ??= rawSeasonalMonths.contains(
+        alignment.referenceMonth(time, anchor: anchor),
+      );
+    }
 
     final isCurrentlyInSeason = isDateInSeason(startTime);
 
@@ -551,12 +620,19 @@ abstract final class TaskWindowPlanner {
     bool activeIsWaxing = false;
     bool activeHasSpecialTrine = false;
 
-    DateTime cursor = DateTime(
-      startTime.year,
-      startTime.month,
-      startTime.day,
-      startTime.hour,
-    );
+    DateTime cursor = startTime.isUtc
+        ? DateTime.utc(
+            startTime.year,
+            startTime.month,
+            startTime.day,
+            startTime.hour,
+          )
+        : DateTime(
+            startTime.year,
+            startTime.month,
+            startTime.day,
+            startTime.hour,
+          );
 
     while (cursor.isBefore(endLimit) && windows.length < maxWindows) {
       final info = algo.getCalendarInfo(
@@ -646,7 +722,7 @@ abstract final class TaskWindowPlanner {
     }
 
     // Windows are collected and returned in chronological order.
-    return TaskWindowSearchResult(
+    final result = TaskWindowSearchResult(
       action: action,
       targetQuality: effectiveQuality,
       crop: crop,
@@ -660,6 +736,13 @@ abstract final class TaskWindowPlanner {
       cropClimate: cropClimate,
       localSeasonSummary: localSeasonSummary,
     );
+    if (cacheKey != null) {
+      if (_searchCache.length >= _maxSearchCacheEntries) {
+        _searchCache.remove(_searchCache.keys.first);
+      }
+      _searchCache[cacheKey] = result;
+    }
+    return result;
   }
 
   /// Evaluates whether [info] matches the cosmic requirements for [action] and [targetQuality].
@@ -917,14 +1000,13 @@ abstract final class TaskWindowPlanner {
     required bool prefersAfternoon,
   }) {
     final targetHour = prefersAfternoon ? 16 : 9;
-    DateTime candidate = DateTime(
-      start.year,
-      start.month,
-      start.day,
-      targetHour,
-    );
+    DateTime candidate = start.isUtc
+        ? DateTime.utc(start.year, start.month, start.day, targetHour)
+        : DateTime(start.year, start.month, start.day, targetHour);
     if (candidate.isBefore(start)) {
-      candidate = candidate.add(const Duration(days: 1));
+      candidate = start.isUtc
+          ? DateTime.utc(start.year, start.month, start.day + 1, targetHour)
+          : DateTime(start.year, start.month, start.day + 1, targetHour);
     }
     if (!candidate.isBefore(start) && !candidate.isAfter(end)) {
       return candidate;
@@ -945,14 +1027,14 @@ abstract final class TaskWindowPlanner {
       return (note: null, conflict: false, horizon: null);
     }
 
-    final horizon = MultiHorizonWeatherAnalysis.analyze(
+    final horizon = EcologicalSynthesis.resolveHorizon(
       referenceTime: peakTime,
       weatherSeries: weatherForecast,
       localProfile: localProfile,
     );
 
-    final closest = horizon.currentPoint;
-    if (closest == null) {
+    final closest = horizon?.currentPoint;
+    if (horizon == null || closest == null) {
       return (note: null, conflict: false, horizon: null);
     }
 

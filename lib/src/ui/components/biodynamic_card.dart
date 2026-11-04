@@ -18,7 +18,7 @@ import 'stirring_timer_dialog.dart';
 /// Interactive card widget summarizing biodynamic field preparation windows (BD 500, BD 501, CPP, BD 508),
 /// seasonal compost preparation burial cycles (BD 502–507),
 /// and providing direct access to the stirring timer, concoction assistant, and `.ics` calendar export.
-final class BiodynamicCard extends StatelessWidget {
+final class BiodynamicCard extends StatefulWidget {
   /// Current calendar context information.
   final CalendarInfo info;
 
@@ -61,17 +61,70 @@ final class BiodynamicCard extends StatelessWidget {
   });
 
   @override
+  State<BiodynamicCard> createState() => _BiodynamicCardState();
+}
+
+final class _BiodynamicCardState extends State<BiodynamicCard> {
+  static final TextStyle _prepChipStyle = GoogleFonts.outfit(
+    fontSize: 10.5,
+    color: Colors.white70,
+  );
+
+  CalendarInfo? _cachedInfo;
+  int? _cachedHourBucket;
+  int? _cachedLocalDay;
+  int? _cachedLocalHour;
+  SeasonAlignment? _cachedSeasons;
+  PrepSuitability? _cachedCppSuitability;
+  BurialCycleProgress? _cachedBurialProgress;
+
+  void _ensureEvaluations() {
+    final hourBucket =
+        widget.selectedDate.millisecondsSinceEpoch ~/ (60 * 60 * 1000);
+    final localDay = widget.selectedDate.day;
+    final localHour = widget.selectedDate.hour;
+    if (_cachedHourBucket == hourBucket &&
+        _cachedLocalDay == localDay &&
+        _cachedLocalHour == localHour &&
+        _cachedInfo == widget.info &&
+        identical(_cachedSeasons, widget.seasons) &&
+        _cachedCppSuitability != null &&
+        _cachedBurialProgress != null) {
+      return;
+    }
+    _cachedHourBucket = hourBucket;
+    _cachedLocalDay = localDay;
+    _cachedLocalHour = localHour;
+    _cachedInfo = widget.info;
+    _cachedSeasons = widget.seasons;
+    _cachedCppSuitability = BiodynamicPrepEvaluator.evaluateSpray(
+      prep: BiodynamicPrepType.cpp,
+      time: widget.selectedDate,
+      calendarInfo: widget.info,
+    );
+    _cachedBurialProgress = BiodynamicPrepEvaluator.getSeasonalBurialProgress(
+      widget.selectedDate,
+      seasons: widget.seasons,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    _ensureEvaluations();
+    final info = widget.info;
+    final selectedDate = widget.selectedDate;
+    final onTimeJump = widget.onTimeJump;
+    final ephemeris = widget.ephemeris;
+    final weatherNotifier = widget.weatherNotifier;
+    final latitude = widget.latitude;
+    final longitude = widget.longitude;
+    final gardenController = widget.gardenController;
+
     final isDescending = info.isMoonDescending;
     final isAscending = info.isMoonAscending;
     final hour = selectedDate.hour;
 
-    // Evaluate CPP suitability
-    final cppSuitability = BiodynamicPrepEvaluator.evaluateSpray(
-      prep: BiodynamicPrepType.cpp,
-      time: selectedDate,
-      calendarInfo: info,
-    );
+    final cppSuitability = _cachedCppSuitability!;
 
     String currentPrepStatus;
     Color statusColor;
@@ -109,10 +162,7 @@ final class BiodynamicCard extends StatelessWidget {
       statusIcon = Icons.eco_outlined;
     }
 
-    final burialProgress = BiodynamicPrepEvaluator.getSeasonalBurialProgress(
-      selectedDate,
-      seasons: seasons,
-    );
+    final burialProgress = _cachedBurialProgress!;
 
     const primaryAccent = GoetheanPalette.aspectGold;
     const primaryIconColor = GoetheanPalette.aspectGold;
@@ -224,7 +274,7 @@ final class BiodynamicCard extends StatelessWidget {
                         Icons.chevron_left,
                         color: GoetheanPalette.aspectGold,
                       ),
-                      onPressed: () => onTimeJump!(
+                      onPressed: () => onTimeJump(
                         selectedDate.subtract(const Duration(days: 1)),
                       ),
                     ),
@@ -240,9 +290,8 @@ final class BiodynamicCard extends StatelessWidget {
                         Icons.chevron_right,
                         color: GoetheanPalette.aspectGold,
                       ),
-                      onPressed: () => onTimeJump!(
-                        selectedDate.add(const Duration(days: 1)),
-                      ),
+                      onPressed: () =>
+                          onTimeJump(selectedDate.add(const Duration(days: 1))),
                     ),
                   ),
                 ],
@@ -435,7 +484,7 @@ final class BiodynamicCard extends StatelessWidget {
                     final prepCode = isDescending ? 'BD 500' : 'BD 501';
                     FieldJournalSheet.show(
                       context,
-                      gardenController: gardenController!,
+                      gardenController: gardenController,
                       timestamp: selectedDate,
                       calendarInfo: info,
                       weatherSeries: weatherNotifier?.value,
@@ -566,17 +615,19 @@ final class BiodynamicCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  _buildPrepOrganChip('BD 502 Yarrow', 'Stag bladder'),
-                  _buildPrepOrganChip('BD 503 Chamomile', 'Cow intestine'),
-                  _buildPrepOrganChip('BD 504 Nettle', 'Peat mantle'),
-                  _buildPrepOrganChip('BD 505 Oak Bark', 'Animal skull'),
-                  _buildPrepOrganChip('BD 506 Dandelion', 'Mesentery'),
-                  _buildPrepOrganChip('BD 507 Valerian', 'Amber glass'),
-                ],
+              RepaintBoundary(
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    _buildPrepOrganChip('BD 502 Yarrow', 'Stag bladder'),
+                    _buildPrepOrganChip('BD 503 Chamomile', 'Cow intestine'),
+                    _buildPrepOrganChip('BD 504 Nettle', 'Peat mantle'),
+                    _buildPrepOrganChip('BD 505 Oak Bark', 'Animal skull'),
+                    _buildPrepOrganChip('BD 506 Dandelion', 'Mesentery'),
+                    _buildPrepOrganChip('BD 507 Valerian', 'Amber glass'),
+                  ],
+                ),
               ),
             ],
           ),
@@ -603,10 +654,7 @@ final class BiodynamicCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
-      child: Text(
-        '$name: $organ',
-        style: GoogleFonts.outfit(fontSize: 10.5, color: Colors.white70),
-      ),
+      child: Text('$name: $organ', style: _prepChipStyle),
     );
   }
 }

@@ -1892,5 +1892,654 @@ void main() {
         expect(sharedTexts.last, contains('Dill / Dild'));
       },
     );
+
+    testWidgets(
+      'Journal & Plot edge cases: unique IDs at same timestamp, PlantQuality.none fallback, note edit idempotency, harvest delete unlinking, and plot case/delete handling',
+      (tester) async {
+        final dir = Directory.systemTemp.createTempSync(
+          'magic_calendar_edge_cases_',
+        );
+        addTearDown(() {
+          if (dir.existsSync()) dir.deleteSync(recursive: true);
+        });
+
+        final sqlStore = ShardedSqliteJournalStore(
+          rootDirectoryPath: dir.path,
+          initialActorId: 'sigurd',
+          initialAuthorName: 'Sigurd',
+        );
+        final controller = GardenProfileController(journalStore: sqlStore);
+        addTearDown(controller.dispose);
+
+        final selectedTime = DateTime.utc(2026, 5, 16, 10, 0);
+        final baseInfo = algo.getCalendarInfo(
+          selectedTime,
+          ephemeris,
+          includePlanets: true,
+        );
+        final grayDayInfo = CalendarInfo(
+          quality: PlantQuality.none,
+          isGrayDay: true,
+          message: 'Lunar Node',
+          sapFlow: baseInfo.sapFlow,
+          isMoonAscending: baseInfo.isMoonAscending,
+          vitality: baseInfo.vitality,
+          moonPhase: baseInfo.moonPhase,
+          planets: baseInfo.planets,
+        );
+
+        // 1. Logging two entries at the exact same timestamp does not collide or overwrite
+        final firstAtSameTime = FieldJournalEntry.fromLiveContext(
+          timestamp: selectedTime,
+          action: FieldJournalAction.sowSeeds,
+          cropId: 'carrot',
+          bedName: '  Bed 1  ',
+          calendarInfo: grayDayInfo,
+          quality: PlantQuality.none,
+          notes: 'First carrot row in Bed 1',
+        );
+        final secondAtSameTime = FieldJournalEntry.fromLiveContext(
+          timestamp: selectedTime,
+          action: FieldJournalAction.sowSeeds,
+          cropId: 'carrot',
+          bedName: 'Bed 2',
+          calendarInfo: grayDayInfo,
+          quality: PlantQuality.none,
+          notes: 'Second carrot row in Bed 2',
+        );
+        expect(firstAtSameTime.id, isNot(equals(secondAtSameTime.id)));
+        expect(firstAtSameTime.bedName, equals('Bed 1'));
+        expect(firstAtSameTime.quality, equals(PlantQuality.root));
+
+        await controller.addJournalEntry(firstAtSameTime);
+        await controller.addJournalEntry(secondAtSameTime);
+        expect(controller.value.journalEntries, hasLength(2));
+
+        // 2. Collaborative notes + editing an existing entry via upsertEntry does not duplicate notes
+        await controller.addNoteToJournalEntry(
+          entryId: firstAtSameTime.id,
+          body: 'Maja watered the row.',
+          authorName: 'Maja',
+        );
+        final withThread = sqlStore.getEntry(firstAtSameTime.id)!;
+        expect(withThread.activeNotes, hasLength(2));
+        expect(
+          withThread.editableFieldNote,
+          equals('First carrot row in Bed 1'),
+        );
+
+        // Updating outcome without changing notes preserves the 2 field notes without duplicating prefixes
+        await controller.updateJournalEntry(
+          withThread.withOutcome(
+            outcomeRating: 5,
+            outcomeNote: 'Uniform emergence',
+          ),
+        );
+        final afterOutcome = sqlStore.getEntry(firstAtSameTime.id)!;
+        expect(
+          afterOutcome.activeNotes.where(
+            (n) => n.kind != JournalNoteKind.outcome,
+          ),
+          hasLength(2),
+        );
+        expect(
+          afterOutcome.editableFieldNote,
+          equals('First carrot row in Bed 1'),
+        );
+        expect(afterOutcome.notes, isNot(contains('Sigurd: Sigurd:')));
+
+        // Clearing initial note deletes note_init_... cleanly
+        await controller.updateJournalEntry(
+          afterOutcome.withOutcome(notes: ''),
+        );
+        final afterClear = sqlStore.getEntry(firstAtSameTime.id)!;
+        expect(
+          afterClear.activeNotes.where(
+            (n) => n.kind != JournalNoteKind.outcome,
+          ),
+          hasLength(1),
+        );
+        expect(afterClear.notes, equals('Maja watered the row.'));
+
+        // 3. Deleting a harvest entry restores the parent planting batch to onlyActiveInGround: true
+        final harvestEntry = FieldJournalEntry.fromLiveContext(
+          timestamp: selectedTime.add(const Duration(days: 65)),
+          action: FieldJournalAction.harvestStorage,
+          cropId: 'carrot',
+          bedName: 'Bed 1',
+          parentEntryId: firstAtSameTime.id,
+          calendarInfo: baseInfo,
+        );
+        await controller.addJournalEntry(harvestEntry);
+        expect(
+          controller
+              .listPlantingBatches(bedName: 'Bed 1', onlyActiveInGround: true)
+              .map((b) => b.entryId),
+          isNot(contains(firstAtSameTime.id)),
+        );
+
+        await controller.removeJournalEntry(harvestEntry.id);
+        expect(
+          controller
+              .listPlantingBatches(bedName: 'Bed 1', onlyActiveInGround: true)
+              .map((b) => b.entryId),
+          contains(firstAtSameTime.id),
+        );
+
+        // 4. Case-insensitive plot upsert preserves soil-prep metadata & in-memory controller also tracks soil prep
+        await controller.addJournalEntry(
+          FieldJournalEntry.fromLiveContext(
+            timestamp: selectedTime.add(const Duration(hours: 2)),
+            action: FieldJournalAction.sprayPreparation,
+            prepCode: 'BD 500',
+            bedName: 'Bed 1',
+            calendarInfo: baseInfo,
+          ),
+        );
+        expect(
+          controller.findPlot('bed 1')?.lastSoilPrepSummary,
+          equals('BD 500'),
+        );
+        controller.upsertPlot(
+          GardenPlot(
+            name: 'bed 1',
+            areaName: 'Kitchen Garden',
+            plotType: GardenPlotType.raisedBed,
+          ),
+        );
+        final updatedPlot = controller.findPlot('Bed 1')!;
+        expect(updatedPlot.name, equals('Bed 1'));
+        expect(updatedPlot.areaName, equals('Kitchen Garden'));
+        expect(updatedPlot.lastSoilPrepSummary, equals('BD 500'));
+
+        final inMemoryController = GardenProfileController();
+        await inMemoryController.addJournalEntry(
+          FieldJournalEntry.fromLiveContext(
+            timestamp: selectedTime,
+            action: FieldJournalAction.sprayPreparation,
+            prepCode: 'BD 501',
+            bedName: 'South Tunnel',
+            calendarInfo: baseInfo,
+          ),
+        );
+        expect(
+          inMemoryController.findPlot('south tunnel')?.lastSoilPrepSummary,
+          equals('BD 501'),
+        );
+
+        // 5. UI verification: Gray Day FieldJournalSheet fallback & Plot Delete button in FieldJournalCard
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    BiodynamicCard(
+                      info: grayDayInfo,
+                      selectedDate: selectedTime,
+                      ephemeris: ephemeris,
+                      gardenController: controller,
+                    ),
+                    FieldJournalCard(
+                      gardenController: controller,
+                      selectedDate: selectedTime,
+                      info: grayDayInfo,
+                      onTimeJump: (_) {},
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Tap BiodynamicCard Log Action on a Gray Day (PlantQuality.none)
+        final bioBtn = find.byKey(
+          const ValueKey('biodynamic_log_action_button'),
+        );
+        await tester.ensureVisible(bioBtn);
+        await tester.tap(bioBtn);
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.byKey(const ValueKey('field_journal_save_button')),
+        );
+        await tester.pumpAndSettle();
+
+        // Verify the saved entry normalized PlantQuality.none to PlantQuality.root
+        expect(
+          controller.value.journalEntries.first.quality,
+          isNot(equals(PlantQuality.none)),
+        );
+
+        // Open Edit Plot dialog on Bed 1 and tap Delete Plot
+        final editPlotBtn = find.byKey(const ValueKey('edit_plot_Bed 1'));
+        expect(editPlotBtn, findsOneWidget);
+        await tester.ensureVisible(editPlotBtn);
+        await tester.tap(editPlotBtn);
+        await tester.pumpAndSettle();
+
+        final deletePlotBtn = find.byKey(
+          const ValueKey('plot_dialog_delete_button'),
+        );
+        expect(deletePlotBtn, findsOneWidget);
+        await tester.tap(deletePlotBtn);
+        await tester.pumpAndSettle();
+
+        expect(
+          controller.listPlots().map((p) => p.name),
+          isNot(contains('Bed 1')),
+        );
+      },
+    );
+
+    testWidgets(
+      'Drag-and-drop BedSuccessionPlannerCard places crops in time on beds, evaluates overlaps & rotation, and moves bars across beds',
+      (tester) async {
+        final dirA = Directory.systemTemp.createTempSync('bed_dnd_a_');
+        final dirB = Directory.systemTemp.createTempSync('bed_dnd_b_');
+        addTearDown(() {
+          if (dirA.existsSync()) dirA.deleteSync(recursive: true);
+          if (dirB.existsSync()) dirB.deleteSync(recursive: true);
+        });
+
+        final storeA = ShardedSqliteJournalStore(
+          rootDirectoryPath: dirA.path,
+          initialGardenId: 'garden_dnd',
+          initialActorId: 'sigurd',
+          initialAuthorName: 'Sigurd',
+        );
+        final storeB = ShardedSqliteJournalStore(
+          rootDirectoryPath: dirB.path,
+          initialGardenId: 'garden_dnd',
+          initialActorId: 'maja',
+          initialAuthorName: 'Maja',
+        );
+        addTearDown(() {
+          if (!storeA.isClosed) storeA.close();
+          if (!storeB.isClosed) storeB.close();
+        });
+
+        final controller = GardenProfileController(journalStore: storeA);
+        addTearDown(controller.dispose);
+
+        final selectedTime = DateTime(2026, 5, 10, 12);
+        final info = algo.getCalendarInfo(
+          selectedTime,
+          ephemeris,
+          includePlanets: true,
+        );
+
+        controller.upsertPlot(
+          GardenPlot(
+            name: 'Bed 1',
+            areaName: 'Kitchen Garden',
+            plotType: GardenPlotType.raisedBed,
+          ),
+        );
+        controller.upsertPlot(
+          GardenPlot(
+            name: 'Bed 2',
+            areaName: 'Kitchen Garden',
+            plotType: GardenPlotType.openBed,
+          ),
+        );
+
+        // Log an active early-spring Pea batch in Bed 1 (planted April 5, clears ~June)
+        await controller.addJournalEntry(
+          FieldJournalEntry.fromLiveContext(
+            id: 'pea_spring_bed1',
+            timestamp: DateTime(2026, 4, 5, 10),
+            action: FieldJournalAction.sowSeeds,
+            cropId: 'pea',
+            bedName: 'Bed 1',
+            calendarInfo: info,
+          ),
+        );
+
+        final carrot = VegetableDatabase.findById('carrot')!;
+        final kale = VegetableDatabase.findById('kale')!;
+        final broccoli = VegetableDatabase.findById('broccoli')!;
+
+        // 1. Evaluate overlapping drop vs clean relay drop on Bed 1
+        final overlapEval = controller.evaluateBedPlacement(
+          plotName: 'Bed 1',
+          crop: carrot,
+          targetDate: DateTime(2026, 5, 1, 12),
+        );
+        expect(
+          overlapEval.status,
+          equals(BedPlacementStatus.bedOverlapWarning),
+        );
+        expect(overlapEval.suggestedRelayDate, isNotNull);
+
+        final cleanRelayEval = controller.evaluateBedPlacement(
+          plotName: 'Bed 1',
+          crop: kale,
+          targetDate: overlapEval.suggestedRelayDate!.add(
+            const Duration(days: 2),
+          ),
+        );
+        expect(cleanRelayEval.status, equals(BedPlacementStatus.cleanRelay));
+
+        // 2. Render FieldJournalCard, verify the bed planner is no longer inline inside the diary card,
+        // and tap "Bed Succession Planner" to open the dedicated full-screen BedSuccessionPlannerPage.
+        await tester.binding.setSurfaceSize(const Size(1200, 1800));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: FieldJournalCard(
+                  gardenController: controller,
+                  selectedDate: selectedTime,
+                  info: info,
+                  ephemeris: ephemeris,
+                  onTimeJump: (_) {},
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('bed_succession_planner_card')),
+          findsNothing,
+        );
+        await tester.tap(
+          find.byKey(const ValueKey('field_journal_toggle_succession_planner')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('bed_succession_planner_page')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('bed_succession_planner_card')),
+          findsOneWidget,
+        );
+
+        // Search for Carrot in the palette so draggable_crop_carrot is visible
+        await tester.enterText(
+          find.byKey(const ValueKey('bed_succession_crop_search')),
+          'Carrot',
+        );
+        await tester.pumpAndSettle();
+
+        final carrotChip = find.byKey(const ValueKey('draggable_crop_carrot'));
+        final bed1Track = find.byKey(
+          const ValueKey('bed_timeline_track_Bed 1'),
+        );
+        expect(carrotChip, findsOneWidget);
+        expect(bed1Track, findsOneWidget);
+
+        // Drag Carrot from the palette onto Bed 1's timeline track
+        await tester.ensureVisible(bed1Track);
+        final chipCenter = tester.getCenter(carrotChip);
+        final trackRect = tester.getRect(bed1Track);
+        // Drop at ~65% across the year (August, after spring peas clear)
+        final dropTarget = Offset(
+          trackRect.left + trackRect.width * 0.65,
+          trackRect.center.dy,
+        );
+        final gesture = await tester.startGesture(chipCenter);
+        await tester.pump(const Duration(milliseconds: 50));
+        // Move past kTouchSlop to initiate the Draggable avatar, then move onto the target track
+        await gesture.moveBy(const Offset(0, 24));
+        await tester.pump(const Duration(milliseconds: 50));
+        await gesture.moveTo(dropTarget);
+        await tester.pump(const Duration(milliseconds: 50));
+        await gesture.moveBy(const Offset(4, 0));
+        await tester.pump(const Duration(milliseconds: 50));
+        // Live ghost preview banner, cosmic alignment badge & ghost bar should be visible during drag hover!
+        expect(
+          find.byKey(const ValueKey('bed_succession_live_preview_banner')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('bed_hover_cosmic_alignment')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('bed_timeline_ghost_bar')),
+          findsOneWidget,
+        );
+        await gesture.up();
+        await tester.pumpAndSettle();
+
+        // Verify Carrot was placed in time on Bed 1 with plannedStartDate and plannedEndDate
+        final bed1Tasks = controller.value.taskQueue
+            .where((t) => t.bedName == 'Bed 1' && t.cropId == 'carrot')
+            .toList();
+        expect(bed1Tasks, hasLength(1));
+        final placedCarrot = bed1Tasks.first;
+        expect(placedCarrot.plannedStartDate, isNotNull);
+        expect(placedCarrot.effectiveEndDate, isNotNull);
+
+        // Inspector for the newly placed bar is open; test cosmic alignment, +7d shift and +Hold-såning batch
+        expect(
+          find.byKey(const ValueKey('selected_planned_span_inspector')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('inspector_cosmic_alignment')),
+          findsOneWidget,
+        );
+        final originalStart = placedCarrot.plannedStartDate!;
+        final shiftLaterBtn = find.byKey(
+          const ValueKey('planned_span_shift_later'),
+        );
+        await tester.ensureVisible(shiftLaterBtn);
+        await tester.tap(shiftLaterBtn);
+        await tester.pumpAndSettle();
+
+        final shiftedTask = controller.value.taskQueue.firstWhere(
+          (t) => t.id == placedCarrot.id,
+        );
+        expect(
+          shiftedTask.plannedStartDate,
+          equals(originalStart.add(const Duration(days: 7))),
+        );
+
+        // Toggle to Transplant mode and verify indoor nursery lead-time tail appears
+        final toggleActionBtn = find.byKey(
+          const ValueKey('planned_span_toggle_action'),
+        );
+        await tester.ensureVisible(toggleActionBtn);
+        await tester.tap(toggleActionBtn);
+        await tester.pumpAndSettle();
+
+        // Add a staggered Hold-såning batch of Carrot on Bed 1
+        final addStaggeredBtn = find.byKey(
+          const ValueKey('planned_span_add_staggered'),
+        );
+        await tester.ensureVisible(addStaggeredBtn);
+        await tester.tap(addStaggeredBtn);
+        await tester.pumpAndSettle();
+
+        final carrotTasksOnBed1 = controller.value.taskQueue
+            .where((t) => t.bedName == 'Bed 1' && t.cropId == 'carrot')
+            .toList();
+        expect(carrotTasksOnBed1, hasLength(2));
+
+        // Drag the first planned Carrot bar from Bed 1 onto Bed 2!
+        final firstSpanFinder = find.byKey(
+          ValueKey('planned_bed_span_${placedCarrot.id}'),
+        );
+        final bed2Track = find.byKey(
+          const ValueKey('bed_timeline_track_Bed 2'),
+        );
+        await tester.ensureVisible(firstSpanFinder);
+        await tester.ensureVisible(bed2Track);
+        final spanCenter = tester.getCenter(firstSpanFinder);
+        final bed2Rect = tester.getRect(bed2Track);
+        final moveGesture = await tester.startGesture(spanCenter);
+        await tester.pump(const Duration(milliseconds: 50));
+        await moveGesture.moveBy(const Offset(0, 24));
+        await tester.pump(const Duration(milliseconds: 50));
+        await moveGesture.moveTo(
+          Offset(bed2Rect.left + bed2Rect.width * 0.5, bed2Rect.center.dy),
+        );
+        await tester.pump(const Duration(milliseconds: 50));
+        await moveGesture.up();
+        await tester.pumpAndSettle();
+
+        final movedTask = controller.value.taskQueue.firstWhere(
+          (t) => t.id == placedCarrot.id,
+        );
+        expect(movedTask.bedName, equals('Bed 2'));
+
+        // Verify planned tasks on Bed 2 also trigger rotation alerts for subsequent planned Brassicas
+        await controller.placeCropOnBed(
+          bedName: 'Bed 2',
+          crop: kale,
+          startDate: DateTime(2026, 4, 15, 12),
+        );
+        final brassicaConflictEval = controller.evaluateBedPlacement(
+          plotName: 'Bed 2',
+          crop: broccoli,
+          targetDate: DateTime(2026, 9, 1, 12),
+        );
+        expect(
+          brassicaConflictEval.status,
+          equals(BedPlacementStatus.familyRotationConflict),
+        );
+
+        // Verify SQLite CRDT sync preserves plannedStartDate & plannedEndDate across devices
+        final metaTemp = File('${dirA.path}/meta_export_dnd.sqlite');
+        metaTemp.writeAsBytesSync(storeA.exportMetaBytes());
+        storeB.mergeRemoteMetaFile(metaTemp.path);
+        final syncedTasksOnB = storeB.listQueuedTasks();
+        final syncedMoved = syncedTasksOnB.firstWhere(
+          (t) => t.id == placedCarrot.id,
+        );
+        expect(syncedMoved.bedName, equals('Bed 2'));
+        expect(syncedMoved.plannedStartDate, isNotNull);
+        expect(syncedMoved.plannedEndDate, isNotNull);
+
+        // 3. Verify Perennial crop filter & multi-year bed occupancy
+        await tester.enterText(
+          find.byKey(const ValueKey('bed_succession_crop_search')),
+          '',
+        );
+        await tester.pumpAndSettle();
+        final perennialFilterChip = find.byKey(
+          const ValueKey('bed_palette_filter_perennial'),
+        );
+        expect(perennialFilterChip, findsOneWidget);
+        await tester.tap(perennialFilterChip);
+        await tester.pumpAndSettle();
+        final asparagus = VegetableDatabase.allEntries.firstWhere(
+          (c) => c.lifeCycle == PlantLifeCycle.perennial,
+        );
+        final asparagusProfile = CropMaturityProfile.forCrop(asparagus);
+        expect(asparagusProfile.isPerennial, isTrue);
+        expect(
+          asparagusProfile.estimatedDaysInGround,
+          greaterThanOrEqualTo(365 * 3),
+        );
+
+        // 4. Verify Secondary Organ selector in inspector for multi-organ crops
+        final multiOrganCrop = VegetableDatabase.allEntries.firstWhere(
+          (c) => c.secondaryOrganRules.isNotEmpty,
+        );
+        final multiTask = await controller.placeCropOnBed(
+          bedName: 'Bed 1',
+          crop: multiOrganCrop,
+          startDate: DateTime(2026, 7, 10, 12),
+        );
+        await tester.pumpAndSettle();
+        final multiSpan = find.byKey(
+          ValueKey('planned_bed_span_${multiTask.id}'),
+        );
+        await tester.ensureVisible(multiSpan);
+        await tester.tap(multiSpan);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('planned_span_organ_selector')),
+          findsOneWidget,
+        );
+        final secondaryRule = multiOrganCrop.secondaryOrganRules.first;
+        final secondaryChip = find.byKey(
+          ValueKey('organ_target_${secondaryRule.id}'),
+        );
+        await tester.ensureVisible(secondaryChip);
+        await tester.tap(secondaryChip);
+        await tester.pumpAndSettle();
+        final updatedMultiTask = controller.value.taskQueue.firstWhere(
+          (t) => t.id == multiTask.id,
+        );
+        expect(updatedMultiTask.targetQuality, equals(secondaryRule.quality));
+
+        // 5. Verify InfiniteTimelinePainter paints & hit-tests planned bed tasks
+        final painter = InfiniteTimelinePainter(
+          centerTime: DateTime(2026, 7, 10, 12),
+          hourWidth: 8.0,
+          intervals: const [],
+          weatherData: const [],
+          queuedTasks: controller.value.taskQueue,
+          ephemeris: ephemeris,
+          latitude: 55.6761,
+          longitude: 12.5683,
+        );
+        final visiblePlanned = painter.visiblePlannedTasks(800.0);
+        expect(visiblePlanned.any((t) => t.id == multiTask.id), isTrue);
+        final hitTask = painter.hitTestPlannedTask(
+          const Offset(400.0, 140.0),
+          const Size(800.0, 200.0),
+        );
+        expect(hitTask?.id, equals(multiTask.id));
+
+        // 6. Verify mobile viewport (390x844) screen usage in BedSuccessionPlannerPage:
+        // palette and multiple bed tracks fit simultaneously on screen with >90% track width,
+        // and 6M/3M window toggle, 2x zoom, and palette collapse work without overflow.
+        await tester.binding.setSurfaceSize(const Size(390, 844));
+        await tester.pumpAndSettle();
+
+        final paletteRect = tester.getRect(
+          find.byKey(const ValueKey('bed_succession_crop_palette')),
+        );
+        final bed1MobileRect = tester.getRect(
+          find.byKey(const ValueKey('bed_timeline_track_Bed 1')),
+        );
+        final bed2MobileRect = tester.getRect(
+          find.byKey(const ValueKey('bed_timeline_track_Bed 2')),
+        );
+        expect(paletteRect.height, lessThan(135.0));
+        expect(bed1MobileRect.width, greaterThan(350.0));
+        expect(bed1MobileRect.bottom, lessThan(844.0));
+        expect(bed2MobileRect.bottom, lessThan(844.0));
+
+        // Cycle 12M -> 6M -> 3M window focus and 2x horizontal zoom
+        await tester.tap(
+          find.byKey(const ValueKey('bed_timeline_window_toggle')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey('bed_timeline_zoom_toggle')),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('bed_planner_horizontal_scroll')),
+          findsOneWidget,
+        );
+
+        // Collapse palette to give full vertical height to bed tracks
+        final collapseToggle = find.byKey(
+          const ValueKey('bed_palette_collapse_toggle'),
+        );
+        await tester.ensureVisible(collapseToggle);
+        await tester.tap(collapseToggle);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('bed_succession_crop_palette')),
+          findsNothing,
+        );
+      },
+    );
   });
 }

@@ -1,5 +1,30 @@
+import 'dart:collection';
+
+import '../services/ephemeris_service.dart'
+    show AstronomiaEphemerisService, IsolateEphemerisService;
 import 'dornach_boundaries.dart';
 import 'models/models.dart';
+
+final LinkedHashMap<Object, (CalendarInfo withPlanets, CalendarInfo noPlanets)>
+_calendarInfoCache =
+    LinkedHashMap<Object, (CalendarInfo withPlanets, CalendarInfo noPlanets)>();
+const int _maxCalendarInfoCacheEntries = 2048;
+
+/// Returns the observer location version counter when [ephemeris] is a
+/// cacheable concrete service, or `null` when [ephemeris] is a custom/mock
+/// implementation.
+int? ephemerisLocationVersion(EphemerisService ephemeris) =>
+    _ephemerisLocationVersion(ephemeris);
+
+int? _ephemerisLocationVersion(EphemerisService ephemeris) {
+  if (ephemeris is AstronomiaEphemerisService) {
+    return ephemeris.observerLocationVersion;
+  }
+  if (ephemeris is IsolateEphemerisService) {
+    return ephemeris.observerLocationVersion;
+  }
+  return null;
+}
 
 /// Checks for planetary Trine aspects (120 degrees apart) and returns special plant quality if present.
 ({PlantQuality quality, String message}) calculateTrineQuality(
@@ -71,17 +96,58 @@ CalendarInfo getCalendarInfo(
   double latitude = DefaultLocations.dornachLatitude,
   double longitude = DefaultLocations.dornachLongitude,
 }) {
+  final locVersion = _ephemerisLocationVersion(ephemeris);
+  Object? cacheKey;
+  if (locVersion != null) {
+    final boundariesKey =
+        identical(boundaries, dornachBoundaries) ||
+            identical(boundaries, customCalendarBoundaries)
+        ? identityHashCode(boundaries)
+        : Object.hashAll(boundaries);
+    cacheKey = (
+      identityHashCode(ephemeris),
+      locVersion,
+      time.toUtc().millisecondsSinceEpoch,
+      time.isUtc,
+      boundariesKey,
+      (latitude * 10000).round(),
+      (longitude * 10000).round(),
+    );
+    final cached = _calendarInfoCache.remove(cacheKey);
+    if (cached != null) {
+      // Re-insert to maintain LRU order.
+      _calendarInfoCache[cacheKey] = cached;
+      return includePlanets ? cached.$1 : cached.$2;
+    }
+  }
+
   DiurnalRhythmInfo? diurnalRhythm;
   try {
     final sunTimes = ephemeris.getSunriseSunset(time, latitude, longitude);
+    final DateTime effectiveNoon;
+    if (sunTimes.sunrise == null &&
+        sunTimes.sunset == null &&
+        sunTimes.noon.isAtSameMomentAs(time)) {
+      final utcNoon = DateTime.utc(
+        time.year,
+        time.month,
+        time.day,
+        12,
+      ).subtract(Duration(seconds: (longitude * 240).round()));
+      effectiveNoon = time.isUtc ? utcNoon : utcNoon.toLocal();
+    } else {
+      effectiveNoon = sunTimes.noon;
+    }
     diurnalRhythm = DiurnalRhythmInfo.fromSunTimes(
       time: time,
       sunrise: sunTimes.sunrise,
       sunset: sunTimes.sunset,
-      solarNoon: sunTimes.noon,
+      solarNoon: effectiveNoon,
     );
   } catch (_) {
-    final fallbackNoon = DateTime(time.year, time.month, time.day, 12);
+    final fallbackNoon = time.isUtc
+        ? DateTime.utc(time.year, time.month, time.day, 12)
+        : DateTime(time.year, time.month, time.day, 12);
     diurnalRhythm = DiurnalRhythmInfo.fromSunTimes(
       time: time,
       sunrise: fallbackNoon.subtract(const Duration(hours: 6)),
@@ -116,6 +182,7 @@ CalendarInfo getCalendarInfo(
     boundaries,
   );
 
+  final planets = ephemeris.getPlanets(time);
   final bool isNearNode = ephemeris.isNearNode(time);
   final bool isNearPerigee = ephemeris.isNearPerigee(time);
   final bool isNearApogee = ephemeris.isNearApogee(time);
@@ -141,7 +208,6 @@ CalendarInfo getCalendarInfo(
         'Moon-Saturn Opposition (180°): Fungal Resistance & Strong Root Vigor.';
   }
 
-  final planets = ephemeris.getPlanets(time);
   List<PlanetaryAspect> activeAspects = const [];
   try {
     activeAspects = ephemeris.getAspects(time);
@@ -180,8 +246,11 @@ CalendarInfo getCalendarInfo(
     vitality += ' (Decreasing moisture; good for storage)';
   }
 
+  final CalendarInfo withPlanetsInfo;
+  final CalendarInfo noPlanetsInfo;
+
   if (isGrayDay) {
-    return CalendarInfo(
+    withPlanetsInfo = CalendarInfo(
       quality: PlantQuality.none,
       isGrayDay: true,
       isSpecial: false,
@@ -194,40 +263,85 @@ CalendarInfo getCalendarInfo(
       isMoonAscending: isAscending,
       vitality: vitality,
       moonPhase: moonPhase,
-      planets: includePlanets ? planets : [],
+      planets: planets,
+      diurnalRhythm: diurnalRhythm,
+      transitionEnvelope: transitionEnvelope,
+    );
+    noPlanetsInfo = CalendarInfo(
+      quality: PlantQuality.none,
+      isGrayDay: true,
+      isSpecial: false,
+      isApogee: isNearApogee,
+      isMoonSaturnOpposition: isMoonSaturnOpp,
+      isEclipse: isEclipse,
+      activeAspects: activeAspects,
+      message: message,
+      sapFlow: sapFlow,
+      isMoonAscending: isAscending,
+      vitality: vitality,
+      moonPhase: moonPhase,
+      planets: const <PlanetInfo>[],
+      diurnalRhythm: diurnalRhythm,
+      transitionEnvelope: transitionEnvelope,
+    );
+  } else {
+    final trineResult = calculateTrineQuality(planets, boundaries);
+    final PlantQuality trineQuality = trineResult.quality;
+    PlantQuality quality = PlantQuality.none;
+    if (trineQuality == PlantQuality.none) {
+      quality = getQualityFromLongitude(moonLongitude, boundaries);
+    } else {
+      quality = trineQuality;
+      if (message.isEmpty) {
+        message = trineResult.message;
+      }
+    }
+
+    final isSpecial =
+        trineQuality != PlantQuality.none || isMoonSaturnOpp || isNearApogee;
+
+    withPlanetsInfo = CalendarInfo(
+      quality: quality,
+      isGrayDay: false,
+      isSpecial: isSpecial,
+      isApogee: isNearApogee,
+      isMoonSaturnOpposition: isMoonSaturnOpp,
+      isEclipse: isEclipse,
+      activeAspects: activeAspects,
+      message: message,
+      sapFlow: sapFlow,
+      isMoonAscending: isAscending,
+      vitality: vitality,
+      moonPhase: moonPhase,
+      planets: planets,
+      diurnalRhythm: diurnalRhythm,
+      transitionEnvelope: transitionEnvelope,
+    );
+    noPlanetsInfo = CalendarInfo(
+      quality: quality,
+      isGrayDay: false,
+      isSpecial: isSpecial,
+      isApogee: isNearApogee,
+      isMoonSaturnOpposition: isMoonSaturnOpp,
+      isEclipse: isEclipse,
+      activeAspects: activeAspects,
+      message: message,
+      sapFlow: sapFlow,
+      isMoonAscending: isAscending,
+      vitality: vitality,
+      moonPhase: moonPhase,
+      planets: const <PlanetInfo>[],
       diurnalRhythm: diurnalRhythm,
       transitionEnvelope: transitionEnvelope,
     );
   }
 
-  final trineResult = calculateTrineQuality(planets, boundaries);
-  final PlantQuality trineQuality = trineResult.quality;
-  PlantQuality quality = PlantQuality.none;
-  if (trineQuality == PlantQuality.none) {
-    quality = getQualityFromLongitude(moonLongitude, boundaries);
-  } else {
-    quality = trineQuality;
-    if (message.isEmpty) {
-      message = trineResult.message;
+  if (cacheKey != null) {
+    if (_calendarInfoCache.length >= _maxCalendarInfoCacheEntries) {
+      _calendarInfoCache.remove(_calendarInfoCache.keys.first);
     }
+    _calendarInfoCache[cacheKey] = (withPlanetsInfo, noPlanetsInfo);
   }
 
-  return CalendarInfo(
-    quality: quality,
-    isGrayDay: false,
-    isSpecial:
-        trineQuality != PlantQuality.none || isMoonSaturnOpp || isNearApogee,
-    isApogee: isNearApogee,
-    isMoonSaturnOpposition: isMoonSaturnOpp,
-    isEclipse: isEclipse,
-    activeAspects: activeAspects,
-    message: message,
-    sapFlow: sapFlow,
-    isMoonAscending: isAscending,
-    vitality: vitality,
-    moonPhase: moonPhase,
-    planets: includePlanets ? planets : <PlanetInfo>[],
-    diurnalRhythm: diurnalRhythm,
-    transitionEnvelope: transitionEnvelope,
-  );
+  return includePlanets ? withPlanetsInfo : noPlanetsInfo;
 }

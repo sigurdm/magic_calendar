@@ -30,7 +30,7 @@ Future<void> showClimateDetailsSheet(
 /// Modal bottom sheet presenting a location's Köppen–Geiger class, approximate
 /// USDA hardiness zone, thermal and frost season dates, monthly climate
 /// normals, and Danish calendar transferability.
-final class ClimateDetailsSheet extends StatelessWidget {
+final class ClimateDetailsSheet extends StatefulWidget {
   /// Resolved 30-year climate profile.
   final ClimateProfile profile;
 
@@ -108,12 +108,66 @@ final class ClimateDetailsSheet extends StatelessWidget {
   }
 
   @override
+  State<ClimateDetailsSheet> createState() => _ClimateDetailsSheetState();
+}
+
+final class _ClimateDetailsSheetState extends State<ClimateDetailsSheet> {
+  static final TextStyle _metricLabelStyle = GoogleFonts.outfit(
+    fontSize: 11.5,
+    color: Colors.white54,
+  );
+  static final TextStyle _metricValueStyle = GoogleFonts.outfit(
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    color: const Color(0xFFF3E5C8),
+  );
+  static final TextStyle _monthTitleStyle = GoogleFonts.outfit(
+    fontSize: 10.5,
+    fontWeight: FontWeight.w600,
+    color: GoetheanPalette.aspectGold,
+  );
+  static final TextStyle _monthTempStyle = GoogleFonts.outfit(
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    color: Colors.white,
+  );
+  static final TextStyle _monthPrecipStyle = GoogleFonts.outfit(
+    fontSize: 10,
+    color: Colors.white60,
+  );
+
+  ClimateProfile? _cachedProfile;
+  late ClimateSeasonAlignment _alignment;
+  late ThermalSeason _growing5;
+  late ThermalSeason _warm10;
+  late String _springComparison;
+  late String _growing5Label;
+  late String _warm10Label;
+
+  void _ensureProfileCache() {
+    if (identical(_cachedProfile, widget.profile)) return;
+    final profile = widget.profile;
+    _cachedProfile = profile;
+    _alignment = ClimateSeasonAlignment(local: profile);
+    _growing5 = profile.thermalSeason(5);
+    _warm10 = profile.thermalSeason(10);
+    _springComparison = ClimateDetailsSheet._springOffsetComparison(profile);
+    _growing5Label = ClimateDetailsSheet._formatThermalSeason(
+      profile,
+      _growing5,
+    );
+    _warm10Label = ClimateDetailsSheet._formatThermalSeason(profile, _warm10);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    _ensureProfileCache();
+    final profile = widget.profile;
+    final latitude = widget.latitude;
+    final longitude = widget.longitude;
     const warmGold = Color(0xFFF3E5C8);
     const accentGold = GoetheanPalette.aspectGold;
-    final alignment = ClimateSeasonAlignment(local: profile);
-    final growing5 = profile.thermalSeason(5);
-    final warm10 = profile.thermalSeason(10);
+    final alignment = _alignment;
     final frost = profile.frost;
     final zone = profile.hardinessZone;
 
@@ -257,7 +311,7 @@ final class ClimateDetailsSheet extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        _springOffsetComparison(profile),
+                        _springComparison,
                         style: GoogleFonts.outfit(
                           fontSize: 12,
                           color: Colors.white70,
@@ -285,19 +339,19 @@ final class ClimateDetailsSheet extends StatelessWidget {
                 ),
                 _buildMetricRow(
                   label: 'Growing Season (smoothed mean ≥ 5 °C)',
-                  value: _formatThermalSeason(profile, growing5),
+                  value: _growing5Label,
                 ),
                 _buildMetricRow(
                   label: 'Warm Season (smoothed mean ≥ 10 °C)',
-                  value: _formatThermalSeason(profile, warm10),
+                  value: _warm10Label,
                 ),
                 _buildMetricRow(
                   label: 'Air Frost (Tmin ≤ 0 °C)',
                   value: frost.hasFrost
                       ? '${frost.seasonsWithFrost}/${frost.seasonCount} winters • '
-                            'last spring ${_formatSeasonOffsetDate(profile, frost.medianLastSpringFrost)} '
-                            '(90%: ${_formatSeasonOffsetDate(profile, frost.lastSpringFrost90)}) • '
-                            'first autumn ${_formatSeasonOffsetDate(profile, frost.medianFirstAutumnFrost)} '
+                            'last spring ${ClimateDetailsSheet._formatSeasonOffsetDate(profile, frost.medianLastSpringFrost)} '
+                            '(90%: ${ClimateDetailsSheet._formatSeasonOffsetDate(profile, frost.lastSpringFrost90)}) • '
+                            'first autumn ${ClimateDetailsSheet._formatSeasonOffsetDate(profile, frost.medianFirstAutumnFrost)} '
                             '(${frost.medianFrostFreeDays} frost-free d)'
                       : 'Frost-free in ${frost.seasonCount}/${frost.seasonCount} winters',
                 ),
@@ -312,7 +366,7 @@ final class ClimateDetailsSheet extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                _buildMonthlyGrid(),
+                RepaintBoundary(child: _buildMonthlyGrid(profile)),
                 const SizedBox(height: 14),
                 Text(
                   'Climate data: ERA5 ${profile.firstYear}–${profile.lastYear} via Open-Meteo (CC BY 4.0). '
@@ -337,25 +391,15 @@ final class ClimateDetailsSheet extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: GoogleFonts.outfit(fontSize: 11.5, color: Colors.white54),
-          ),
+          Text(label, style: _metricLabelStyle),
           const SizedBox(height: 2),
-          Text(
-            value,
-            style: GoogleFonts.outfit(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFFF3E5C8),
-            ),
-          ),
+          Text(value, style: _metricValueStyle),
         ],
       ),
     );
   }
 
-  Widget _buildMonthlyGrid() {
+  Widget _buildMonthlyGrid(ClimateProfile profile) {
     final temperatures = profile.normals.temperature;
     final precipitations = profile.normals.precipitation;
     return Wrap(
@@ -374,28 +418,17 @@ final class ClimateDetailsSheet extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  _monthNames[m],
-                  style: GoogleFonts.outfit(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w600,
-                    color: GoetheanPalette.aspectGold,
-                  ),
+                  ClimateDetailsSheet._monthNames[m],
+                  style: _monthTitleStyle,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '${temperatures[m].toStringAsFixed(1)}°',
-                  style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+                  style: _monthTempStyle,
                 ),
                 Text(
                   '${precipitations[m].round()} mm',
-                  style: GoogleFonts.outfit(
-                    fontSize: 10,
-                    color: Colors.white60,
-                  ),
+                  style: _monthPrecipStyle,
                 ),
               ],
             ),

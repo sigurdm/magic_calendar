@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -13,7 +14,7 @@ import 'plant_quality_card.dart';
 ///
 /// Performance considerations:
 /// Evaluates smooth cubic Bézier boundary contours and faceted rim gradients in
-/// $O(1)$ time per paint pass.
+/// $O(1)$ time per paint pass, memoizing geometry and gradient shaders across frames.
 final class OrganicVesselContainer extends StatelessWidget {
   /// Inner widget content.
   final Widget child;
@@ -55,19 +56,20 @@ final class OrganicVesselContainer extends StatelessWidget {
     this.seed = 1.0,
   }) : isInsetNiche = true;
 
+  static const DiurnalSolarLighting _defaultLighting = DiurnalSolarLighting(
+    lx: -0.45,
+    ly: -0.72,
+    lz: 0.52,
+    sunAltitude: 0.68,
+    daylightFactor: 0.92,
+  );
+
   @override
   Widget build(BuildContext context) {
-    final effectiveLighting =
-        lighting ??
-        const DiurnalSolarLighting(
-          lx: -0.45,
-          ly: -0.72,
-          lz: 0.52,
-          sunAltitude: 0.68,
-          daylightFactor: 0.92,
-        );
+    final effectiveLighting = lighting ?? _defaultLighting;
 
-    return CustomPaint(
+    final painted = CustomPaint(
+      isComplex: !isInsetNiche,
       painter: _OrganicVesselPainter(
         accentColor: accentColor,
         lighting: effectiveLighting,
@@ -76,10 +78,48 @@ final class OrganicVesselContainer extends StatelessWidget {
       ),
       child: Padding(padding: padding, child: child),
     );
+    return isInsetNiche ? painted : RepaintBoundary(child: painted);
   }
 }
 
+final class _CachedVesselPaints {
+  final Paint rimPaint;
+  final Paint wellPaint;
+  final Paint crestPaint;
+
+  const _CachedVesselPaints({
+    required this.rimPaint,
+    required this.wellPaint,
+    required this.crestPaint,
+  });
+}
+
 final class _OrganicVesselPainter extends CustomPainter {
+  static final Paint _dropShadowPaint = Paint()
+    ..color = const Color(0x6B000000)
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10.0);
+
+  static final Paint _cavityShadowRaisedPaint = Paint()
+    ..color = const Color(0x8C000000)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 5.0
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0);
+
+  static final Paint _cavityShadowInsetPaint = Paint()
+    ..color = const Color(0x73000000)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 3.0
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0);
+
+  static final LinkedHashMap<(Size, int, bool), (Path, Path)> _pathCache =
+      LinkedHashMap();
+
+  static final LinkedHashMap<
+    (Size, int, int, int, int, bool),
+    _CachedVesselPaints
+  >
+  _shaderPaintCache = LinkedHashMap();
+
   final Color accentColor;
   final DiurnalSolarLighting lighting;
   final double seed;
@@ -92,23 +132,157 @@ final class _OrganicVesselPainter extends CustomPainter {
     required this.isInsetNiche,
   });
 
+  static (Path, Path) _resolvePaths(Size size, double seed, bool isInsetNiche) {
+    final safeSeed = seed.isFinite ? seed : 0.0;
+    final key = (size, (safeSeed * 1000).round(), isInsetNiche);
+    final existing = _pathCache.remove(key);
+    if (existing != null) {
+      _pathCache[key] = existing;
+      return existing;
+    }
+    final outerPath = _buildVesselPathStatic(size, 0.0, safeSeed, isInsetNiche);
+    final bevelWidth = isInsetNiche ? 2.5 : 5.5;
+    final innerPath = _buildVesselPathStatic(
+      size,
+      bevelWidth,
+      safeSeed,
+      isInsetNiche,
+    );
+    final pair = (outerPath, innerPath);
+    if (_pathCache.length >= 48) {
+      _pathCache.remove(_pathCache.keys.first);
+    }
+    _pathCache[key] = pair;
+    return pair;
+  }
+
+  static _CachedVesselPaints _resolveShaderPaints(
+    Size size,
+    Color accentColor,
+    DiurnalSolarLighting lighting,
+    bool isInsetNiche,
+  ) {
+    final safeLx = lighting.lx.isFinite ? lighting.lx.clamp(-1.0, 1.0) : -0.45;
+    final safeLy = lighting.ly.isFinite ? lighting.ly.clamp(-1.0, 1.0) : -0.72;
+    final safeDay = lighting.daylightFactor.isFinite
+        ? lighting.daylightFactor.clamp(0.0, 1.0)
+        : 0.92;
+    final qLx = (safeLx * 100).round();
+    final qLy = (safeLy * 100).round();
+    final qDay = (safeDay * 100).round();
+    final key = (size, accentColor.toARGB32(), qLx, qLy, qDay, isInsetNiche);
+    final existing = _shaderPaintCache.remove(key);
+    if (existing != null) {
+      _shaderPaintCache[key] = existing;
+      return existing;
+    }
+
+    final sunSideAlign = Alignment(
+      safeLx.clamp(-0.9, 0.9),
+      safeLy.clamp(-0.9, 0.9),
+    );
+    final shadowSideAlign = Alignment(
+      (-safeLx).clamp(-0.9, 0.9),
+      (-safeLy).clamp(-0.9, 0.9),
+    );
+
+    final warmTint = Color.lerp(
+      accentColor,
+      const Color(0xFFF3E5C8),
+      0.48 * safeDay + 0.15,
+    )!;
+    final midBody = Color.lerp(
+      const Color(0xFF2B2622),
+      accentColor,
+      isInsetNiche ? 0.20 : 0.32,
+    )!;
+    final deepShadow = Color.lerp(const Color(0xFF14110F), accentColor, 0.10)!;
+
+    final rimStartAlign = isInsetNiche ? shadowSideAlign : sunSideAlign;
+    final rimEndAlign = isInsetNiche ? sunSideAlign : shadowSideAlign;
+
+    final rimRect = Offset.zero & size;
+    final rimPaint = Paint()
+      ..shader = LinearGradient(
+        begin: rimStartAlign,
+        end: rimEndAlign,
+        colors: [
+          warmTint.withValues(alpha: isInsetNiche ? 0.45 : 0.68),
+          midBody.withValues(alpha: isInsetNiche ? 0.55 : 0.82),
+          deepShadow.withValues(alpha: isInsetNiche ? 0.72 : 0.92),
+        ],
+        stops: const [0.0, 0.48, 1.0],
+      ).createShader(rimRect);
+
+    const wellBaseDark = Color(0xFF1E1B18);
+    const wellTopsoil = Color(0xFF27231E);
+    final wellLazure = Color.lerp(
+      wellTopsoil,
+      accentColor,
+      isInsetNiche ? 0.14 : 0.11,
+    )!;
+
+    final wellPaint = Paint()
+      ..shader = RadialGradient(
+        center: Alignment(safeLx * 0.5, safeLy * 0.5),
+        radius: 1.15,
+        colors: [
+          wellLazure.withValues(alpha: isInsetNiche ? 0.88 : 0.94),
+          wellBaseDark.withValues(alpha: isInsetNiche ? 0.92 : 0.96),
+        ],
+      ).createShader(rimRect);
+
+    final crestPaint = Paint()
+      ..shader = LinearGradient(
+        begin: rimStartAlign,
+        end: rimEndAlign,
+        colors: [
+          warmTint.withValues(alpha: isInsetNiche ? 0.35 : 0.55),
+          accentColor.withValues(alpha: 0.18),
+          const Color(0x59000000),
+        ],
+      ).createShader(rimRect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1;
+
+    final created = _CachedVesselPaints(
+      rimPaint: rimPaint,
+      wellPaint: wellPaint,
+      crestPaint: crestPaint,
+    );
+    if (_shaderPaintCache.length >= 64) {
+      _shaderPaintCache.remove(_shaderPaintCache.keys.first);
+    }
+    _shaderPaintCache[key] = created;
+    return created;
+  }
+
   /// Builds an asymmetric, C1-continuous non-Cartesian contour inspired by
   /// Steiner's carved wooden frames and concrete portals at Dornach.
-  Path _buildVesselPath(Size size, double inset) {
+  static Path _buildVesselPathStatic(
+    Size size,
+    double inset,
+    double seed,
+    bool isInsetNiche,
+  ) {
     final w = size.width;
     final h = size.height;
-    final l = inset;
-    final t = inset;
-    final r = w - inset;
-    final b = h - inset;
+    final maxInset = math.max(0.0, math.min(w, h) * 0.25);
+    final effectiveInset = math.min(inset, maxInset);
+    final l = effectiveInset;
+    final t = effectiveInset;
+    final r = w - effectiveInset;
+    final b = h - effectiveInset;
+    final availW = math.max(0.0, r - l);
+    final availH = math.max(0.0, b - t);
 
     // Subtle organic asymmetry varied by seed so cards don't look stamped from a cookie cutter
     final archShift = (math.sin(seed * 1.7) * 0.08 + 0.06) * w;
-    final topLift = isInsetNiche ? 2.2 : 4.5;
-    final bottomWave = isInsetNiche ? 1.8 : 3.6;
-    final sideSwell = isInsetNiche ? 1.5 : 3.0;
-    final cornerX = isInsetNiche ? 14.0 : 24.0;
-    final cornerY = isInsetNiche ? 14.0 : 22.0;
+    final topLift = math.min(isInsetNiche ? 2.2 : 4.5, availH * 0.2);
+    final bottomWave = math.min(isInsetNiche ? 1.8 : 3.6, availH * 0.2);
+    final sideSwell = math.min(isInsetNiche ? 1.5 : 3.0, availW * 0.2);
+    final cornerX = math.min(isInsetNiche ? 14.0 : 24.0, availW * 0.35);
+    final cornerY = math.min(isInsetNiche ? 14.0 : 22.0, availH * 0.35);
 
     final path = Path();
     // Start on upper-left shoulder after the sculpted arch corner
@@ -200,124 +374,66 @@ final class _OrganicVesselPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (size.width <= 0 || size.height <= 0) return;
+    if (size.width <= 0 ||
+        size.height <= 0 ||
+        !size.width.isFinite ||
+        !size.height.isFinite) {
+      return;
+    }
 
-    final outerPath = _buildVesselPath(size, 0.0);
-    final bevelWidth = isInsetNiche ? 2.5 : 5.5;
-    final innerPath = _buildVesselPath(size, bevelWidth);
+    final (outerPath, innerPath) = _resolvePaths(size, seed, isInsetNiche);
+    final paints = _resolveShaderPaints(
+      size,
+      accentColor,
+      lighting,
+      isInsetNiche,
+    );
+
+    final safeLx = lighting.lx.isFinite ? lighting.lx.clamp(-1.0, 1.0) : -0.45;
+    final safeLy = lighting.ly.isFinite ? lighting.ly.clamp(-1.0, 1.0) : -0.72;
 
     // 1. Directional drop shadow cast away from the diurnal sun vector
     if (!isInsetNiche) {
-      final shadowDx = -lighting.lx * 6.0;
-      final shadowDy = (-lighting.ly * 5.0).clamp(2.0, 8.0);
+      final shadowDx = -safeLx * 6.0;
+      final shadowDy = (-safeLy * 5.0).clamp(2.0, 8.0);
       canvas.save();
       canvas.translate(shadowDx, shadowDy);
-      canvas.drawPath(
-        outerPath,
-        Paint()
-          ..color = Colors.black.withValues(alpha: 0.42)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10.0),
-      );
+      canvas.drawPath(outerPath, _dropShadowPaint);
       canvas.restore();
     }
 
     // 2. Sculpted outer bevel frame (chiseled mineral crest catching diurnal sunlight)
-    final sunSideAlign = Alignment(
-      lighting.lx.clamp(-0.9, 0.9),
-      lighting.ly.clamp(-0.9, 0.9),
-    );
-    final shadowSideAlign = Alignment(
-      (-lighting.lx).clamp(-0.9, 0.9),
-      (-lighting.ly).clamp(-0.9, 0.9),
-    );
-
-    final warmTint = Color.lerp(
-      accentColor,
-      const Color(0xFFF3E5C8),
-      0.48 * lighting.daylightFactor + 0.15,
-    )!;
-    final midBody = Color.lerp(
-      const Color(0xFF2B2622),
-      accentColor,
-      isInsetNiche ? 0.20 : 0.32,
-    )!;
-    final deepShadow = Color.lerp(const Color(0xFF14110F), accentColor, 0.10)!;
-
-    // For inset niches, invert light/shadow alignment so the top/sunward lip looks sunken
-    final rimStartAlign = isInsetNiche ? shadowSideAlign : sunSideAlign;
-    final rimEndAlign = isInsetNiche ? sunSideAlign : shadowSideAlign;
-
-    final rimRect = Offset.zero & size;
-    final rimPaint = Paint()
-      ..shader = LinearGradient(
-        begin: rimStartAlign,
-        end: rimEndAlign,
-        colors: [
-          warmTint.withValues(alpha: isInsetNiche ? 0.45 : 0.68),
-          midBody.withValues(alpha: isInsetNiche ? 0.55 : 0.82),
-          deepShadow.withValues(alpha: isInsetNiche ? 0.72 : 0.92),
-        ],
-        stops: const [0.0, 0.48, 1.0],
-      ).createShader(rimRect);
-
-    canvas.drawPath(outerPath, rimPaint);
+    canvas.drawPath(outerPath, paints.rimPaint);
 
     // 3. Inner recessed card well with warm compost/humus watercolor lazure glaze
-    final wellBaseDark = const Color(0xFF1E1B18);
-    final wellTopsoil = const Color(0xFF27231E);
-    final wellLazure = Color.lerp(
-      wellTopsoil,
-      accentColor,
-      isInsetNiche ? 0.14 : 0.11,
-    )!;
-
-    final wellPaint = Paint()
-      ..shader = RadialGradient(
-        center: Alignment(lighting.lx * 0.5, lighting.ly * 0.5),
-        radius: 1.15,
-        colors: [
-          wellLazure.withValues(alpha: isInsetNiche ? 0.88 : 0.94),
-          wellBaseDark.withValues(alpha: isInsetNiche ? 0.92 : 0.96),
-        ],
-      ).createShader(rimRect);
-
-    canvas.drawPath(innerPath, wellPaint);
+    canvas.drawPath(innerPath, paints.wellPaint);
 
     // 4. Subtle inner reveal shadow & sunlit sill highlight along the chiseled ridge
     canvas.save();
     canvas.clipPath(innerPath);
     // Sunken cavity shadow cast by the frame overhang
-    canvas.translate(-lighting.lx * 2.5, -lighting.ly * 2.5);
+    canvas.translate(-safeLx * 2.5, -safeLy * 2.5);
     canvas.drawPath(
       innerPath,
-      Paint()
-        ..color = Colors.black.withValues(alpha: isInsetNiche ? 0.45 : 0.55)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = isInsetNiche ? 3.0 : 5.0
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.0),
+      isInsetNiche ? _cavityShadowInsetPaint : _cavityShadowRaisedPaint,
     );
     canvas.restore();
 
     // Crisp chiseled crest line where outer bevel meets inner slope
-    final crestPaint = Paint()
-      ..shader = LinearGradient(
-        begin: rimStartAlign,
-        end: rimEndAlign,
-        colors: [
-          warmTint.withValues(alpha: isInsetNiche ? 0.35 : 0.55),
-          accentColor.withValues(alpha: 0.18),
-          Colors.black.withValues(alpha: 0.35),
-        ],
-      ).createShader(rimRect)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.1;
-    canvas.drawPath(innerPath, crestPaint);
+    canvas.drawPath(innerPath, paints.crestPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _OrganicVesselPainter oldDelegate) =>
-      oldDelegate.accentColor != accentColor ||
-      oldDelegate.lighting != lighting ||
-      oldDelegate.seed != seed ||
-      oldDelegate.isInsetNiche != isInsetNiche;
+  bool shouldRepaint(covariant _OrganicVesselPainter oldDelegate) {
+    if (oldDelegate.accentColor != accentColor ||
+        oldDelegate.seed != seed ||
+        oldDelegate.isInsetNiche != isInsetNiche) {
+      return true;
+    }
+    final oldL = oldDelegate.lighting;
+    if (identical(oldL, lighting)) return false;
+    return (oldL.lx - lighting.lx).abs() >= 0.01 ||
+        (oldL.ly - lighting.ly).abs() >= 0.01 ||
+        (oldL.daylightFactor - lighting.daylightFactor).abs() >= 0.01;
+  }
 }

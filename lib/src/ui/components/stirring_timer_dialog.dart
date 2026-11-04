@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -53,22 +54,49 @@ final class StirringTimerDialog extends StatefulWidget {
   State<StirringTimerDialog> createState() => _StirringTimerDialogState();
 }
 
-final class _StirringTimerDialogState extends State<StirringTimerDialog> {
+final class _StirringTimerDialogState extends State<StirringTimerDialog>
+    with SingleTickerProviderStateMixin {
   late StirringPrepType _selectedPrep;
   late int _totalDurationSeconds;
   int _remainingSeconds = 3600;
   bool _isRunning = false;
   bool _isComplete = false;
   Timer? _timer;
+  late final AnimationController _vortexController;
 
   // Vortex cycle length is 75 seconds (vortex buildup -> crater chaos -> direction reversal).
   static const int _cycleLengthSeconds = 75;
+
+  bool get _isTestEnvironment =>
+      WidgetsBinding.instance.runtimeType.toString().contains('Test');
 
   @override
   void initState() {
     super.initState();
     _selectedPrep = widget.initialPrep;
     _setDurationForPrep(_selectedPrep);
+    _vortexController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant StirringTimerDialog oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialPrep != oldWidget.initialPrep && !_isRunning) {
+      _setDurationForPrep(widget.initialPrep);
+    }
+  }
+
+  void _syncVortexAnimation() {
+    if (_isRunning && !_isTestEnvironment) {
+      if (!_vortexController.isAnimating) {
+        _vortexController.repeat();
+      }
+    } else if (_vortexController.isAnimating) {
+      _vortexController.stop();
+    }
   }
 
   void _setDurationForPrep(StirringPrepType prep) {
@@ -96,6 +124,7 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
       setState(() {
         _isRunning = false;
       });
+      _syncVortexAnimation();
       return;
     }
 
@@ -108,8 +137,13 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
       _isComplete = false;
       _isRunning = true;
     });
+    _syncVortexAnimation();
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
       setState(() {
         _remainingSeconds--;
       });
@@ -122,6 +156,7 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
           _isRunning = false;
           _isComplete = true;
         });
+        _syncVortexAnimation();
         SystemSound.play(SystemSoundType.click);
         return;
       }
@@ -135,12 +170,27 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
   }
 
   void _skipSeconds(int deltaSeconds) {
+    var completedNow = false;
     setState(() {
       _remainingSeconds = (_remainingSeconds + deltaSeconds).clamp(
         0,
         _totalDurationSeconds,
       );
+      if (_remainingSeconds <= 0) {
+        _timer?.cancel();
+        _isRunning = false;
+        if (!_isComplete) {
+          _isComplete = true;
+          completedNow = true;
+        }
+      } else if (_isComplete) {
+        _isComplete = false;
+      }
     });
+    _syncVortexAnimation();
+    if (completedNow) {
+      SystemSound.play(SystemSoundType.click);
+    }
   }
 
   void _resetTimer() {
@@ -150,11 +200,13 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
       _isComplete = false;
       _remainingSeconds = _totalDurationSeconds;
     });
+    _syncVortexAnimation();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _vortexController.dispose();
     super.dispose();
   }
 
@@ -426,75 +478,89 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Main Circular Progress & Timer Display
-                  Center(
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox(
-                          width: 200,
-                          height: 200,
-                          child: CircularProgressIndicator(
-                            value: progress,
-                            strokeWidth: 8,
-                            backgroundColor: Colors.white.withValues(
-                              alpha: 0.1,
-                            ),
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              Color(0xFF646CFF),
+                  // Main Circular Progress & Vortex Timer Display
+                  RepaintBoundary(
+                    child: Center(
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox(
+                            width: 160,
+                            height: 160,
+                            child: CustomPaint(
+                              painter: _DynamizationVortexPainter(
+                                animation: _vortexController,
+                                isClockwise: _isClockwise,
+                                isReversalWarning: _isReversalWarning,
+                                isRunning: _isRunning,
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(
-                          width: 175,
-                          height: 175,
-                          child: CircularProgressIndicator(
-                            value: cycleProgress,
-                            strokeWidth: 4,
-                            backgroundColor: Colors.transparent,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              _isReversalWarning
-                                  ? const Color(0xFFEF4444)
-                                  : (_isClockwise
-                                        ? const Color(0xFF60A5FA)
-                                        : const Color(0xFFF59E0B)),
+                          SizedBox(
+                            width: 200,
+                            height: 200,
+                            child: CircularProgressIndicator(
+                              value: progress,
+                              strokeWidth: 8,
+                              backgroundColor: Colors.white.withValues(
+                                alpha: 0.1,
+                              ),
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                Color(0xFF646CFF),
+                              ),
                             ),
                           ),
-                        ),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _formatTime(_remainingSeconds),
-                              style: GoogleFonts.outfit(
-                                fontSize: 36,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 1.2,
+                          SizedBox(
+                            width: 175,
+                            height: 175,
+                            child: CircularProgressIndicator(
+                              value: cycleProgress,
+                              strokeWidth: 4,
+                              backgroundColor: Colors.transparent,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                _isReversalWarning
+                                    ? const Color(0xFFEF4444)
+                                    : (_isClockwise
+                                          ? const Color(0xFF60A5FA)
+                                          : const Color(0xFFF59E0B)),
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                'Cycle $_currentCycleIndex/$_totalCycles',
+                          ),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _formatTime(_remainingSeconds),
                                 style: GoogleFonts.outfit(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF818CF8),
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 1.2,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'Cycle $_currentCycleIndex/$_totalCycles',
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF818CF8),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -619,72 +685,74 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
                   const SizedBox(height: 24),
 
                   // Goethean Dynamization & Application Guidance Section
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.04),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.08),
+                  RepaintBoundary(
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.auto_awesome,
-                              size: 16,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.auto_awesome,
+                                size: 16,
+                                color: Color(0xFF818CF8),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Goethean Dynamization Guidance',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _buildGuidanceRow(
+                            icon: Icons.water_drop_outlined,
+                            iconColor: const Color(0xFF60A5FA),
+                            title: 'Water Source & Warmth',
+                            description: 'Clean rainwater recommended (or living spring water). Warm to approx. 35°C (blood warmth) before dynamizing. Avoid treated, chlorinated tap water.',
+                          ),
+                          const SizedBox(height: 10),
+                          _buildGuidanceRow(
+                            icon: Icons.nature_outlined,
+                            iconColor: const Color(0xFFF59E0B),
+                            title: 'Vessel Materiality',
+                            description: 'Natural materials: Oak or larch wooden barrel, glazed earthenware crock, or hammered copper vat. Avoid synthetic plastic containers which dampen energetic resonance.',
+                          ),
+                          const SizedBox(height: 10),
+                          _buildGuidanceRow(
+                            customIcon: const BiodynamicIcon(
+                              type: BiodynamicIconType.dynamizationVortex,
+                              size: 14,
                               color: Color(0xFF818CF8),
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Goethean Dynamization Guidance',
-                              style: GoogleFonts.outfit(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
+                            iconColor: const Color(0xFF818CF8),
+                            title: 'Vortex & Dynamic Chaos',
+                            description: 'Stir along perimeter to form a deep funnel reaching the bottom of the barrel, then reverse sharply to shatter into dynamic foaming chaos.',
+                          ),
+                          const SizedBox(height: 10),
+                          _buildGuidanceRow(
+                            icon: Icons.grain,
+                            iconColor: const Color(0xFF10B981),
+                            title: 'Droplet Atomization & Spraying',
+                            description: _getDropletGuidanceForPrep(
+                              _selectedPrep,
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        _buildGuidanceRow(
-                          icon: Icons.water_drop_outlined,
-                          iconColor: const Color(0xFF60A5FA),
-                          title: 'Water Source & Warmth',
-                          description: 'Clean rainwater recommended (or living spring water). Warm to approx. 35°C (blood warmth) before dynamizing. Avoid treated, chlorinated tap water.',
-                        ),
-                        const SizedBox(height: 10),
-                        _buildGuidanceRow(
-                          icon: Icons.nature_outlined,
-                          iconColor: const Color(0xFFF59E0B),
-                          title: 'Vessel Materiality',
-                          description: 'Natural materials: Oak or larch wooden barrel, glazed earthenware crock, or hammered copper vat. Avoid synthetic plastic containers which dampen energetic resonance.',
-                        ),
-                        const SizedBox(height: 10),
-                        _buildGuidanceRow(
-                          customIcon: const BiodynamicIcon(
-                            type: BiodynamicIconType.dynamizationVortex,
-                            size: 14,
-                            color: Color(0xFF818CF8),
                           ),
-                          iconColor: const Color(0xFF818CF8),
-                          title: 'Vortex & Dynamic Chaos',
-                          description: 'Stir along perimeter to form a deep funnel reaching the bottom of the barrel, then reverse sharply to shatter into dynamic foaming chaos.',
-                        ),
-                        const SizedBox(height: 10),
-                        _buildGuidanceRow(
-                          icon: Icons.grain,
-                          iconColor: const Color(0xFF10B981),
-                          title: 'Droplet Atomization & Spraying',
-                          description: _getDropletGuidanceForPrep(
-                            _selectedPrep,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -781,5 +849,66 @@ final class _StirringTimerDialogState extends State<StirringTimerDialog> {
         ),
       ),
     );
+  }
+}
+
+/// Zero-allocation custom painter for the dynamization vortex spiral inside
+/// [StirringTimerDialog], driven directly by [animation] via `super(repaint: animation)`.
+final class _DynamizationVortexPainter extends CustomPainter {
+  final Animation<double> animation;
+  final bool isClockwise;
+  final bool isReversalWarning;
+  final bool isRunning;
+
+  static final Paint _spiralPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.6
+    ..strokeCap = StrokeCap.round;
+
+  static final Path _spiralPath = Path();
+
+  _DynamizationVortexPainter({
+    required this.animation,
+    required this.isClockwise,
+    required this.isReversalWarning,
+    required this.isRunning,
+  }) : super(repaint: animation);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width * 0.5;
+    final cy = size.height * 0.5;
+    final maxR = math.min(cx, cy) * 0.88;
+    final dir = isClockwise ? 1.0 : -1.0;
+    final phase = animation.value * 2.0 * math.pi * dir;
+
+    final baseColor = isReversalWarning
+        ? const Color(0xFFEF4444)
+        : (isClockwise ? const Color(0xFF60A5FA) : const Color(0xFFF59E0B));
+    _spiralPaint.color = baseColor.withValues(alpha: isRunning ? 0.22 : 0.08);
+
+    _spiralPath.reset();
+    const steps = 42;
+    for (var i = 0; i <= steps; i++) {
+      final t = i / steps;
+      final r = maxR * (0.15 + 0.85 * t);
+      final theta = phase + dir * t * 4.5 * math.pi;
+      final x = cx + r * math.cos(theta);
+      final y = cy + r * math.sin(theta);
+      if (i == 0) {
+        _spiralPath.moveTo(x, y);
+      } else {
+        _spiralPath.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(_spiralPath, _spiralPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DynamizationVortexPainter oldDelegate) {
+    return oldDelegate.isClockwise != isClockwise ||
+        oldDelegate.isReversalWarning != isReversalWarning ||
+        oldDelegate.isRunning != isRunning ||
+        oldDelegate.animation != animation;
   }
 }

@@ -1,6 +1,9 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 
 import 'dornach_boundaries.dart';
+import 'ecological_synthesis.dart';
 import 'models/models.dart';
 
 /// Evaluates agricultural farm organism tasks beyond seed sowing.
@@ -13,12 +16,41 @@ import 'models/models.dart';
 /// 5. Timber felling (Mondholz / Moon Wood: waning/descending moon in Capricorn).
 /// 6. Weed & pest peppering (ashing in Leo / Scorpio).
 abstract final class AgriculturalTaskEvaluator {
+  static const int _maxCacheEntries = 512;
+
+  static final LinkedHashMap<Object, AgriculturalTaskAdvice> _taskCache =
+      LinkedHashMap<Object, AgriculturalTaskAdvice>();
+
+  static final LinkedHashMap<Object, List<AgriculturalTaskAdvice>>
+  _allTasksCache = LinkedHashMap<Object, List<AgriculturalTaskAdvice>>();
+
   /// Returns the astronomical constellation name corresponding to [longitude].
   static String getConstellationName(
     double longitude, [
     List<ConstellationBoundary> boundaries = dornachBoundaries,
   ]) {
     return findBoundaryForLongitude(longitude, boundaries)?.name ?? '';
+  }
+
+  static String _resolveConstellationLower({
+    String? constellation,
+    double? moonLongitude,
+    EphemerisService? ephemeris,
+    required DateTime time,
+  }) {
+    if (constellation != null && constellation.isNotEmpty) {
+      return constellation.toLowerCase();
+    }
+    var resolvedLon = moonLongitude;
+    if (resolvedLon == null && ephemeris != null) {
+      try {
+        resolvedLon = ephemeris.getMoonLongitude(time);
+      } catch (_) {}
+    }
+    if (resolvedLon != null) {
+      return getConstellationName(resolvedLon).toLowerCase();
+    }
+    return '';
   }
 
   /// Evaluates the suitability of a specific [task] at [time] under [calendarInfo].
@@ -34,28 +66,25 @@ abstract final class AgriculturalTaskEvaluator {
     double? moonLongitude,
     double latitude = DefaultLocations.copenhagenLatitude,
   }) {
-    if (constellation == null || constellation.isEmpty) {
-      if (moonLongitude == null && ephemeris != null) {
-        try {
-          moonLongitude = ephemeris.getMoonLongitude(time);
-        } catch (_) {}
-      }
-      if (moonLongitude != null) {
-        constellation = getConstellationName(moonLongitude);
-      }
-    }
-    final constName = constellation ?? '';
-    final constLower = constName.toLowerCase();
+    final needsConstellation =
+        task == AgriculturalTaskType.timberFelling ||
+        task == AgriculturalTaskType.peppering;
+    final constLower = needsConstellation
+        ? _resolveConstellationLower(
+            constellation: constellation,
+            moonLongitude: moonLongitude,
+            ephemeris: ephemeris,
+            time: time,
+          )
+        : '';
 
     final effectiveHorizon =
         horizon ??
-        ((weather != null || weatherSeries != null)
-            ? MultiHorizonWeatherAnalysis.analyze(
-                referenceTime: time,
-                weatherSeries: weatherSeries,
-                currentWeather: weather,
-              )
-            : null);
+        EcologicalSynthesis.resolveHorizon(
+          referenceTime: time,
+          weatherSeries: weatherSeries,
+          currentWeather: weather,
+        );
     final effectiveWeather = weather ?? effectiveHorizon?.currentPoint;
 
     final isDescending = calendarInfo.isMoonDescending;
@@ -65,9 +94,28 @@ abstract final class AgriculturalTaskEvaluator {
     final quality = calendarInfo.quality;
     final isGrayDay = calendarInfo.isGrayDay;
 
+    final cacheKey = (
+      task,
+      quality,
+      isGrayDay,
+      isDescending,
+      isAscending,
+      isWaxing,
+      time.hour,
+      effectiveWeather,
+      effectiveHorizon,
+      constLower,
+    );
+    final cached = _taskCache.remove(cacheKey);
+    if (cached != null) {
+      _taskCache[cacheKey] = cached;
+      return cached;
+    }
+
+    final AgriculturalTaskAdvice result;
     switch (task) {
       case AgriculturalTaskType.soilCultivation:
-        return _evaluateSoilCultivation(
+        result = _evaluateSoilCultivation(
           time: time,
           weather: effectiveWeather,
           horizon: effectiveHorizon,
@@ -77,7 +125,7 @@ abstract final class AgriculturalTaskEvaluator {
         );
 
       case AgriculturalTaskType.pruning:
-        return _evaluatePruning(
+        result = _evaluatePruning(
           weather: effectiveWeather,
           horizon: effectiveHorizon,
           isDescending: isDescending,
@@ -87,7 +135,7 @@ abstract final class AgriculturalTaskEvaluator {
         );
 
       case AgriculturalTaskType.harvestStorage:
-        return _evaluateHarvestStorage(
+        result = _evaluateHarvestStorage(
           weather: effectiveWeather,
           horizon: effectiveHorizon,
           isDescending: isDescending,
@@ -98,7 +146,7 @@ abstract final class AgriculturalTaskEvaluator {
         );
 
       case AgriculturalTaskType.harvestFresh:
-        return _evaluateHarvestFresh(
+        result = _evaluateHarvestFresh(
           time: time,
           quality: quality,
           isAscending: isAscending,
@@ -107,7 +155,7 @@ abstract final class AgriculturalTaskEvaluator {
         );
 
       case AgriculturalTaskType.timberFelling:
-        return _evaluateTimberFelling(
+        result = _evaluateTimberFelling(
           weather: effectiveWeather,
           isWaning: isWaning,
           quality: quality,
@@ -116,13 +164,19 @@ abstract final class AgriculturalTaskEvaluator {
         );
 
       case AgriculturalTaskType.peppering:
-        return _evaluatePeppering(
+        result = _evaluatePeppering(
           weather: effectiveWeather,
           quality: quality,
           constLower: constLower,
           isGrayDay: isGrayDay,
         );
     }
+
+    if (_taskCache.length >= _maxCacheEntries) {
+      _taskCache.remove(_taskCache.keys.first);
+    }
+    _taskCache[cacheKey] = result;
+    return result;
   }
 
   /// Evaluates all 6 agricultural tasks.
@@ -139,29 +193,54 @@ abstract final class AgriculturalTaskEvaluator {
   }) {
     final sharedHorizon =
         horizon ??
-        ((weather != null || weatherSeries != null)
-            ? MultiHorizonWeatherAnalysis.analyze(
-                referenceTime: time,
-                weatherSeries: weatherSeries,
-                currentWeather: weather,
-              )
-            : null);
-    return AgriculturalTaskType.values
-        .map(
-          (task) => evaluateTask(
-            task: task,
-            calendarInfo: calendarInfo,
-            time: time,
-            weather: weather,
-            weatherSeries: weatherSeries,
-            horizon: sharedHorizon,
-            constellation: constellation,
-            ephemeris: ephemeris,
-            moonLongitude: moonLongitude,
-            latitude: latitude,
-          ),
-        )
-        .toList(growable: false);
+        EcologicalSynthesis.resolveHorizon(
+          referenceTime: time,
+          weatherSeries: weatherSeries,
+          currentWeather: weather,
+        );
+    final effectiveWeather = weather ?? sharedHorizon?.currentPoint;
+    final resolvedConstellation = _resolveConstellationLower(
+      constellation: constellation,
+      moonLongitude: moonLongitude,
+      ephemeris: ephemeris,
+      time: time,
+    );
+
+    final allKey = (
+      calendarInfo.quality,
+      calendarInfo.isGrayDay,
+      calendarInfo.isMoonDescending,
+      calendarInfo.isMoonAscending,
+      calendarInfo.moonPhase.isWaxing,
+      time.hour,
+      effectiveWeather,
+      sharedHorizon,
+      resolvedConstellation,
+    );
+    final cachedAll = _allTasksCache.remove(allKey);
+    if (cachedAll != null) {
+      _allTasksCache[allKey] = cachedAll;
+      return cachedAll;
+    }
+
+    final list = List<AgriculturalTaskAdvice>.unmodifiable(
+      AgriculturalTaskType.values.map(
+        (task) => evaluateTask(
+          task: task,
+          calendarInfo: calendarInfo,
+          time: time,
+          weather: effectiveWeather,
+          horizon: sharedHorizon,
+          constellation: resolvedConstellation,
+          latitude: latitude,
+        ),
+      ),
+    );
+    if (_allTasksCache.length >= _maxCacheEntries) {
+      _allTasksCache.remove(_allTasksCache.keys.first);
+    }
+    _allTasksCache[allKey] = list;
+    return list;
   }
 
   static AgriculturalTaskAdvice _evaluateSoilCultivation({

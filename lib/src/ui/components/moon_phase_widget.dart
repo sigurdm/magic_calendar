@@ -16,9 +16,13 @@ final class MoonPhaseWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(size, size),
-      painter: MoonPainter(info: info),
+    final safeSize = size.isFinite && size > 0 ? size : 0.0;
+    return RepaintBoundary(
+      child: CustomPaint(
+        isComplex: true,
+        size: Size(safeSize, safeSize),
+        painter: MoonPainter(info: info),
+      ),
     );
   }
 }

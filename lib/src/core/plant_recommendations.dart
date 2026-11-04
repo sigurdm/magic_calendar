@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'climate/climate_profile.dart';
 import 'climate/crop_climate_suitability.dart';
 import 'climate/season_alignment.dart';
@@ -9,6 +11,29 @@ enum GardenSeason { spring, summer, autumn, winter }
 
 /// Helper class computing practical sowing, transplanting, and harvesting recommendations adapted to season, hemisphere, moon phase, and Danish vegetable database.
 final class PlantRecommendations {
+  static const int _maxCacheEntries = 256;
+
+  static final Map<PlantQuality, List<VegetableEntry>>
+  _defaultEntriesByQuality = <PlantQuality, List<VegetableEntry>>{
+    for (final q in PlantQuality.values)
+      q: List<VegetableEntry>.unmodifiable(
+        VegetableDatabase.queryByQuality(quality: q),
+      ),
+  };
+
+  static final Expando<String> _profileNoteCache = Expando<String>(
+    'PlantRecommendationsProfileNote',
+  );
+
+  static final Expando<Map<PlantQuality, Map<String, CropClimateEvaluation>>>
+  _profileEvaluationsCache =
+      Expando<Map<PlantQuality, Map<String, CropClimateEvaluation>>>(
+        'PlantRecommendationsProfileEvaluations',
+      );
+
+  static final LinkedHashMap<Object, PlantRecommendations> _evalCache =
+      LinkedHashMap<Object, PlantRecommendations>();
+
   final GardenSeason season;
   final int weekNumber;
   final List<String> sowIndoorPlants;
@@ -48,6 +73,29 @@ final class PlantRecommendations {
     return week.clamp(1, 53);
   }
 
+  static Map<String, CropClimateEvaluation> _defaultProfileEvaluations(
+    ClimateProfile profile,
+    PlantQuality quality,
+    List<VegetableEntry> matchingVegs,
+  ) {
+    var byQuality = _profileEvaluationsCache[profile];
+    if (byQuality == null) {
+      byQuality = <PlantQuality, Map<String, CropClimateEvaluation>>{};
+      _profileEvaluationsCache[profile] = byQuality;
+    }
+    if (byQuality[quality] case final cached?) {
+      return cached;
+    }
+    final computed = Map<String, CropClimateEvaluation>.unmodifiable(
+      <String, CropClimateEvaluation>{
+        for (final v in matchingVegs)
+          v.id: CropClimateEvaluation.evaluate(v, profile),
+      },
+    );
+    byQuality[quality] = computed;
+    return computed;
+  }
+
   /// Evaluates plant recommendations for the given agricultural and celestial state
   /// following Maria Thun's factor hierarchy:
   ///
@@ -75,8 +123,76 @@ final class PlantRecommendations {
     List<VegetableEntry>? dbEntries,
   }) {
     final alignment = seasons ?? HemisphereSeasonAlignment(latitude: latitude);
-    final month = alignment.referenceMonth(selectedTime);
     final profile = alignment.localProfile;
+    final useDefaultDb =
+        dbEntries == null || identical(dbEntries, VegetableDatabase.allEntries);
+
+    if (useDefaultDb) {
+      final cacheKey = (
+        quality,
+        isDescending,
+        isWaxing,
+        isGrayDay,
+        selectedTime.year,
+        selectedTime.month,
+        selectedTime.day,
+        alignment.hasNorthernSeasons,
+        alignment.transferability,
+        alignment.shortLabel,
+        alignment.referenceMonth(selectedTime),
+        alignment.referenceMonth(
+          selectedTime,
+          anchor: SeasonalAnchor.frostTender,
+        ),
+        alignment.referenceMonth(selectedTime, anchor: SeasonalAnchor.thermal),
+        identityHashCode(profile),
+      );
+      final cached = _evalCache.remove(cacheKey);
+      if (cached != null) {
+        _evalCache[cacheKey] = cached;
+        return cached;
+      }
+
+      final result = _evaluateUncached(
+        quality: quality,
+        isDescending: isDescending,
+        isWaxing: isWaxing,
+        isGrayDay: isGrayDay,
+        selectedTime: selectedTime,
+        alignment: alignment,
+        profile: profile,
+        dbEntries: null,
+      );
+      if (_evalCache.length >= _maxCacheEntries) {
+        _evalCache.remove(_evalCache.keys.first);
+      }
+      _evalCache[cacheKey] = result;
+      return result;
+    }
+
+    return _evaluateUncached(
+      quality: quality,
+      isDescending: isDescending,
+      isWaxing: isWaxing,
+      isGrayDay: isGrayDay,
+      selectedTime: selectedTime,
+      alignment: alignment,
+      profile: profile,
+      dbEntries: dbEntries,
+    );
+  }
+
+  static PlantRecommendations _evaluateUncached({
+    required PlantQuality quality,
+    required bool isDescending,
+    required bool isWaxing,
+    required bool isGrayDay,
+    required DateTime selectedTime,
+    required SeasonAlignment alignment,
+    required ClimateProfile? profile,
+    required List<VegetableEntry>? dbEntries,
+  }) {
+    final month = alignment.referenceMonth(selectedTime);
     final climateNote = profile == null ? null : _buildProfileNote(profile);
 
     final GardenSeason season = switch (month) {
@@ -127,24 +243,38 @@ final class PlantRecommendations {
       );
     }
 
-    final matchingVegs = VegetableDatabase.queryByQuality(
-      quality: quality,
-      sourceList: dbEntries,
-    );
+    final matchingVegs = dbEntries == null
+        ? (_defaultEntriesByQuality[quality] ?? const <VegetableEntry>[])
+        : VegetableDatabase.queryByQuality(
+            quality: quality,
+            sourceList: dbEntries,
+          );
 
-    final evaluations = profile == null
-        ? const <String, CropClimateEvaluation>{}
-        : <String, CropClimateEvaluation>{
-            for (final v in matchingVegs)
-              v.id: CropClimateEvaluation.evaluate(v, profile),
-          };
+    final Map<String, CropClimateEvaluation> evaluations;
+    if (profile == null) {
+      evaluations = const <String, CropClimateEvaluation>{};
+    } else if (dbEntries == null) {
+      evaluations = _defaultProfileEvaluations(profile, quality, matchingVegs);
+    } else {
+      evaluations = Map<String, CropClimateEvaluation>.unmodifiable(
+        <String, CropClimateEvaluation>{
+          for (final v in matchingVegs)
+            v.id: CropClimateEvaluation.evaluate(v, profile),
+        },
+      );
+    }
 
-    int sowMonthFor(VegetableEntry crop) => alignment.referenceMonth(
+    final frostTenderMonth = alignment.referenceMonth(
       selectedTime,
-      anchor: crop.isFrostTender
-          ? SeasonalAnchor.frostTender
-          : SeasonalAnchor.thermal,
+      anchor: SeasonalAnchor.frostTender,
     );
+    final thermalMonth = alignment.referenceMonth(
+      selectedTime,
+      anchor: SeasonalAnchor.thermal,
+    );
+
+    int sowMonthFor(VegetableEntry crop) =>
+        crop.isFrostTender ? frostTenderMonth : thermalMonth;
 
     bool isOutdoorViable(VegetableEntry crop) {
       final eval = evaluations[crop.id];
@@ -157,30 +287,35 @@ final class PlantRecommendations {
 
     // 1. Sidereal Plant-Part Day + Season governs both indoor and outdoor sowing
     // regardless of whether the Moon is ascending/descending or waxing/waning.
-    final sowIndoor = matchingVegs
-        .where((v) => v.indoorSowingMonths.contains(sowMonthFor(v)))
-        .map((v) => v.localizedDisplayName)
-        .toList(growable: false);
+    final sowIndoor = List<String>.unmodifiable(
+      matchingVegs
+          .where((v) => v.indoorSowingMonths.contains(sowMonthFor(v)))
+          .map((v) => v.localizedDisplayName),
+    );
 
-    final sowOutdoor = matchingVegs
-        .where(
-          (v) => v.sowingMonths.contains(sowMonthFor(v)) && isOutdoorViable(v),
-        )
-        .map((v) => v.localizedDisplayName)
-        .toList(growable: false);
+    final sowOutdoor = List<String>.unmodifiable(
+      matchingVegs
+          .where(
+            (v) =>
+                v.sowingMonths.contains(sowMonthFor(v)) && isOutdoorViable(v),
+          )
+          .map((v) => v.localizedDisplayName),
+    );
 
     // 2. Descending Moon (Pflanzzeit) + Sidereal Plant-Part Day governs transplanting.
     final transplant = isDescending
-        ? matchingVegs
-              .where((v) => v.transplantMonths.contains(sowMonthFor(v)))
-              .map((v) => v.localizedDisplayName)
-              .toList(growable: false)
+        ? List<String>.unmodifiable(
+            matchingVegs
+                .where((v) => v.transplantMonths.contains(sowMonthFor(v)))
+                .map((v) => v.localizedDisplayName),
+          )
         : const <String>[];
 
-    final harvest = matchingVegs
-        .where((v) => v.harvestMonths.contains(month))
-        .map((v) => v.localizedDisplayName)
-        .toList(growable: false);
+    final harvest = List<String>.unmodifiable(
+      matchingVegs
+          .where((v) => v.harvestMonths.contains(month))
+          .map((v) => v.localizedDisplayName),
+    );
 
     final String advice =
         '$seasonName ($hemisphereText, Week $week): ${quality.displayName} Day (primary sidereal impulse for sowing & hoeing). $declinationNote $synodicNote$caveatSuffix';
@@ -193,12 +328,15 @@ final class PlantRecommendations {
       transplantActions: transplant,
       harvestActions: harvest,
       generalAdvice: advice,
-      cropClimateEvaluations: Map.unmodifiable(evaluations),
+      cropClimateEvaluations: evaluations,
       localClimateNote: climateNote,
     );
   }
 
   static String _buildProfileNote(ClimateProfile p) {
+    if (_profileNoteCache[p] case final cached?) {
+      return cached;
+    }
     final s5 = p.thermalSeason(5);
     final spring90 = p.frost.lastSpringFrost90;
     final autumn10 = p.frost.firstAutumnFrost10;
@@ -212,6 +350,9 @@ final class PlantRecommendations {
         : (s5.isYearRound
               ? 'thermal season ≥ 5 °C year-round'
               : 'sub-5 °C climate');
-    return '${p.koppen.code} · USDA Zone ${p.hardinessZone.label}: $frostClause; $thermalClause.';
+    final note =
+        '${p.koppen.code} · USDA Zone ${p.hardinessZone.label}: $frostClause; $thermalClause.';
+    _profileNoteCache[p] = note;
+    return note;
   }
 }
